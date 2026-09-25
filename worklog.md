@@ -277,3 +277,62 @@ Stage Summary:
 - Answered all 8 final quality-check questions YES (§26 correction-pass table).
 - Exact next action (when ordered): owner resolves §N items -> implementation agent builds
   v0.1 per §B.3 layout with §L as acceptance gate, following §P.4 process obligations.
+
+---
+Task ID: 9
+Agent: orchestrator (main)
+Task: Docs & artifacts hub — upload all documents and every (future) artifact to GitHub (AGE-T/Pitchlab) and build an in-app docs/artifacts workbench at "/"
+
+Work Log:
+- Interpreted the user request ("szeretném, ha ide felkerülnének a doksik, valamint ha
+  majd lesz, minden artifact" + GitHub PAT): destination = the user's freshly created,
+  empty GitHub repo AGE-T/Pitchlab, verified the PAT via the GitHub /user API.
+- Git hardening: untracked .env (now holds GITHUB_TOKEN + GITHUB_REPO, gitignored) and
+  internal tool-results/ + .zscripts/dev.pid; extended .gitignore. Token is never
+  committed (verified in remote tree).
+- Created repo assets: README.md (doc index, artifact policy, sync instructions),
+  artifacts/ tree per design doc §B.2 (renders/ analysis/ reports/, .gitkeep keepers),
+  scripts/push-to-github.sh (commit all + push, token from .env only, redacts token
+  from push output).
+- Pushed the whole project (main) to https://github.com/AGE-T/Pitchlab — all 6
+  authoritative docs now on GitHub.
+- Built the Pitch Lab workbench web app at "/" (frontend first, then backend):
+  * src/app/page.tsx — dark lab-console UI: header (status pill, GitHub, sync),
+    sidebar (docs list grouped Tervezés/Kutatás/Működési elvek/Archívum/Projekt +
+    artifacts tree with auto-poll every 30 s), markdown reader (max-w-3xl), right-rail
+    TOC on xl / popover TOC on smaller, mobile Sheet navigation, sticky console-style
+    footer status bar, framer-motion transitions, skeletons, toasts.
+  * src/components/markdown-view.tsx — react-markdown + remark-gfm + Tailwind
+    typography (custom pitch-prose dark theme); heading anchor generation that
+    matches the TOC slug algorithm, including setext headings (==== banners) used by
+    the Operating Principles doc; GFM tables with overflow scroll.
+  * src/lib/docs.ts — server doc enumeration (research/**, worklog.md, README.md),
+    curated metadata + generic fallback for future docs, path-traversal-safe reads
+    (only enumerated paths are servable).
+  * src/lib/artifacts.ts — recursive artifacts/ tree listing (.gitkeep hidden).
+  * API routes: GET /api/docs, GET /api/docs/content?path=, GET /api/artifacts,
+    GET/POST /api/sync (runs scripts/push-to-github.sh via execFile, 120 s timeout,
+    token redaction in output, .sync-state.json state, git log lastCommit info).
+  * Custom scrollbars (pitch-scrollbar), hu locale date-fns relative times.
+- Installed: remark-gfm, @tailwindcss/typography.
+- Browser self-verification (agent-browser): page renders; doc list = 6 docs with
+  correct default (architecture design v1.1); doc switching works; TOC navigation
+  works for ATX (design doc) AND setext (principles doc, 133 entries) — found and
+  fixed a bug where headings had no id (anchors were not generated initially);
+  sync dialog ran a real sync: commit "sync: docs, worklog and artifacts" created and
+  pushed, remote HEAD == local HEAD verified via git ls-remote; artifact discovery
+  verified with a temporary test file (then removed); mobile 390 px layout verified
+  (Sheet menu, no horizontal overflow); VLM screenshot reviews passed (desktop +
+  sync dialog); eslint clean; dev.log clean.
+- Path traversal and .env access verified blocked (404) via /api/docs/content.
+
+Stage Summary:
+- Deliverables: (1) GitHub repo AGE-T/Pitchlab now holds every document + the full
+  project; (2) scripts/push-to-github.sh one-command sync (token stays in .env);
+  (3) artifacts/ tree ready for v0.1 outputs; (4) the "/" workbench app to browse all
+  docs (markdown + TOC) and artifacts in-app, with a one-click "Szinkron" button that
+  pushes docs + artifacts to GitHub.
+- Future artifacts: anything placed in artifacts/renders|analysis|reports appears in
+  the app automatically (30 s poll) and is included in every sync.
+- Security: GitHub PAT only in gitignored .env; API output redaction; allowlisted
+  doc paths.
