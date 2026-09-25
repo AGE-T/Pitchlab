@@ -1,0 +1,707 @@
+     1→# PITCH LAB — Architecture & Design Document
+     2→
+     3→**Document status:** DESIGN ONLY — not implemented. No code in this document is final or built; interfaces are architectural contracts, not implementations.
+     4→**Version:** v1.0 (design baseline)
+     5→**Date:** 2026-02-15
+     6→**Author role:** senior audio DSP architect / software engineer (AI-assisted)
+     7→**Governing document:** *AI Assisted Software Engineering Operating Principles v3.0* — **NOT AVAILABLE** at design time (referenced file was not present in the project upload area). This design therefore follows the principles **as explicitly enumerated in the task brief**: scope & non-goals first; authoritative sources identified; architecture separated from implementation; assumptions explicit; no silent invention of missing behaviour; explicit ownership; lifecycle & state; testing & validation; dependency & licensing diligence; reproducibility & recoverability; no unnecessary abstraction; no scope expansion into the future VST.
+     8→
+     9→> **OPEN ISSUE #0 (governing document):** the Operating Principles v3.0 file must be re-supplied and this design re-checked against it before implementation begins. Any conflict between that file and this design is resolved in favour of the principles file, by explicit amendment — never silently.
+    10→
+    11→**Primary upstream input:** `research/doppler-whip-pitch-research-report.md` (unified research report, same repository). Statements inherited from it are tagged **[RESEARCH FINDING]**. Statement classification used throughout this document:
+    12→
+    13→| Tag | Meaning |
+    14→|---|---|
+    15→| **[RESOLVED DESIGN]** | Decision made in this document, justified, safe for the implementation agent to follow |
+    16→| **[OPEN DECISION]** | Genuinely undecidable from current requirements; listed in §N; must not be decided silently by the implementer |
+    17→| **[ASSUMPTION]** | Environmental/organisational assumption; if false, the affected design point must be revisited |
+    18→| **[RESEARCH FINDING]** | Inherited verified/inferred claim from the research phase (see the research report's own tag system) |
+    19→| **[IMPLEMENTATION DETAIL]** | Detail deliberately left to the implementation agent; principle and constraints given here |
+    20→
+    21→---
+    22→
+    23→## 0. Scope, purpose, non-goals
+    24→
+    25→### 0.1 Purpose (restated from requirements)
+    26→
+    27→Pitch Lab is a **local DSP research laboratory** for sound-design-oriented pitch processing. Its product is **knowledge and tested DSP components**, not shippable audio software. It must support:
+    28→
+    29→1. **Technically controlled benchmarks** — identical inputs, identical pitch trajectories, multiple engines, measured results.
+    30→2. **Deliberately creative / unstable experimentation** — extreme ratios, unstable modulation, aggressive parameters, where "artefacts" may be the goal.
+    31→
+    32→It must distinguish **technical correctness**, **perceptual quality**, and **creative usefulness** — and must never collapse them into one score. **[RESOLVED DESIGN]**
+    33→
+    34→### 0.2 Non-goals (binding)
+    35→
+    36→Explicitly out of scope for the first implementation, per the task and the operating principles:
+    37→
+    38→- the VST3 product itself, any plugin wrapper, any DAW integration
+    39→- a polished GUI (a minimal file/CLI workflow only)
+    40→- implementation of the physical Doppler / propagation / shock / whip / spatialisation / feedback systems
+    41→- real-time audio playback in v1 (deterministic offline renderer first)
+    42→- AI/neural pitch processing
+    43→- premature optimisation
+    44→- silently deciding unresolved product behaviour
+    45→
+    46→The architecture must nevertheless **not block** any of these (see §M). **[RESOLVED DESIGN]**
+    47→
+    48→### 0.3 Governing separation from physical Doppler
+    49→
+    50→Pitch Lab models **musical/engineering pitch processing**: transforms that (typically) preserve duration and are driven by a **pitch-ratio control curve**. The physical Doppler/propagation system is a **duration-modulating, physics-driven** process and belongs to a separate future component with a **different contract** (research report §B.3.3). Pitch Lab must support *Doppler-like pitch curves* (arbitrary time-varying ratio) but must **not** model velocity, Mach numbers, or propagation. No Doppler concept appears in any Pitch Lab API. **[RESOLVED DESIGN — boundary inherited from [RESEARCH FINDING])**
+    51→
+    52→### 0.4 Assumptions (explicit, revisited if false)
+    53→
+    54→| # | Assumption |
+    55→|---|---|
+    56→| A1 | Single user, single workstation, offline operation; no concurrent writers to the project tree |
+    57→| A2 | A C++20 toolchain (clang/gcc/MSVC) and CMake are available on the development machine |
+    58→| A3 | Git is used; the renderer stamps outputs with the source version (fallback: static version file if git unavailable) |
+    59→| A4 | Test corpus assets will be authored/obtained/licensed later; some categories (whoosh, whip) require the measurements defined in the research report §A.6.3 |
+    60→| A5 | The Operating Principles v3.0 file will be re-supplied (OPEN ISSUE #0) |
+    61→| A6 | Python 3.11+ is available for the optional offline analysis layer (fallback: pure-C++ analysis path is designed-in as an alternative) |
+    62→
+    63→---
+    64→
+    65→## A. Executive architecture
+    66→
+    67→```text
+    68→                ┌─────────────────────────────────────────────────────────┐
+    69→                │  AUTHORITATIVE INPUTS (files under version control)     │
+    70→                │  experiments/*.toml   assets/corpus/**   config/*.toml  │
+    71→                │  (experiment defs, corpus + metadata, engine registry)  │
+    72→                └────────────────────────────┬────────────────────────────┘
+    73→                                             ▼
+    74→                                   ExperimentCompiler
+    75→                        (matrix expansion: inputs × curves × engines
+    76→                         × configs × sample rates; capability filtering
+    77→                         with recorded skip reasons)
+    78→                                             ▼
+    79→        ┌───────────────────────── RenderJob queue ─────────────────────────┐
+    80→        │  per job: InputAsset, PitchCurveSignal, EngineConfiguration,       │
+    81→        │           seed, sample rate, channels, destination, provenance     │
+    82→        └───────┬───────────────────────────────────────────────┬───────────┘
+    83→                ▼                                               │
+    84→        OfflineRenderer (deterministic, block-streaming)        │  skipped jobs
+    85→        │  drives PitchEngine via the engine contract            │  recorded with reason
+    86→        │  owns latency accounting, length policy,               ▼
+    87→        │  NaN/Inf scanning, manifest emission                (no render)
+    88→                ▼
+    89→        RenderResult  =  renders/**.wav  +  renders/**.manifest.json
+    90→                ▼
+    91→        Analyzer (independent stage; metric modules as pure functions;
+    92→         optional Python offline trackers for reference pitch analysis)
+    93→                ▼
+    94→        AnalysisResult  =  analysis/**.json
+    95→                ▼
+    96→        BenchmarkRun aggregator (comparison matrices; never mutates results)
+    97→                ▼
+    98→        Report  =  reports/**   (tables/plots + listening indexes)
+    99→```
+   100→
+   101→**Engine side (compiled into the same binary, isolated by directory and contract):**
+   102→
+   103→```text
+   104→PitchEngine (abstract contract — §D)
+   105→├── engines/native/          (own implementations, Tier A/B)
+   106→│    varispeed · variable_delay · phase_vocoder · phase_locked_pv ·
+   107→│    granular · wsola · td_psola · fd_psola · transient_pv · sinusoidal · sms
+   108→└── engines/external/        (adapters only — no third-party code in native/)
+   109→     ├── linked adapters     (permissive-licence engines: Signalsmith, pbshift)
+   110→     └── subprocess adapters (copyleft engines: Rubber Band, SoundTouch —
+   111→                              isolated via CLI process boundary)
+   112→```
+   113→
+   114→Every engine carries a **UsageClass** ∈ {`prototype`, `benchmark-only`, `external-integration`, `external-benchmark`, `research-reference`, `rejected`, `future`}. The class is recorded in the engine registry and in every manifest; it constrains nothing at runtime (a `benchmark-only` engine still renders) but is **authoritative metadata for interpretation and for what may later enter the VST**. **[RESOLVED DESIGN]**
+   115→
+   116→**Four components, no more:** ExperimentCompiler, OfflineRenderer, Analyzer, Reporter — plus the passive registries (corpus, curves, engines). No GUI, no server, no database, no manager classes beyond these. **[RESOLVED DESIGN — minimal abstraction per operating principles]**
+   117→
+   118→## B. Component model, ownership, project layout
+   119→
+   120→### B.1 Components and responsibilities
+   121→
+   122→| Component | Responsibility (complete list) | Explicitly NOT responsible for |
+   123→|---|---|---|
+   124→| **CorpusRegistry** | Enumerate InputAssets from `assets/corpus/**` + metadata files; validate metadata; serve paths & hashes | Creating, editing or resampling assets; judging asset quality |
+   125→| **CurveLibrary** | Parse PitchCurveSpec files; validate; compile spec → dense PitchCurveSignal at a requested control rate (deterministically, with seed) | Knowing anything about engines; smoothing (engine's business) |
+   126→| **EngineRegistry** | Compile-time registry of all engines (native + adapters); expose EngineInfo/Capabilities; construct engine instances | Testing engines; enforcing capabilities at runtime (harness does that) |
+   127→| **ExperimentCompiler** | Parse experiment TOML; expand the test matrix; apply capability filters with recorded skip reasons; emit RenderJob list + job plan manifest | Rendering; analysing; inventing missing test definitions (missing input = error, not default) |
+   128→| **OfflineRenderer** | For each RenderJob: instantiate engine, configure (params+seed), prepare (fs/channels/block), block-stream the input, drive the engine with the curve view, enforce output length policy, account latency, scan output for NaN/Inf, write WAV + manifest | Metric computation; comparing engines; deciding skip policy (compiler decided it) |
+   129→| **Analyzer** | Read RenderResults (files only); compute metric modules as pure functions over (reference, output, context); write AnalysisResults | Touching engines; re-rendering; mutating results |
+   130→| **Reporter** | Aggregate AnalysisResults into BenchmarkRuns, comparison tables, listening indexes | Scoring; ranking beyond presenting measurements |
+   131→| **CLI (`pitchlab`)** | Entry points: `compile`, `render`, `analyze`, `report`, `verify`, `listen-index` | Business logic (all logic lives in the components) |
+   132→
+   133→### B.2 Ownership matrix (no shared mutable state)
+   134→
+   135→| State | Owner | Mutability | Persistence |
+   136→|---|---|---|---|
+   137→| Input assets + metadata | CorpusRegistry (read-only) | immutable | `assets/corpus/` (authoritative files) |
+   138→| Pitch curve specs | CurveLibrary (read-only) | immutable | `experiments/curves/` (authoritative) |
+   139→| Pitch curve signals (compiled) | ExperimentCompiler → Renderer | ephemeral, derived | derivable; never persisted as truth |
+   140→| Engine instances + internal DSP state | OfflineRenderer, for the duration of one RenderJob | mutable, job-local | never persisted |
+   141→| Engine configurations | defined in experiment files (authoritative) | immutable | `experiments/` |
+   142→| Random seeds | defined in experiment/TestCase files (authoritative) | immutable | `experiments/` + copied into manifests |
+   143→| RenderJob queue | ExperimentCompiler → Renderer (handoff) | append-only during run | job plan manifest (generated) |
+   144→| Render buffers | Renderer, per job | ephemeral | none |
+   145→| WAV outputs + manifests | Renderer emits; **nobody owns after emission** (immutable artifacts) | immutable | `renders/` (generated) |
+   146→| Analysis results | Analyzer emits; immutable artifacts | immutable | `analysis/` (generated) |
+   147→| Experiment definitions | The user (via files) | authoritative | `experiments/` |
+   148→| Configuration defaults | `config/` files | authoritative | `config/` |
+   149→
+   150→**Rule:** generated trees (`renders/`, `analysis/`, `reports/`) are **never** source of truth; deleting them and re-running `pitchlab render/analyze/report` must reconstruct them bit-for-bit for deterministic engines (§L). **[RESOLVED DESIGN]**
+   151→
+   152→### B.3 Project layout (proposed root: `pitch-lab/`)
+   153→
+   154→```text
+   155→pitch-lab/
+   156→  config/                 # authoritative: engine registry defaults, harness defaults
+   157→  docs/                   # authoritative: this design doc + research links
+   158→  experiments/            # authoritative: experiment definitions (TOML)
+   159→    curves/               #   pitch curve specs (TOML) + optional curve data (CSV)
+   160→    suites/               #   benchmark suites (the §10 battery as files)
+   161→    creative/             #   creative experiments (namespaced)
+   162→  assets/
+   163→    corpus/               # authoritative: test inputs + per-asset metadata.toml
+   164→    reference-notes/      # authoritative: notes on what counts as reference and why
+   165→  src/
+   166→    core/                 # contract, curve lib, renderer, compiler, harness, CLI
+   167→    engines/native/       # own engines (one dir per engine)
+   168→    engines/external/     # adapters ONLY (linked + subprocess)
+   169→    analysis/             # C++ metric modules
+   170→  analysis-py/            # OPTIONAL Python offline analysis layer (isolated, dev-only)
+   171→  external/               # vendored third-party sources, one dir per library,
+   172→                          #   each with LICENSE.txt copied verbatim + ORIGIN.toml
+   173→  scripts/                # bootstrap, build, run-suite, verify-reproducibility
+   174→  tests/                  # unit/component/renderer/failure test sources
+   175→  renders/                # GENERATED (gitignored; reconstructable)
+   176→  analysis/               # GENERATED
+   177→  reports/                # GENERATED
+   178→```
+   179→
+   180→**[RESOLVED DESIGN]** — exact file formats inside `experiments/` are sketched in §F; schemas are authoritative here, syntax details are **[IMPLEMENTATION DETAIL]**.
+   181→
+   182→---
+   183→
+   184→## C. Data flow (an experiment moves through the system)
+   185→
+   186→1. **Author** writes `experiments/suites/dynamic-basic.toml`: selects inputs (by asset id), curves (by spec id), engines (by registry id) or engine groups, parameter sets, sample rates, seed, kind = benchmark.
+   187→2. **`pitchlab compile`** → ExperimentCompiler loads corpora/curves/engines; validates everything it can **before** any DSP runs (missing asset → hard error with asset id; ratio out of engine range → job skip recorded with reason `ratio-out-of-range`; unsupported fs/channels → skip reason); emits `renders/<run-id>/jobplan.json` with the full job list + skip log.
+   188→3. **`pitchlab render`** (consumes jobplan) → for each job: build engine, configure with parameters + seed, prepare with (fs, channels, harness block size), then block-stream: read input block → advance curve view → `process()` → collect output block → enforce length policy → NaN/Inf scan. Emits `renders/<run-id>/<engine>/<input>__<curve>__<fs>__<paramstag>/<...>.wav` + `...manifest.json` (provenance: asset hash, curve spec hash + signal hash, engine id+version, params, seed, git commit, config hash, host info).
+   189→   - Varispeed reference renders are produced by the same path (the harness's reference engine is just another registered engine) — one per (input, curve, fs) — and tagged `reference` in the manifest.
+   190→4. **`pitchlab analyze`** → Analyzer loads each RenderResult + its reference pairing from the run's job plan; computes metric modules; writes `analysis/<run-id>/...json` mirroring render paths.
+   191→5. **`pitchlab report`** → aggregates to `reports/<run-id>/`: comparison tables (engines × metrics × material classes), skip log, listening index (grouped A/B/C render sets with identical input/curve — §G.4).
+   192→6. **Human listens / reviews.** The render identity chain (manifest) answers: which algorithm, which parameters, which input, which curve, which sample rate, which seed, which code version. **[RESOLVED DESIGN — requirement §17]**
+   193→
+   194→Failure branches: see §K. Every failure is classified and persisted; nothing is silently dropped.
+   195→
+   196→---
+   197→
+   198→## D. Pitch engine contract (architecture only — C++ sketch, NOT implementation)
+   199→
+   200→```cpp
+   201→// engine/PitchEngine.h  — the single contract every engine family implements.
+   202→// Architecture-level sketch: exact signatures may be adjusted by the implementer
+   203→// within the constraints marked RESOLVED below. [IMPLEMENTATION DETAIL] applies
+   204→// to syntax, not semantics.
+   205→
+   206→enum class UsageClass { Prototype, BenchmarkOnly, ExternalIntegration,
+   207→                        ExternalBenchmark, ResearchReference, Rejected, Future };
+   208→enum class DurationBehaviour { Preserving, RateFollowing };   // see D.4
+   209→enum class ChannelMode { Mono, Stereo, MonoAndStereo, MultiChannel };
+   210→enum class Determinism { Deterministic, SeededDeterministic }; // Nondeterministic is FORBIDDEN
+   211→
+   212→struct ControlRateSpec {
+   213→    enum Kind { PerSample, FixedBlock, EngineEvent } kind;
+   214→    int blockFrames = 0;        // for FixedBlock; engine-declared, harness-verified
+   215→    // EngineEvent: engine pulls curve samples at its own cadence (per hop/grain/
+   216→    // period) — the harness supplies a sampleable view and LOGS the declared rate.
+   217→};
+   218→
+   219→struct BandwidthSpec {
+   220→    // Declared honest bandwidth: fraction of Nyquist, or absolute Hz at a given fs.
+   221→    double nyquistFraction;     // e.g. 0.45, 0.95
+   222→    // Engines that alias above some ratio must say so here (honesty over marketing).
+   223→    std::string notes;
+   224→};
+   225→
+   226→struct EngineInfo {
+   227→    const char* id;             // stable registry id, e.g. "native.pv.phaselocked"
+   228→    const char* displayName;
+   229→    const char* version;        // engine's own version string
+   230→    UsageClass  usageClass;
+   231→    const char* origin;         // "own implementation" | adapter target + version
+   232→    const char* license;        // recorded status from research (re-verify before impl.)
+   233→};
+   234→
+   235→struct Capabilities {
+   236→    double      minRatio, maxRatio;      // no global ceiling imposed by the harness
+   237→    bool        supportsDynamicRatio;    // false => static-ratio engines still welcome
+   238→    ControlRateSpec controlRate;         // §9: per-sample / per-block / per-event
+   239→    ChannelMode channelMode;
+   240→    int         maxChannels;
+   241→    BandwidthSpec bandwidth;
+   242→    DurationBehaviour duration;          // §D.4
+   243→    Determinism determinism;             // all engines must be reproducible (§14)
+   244→    // NOTE: material-suitability flags (voice/polyphonic/noise/transient) are
+   245→    // DESCRIPTIVE metadata stored in the registry, NOT part of this contract —
+   246→    // see D.6 for the justification (they must not become architectural gate-keeping).
+   247→};
+   248→
+   249→struct LatencyInfo { int64_t inputLatencyFrames; int64_t outputLatencyFrames; };
+   250→
+   251→struct PitchCurveView {
+   252→    const double* ratio;        // dense ratio signal, audio-rate (fs-indexed)
+   253→    int64_t       frames;       // == input frames (one ratio value per input frame)
+   254→    double        sampleRate;   // of the AUDIO (curve is indexed per audio frame)
+   255→    // Engines with EngineEvent control pull arbitrary indices via the view's
+   256→    // sampler (linear interpolation at declared boundaries; no engine may
+   257→    // extrapolate beyond the view — clamp + report, see §K).
+   258→};
+   259→
+   260→struct ProcessContext {
+   261→    double sampleRate; int channels; int maxBlockFrames;
+   262→    int64_t totalFrames;         // whole render length (offline: known)
+   263→};
+   264→
+   265→struct EngineConfiguration {      // opaque, engine-defined parameter set,
+   266→    // serialised verbatim into manifests; harness validates only seed presence.
+   267→    // contains: named parameters (strings/numbers), seed (uint64, REQUIRED)
+   268→};
+   269→
+   270→class PitchEngine {
+   271→public:
+   272→    virtual ~PitchEngine() = default;
+   273→    virtual EngineInfo     info() const = 0;
+   274→    virtual Capabilities   capabilities() const = 0;
+   275→    virtual LatencyInfo    latency() const = 0;          // after prepare(); constant per job
+   276→    virtual void configure(const EngineConfiguration& cfg) = 0;   // params + seed
+   277→    virtual void prepare(const ProcessContext& ctx) = 0;          // allocate, reset state
+   278→    virtual void process(const float* const* in, float* const* out,
+   279→                         int frames, const PitchCurveView& curve,
+   280→                         int64_t frameIndex) = 0;         // planar, channel-major
+   281→    virtual void reset() = 0;                            // clears DSP state, keeps config
+   282→};
+   283→```
+   284→
+   285→### D.1 Resolved contract semantics
+   286→
+   287→- **Planar float processing.** Buffers are non-interleaved, channel-major. Internal compute precision is the engine's choice, but the I/O bus is `float` (32-bit); research-grade double-precision variants are a per-engine internal decision. **[RESOLVED DESIGN]** — *alternative considered and rejected: double I/O bus (rejected: diverges from future VST reality; precision analysis happens inside engines/analyzers).*
+   288→- **Block streaming.** `process()` is called with arbitrary block sizes ≤ `maxBlockFrames`, in order, exactly once per frame range, `frameIndex` monotonically increasing. Engines must tolerate any block boundary. **[RESOLVED DESIGN — VST-donation requirement]**
+   289→- **Determinism.** Every engine must be reproducible: given identical (input, config incl. seed, fs, channels, block schedule), output must be bit-identical. RNG must come from the injected seed via a harness-provided deterministic generator (own PCG64 implementation — no `<random>` device entropy). **[RESOLVED DESIGN — §14 mandate]** Block-size independence of *audio content* is a target contract for native engines (see §L, with the caveat that bit-exactness across different block schedules is a **[OPEN DECISION]** — audio-equal within tolerance vs bit-exact; bit-exact is required only for the *same* schedule, which is what reproducibility demands).
+   290→- **The engine owns ONLY its processing behaviour.** It must not know: test methodology, metrics, benchmark state, corpus semantics, file paths. `PitchEngine` has no hooks for any of that. **[RESOLVED DESIGN — §2 mandate]**
+   291→- **Latency.** Reported once after `prepare()`, in frames. The harness uses it for alignment in analysis and records it; engines do not self-compensate. **[RESOLVED DESIGN]**
+   292→- **Duration policy (D.4 — the honest varispeed case):**
+   293→  - `Preserving` engines MUST emit exactly as many output frames as input frames consumed (offline whole-file contract: output length == input length).
+   294→  - `RateFollowing` engines (varispeed family) emit according to the integrated ratio curve (read-pointer position). The harness computes the expected output length from the curve's integrated read position and verifies the engine's length within a small tolerance (**[OPEN DECISION]**: tolerance value — provisional: ±1 block).
+   295→  - This split is required because forcing varispeed into a duration-preserving contract would falsify the reference model. **[RESOLVED DESIGN]**
+   296→- **Static-ratio engines** (`supportsDynamicRatio == false`) receive the curve like everyone else; they may sample it at their own (e.g. initial) value; the harness's benchmark marks the effective control rate in analysis. No special API. **[RESOLVED DESIGN — methodology equality]**
+   297→
+   298→### D.2 Adapter semantics (external engines)
+   299→
+   300→- **Linked adapters** (permissive licences only): adapter implements `PitchEngine` by calling the external library; adapter owns all glue; external code stays in `external/`, never in `engines/native/`. Adapter declares the external's true capabilities honestly (including "control updates at block rate N").
+   301→- **Subprocess adapters** (copyleft engines — Rubber Band, SoundTouch): the adapter writes the input WAV + a control sidecar to a temp dir, invokes the vendor CLI (rendering the *static* or *block-quantised* ratio timeline it supports), reads back the output WAV, and reports honest capabilities (e.g., `FixedBlock` control with the tool's block size, or static-only). **License isolation is the reason** (GPL/LGPL code must never be linked into the Lab binary; the CLI boundary keeps the Lab proprietary-clean). **[RESOLVED DESIGN — inherited from [RESEARCH FINDING] licensing matrix]**
+   302→- Adapters record the external version in `EngineInfo` and fail with `external-dependency-unavailable` if the binary/library is missing (§K). **[RESOLVED DESIGN]**
+   303→
+   304→### D.3 Capability model — which fields are architecturally necessary and why
+   305→
+   306→| Field | Necessity |
+   307→|---|---|
+   308→| `minRatio / maxRatio` | **Necessary.** The compiler must skip out-of-range jobs *without rendering* (test integrity: rendering a silently-clamped ratio would falsify results) and record the skip. No *global* range exists — each engine declares its own. |
+   309→| `supportsDynamicRatio` + `ControlRateSpec` | **Necessary.** §4/§9 require the harness to test the *difference* between per-sample / per-frame / per-hop / per-grain control. The declared spec is also what the analyzer's *measured* control rate gets compared against. |
+   310→| `ChannelMode / maxChannels` | **Necessary.** Corpus contains stereo + mono; jobs must be skippable when an engine cannot process the layout. |
+   311→| `BandwidthSpec` | **Necessary.** §6: no fixed 20 kHz ceiling; the benchmark must verify *declared* bandwidth against measured bandwidth (aliasing indicator). Honesty field — an engine may declare "aliases above 0.5 Nyquist at ratios > 2"; declaring a limitation is fine, hiding it is not. |
+   312→| `DurationBehaviour` | **Necessary.** Output-length policy differs (varispeed reference). |
+   313→| `Determinism` | **Necessary.** §14 reproducibility mandate. |
+   314→
+   315→### D.4 Rejected capability fields (and why)
+   316→
+   317→- `supportsExtremeRatio` — derivable from `minRatio/maxRatio`; redundant.
+   318→- `supportsTransientMaterial / supportsNoiseMaterial / supportsVoice...` — **rejected as contract fields.** These are *research findings*, not architecture: an artefact may be a feature (§1); encoding them as gate-keeping would fossilise today's opinions into the structure. They live as **descriptive metadata in the engine registry** (informative, non-enforcing). **[RESOLVED DESIGN]**
+   319→- `supportsWideband` — superseded by `BandwidthSpec` (quantitative, honest) rather than a boolean (qualitative, marketing-prone).
+   320→- semitone-based parameters anywhere in the contract — **rejected** (§5: ratio is canonical).
+   321→
+   322→### D.5 Engine registry (initial set, mapping §7 tiers → UsageClass)
+   323→
+   324→| Registry id | Tier | UsageClass | Origin / licence status (from research; **re-verify before linking**) |
+   325→|---|---|---|---|
+   326→| `native.varispeed` | A | **Prototype + harness reference role** | own implementation; no deps |
+   327→| `native.vardelay` | A | Prototype | own; note: naive-delay ratio limits per research §A (documented, engine is a *musical* shifter here) |
+   328→| `native.pv.classic` | A | Prototype (benchmark baseline role) | own |
+   329→| `native.pv.phaselocked` | A | Prototype | own (L-D '99 techniques, patents expired) |
+   330→| `native.granular` | A | Prototype (creative-leaning) | own |
+   331→| `native.wsola` | B | Prototype | own (from Verhelst & Roelands math) |
+   332→| `native.tdpsola` | B | Prototype (voice lane) | own (from Moulines & Charpentier 1990) |
+   333→| `native.fdpsola` | B | Prototype (low priority) | own |
+   334→| `native.pv.transient` | B | Prototype | own (Röbel '03-style reset) |
+   335→| `native.sinusoidal` | B | Prototype (low priority) | own (MQ/SMS) |
+   336→| `native.sms` | B | Prototype (low priority) | own |
+   337→| `ext.signalsmith` | C | ExternalIntegration | Signalsmith Stretch — MIT **[RESEARCH FINDING: verified LICENSE.txt; commonly misreported as LGPL — re-verify at vendoring time]** |
+   338→| `ext.pbshift` | C | ExternalBenchmark (watch) | pbshift — MIT, pre-1.0 **[RESEARCH FINDING: maturity risk]** |
+   339→| `ext.rubberband` | C | ExternalBenchmark | Rubber Band — GPL-2.0+ ⇒ **subprocess adapter only** |
+   340→| `ext.soundtouch` | C | ExternalBenchmark | SoundTouch — LGPL-2.1 ⇒ **subprocess adapter only** |
+   341→| *(future)* `future.hnm`, `future.world`, ... | — | Future / Rejected | per research report §B.6 (not built unless re-scoped) |
+   342→
+   343→**[RESOLVED DESIGN]** — the registry is compile-time (static list in `config/engines.toml` reflected in code); dynamic loading rejected for v1 (§O).
+   344→
+   345→### D.6 What the contract deliberately does NOT contain
+   346→
+   347→- No bypass/identity shortcut method (would defeat the ratio=1.0 contract test — engines must really process; rejected in §O).
+   348→- No quality self-assessment, no "render report" from engines.
+   349→- No streaming-time discovery of capabilities (fixed after `prepare()`).
+   350→- No Doppler/propagation concepts (§0.3).
+   351→- No GUI model, no parameter automation model beyond the curve view.
+   352→
+   353→## E. Pitch curve model
+   354→
+   355→### E.1 Canonical representation
+   356→
+   357→- **Canonical domain: linear pitch ratio, double precision.** `ratio = 1.0` is unchanged; 0.5 = −1 octave; 2.0 = +1 octave; 4.0, 8.0 … unrestricted at the architecture level. **[RESOLVED DESIGN — §5 mandate]**
+   358→- Semitones exist ONLY at the authoring surface: the curve generator accepts semitone expressions and converts via `ratio = 2^(st/12)` at compile time. The engine contract, harness, manifests and metrics see ratio only. **[RESOLVED DESIGN]**
+   359→- **No artificial global range.** Each engine's practical limits come from its `Capabilities`; the compiler skips/mark jobs accordingly (§K). The curve system itself must accept and represent any positive finite ratio (e.g. 0.25× and 8× from the extreme battery, and beyond for creative work). **[RESOLVED DESIGN]**
+   360→
+   361→### E.2 Two-layer model: PitchCurveSpec → PitchCurveSignal
+   362→
+   363→**Layer 1 — `PitchCurveSpec` (declarative, authoritative, serialisable):**
+   364→
+   365→```toml
+   366→# experiments/curves/fast-reversal.toml  [schema sketch; syntax = IMPLEMENTATION DETAIL]
+   367→id = "fast-reversal"
+   368→[crossfadeless_reversal]                 # shape spec, one of:
+   369→kind   = "reversal"                      # static | ramp_lin | ramp_exp | lfo
+   370→                                         # | random | reversal | breakpoints | external
+   371→from   = { semitones = +12.0 }
+   372→to     = { semitones = -12.0 }
+   373→time   = { ms = 100 }
+   374→hold   = { ms = 400 }                    # pre/post holds as needed
+   375→seed   = 0                               # REQUIRED for any stochastic element
+   376→```
+   377→
+   378→Supported spec kinds (§9 mandate): static ratio; static semitone; linear ramp; exponential ramp (per-second semitone rate or ratio-power rate); slow/fast ramp profiles; LFO (sine / triangle / saw / random-walk) with rate, depth, centre, constraints (min/max clamp); rapid reversal; breakpoint curve (monotone times, per-point ratio, per-segment interpolation law); user-supplied curve (external CSV/F32 file of (time, ratio) or dense ratio at declared rate). Every stochastic element carries an explicit seed. **[RESOLVED DESIGN]**
+   379→
+   380→**Layer 2 — `PitchCurveSignal` (dense, derived):**
+   381→
+   382→- Compiled by CurveLibrary deterministically from the spec into a **dense audio-rate ratio array** (one double per input audio frame at the job's sample rate).
+   383→- This dense signal is the **single source of pitch truth for a job**; the renderer hands engines a `PitchCurveView` over it.
+   384→- Engines with `PerSample` control consume it directly; `FixedBlock`/`EngineEvent` engines sample it at their own cadence via the view (the harness logs the declared cadence; the analyzer *measures* the effective control rate independently — see §H).
+   385→- **[RESOLVED DESIGN]** Why dense: it makes per-sample vs per-hop control a *measurable engine property* instead of a harness property, exactly what §9 demands the benchmark demonstrate. Cost is negligible for offline research file sizes.
+   386→
+   387→### E.3 Control-rate semantics (first-class)
+   388→
+   389→| Concept | Owner | Notes |
+   390→|---|---|---|
+   391→| Curve *definition* rate | Spec (author) | breakpoints/params in time domain |
+   392→| Curve *signal* rate | Harness | audio-rate dense (one ratio per input frame) |
+   393→| Curve *consumption* rate | Engine (declared in `ControlRateSpec`) | per-sample / fixed-block / engine-event (per hop, per grain, per period…) |
+   394→| Curve *effective* rate | Analyzer (measured) | pitch-tracking lag + reversal-response latency measured from output |
+   395→
+   396→The harness must **never** quantise the curve globally; block-rate quantisation that some engine performs internally is that engine's measured characteristic. **[RESOLVED DESIGN]**
+   397→
+   398→### E.4 Curve validation (compile-time, hard errors)
+   399→
+   400→- ratios: finite, strictly positive (NaN/≤0 → config error);
+   401→- times: finite, strictly monotone;
+   402→- duration coverage: curve must cover `[0, totalFrames)` — extend policy: hold-first/hold-last declared in spec (default hold-last);
+   403→- discontinuities: allowed only if the spec declares `allow_discontinuity = true` (rapid reversal is a *derivative* discontinuity — always allowed; *value* jumps need the flag, so unintentional clicks are caught at compile time).
+   404→**[RESOLVED DESIGN — §21 "invalid pitch curve"]**
+   405→
+   406→---
+   407→
+   408→## F. Experiment model (entities, lifecycle, ownership)
+   409→
+   410→### F.1 Entity definitions
+   411→
+   412→| Entity | Creation | Owner | Mutable state | Persistence | Lifetime / destruction |
+   413→|---|---|---|---|---|---|
+   414→| **Experiment** | Author writes TOML in `experiments/` | Author (file) | by editing the file | authoritative file | until deleted by author |
+   415→| **TestCase** | Compiler expands matrix | Compiler (ephemeral) | none (immutable value) | listed in jobplan.json (generated) | duration of run |
+   416→| **InputAsset** | Author adds file + `metadata.toml` to `assets/corpus/` | CorpusRegistry (read) | immutable | authoritative + hash pinned in manifests | permanent |
+   417→| **PitchCurveSpec** | Author writes curve TOML | CurveLibrary (read) | immutable | authoritative file | permanent |
+   418→| **PitchCurveSignal** | Compiled from spec per job | Compiler → Renderer | derived, job-scoped | hash in manifest only | job |
+   419→| **PitchEngine (instance)** | Renderer constructs per job | Renderer | internal DSP state during job | none | destroyed at job end (state never leaks across jobs) |
+   420→| **EngineConfiguration** | Experiment file | Author | immutable | authoritative + manifest copy | permanent (file) |
+   421→| **RenderJob** | Compiler | queue handoff | status field until completion | jobplan.json | run |
+   422→| **RenderResult** | Renderer emits | nobody (immutable artifact) | none | `renders/**.wav` + `...manifest.json` | permanent until `renders/` regenerated (generated tree) |
+   423→| **AnalysisResult** | Analyzer emits | nobody (immutable artifact) | none | `analysis/**.json` | as above |
+   424→| **BenchmarkRun** | Reporter aggregates | Reporter | none (immutable view) | `reports/<run-id>/` | generated |
+   425→
+   426→**No manager classes** exist beyond the four components in §B.1. **[RESOLVED DESIGN — operating principle: no unnecessary abstraction]**
+   427→
+   428→### F.2 InputAsset metadata (minimum schema)
+   429→
+   430→```toml
+   431→# assets/corpus/whip-crack-1m-96k/metadata.toml
+   432→id          = "whip-crack-1m-96k"
+   433→category    = "whip"                # sine|harmonic|chord|musical|speech|sung|percussion|
+   434→                                    # transient|noise-white|noise-pink|whoosh|whip|
+   435→                                    # stereo-ambience|diagnostic|wideband
+   436→sampleRate  = 96000
+   437→channels    = 1
+   438→durationSec = 0.8
+   439→sourceDescription = "own measurement per research report A.6.3, 1 m, on-axis"
+   440→referenceStatus   = "real-world-recording"   # test-fixture | benchmark-reference |
+   441→                                              # experimental-source | real-world-recording
+   442→bandContentHz     = [20, 40000]     # honest declared content band (wideband §I)
+   443→```
+   444→
+   445→**[RESOLVED DESIGN]** — `category` vocabulary is fixed by §8; `referenceStatus` distinguishes the four asset roles (fixture/reference/experimental/real-world). Corpus assets are authored **at their intended sample rates**; the harness never silently resamples (see §I).
+   446→
+   447→### F.3 Run identity and reproducibility
+   448→
+   449→- A **run-id** = `{experiment-id}_{UTC-timestamp}_{configHash8}`. Directory naming under `renders/`: `renders/<run-id>/<engine-id>/<asset-id>__<curve-id>__<fs>__<paramtag>/`.
+   450→- Every manifest records: input asset id + SHA-256; curve spec id + spec hash + signal hash; engine id, version, adapter/external version; full EngineConfiguration incl. seed; sample rate; channels; harness block size; git commit (or version fallback); config hash; host triplet. **[RESOLVED DESIGN — §14/§17 mandate]**
+   451→- Two identical configurations → identical WAV bytes for deterministic engines (verified by `pitchlab verify`, §L). **[RESOLVED DESIGN]**
+   452→
+   453→### F.4 Benchmark vs Creative separation (§12)
+   454→
+   455→- `Experiment.kind ∈ {benchmark, creative}` — a single field set at the top of the experiment file.
+   456→- **Benchmark mode:** full validation (§E.4, §K), canonical suites (§10), capability-filtered jobs, results enter aggregation. **Nothing in benchmark mode is relaxable.**
+   457→- **Creative mode:** relaxed policies — explicitly allowed: out-of-declared-range ratios (job renders, manifest records `override-ratio-range`), discontinuous curves without pre-declaration (flagged, not blocked), extreme parameter values, unusual engine combos (a chain is NOT supported in v1 — see §M; "combination" in v1 means *rendering the same material through different engines and layering externally*); NaN/Inf in output → render completes, result **tainted** (flagged in manifest + analysis refuses to score tainted results but preserves them for listening).
+   458→- Creative outputs live in `renders/<run-id>/creative/...` namespace and are **excluded from benchmark aggregation** — no metric table ever mixes them in. **[RESOLVED DESIGN — §12 "must never alter the correctness of the benchmark mode"]**
+   459→- Creative mode cannot disable: determinism, seeding, manifests, NaN tainting. (Determinism is a property of the system, not a quality judgement.) **[RESOLVED DESIGN]**
+   460→
+   461→---
+   462→
+   463→## G. Benchmark architecture (identical tests across engines)
+   464→
+   465→### G.1 The methodology-ownership rule (§2)
+   466→
+   467→The harness (compiler + renderer + analyzer) owns: input selection, sample rate, duration, pitch trajectory, test case definition, output naming, metadata, benchmark execution, measurements. Engines own ONLY processing behaviour and honest capability declaration. There is **no engine-side test API** — an engine cannot influence how it is tested. **[RESOLVED DESIGN — architectural guarantee, not policy document]**
+   468→
+   469→### G.2 Matrix expansion and capability filtering
+   470→
+   471→ExperimentCompiler expands `inputs × curves × engines × configs × sampleRates`, then:
+   472→
+   473→- filters by `Capabilities` (ratio range vs curve extrema, channel mode, declared fs support);
+   474→- each filtered job becomes a **skip record with reason code** (`ratio-out-of-range`, `layout-unsupported`, `sample-rate-unsupported`, `engine-unavailable`), persisted in the job plan — **skips are results, not silence**;
+   475→- unfiltered jobs proceed identically: same block schedule, same curve signal, same manifest schema.
+   476→
+   477→### G.3 The initial benchmark suite (§10 mandate, as authoritative experiment files)
+   478→
+   479→| Suite | Content |
+   480→|---|---|
+   481→| `static` | −24, −12, −5, −1, +1, +7, +12, +24 st × full corpus |
+   482→| `dynamic` | +1 st/s ramp; +12 st/s ramp; fast exponential glide; rapid reversal (±12 st in 100 ms) × corpus |
+   483→| `extreme` | −48 st, +48 st; ratios 0.25×, 0.5×, 1×, 2×, 4×, 8× × corpus |
+   484→| `material` | per-class focus: sine, harmonic, polyphonic, voice, percussion, transient, noise, whoosh, whip, stereo, wideband (each class's representative assets, standard curve set) |
+   485→
+   486→**[RESOLVED DESIGN]** — expected: not all engines pass (or even complete) all cells; the suite's purpose is to *reveal behaviour*, including skip patterns and failures. Metrics are per-class (§H); no global score. Sample rates for the suite: each asset's native rate (§I).
+   487→
+   488→### G.4 Listening / human validation support (§17)
+   489→
+   490→- Reporter emits a **listening index**: for each (input × curve × fs) group, the reference + one render per engine, identically named, with a one-line manifest summary (algorithm, params, seed, latency).
+   491→- Renders are plain WAVs → any DAW/media player works; a tiny `pitchlab listen-index` command regenerates the index from manifests (no GUI in scope).
+   492→- Identity chain guaranteed by manifests (§F.3) — every question of §17 ("what algorithm/parameters/input/curve/sample rate?") is answered from the manifest alone, without the source experiment file. **[RESOLVED DESIGN]**
+   493→
+   494→---
+   495→
+   496→## H. Analysis architecture (measurements strictly separated from rendering)
+   497→
+   498→```text
+   499→Renderer ──► RenderResult (wav + manifest) ──► Analyzer ──► Metric modules (pure functions)
+   500→                                                   │              each: (reference, output, context) → {value, status, notes}
+   501→                                                   ▼
+   502→                                             AnalysisResult (json)
+   503→```
+   504→
+   505→- Analyzer **never touches engines**; it reads files only. It cannot re-render or re-interpret test intent. **[RESOLVED DESIGN]**
+   506→- Metric modules are independent pure functions; adding a metric never modifies rendering or engines. **[RESOLVED DESIGN]**
+   507→
+   508→### H.1 Metric set (§15 mandate) and method class
+   509→
+   510→| Metric | Method class | Notes |
+   511→|---|---|---|
+   512→| Pitch error | tracker (offline pYIN/CREPE via optional Python layer; or C++ tracker later) | compares measured output f₀(t) vs expected f₀(t) curve (analytically derived from input + curve spec; for `RateFollowing` engines the expected map is the curve's emission map) **[IMPLEMENTATION DETAIL: expected-map math]** |
+   513→| Pitch tracking lag | tracker + cross-correlation of measured vs expected f₀ under ramps/reversals | the direct measurement of control-rate honesty (§E.3) |
+   514→| Spectral error | own STFT (C++) log-spectral distance vs varispeed reference | varispeed is artifact-free by construction **[RESEARCH FINDING §B.1.1]** |
+   515→| Transient preservation | attack correlation + onset-time error vs reference | |
+   516→| Onset timing | onset detector | includes latency estimation independent of declared latency |
+   517→| Phase coherence | harmonic-stack alignment metric | |
+   518→| Stereo coherence | inter-channel cross-correlation delta vs input | |
+   519→| Latency | declared (manifest) + measured (onset/impulse alignment) — both reported | discrepancy > tolerance ⇒ capability-honesty flag **[OPEN DECISION: tolerance, provisional ±1 ms]** |
+   520→| CPU cost | renderer-measured real-time factor per block size (32…4096), single thread, pinned | measured on the harness's schedule; provisional normalization documented |
+   521→| Peak / RMS / Crest | waveform (C++) | |
+   522→| HF energy | spectral (C++) | band relative to fs (no fixed 20 kHz ceiling — §I) |
+   523→| Aliasing indicators | spectral: energy above the expected max output frequency given input band + ratio | verifies `BandwidthSpec` honesty |
+   524→| Amplitude modulation | envelope spectrum at expected grain/crossfade rates | |
+   525→| Potential warble | f₀ flutter variance under static ratio | |
+   526→
+   527→- **No global quality score.** Aggregation presents per-metric, per-material-class tables. Weighted composites are explicitly rejected (§O). **[RESOLVED DESIGN]**
+   528→- **All numeric tolerances are PROVISIONAL** and are defined in `config/metrics.toml` (versioned, cited in reports) — flagged as such per §22. **[RESOLVED DESIGN]**
+   529→
+   530→### H.2 Reference model (§16)
+   531→
+   532→- `native.varispeed` is the harness's first reference engine where mathematically appropriate (band-limited Kaiser-sinc resampling, §I) — as **reference**, not as "best". The reference render per (input, curve, fs) is produced once per run and referenced by analysis jobs.
+   533→- Other reference engines can be registered later with `reference` role (e.g. an external engine as perceptual high anchor) — architecture already supports this via UsageClass + job plan. **[RESOLVED DESIGN]**
+   534→- Varispeed as reference is **not** used for creative-mode judgement (creative mode has no correctness target).
+   535→
+   536→## I. High-sample-rate architecture (44.1 kHz → 192 kHz, wideband material)
+   537→
+   538→### I.1 Principles
+   539→
+   540→1. **The harness supports 44.1 / 48 / 88.2 / 96 / 176.4 / 192 kHz as first-class rates.** No component assumes 44.1/48. FFT sizes, windows, grain sizes, and metric bands are **specified in seconds (or Hz)** and converted per rate at `prepare()` time — with engines free to clamp to their internal rate ceilings via `BandwidthSpec`. **[RESOLVED DESIGN]**
+   541→2. **No arbitrary 20 kHz processing ceiling.** High-frequency metrics and aliasing detection use bands relative to the *actual* Nyquist of the job's fs. **[RESOLVED DESIGN]**
+   542→3. **Corpus assets are authored at their target rates** (e.g. a 96 kHz whip recording is a 96 kHz asset). The harness **never silently resamples an asset** — if an experiment wants an asset at a different rate, it must declare `resample = { engine = "native.varispeed", quality = "kaiser-..." }` explicitly; the resampled asset is then a **generated intermediate** recorded in the manifest (source hash + resampler params), never an authoritative corpus file. **[RESOLVED DESIGN]**
+   543→4. **A high sample rate does NOT imply an algorithm preserves ultrasonic content.** This is exactly what the benchmark demonstrates: `BandwidthSpec` declares per-engine bandwidth; the aliasing/HF metrics measure the truth; capability-honesty flags arise from the comparison. **[RESOLVED DESIGN — §6 mandate: "the benchmark must demonstrate this"]**
+   544→
+   545→### I.2 Correctness machinery
+   546→
+   547→- **Varispeed reference (band-limited):** windowed-sinc (Kaiser) interpolation with pre-shift anti-alias filtering: for upward shifts (ratio > 1), input is low-passed at Nyquist/ratio before resampling (otherwise content folds down — *correctness*); for downward shifts no AA is needed (spectrum moves down). Creative aliasing is possible via the **creative-mode parameter** `allow_aliasing` on the varispeed *experiment* engine config (not the reference role) — recorded in the manifest. **[RESOLVED DESIGN]**
+   548→- **Extreme upward shifts (×4, ×8):** correctness at any fs means most real content exits the audible band — the metrics must report this neutrally (HF-energy distribution, band occupancy), not as "failure". **[RESOLVED DESIGN]**
+   549→- **Extreme downward shifts (0.25×):** long read pointers → memory/delay policy is engine-internal; harness imposes nothing beyond the total-frames context. **[RESOLVED DESIGN]**
+   550→- **Ultrasonic source material:** assets declare `bandContentHz` (§F.2); wideband experiments pair wideband assets with high fs; the analyzer uses the declared band when computing expected max-frequency / aliasing windows. **[RESOLVED DESIGN]**
+   551→- **Internal-rate engines** (e.g. an engine that internally runs a 48 kHz processing core): allowed, but the engine's `BandwidthSpec` must declare the resulting ceiling (e.g. `nyquistFraction = 0.45` at 48k-core → ~21.6 kHz absolute). The architecture treats declared-vs-measured mismatch as a flagged finding. **[RESOLVED DESIGN]**
+   552→
+   553→---
+   554→
+   555→## J. Dependency and licensing matrix
+   556→
+   557→Strategy per §19: implement simple DSP primitives ourselves when that removes dependency/licensing complexity; add a library only with a purpose it cannot honestly replace. **Licensing classifications inherited from the research report's verified table [RESEARCH FINDING] — items marked ⚠ require fresh license verification at vendoring time (licenses change; the research verification is dated 2026-02).**
+   558→
+   559→| Dependency | Purpose | Runtime or dev-only | Licence (per research) | Replaceable? | Deployment complexity | Effect on future proprietary VST |
+   560→|---|---|---|---|---|---|---|
+   561→| **CMake + Ninja** | build | dev-only | permissive (Kitware BSD-style) | yes (any build system) | none | none |
+   562→| **own DSP primitives** (WAV I/O, sinc resampler, windows, PCG64 RNG, STFT helpers) | core | runtime (lab) | own code, no licence | n/a | none | **donatable** — written once, reused in VST |
+   563→| **pocketfft** ⚠ | FFT for spectral engines | runtime (lab) | BSD-3 **[RESEARCH FINDING]** | yes (KISS FFT / PFFFT / own radix-2) | vendored header | none (permissive; verify at vendoring) |
+   564→| **Signalsmith Stretch** ⚠ | external integration engine (Tier C) | runtime (lab, behind adapter) | **MIT** **[RESEARCH FINDING — verified LICENSE.txt; frequently misreported as LGPL]** | replaceable (own spectral engine is the long-term path) | vendored, header-only | **safe** (MIT, keep notices) |
+   565→| **pbshift** ⚠ | external watch/benchmark engine (Tier C) | runtime (lab, behind adapter) | **MIT, pre-1.0** **[RESEARCH FINDING — maturity risk; self-reported quality/CPU unverified]** | replaceable | vendored + pffft (BSD-like) | safe if matured; verify then |
+   566→| **Rubber Band CLI** | external benchmark renders | dev/benchmark-only subprocess | GPL-2.0+ — **subprocess adapter only** (no linking) | replaceable (benchmark only) | requires system install of the CLI | **none** (never linked) |
+   567→| **SoundTouch CLI/library** | external benchmark renders | dev/benchmark-only subprocess | LGPL-2.1 — **subprocess adapter** | replaceable | CLI install | **none** (never linked) |
+   568→| **Python 3.11 + numpy/scipy/matplotlib** ⚠ (OPTIONAL) | offline analysis layer (trackers, plots, report tables) | **dev-only, never runtime DSP** | BSD / BSD / matplotlib licence | replaceable (pure-C++ analysis path designed-in, §H) | venv + lockfile | **none** (analysis only; never in DSP path) |
+   569→| **librosa (pYIN) / CREPE** ⚠ (OPTIONAL) | offline reference pitch tracking for metrics | dev-only | ISC / MIT **[RESEARCH FINDING]** | replaceable (C++ tracker later; analyzer is pluggable) | Python layer | none (offline benchmarking only, per research) |
+   570→| **Catch2 / doctest** ⚠ | unit tests | dev-only | BSL-1.0 | yes | none | none |
+   571→| **Rejected: FFTW** | — | — | GPL + paid commercial | — | — | **avoided** **[RESEARCH FINDING]** |
+   572→| **Rejected: libsndfile** | audio file I/O | — | LGPL | replaced by **own WAV I/O** (float PCM RIFF/W64 only — trivial, deterministic, dependency-free) | — | none |
+   573→| **Rejected: JUCE in Pitch Lab** | — | — | AGPL/commercial | **explicit non-dependency**: the Lab must not couple to JUCE; JUCE enters only with the future VST project | — | keeps donation path clean |
+   574→
+   575→**[RESOLVED DESIGN]** — no hidden global dependencies: everything is either vendored in `external/` (with verbatim LICENSE + ORIGIN.toml recording version + source URL + verification date) or a declared dev tool in the lockfile. A clean-machine bootstrap is `scripts/bootstrap.sh` → toolchain check → vendoring verification (licence hash comparison) → build → `pitchlab verify` self-test.
+   576→
+   577→---
+   578→
+   579→## K. Failure model
+   580→
+   581→Error taxonomy (three classes, each with detection point, behaviour, persistence):
+   582→
+   583→1. **CONFIG ERROR** — detected at compile time; the experiment (or the offending definition) fails; nothing renders; a human-readable error names the exact file/field. 
+   584→2. **JOB SKIP** — detected at compile time via capabilities or environment; the job is not rendered; the skip + reason code is persisted in the job plan (visible in reports). 
+   585→3. **RENDER TAINT / FAILURE** — detected during/after render; the job runs but its result is marked; analysis behaviour defined per case.
+   586→
+   587→| Case (from §21) | Class | Behaviour | Persistence |
+   588→|---|---|---|---|
+   589→| missing input asset | CONFIG ERROR | experiment fails: "asset `<id>` referenced but not found in corpus" | error log |
+   590→| unsupported sample rate (engine) | JOB SKIP | reason `sample-rate-unsupported` | job plan |
+   591→| invalid ratio in curve (NaN/≤0) | CONFIG ERROR | curve validation §E.4 | error log |
+   592→| ratio outside engine range | JOB SKIP (benchmark) / **render with manifest flag `override-ratio-range`** (creative) **[OPEN DECISION: creative override default]** | recorded either way | job plan / manifest |
+   593→| invalid pitch curve (times non-monotone etc.) | CONFIG ERROR | §E.4 | error log |
+   594→| empty input (0 frames) | CONFIG ERROR | rejected at corpus validation: assets must have ≥1 frame | error log |
+   595→| zero-length render requested | CONFIG ERROR | rejected | error log |
+   596→| NaN/Inf in **output** | TAINT | render completes; manifest `taints:["nan-inf"]` + count + first frame; analyzer refuses metrics on tainted results (benchmark) or records but warns (creative) | manifest + analysis |
+   597→| NaN/Inf in **input** | CONFIG ERROR | corpus validation computes input integrity hash incl. finiteness scan | error log |
+   598→| engine initialisation failure (prepare/throw) | JOB FAILURE | job marked failed with error string; run continues with next job | job plan + manifest stub |
+   599→| external dependency unavailable | JOB SKIP | adapter reports `engine-unavailable`; **[OPEN DECISION: hard error vs skip]** default: skip + reason | job plan |
+   600→| render interruption (Ctrl-C / crash) | INCOMPLETE | partial WAV + manifest marked `incomplete`; incomplete results never enter analysis or reports | manifest |
+   601→| insufficient memory | JOB FAILURE | fail fast with allocation context; run continues if possible | job plan |
+   602→| unsupported channel layout | JOB SKIP | reason `layout-unsupported` | job plan |
+   603→| declared-vs-measured latency mismatch | TAINT (capability honesty) | flagged; render otherwise valid | analysis |
+   604→| engine declares wrong output length (`Preserving` violated) | TAINT | manifest `taints:["length-policy"]`; analysis aligns what it can | manifest |
+   605→
+   606→**Explicitly not designed** (requirements undefined — do NOT invent): user-facing recovery flows, partial re-run policies, interactive error prompts. All failures are **fail-visible in files**; recovery = fix the authoritative file and re-run. **[RESOLVED DESIGN + OPEN DECISION marker]**
+   607→
+   608→---
+   609→
+   610→## L. Testing strategy
+   611→
+   612→| Layer | What is tested | Tools / notes |
+   613→|---|---|---|
+   614→| **Unit** | curve compiler (spec→signal, validation cases from §K); ratio math; WAV I/O round-trip (incl. 192 kHz, multi-channel WAVE_FORMAT_EXTENSIBLE); sinc resampler passband/stopband specs; PCG64 determinism | Catch2; DSP tests with analytic signals (sines, impulses) |
+   615→| **Component (per engine contract)** | (1) `ratio = 1.0` → output equivalent to bypass within tolerance **after declared-latency alignment** (engines must actually process — no shortcut path exists, §O); (2) constant ratio → measured pitch matches expected ratio within tolerance; (3) sample-rate change → behaviour preserved (same test at 44.1 & 96 & 192); (4) stereo input → channel relationship within engine-declared expectations; (5) determinism → same schedule twice = bit-identical; (6) block-boundary independence: audio output for block schedules {4096} vs {1024, remainder} equal within tolerance **[OPEN DECISION: bit-exact vs audio-exact tolerance; provisional: −80 dB FS error floor]**; (7) length policy per `DurationBehaviour` | every engine runs the SAME contract test suite — the anti-"each algorithm defines its own methodology" guarantee at the unit level |
+   616→| **Renderer** | manifest completeness (all §F.3 fields present); output naming; latency accounting; incomplete/taint marking; skip plan correctness | golden job plans |
+   617→| **Reference comparison** | each metric module against hand-computed analytic cases (e.g. known lag for a deliberately block-quantised dummy engine) | dummy engines are allowed in tests only, registry-flagged `test-only` |
+   618→| **Regression** | golden metric JSON with headroom bands (values may drift within declared bands across platform changes) | **[OPEN DECISION: band widths; provisional ±20% relative]** |
+   619→| **Performance** | RTF per engine per block size per fs; results are *measurements* (no thresholds in v1) | recorded in analysis JSON |
+   620→| **Failure** | every §K case triggered by a fixture experiment; assert class + persistence | the failure model is itself tested |
+   621→| **Reproducibility** | full run re-executed → deterministic engines byte-identical WAVs; seeded stochastic engines byte-identical; manifest diffs = empty | `pitchlab verify` — the recoverability gate |
+   622→
+   623→**All numeric tolerances in tests are PROVISIONAL and live in `config/tolerances.toml`** (versioned; cited in every report) — per §22 they are identified as provisional, not silently chosen. **[RESOLVED DESIGN]**
+   624→
+   625→## M. Future compatibility (without coupling now)
+   626→
+   627→The design must allow five future systems — **PropagationEngine, Doppler control, Shock Events, Spatial Engine, Feedback Engine** — without any of their concepts entering Pitch Lab today.
+   628→
+   629→| Future system | Architectural boundary preserved by this design |
+   630→|---|---|
+   631→| **PropagationEngine / Doppler** | Pitch Lab's engine contract is explicitly *musical pitch* (duration-preserving or rate-following by ratio curve). The future propagation engine is a *different contract* (retarded-time, per-segment, duration-modulating, supersonic event semantics) per the research report §B.3.3. None of those concepts exist here; Pitch Lab's curve model (ratio-only) cannot express them, which is the *point*: no accidental coupling. Integration later happens at a **chain/graph layer above both contracts** (below). |
+   632→| **Doppler-driven pitch curves** | Already supported *as curves*: arbitrary time-varying ratio signals (§E). A future Doppler system can emit a ratio curve into Pitch Lab's curve format for A/B comparison — without Pitch Lab knowing where the curve came from (the spec's `external` kind + `sourceDescription` metadata covers provenance). |
+   633→| **Shock Events** | Belong to the propagation domain. Pitch Lab's transient *detector* code (shared analysis pool, §B.2) is donatable, but no event-scheduler concept exists here. No coupling. |
+   634→| **Spatial Engine** | Channel handling is already multi-capable (`ChannelMode`, planar bus). No spatialisation concepts (no panning, no HRTF) in the contract. Future spatial stages consume the same planar block pattern — but are built in the future project, not here. |
+   635→| **Feedback Engine (§13, explicitly out of scope)** | The required boundary is identified as follows: (a) the engine contract is **single-stage** (`process()` maps input-block+curve → output-block; no loop-back semantics); (b) feedback requires a **future ChainRenderer / graph layer** that taps `RenderOutput` buffers, applies feedback gain/delay/safety (saturation, NaN/Inf guard, kill switch, buffer clear) and feeds the chain input. The existing `RenderInput/RenderOutput` buffer semantics are already tap-compatible (planar, framed, owned by the renderer — the exact points a future loop controller needs to intercept); (c) NaN/Inf protection already exists at render validation (§K), which is the *detection* half of the future safety system; (d) nothing in the contract prevents a future engine from being wrapped as a chain stage. **[RESOLVED DESIGN — boundary only, per §13]** |
+   636→
+   637→**VST donation path (quality check Q12):** the Lab's own DSP primitives (resampler, windows, FFT usage, delay machinery, RNG) and the engine implementations are plain C++ with no Lab-specific dependencies; donating them later = extracting the `src/engines/native/<engine>` + `src/core/dsp/` trees. The Lab is never a *runtime* dependency of the VST (no linked relationship by construction — the VST project will re-vendor selected code). **[RESOLVED DESIGN]**
+   638→
+   639→---
+   640→
+   641→## N. Open decisions (must be decided by the owner, not silently by implementers)
+   642→
+   643→1. **Operating Principles v3.0 file availability** (OPEN ISSUE #0): re-supply; re-check this design against it; amend explicitly on conflict.
+   644→2. **Language mix confirmation:** C++ core + *optional* Python analysis layer is the recommendation; if the team mandates pure C++, the analysis layer falls back to the designed-in C++ metric path (the architecture supports both; §H, §J).
+   645→3. **Authoritative config file format:** TOML recommended for author-facing files, JSON for generated manifests; final choice open (schema is fixed either way).
+   646→4. **Harness block size default** (provisional 4096 frames; engine-test schedules use {4096} vs {1024}).
+   647→5. **WAV export bit depth:** float32 (listening-friendly) vs float64 (analysis-exact) vs both. Provisional recommendation: float64 for all research renders (disk is cheap, determinism is precious); float32 export flag for listening copies. Open.
+   648→6. **Block-boundary independence standard:** bit-exact vs audio-equivalent (−80 dBFS provisional) for native engines (§L).
+   649→7. **Creative-mode defaults for out-of-range ratios and NaN tainting** (§F.4, §K): current design = render-with-flag; owner may prefer skip.
+   650→8. **External adapter build order for Tier C:** recommended order Signalsmith → Rubber Band (subprocess) → SoundTouch → pbshift (last, pre-1.0). Open.
+   651→9. **Engine registry: compile-time static (v1) — if the engine count grows past ~20, revisit dynamic loading; not a v1 concern (recorded to prevent silent scope creep).**
+   652→10. **Metric tolerance values:** ALL provisional (§H, §L); require empirical calibration on Tier-A engines before being treated as authoritative.
+   653→11. **Corpus acquisition:** who records/sources the whoosh/whip/wideband assets (research report §A.6.3 defines the measurement protocol); licensing status of each real-world asset must be recorded in its metadata.
+   654→12. **`>2-channel` (5.1 etc.) support depth:** mono+stereo now; multi-channel is contract-capable but untested — decide whether v1 tests it at all.
+   655→13. **Reference pitch tracker choice** (pYIN vs CREPE vs C++ own) for the analysis layer — dev-only decision, but affects metric definitions.
+   656→14. **Reporting output format** (Markdown tables + CSV + optional HTML) — presentation choice, owner's call.
+   657→
+   658→---
+   659→
+   660→## O. Rejected approaches (considered and rejected, with reasons)
+   661→
+   662→1. **GUI-first or GUI-in-v1** — rejected: §25 non-goal; CLI + files + listening indexes satisfy §17 without GUI risk.
+   663→2. **Real-time audio path in v1** — rejected: determinism and reproducibility (§14) come first; real-time brings scheduling nondeterminism the research phase must not absorb.
+   664→3. **Single global quality score / weighted composite metric** — rejected: §1/§11 require per-class, per-metric distinction; composites fossilise taste into architecture.
+   665→4. **Per-algorithm test methodologies** — rejected: §2 core principle; the harness owns methodology (structurally guaranteed: engines have no test-facing API).
+   666→5. **Semitone-based canonical pitch representation** — rejected: §5; ratio is canonical, semitones are an authoring convenience.
+   667→6. **Linked integration of GPL/LGPL engines (Rubber Band, SoundTouch)** — rejected: licensing contamination for the future proprietary VST **[RESEARCH FINDING licensing matrix]**; subprocess adapters preserve benchmark access without linking.
+   668→7. **Database for results** — rejected: file-based manifests + generated trees are sufficient, diffable, and recoverable; a DB adds state ownership problems (violates operating principles' no-unnecessary-abstraction).
+   669→8. **Dynamic plugin loading of engines in v1** — rejected: compile-time registry is simpler and sufficient; revisit only on real growth (§N.9).
+   670→9. **Python/Jupyter-first prototyping for the engine contract** — rejected: the engine contract must be C++ for VST donation (§M); Python remains analysis-only (hybrid, §J).
+   671→10. **Modeling PitchEngine as duration-modulating propagation (Doppler-style contract)** — rejected: category error inherited from the research report (§B.3.3); Doppler gets its own future contract.
+   672→11. **Fixed 20 kHz processing/analysis ceiling** — rejected: §6; per-engine `BandwidthSpec` + Nyquist-relative metrics instead.
+   673→12. **Implicit/ambient randomness (time-seeded RNG, `<random_device>`)** — rejected: §14 determinism; PCG64 with explicit per-job seeds.
+   674→13. **Engine-provided identity/bypass shortcut in the contract** — rejected: would defeat the ratio=1.0 contract test; engines must actually process.
+   675→14. **Material-suitability booleans as contract capabilities** — rejected: §D.4 — descriptive registry metadata only (artefacts may be features).
+   676→15. **Silent resampling of corpus assets to match experiments** — rejected: §I.1; resampling is an explicit, manifest-recorded operation.
+   677→16. **libsndfile / FFTW / JUCE as Lab dependencies** — rejected: §J matrix (own WAV I/O; permissive FFT; JUCE reserved for the future VST project).
+   678→
+   679→---
+   680→
+   681→## §26 Final architectural quality check (self-review)
+   682→
+   683→| # | Question | Answer | Where |
+   684→|---|---|---|---|
+   685→| 1 | Understandable without this conversation? | **YES** — self-contained: scope, contract, layout, failure model, open decisions all in-document; upstream research findings tagged and referenced by section | whole document |
+   686→| 2 | Implementation agent can start without inventing architecture? | **YES** — components, ownership, contract semantics, project layout, data flow, error taxonomy, and test strategy are resolved; the genuinely undecidable items are *listed* as open decisions instead of being silently decided | §B–§L, §N |
+   687→| 3 | Ownership explicit? | **YES** — ownership matrix, no shared mutable state, generated vs authoritative trees | §B.2, §B.3 |
+   688→| 4 | Experiment lifecycle explicit? | **YES** — entity table with creation/owner/persistence/lifetime | §F.1 |
+   689→| 5 | Benchmark vs creative explicit? | **YES** — kind field, separated policies and namespaces, aggregation exclusion | §F.4, §G |
+   690→| 6 | Dynamic pitch first-class? | **YES** — dense audio-rate curve signal + declared consumption rates + measured effective rates | §E |
+   691→| 7 | Extreme ratios without global ceiling? | **YES** — ratio domain, per-engine ranges, skip-not-clamp policy | §E.1, §K |
+   692→| 8 | 192 kHz / wideband without redesign? | **YES** — rate-agnostic parameters, per-engine BandwidthSpec, Nyquist-relative metrics | §I |
+   693→| 9 | Third-party engines isolated? | **YES** — adapter-only access, native/external directory split, subprocess boundary for copyleft, verbatim licence files in `external/` | §D.2, §J |
+   694→| 10 | Generated outputs separate from authoritative state? | **YES** — generated trees, reconstruction gate (`pitchlab verify`) | §B.2, §L |
+   695→| 11 | Future feedback without restructuring the engine contract? | **YES** — single-stage contract stays; feedback belongs to a future chain layer; tap-compatible buffer semantics; NaN guard already exists | §M |
+   696→| 12 | DSP donatable to the VST without the Lab becoming a runtime dependency? | **YES** — plain-C++ engine/DSP trees, no JUCE/GUI coupling, donation = re-vendoring | §M |
+   697→
+   698→**No NO answers remain.** One systemic caveat is recorded as OPEN ISSUE #0 (governing principles file unavailable → re-check required), which is itself a demonstration of the no-silent-gaps rule.
+   699→
+   700→---
+   701→
+   702→## Closing statement
+   703→
+   704→**This design is not implemented.** No code exists, no build exists, no corpus exists. The next phase, when ordered, is: resolve OPEN ISSUE #0 (re-supply operating principles) → decide §N items owned by the product owner → implementation agent builds per §B.3 layout with §L tests as the acceptance gate. Nothing in this document silently decides product behaviour beyond the [RESOLVED DESIGN] markers, and every such marker carries its justification inline.
+   705→
+   706→**Primary upstream source:** `research/doppler-whip-pitch-research-report.md` — sections referenced: §A (Doppler physics), §B.1 (per-algorithm findings), §B.3 (architecture separation), §B.4 (licensing), §B.5–B.6 (benchmark and recommendations).
+   707→

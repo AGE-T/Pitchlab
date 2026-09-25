@@ -202,3 +202,78 @@ Stage Summary:
   contaminate benchmark aggregation; feedback/propagation excluded but
   boundary-compatible (single-stage contract + future chain layer).
 - Open issue for user: operating principles file must be re-uploaded (OPEN ISSUE #0).
+
+---
+Task ID: 8
+Agent: orchestrator (main)
+Task: Pitch Lab Architecture correction pass — revise design document v1.0 into v1.1 (6 mandated fixes, no redesign, no implementation)
+
+Work Log:
+- Downloaded the governing document from the user-supplied Google Drive link
+  (AI ASSISTED SOFTWARE ENGINEERING OPERATING PRINCIPLES v3.0, 130 sections, 3901 lines)
+  and stored it verbatim at research/AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0.md.
+  This closes v1.0 OPEN ISSUE #0 and assumption A6/A5.
+- Read the full Operating Principles (all 130 sections).
+- Read the full v1.0 design document (research/pitch-lab-architecture-design.md, 706 lines).
+- Archived v1.0 unchanged at research/archive/pitch-lab-architecture-design-v1.0.md (historical
+  evidence, per Operating Principles §13/§63; the canonical path now holds v1.1).
+- Wrote v1.1 (938 lines) into research/pitch-lab-architecture-design.md with the six
+  mandated corrections:
+  1. Rate-following/varispeed contract made normative (new §D.4): block exchange must
+     represent input-frames-consumed, output-frames-produced (= output-timeline progress),
+     end-of-input notification, bounded flush; Preserving canonical length amended from
+     "output == input" (v1.0, internally contradictory with no-self-compensation latency
+     rule) to N_in + outputLatencyFrames; RateFollowing length discovered during render,
+     verified against integrated-curve expectation (tolerance = open decision);
+     input-timeline curve indexing made explicit (read-position consumption semantics);
+     worked example (1000 frames @ 2.0x => ~500 + L); signatures deliberately not frozen.
+     Updated §A, §D, §D.1, §D.2, §E.2/E.3, §G.3, §H preamble (input-timeline common
+     comparison axis + alignment policy), §H.1 (realised duration metric), §K (end-of-render
+     violation case; length-policy row rewritten), §L (contract tests 7-8), §O.18/§O.20.
+  2. Single authoritative engine registry (§D.6): in-code compile-time registration point
+     is THE identity source (id, binding, display name, version, usage class, licence/origin,
+     capabilities); engines.toml identity concept removed/rejected (§O.17); config = parameters
+     only; unknown engine id = CONFIG ERROR (§K); registry row added to ownership matrix (§B.2);
+     §A diagram + §B.1 + §J + §N updated.
+  3. Source vs generated tree separation: artifacts/renders|analysis|reports (generated) vs
+     src/analysis + src/analysis-py (source); confusable src/analysis vs analysis/ pair removed;
+     all path references updated (§A, §B.2, §B.3, §C, §F.1, §F.4, §G.4, §I.1).
+  4. Creative-mode requested/effective/status semantics (§E.5, §F.4): harness-side saturation
+     of the requested curve to declared range; requested + effective + execution status
+     (RANGE_SATURATED example) preserved end-to-end; engines never silently clamp; benchmark
+     remains strict skip; v1.0 "override-ratio-range" flag replaced; open decision #7 resolved.
+  5. Operating Principles reconciliation recorded (new §P): conflicts C1-C6 found & corrected
+     (dual registry; ambiguous trees; creative info loss; varispeed underspecification;
+     missing failure cases; dangling D.4 cross-ref); compliance verification; design
+     preferences vs defects (§90); implementation-phase process obligations recorded as gate
+     conditions (§P.4); §71 pre-implementation gate mapping (all yes); protected constraints
+     (§P.6); result: CONSISTENT.
+  6. v0.1 scope made binding (new §0.5): resampling primitives + varispeed + vardelay +
+     pv.classic + pv.phaselocked + granular + harness; explicit do-NOT-implement list
+     (WSOLA/TD-PSOLA/FD-PSOLA/SMS/WORLD/HNM/neural/externals/Doppler/propagation/shock/
+     spatial/feedback/VST/GUI); phase column added to §D.6 registry table.
+  - Additional repairs: cross-reference repair (D.4-D.7 renumbering; v1.0 enum comment pointed
+    at the wrong section); "clamp" terminology reserved for forbidden behaviour (LFO bounds
+    renamed); change record table added (Operating Principles §12/§14); status chain declared
+    (everything = DESIGNED, §81).
+- Performed the mandated internal consistency sweep (correction item 8) with explicit
+  searches: RateFollowing (19 refs, consistent), varispeed (22 refs), engines.toml (only in
+  change-record/rejected/reconciliation contexts), bare analysis|renders|reports paths
+  (none without artifacts/ prefix outside the tree diagram), clamp (all forbidden/declared
+  contexts), Operating Principles availability (no stale "NOT AVAILABLE"), v0.1 (33 refs),
+  D.x cross-references (D.4=duration, D.5=rejected fields, D.6=registry, D.7=exclusions).
+  All sweeps clean.
+- No new components/managers/layers/databases/servers/plugin frameworks introduced; no code
+  written; the project remains DESIGN ONLY.
+
+Stage Summary:
+- Deliverable: research/pitch-lab-architecture-design.md is now v1.1 (938 lines); v1.0 archived
+  at research/archive/pitch-lab-architecture-design-v1.0.md; governing principles stored at
+  research/AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0.md.
+- Closure state: DONE WITH KNOWN LIMITATION — the design is implementation-ready for the v0.1
+  scope (§0.5), reconciled against the Operating Principles (§P, result CONSISTENT), with 13
+  non-structural open decisions (§N) remaining for the owner. Nothing is implemented; nothing
+  in the document claims to be.
+- Answered all 8 final quality-check questions YES (§26 correction-pass table).
+- Exact next action (when ordered): owner resolves §N items -> implementation agent builds
+  v0.1 per §B.3 layout with §L as acceptance gate, following §P.4 process obligations.
