@@ -158,3 +158,47 @@ Stage Summary:
   the best spectral candidate; (5) license-clean integrations: Signalsmith Stretch (MIT), pocketfft/PFFFT,
   VST3 SDK (now MIT), JUCE commercial; Rubber Band/eLastique = commercial; (6) skip: HNM/LPC/WORLD/DDSP/
   FD-PSOLA as product engines.
+
+---
+Task ID: 7
+Agent: orchestrator (main)
+Task: Pitch Lab architecture & design document (design only, no implementation)
+
+Work Log:
+- Checked for the referenced governing document upload: upload/ dir empty, file
+  AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0.md NOT present anywhere
+  in the project tree. Decision: do NOT invent its contents; design follows the
+  principles as enumerated in the task brief; recorded as OPEN ISSUE #0 in the design.
+- Designed the Pitch Lab architecture from the research report findings + task
+  requirements (sections 1-26 of the brief).
+- Compiled the design document: research/pitch-lab-architecture-design.md (706 lines).
+- Sections delivered: A executive architecture; B component model + ownership matrix +
+  project layout; C data flow; D PitchEngine C++ contract (capabilities model with
+  justified/rejected fields, DurationBehaviour Preserving/RateFollowing, adapter
+  semantics incl. subprocess isolation for GPL/LGPL externals, engine registry with
+  UsageClass tiers); E pitch curve model (ratio canonical, spec->signal two layers,
+  control-rate semantics first-class); F experiment entities + lifecycle + benchmark/
+  creative separation; G benchmark architecture (harness owns methodology, initial
+  suites, listening index); H analysis architecture (pure metric modules, varispeed
+  reference, provisional tolerances); I high-sample-rate architecture (no 20 kHz
+  ceiling, BandwidthSpec honesty, explicit resampling only); J dependency/licensing
+  matrix (inherited from research, re-verification flags); K failure model (config
+  error / job skip / taint taxonomy for all 14 enumerated cases); L testing strategy
+  (8 layers incl. contract tests + reproducibility gate); M future compatibility
+  (PropagationEngine/Doppler/shock/spatial/feedback boundaries, VST donation path);
+  N 14 open decisions; O 16 rejected approaches with reasons; section-26 quality
+  check answered (12x YES); classification tags (RESOLVED/OPEN/ASSUMPTION/RESEARCH
+  FINDING/IMPLEMENTATION DETAIL) used throughout.
+
+Stage Summary:
+- Deliverable: research/pitch-lab-architecture-design.md (design only, explicitly
+  not implemented).
+- Key architectural decisions: 4 components (Compiler/Renderer/Analyzer/Reporter)
+  + passive registries; single PitchEngine contract with per-engine capability
+  honesty; dense audio-rate ratio curve signal as single pitch truth; planar float
+  block-streaming renderer; file-based authoritative-vs-generated tree separation
+  with bit-exact reproducibility gate (pitchlab verify); subprocess adapters for
+  copyleft externals; creative mode as separate experiment kind that can never
+  contaminate benchmark aggregation; feedback/propagation excluded but
+  boundary-compatible (single-stage contract + future chain layer).
+- Open issue for user: operating principles file must be re-uploaded (OPEN ISSUE #0).
