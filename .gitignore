@@ -57,3 +57,7 @@ tool-results/
 
 # sandbox logs
 server.out.log
+
+# sync state (workbench UI)
+.sync-state.json
+.zscripts/dev.pid

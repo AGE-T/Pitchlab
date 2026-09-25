@@ -30,8 +30,8 @@ fi
 
 MSG="${1:-sync: docs, worklog and artifacts $(date -u '+%Y-%m-%d %H:%M UTC')}"
 
-echo "==> Staging research/, worklog.md, artifacts/, README.md"
-git add research worklog.md artifacts README.md 2>/dev/null || true
+echo "==> Staging everything (docs, worklog, artifacts, app source)"
+git add -A
 
 if git diff --cached --quiet; then
   echo "==> Nothing new to commit — pushing current state."
