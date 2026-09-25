@@ -81,7 +81,7 @@ The workbench stays as-is (owner mandate; architecture has no workbench concept 
 
 ### 1.4 Canonical environment summary — `ENVIRONMENT CONSTRAINT`
 
-Canonical build/test target = GitHub Actions, pinned `ubuntu-24.04` x64, GCC 13.2.0, C++20, CMake 3.31.6 (checksum-pinned tarball), Ninja, CTest. Full specification, justification and exact commands: `research/pitch-lab-build-and-ci-environment.md`. Local builds are permitted but never authoritative; a clean checkout must configure/build/test with zero ambient dependencies (verified by CI, which at freeze state vendors **no** third-party code).
+Canonical build/test target = GitHub Actions, pinned `ubuntu-24.04` x64, GCC 13.2.0, C++20, CMake 3.31.6 (checksum-pinned tarball), Ninja, CTest. Full specification, justification and exact commands: `research/pitch-lab-build-and-ci-environment.md`. Local builds are permitted but never authoritative; a clean checkout must configure/build/test with zero ambient dependencies (the freeze build vendors **no** third-party code). CI activation status: workflow implemented and locally validated on the pinned toolchain; GitHub execution pending the token's Workflows permission — build spec §12.1 / OD-17.
 
 ---
 
@@ -815,7 +815,7 @@ Test levels (distinguished per task §13): `unit` (single module), `integration`
 
 ### 13.3 CI mapping
 
-CI (canonical, §1.4/build spec) runs at freeze: T-INF1 suite only (infrastructure). At implementation milestones, the same workflow runs the growing suite — the workflow file itself does not change (CTest discovers tests). Perceptual listening tests never run in CI (human layer). Benchmark runs (RTF measurements) are CI-executed measurements recorded as artifacts, not pass/fail gates (except NaN/taint gates).
+CI (canonical, §1.4/build spec) runs at freeze: T-INF1 suite only (infrastructure). At implementation milestones, the same workflow runs the growing suite — the workflow file itself does not change (CTest discovers tests). Perceptual listening tests never run in CI (human layer). Benchmark runs (RTF measurements) are CI-executed measurements recorded as artifacts, not pass/fail gates (except NaN/taint gates). Activation status (2026-09-25): the workflow is implemented and locally validated end-to-end on the pinned toolchain; GitHub execution is pending the fine-grained PAT's missing `Workflows` permission — build spec §12.1, OD-17. After activation it runs automatically on every push.
 
 ---
 
@@ -823,7 +823,7 @@ CI (canonical, §1.4/build spec) runs at freeze: T-INF1 suite only (infrastructu
 
 **Registration point:** `src/core/engine_registry.cpp::registerProductionEngines()` — the single authoritative location (§4.6). Adding an engine = editing that one TU + implementing the engine (architecture §D.6); never a config file.
 
-**Freeze state (this cycle, verified by CI):** the production registration list is **EMPTY**. The five v0.1 engines exist in the registry only as *specified* entries (this §14 table); no engine code exists; the `pitchlab engines` CLI prints the empty list with the freeze notice. This is the honest state: registry content == implemented engines, always.
+**Freeze state (this cycle, verified by the engine_registry_smoke test — T-E19, green locally; the CI assertion runs once activated):** the production registration list is **EMPTY**. The five v0.1 engines exist in the registry only as *specified* entries (this §14 table); no engine code exists; the `pitchlab engines` CLI prints the empty list with the freeze notice. This is the honest state: registry content == implemented engines, always.
 
 **v0.1 end state (implementation target — the registry MUST contain exactly this when v0.1 is complete):**
 
@@ -923,8 +923,9 @@ metrics = ["spectral-error", "pitch-error", "cpu-cost"]
 | **OD-14 (new)** | WAV >4 GiB (W64) support | open | only if long multichannel 192 kHz masters exceed RIFF limit |
 | **OD-15 (new)** | Publishing generated artifacts (e.g. reports) to GitHub as release evidence | open (owner) | replaces Task-9 implicit push (conflict C-2); architecture default: gitignore + regenerate |
 | **OD-16 (new)** | Architecture v1.2 change cycle to fold in Amendment A-1 (f64 bus) | queued | text amendment only; no behaviour change vs this spec |
+| **OD-17 (new)** | **CI activation on GitHub** — the fine-grained PAT lacks the `Workflows` permission; the implemented workflow (`.github/workflows/ci.yml`, locally validated end-to-end on the pinned toolchain) cannot be pushed until the owner grants the permission or supplies a workflow-capable credential. Exact error + one-time remediation: build spec §12.1 | credentials matter only; all CI commands/design final |
 
-**Blocker assessment (task §22 stop conditions):** no stop condition is triggered that blocks *starting* implementation: all public APIs affecting multiple components are specified (§4); ownership/lifecycle/frame/curve semantics defined; build environment defined and CI-verified (§ build spec); all dependencies declared; the C++-only vs pYIN issue is investigated and recorded as OD-12 — it blocks only the tracker-dependent metrics (§10.2), not the engines or harness, and is explicitly recorded rather than silently decided. Package state: **READY WITH KNOWN LIMITATION** (§18).
+**Blocker assessment (task §22 stop conditions):** no stop condition is triggered that blocks *starting* implementation: all public APIs affecting multiple components are specified (§4); ownership/lifecycle/frame/curve semantics defined; build environment defined and locally validated on the pinned toolchain (GitHub activation pending OD-17 — a pure credentials matter with recorded remediation); all dependencies declared; the C++-only vs pYIN issue is investigated and recorded as OD-12 — it blocks only the tracker-dependent metrics (§10.2), not the engines or harness, and is explicitly recorded rather than silently decided. Package state: **READY WITH KNOWN LIMITATION** (§18).
 
 ---
 
@@ -949,7 +950,7 @@ Each implementation cycle closes per Operating Principles §75/§119–§122 (wo
 | Interfaces: contracts, ownership, lifecycle, state, frame accounting, error paths | COVERED | §4, §5, §4.3, §13 failure fixtures |
 | DSP: engines, resampling, curves, benchmark/creative, sample-rate, WAV | COVERED | §6, §7, §4.4, §4.4.6, §8, §9 |
 | Analysis: metrics, alignment, tolerance status, synthetic corpus | COVERED (tolerances provisional by design) | §10, §11; OD-9 |
-| Environment: canonical CI, dependencies, no ambient state, reproducibility | COVERED | build/CI spec; CI workflow running at freeze (T-INF1) |
+| Environment: canonical CI, dependencies, no ambient state, reproducibility | COVERED (activation pending OD-17) | build/CI spec; workflow implemented + locally validated on the pinned toolchain (T-INF1, 3/3 green); GitHub execution pending token permission |
 | Testing: matrix, deterministic fixtures, CI path | COVERED | §13 |
 | Documentation: specs committed, worklog updated, open decisions recorded, contradictions recorded | COVERED | this document + build spec + worklog Task 10 |
 | Recovery: repository state recoverable, artefacts committed, no chat-only knowledge | COVERED | all decisions are in repository documents; git state at a known commit; worklog current-state block |

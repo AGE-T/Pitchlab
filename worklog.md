@@ -18,13 +18,13 @@
 
 **Known limitations:** all numeric tolerances provisional (calibration procedures defined: T-LEN-CAL, T-E7 calibration); tracker-dependent metrics blocked on OD-12; Amendment A-1 pending architecture v1.2 fold-in (OD-16); RIFF 4 GiB WAV cap (OD-14).
 
-**Open decisions:** OD-6 (rate-following length tolerance value), OD-7, OD-8, OD-9 (metric tolerances), OD-10, OD-11, **OD-12 (pYIN C++ route — options A/B/C/D, B recommended)**, OD-13, OD-14, OD-15 (artifact publication), OD-16 (architecture v1.2). Full table: implementation specification §16.
+**Open decisions:** OD-6 (rate-following length tolerance value), OD-7, OD-8, OD-9 (metric tolerances), OD-10, OD-11, **OD-12 (pYIN C++ route — options A/B/C/D, B recommended)**, OD-13, OD-14, OD-15 (artifact publication), OD-16 (architecture v1.2), **OD-17 (CI activation on GitHub — PAT lacks Workflows permission; workflow ready locally, one-time remediation in build spec §12.1)**. Full table: implementation specification §16.
 
-**Blockers:** none blocking the start of implementation (package state: READY WITH KNOWN LIMITATION).
+**Blockers:** none blocking the start of implementation (package state: READY WITH KNOWN LIMITATION). OD-17 blocks only the *execution* of CI on GitHub, not its design or any DSP work.
 
 **Dependency and environment state:** canonical = GitHub Actions `ubuntu-24.04` x64, GCC 13.2.0 (asserted), CMake 3.31.6 (sha256-pinned), Ninja (≥1.11), CTest; ZERO third-party code at freeze; planned vendoring (pocketfft BSD-3, doctest BSL-1.0) audited in the build spec §7. Token in gitignored `.env`.
 
-**Validation state:** local clean build + all 3 smoke tests green (GCC 14.2.0, CMake 3.31.6, Makefiles); CI run on the canonical environment: see Task 10 entry (§ CI VALIDATION) for the executed-run evidence. No DSP validation exists (nothing DSP is implemented — honestly).
+**Validation state:** local clean build + all 3 smoke tests green (pinned CMake 3.31.6 sha256-verified; GCC 14.2.0 local vs 13.2.0 CI — exact-asserted in the workflow; Unix Makefiles generator locally, Ninja canonical). GitHub CI: workflow implemented + locally validated; execution on GitHub PENDING token permission (OD-17 — honest record in Task 10 entry). No DSP validation exists (nothing DSP is implemented — honestly).
 
 **Exact next action:** owner resolves OD-12 (tracker option) → implementation begins at implementation-specification §17 step 1 (core types + RNG + WAV I/O + resampler + acceptance tests), closing cycles per the Operating Principles master lifecycle.
 
@@ -519,17 +519,17 @@ Work Log:
 - CI workflow `.github/workflows/ci.yml`: pinned runner, toolchain assertions, checksum-verified CMake, Ninja Release build, CTest with JUnit, evidence upload (if-no-files-found: error).
 - LOCAL VALIDATION: pinned CMake 3.31.6 downloaded + sha256-verified in sandbox; clean configure/build with GCC 14.2.0 (Unix Makefiles — generator portability documented); all 3 tests pass; `pitchlab --version`/`engines` output honest freeze state; JUnit XML verified; web lint clean; workbench APIs re-verified (docs list, artifacts empty tree).
 - COMMIT + PUSH: everything committed and pushed to AGE-T/Pitchlab main.
-- CI VALIDATION (executed, not claimed): GitHub Actions run observed via API on the pushed commit — see `§ CI RUN EVIDENCE` appended below after the run completed; conclusion + logs fetched from the canonical environment itself.
-- Worklog upgraded to the Operating Principles §0/§118 format: CURRENT STATE block at top (reading order, SoT, phase, limitations, open decisions, environment, validation, exact next action). Handoff-package interpretation recorded: the canonical repository at the freeze commit + this worklog + the GitHub CI run = the recoverable handoff artefact (single-ZIP packaging per §120 was not mandated by the owner's task brief §24, which defines the deliverable set; deviation documented here per §91 truthful-closure rules).
+- CI VALIDATION: honest two-part record below — LOCAL executed green on the pinned toolchain; GITHUB EXECUTION BLOCKED by the PAT's missing Workflows permission (OD-17, remediation recorded). No claim that CI ran on GitHub.
+- Worklog upgraded to the Operating Principles §0/§118 format: CURRENT STATE block at top (reading order, SoT, phase, limitations, open decisions, environment, validation, exact next action). Handoff-package interpretation recorded: the canonical repository at the freeze commit + this worklog = the recoverable handoff artefact (single-ZIP packaging per §120 was not mandated by the owner's task brief §24, which defines the deliverable set; deviation documented here per §91 truthful-closure rules).
 
-CI RUN EVIDENCE (2026-09-25):
-- Run URL: https://github.com/AGE-T/Pitchlab/actions/runs/{run_id}
-- Head SHA: {sha}
-- Conclusion: {conclusion} — steps: checkout, toolchain assertions (GCC 13.2.0 exact), pinned CMake 3.31.6 (sha256 OK), configure (Ninja Release), build, ctest 3/3 passed, evidence artefacts uploaded.
-- Logs fetched and inspected: toolchain report, test output, JUnit XML (3 tests, 0 failures).
+CI VALIDATION — HONEST RECORD (2026-09-25):
+- LOCAL (executed): pinned CMake 3.31.6 tarball downloaded and sha256-verified (`cmake.tar.gz: OK`); clean configure + build (GCC 14.2.0, Unix Makefiles — generator portability documented; CI uses Ninja on the same pinned CMake); `ctest` 3/3 passed (toolchain_smoke, engine_registry_smoke, version_smoke); JUnit XML generated and inspected (3 tests, 0 failures); `pitchlab --version` / `pitchlab engines` output the honest freeze state; workflow YAML parsed and structurally verified.
+- GITHUB (BLOCKED by credentials): `git push` rejected with `! [remote rejected] main -> main (refusing to allow a Personal Access Token to create or update workflow `.github/workflows/ci.yml` without `workflow` scope)`; Contents API returned `403 Resource not accessible by personal access token`. The fine-grained PAT (AGE-T) has repo admin/push but NOT the Workflows permission (verified via the /repos API permissions object).
+- Consequence: freeze commit c17e5b5 pushed WITHOUT the workflow file (all other deliverables on GitHub); the workflow file remains ready locally, gitignored until activation (so doc-sync pushes keep working; recorded as OD-17 with one-time remediation in build spec §12.1). NO claim is made that CI ran on GitHub.
+- Exact remediation (owner): grant the fine-grained PAT "Workflows" permission (Read and write), then: remove the `.github/workflows/ci.yml` line from `.gitignore`, run `git add -f .github/workflows/ci.yml && bash scripts/push-to-github.sh`. The workflow triggers on the next push; evidence = run URL + green conclusion in the Actions tab.
 
 Stage Summary:
-- Deliverables: implementation specification (959 lines), build/CI environment specification, CI workflow (executed green on the canonical environment), pitch-lab/ freeze-state skeleton (registry EMPTY by design, asserted by CI), reconciled repository structure, updated README + workbench, worklog current-state block.
+- Deliverables: implementation specification (959 lines), build/CI environment specification, CI workflow (implemented + locally validated on the pinned toolchain; GitHub activation pending OD-17), pitch-lab/ freeze-state skeleton (registry EMPTY by design, asserted by the T-E19 smoke test), reconciled repository structure, updated README + workbench, worklog current-state block.
 - Key decisions recorded: Amendment A-1 (f64 bus, owner-mandated, v1.2 fold-in queued); architecture wins on generated-tree policy (root artifacts/ removed; OD-15 records the owner's publication intent); OD-12 pYIN options A/B/C/D with B recommended — NOT silently resolved.
-- Package state: PACKAGE READY WITH KNOWN LIMITATION (limitations: provisional tolerances, OD-12 tracker, A-1 fold-in, OD-14/OD-15). No DSP implemented; CI proves environment + infrastructure only — the registry test asserts emptiness (anti-fake-completeness).
+- Package state: PACKAGE READY WITH KNOWN LIMITATION (limitations: provisional tolerances, OD-12 tracker, A-1 fold-in, OD-14/OD-15, OD-17 CI activation). No DSP implemented; CI proves environment + infrastructure only — the registry test asserts emptiness (anti-fake-completeness).
 - Exact next action: owner resolves OD-12 → implement per specification §17 step 1.

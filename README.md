@@ -36,6 +36,12 @@ test → evidence upload, zero third-party dependencies at freeze. CI proves
 the environment and the infrastructure (toolchain, FP determinism guards,
 engine-registry freeze state); it does **not** prove any DSP behaviour.
 
+**Activation status (2026-09-25):** the workflow is implemented and validated
+end-to-end locally on the identical pinned toolchain (3/3 tests green), but
+it is **not yet running on GitHub**: the current fine-grained PAT lacks the
+`Workflows` permission, so the push of the workflow file was rejected. One-time
+remediation: see `research/pitch-lab-build-and-ci-environment.md` §12.1 (OD-17).
+
 ## Artifacts
 
 Generated DSP outputs live in `pitch-lab/artifacts/{renders,analysis,reports}`
