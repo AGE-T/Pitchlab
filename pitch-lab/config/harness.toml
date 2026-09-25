@@ -1,0 +1,16 @@
+# Pitch Lab — authoritative harness defaults.
+# NEVER engine identity (architecture §D.6: identity lives in code at the
+# single registration point, pitch-lab/src/core/engine_registry.cpp).
+# Schema: implementation specification §15.1.
+version = 1
+
+# Owner-locked default harness block size (L-3). Configurable harness parameter.
+block_frames = 4096
+
+manifest_format = "json"
+
+# Owner-locked audio precision policy (L-4, spec Amendment A-1):
+# research masters are float64; listening/export copies are float32.
+[export]
+master_format = "float64"
+listening_format = "float32"

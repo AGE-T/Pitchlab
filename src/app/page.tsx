@@ -78,6 +78,7 @@ type SyncStatus = {
 }
 
 const CATEGORY_ORDER = [
+  'Implementáció',
   'Tervezés',
   'Kutatás',
   'Működési elvek',
@@ -86,6 +87,7 @@ const CATEGORY_ORDER = [
 ]
 
 const STATUS_STYLE: Record<string, string> = {
+  SPECIFIED: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
   DESIGNED: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
   RESEARCH: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
   GOVERNING: 'border-rose-500/40 bg-rose-500/10 text-rose-300',

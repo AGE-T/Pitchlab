@@ -18,6 +18,20 @@ export type DocMeta = {
 
 /** Curated presentation metadata for the authoritative docs (fallback = generic). */
 const CURATED: Record<string, Omit<DocMeta, 'path' | 'size' | 'lines' | 'mtime'>> = {
+  'research/pitch-lab-v0.1-implementation-specification.md': {
+    title: 'Pitch Lab — V0.1 Implementation Specification',
+    shortTitle: 'V0.1 implementációs specifikáció',
+    category: 'Implementáció',
+    status: 'SPECIFIED',
+    icon: 'compass',
+  },
+  'research/pitch-lab-build-and-ci-environment.md': {
+    title: 'Pitch Lab — Build & CI Environment Specification',
+    shortTitle: 'Build & CI környezet specifikáció',
+    category: 'Implementáció',
+    status: 'SPECIFIED',
+    icon: 'flask',
+  },
   'research/pitch-lab-architecture-design.md': {
     title: 'Pitch Lab — Architecture & Design Document',
     shortTitle: 'Architektúra & tervezés v1.1',
@@ -96,8 +110,10 @@ function genericMeta(rel: string, content: string): Omit<DocMeta, 'path' | 'size
   }
 }
 
-/** Curated docs first in this exact order (design doc is the headline deliverable). */
+/** Curated docs first in this exact order (current freeze spec is the headline). */
 const DOC_PRIORITY = [
+  'research/pitch-lab-v0.1-implementation-specification.md',
+  'research/pitch-lab-build-and-ci-environment.md',
   'research/pitch-lab-architecture-design.md',
   'research/doppler-whip-pitch-research-report.md',
   'research/AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0.md',

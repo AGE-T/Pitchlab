@@ -1,0 +1,31 @@
+# Pitch Lab — ALL numeric tolerances in one place.
+#
+# EVERY value here is PROVISIONAL (owner mandates L-5/L-6; architecture §N.9;
+# implementation specification §16 OD-9). None has been empirically validated
+# yet. Each cites the calibration test that must produce the evidence before
+# the owner ratifies an authoritative value.
+#
+# Schema: implementation specification §15.2.
+version = 1
+
+[tolerances]
+# Block-boundary independence + ratio-1.0 identity criterion (owner L-5):
+# audio-equivalent at -80 dBFS — audio-equivalent, NEVER silently bit-exact.
+# Calibration: Tier-A engine runs (T-E7/T-E1) + owner ratification.
+block_boundary_dbfs = -80.0
+ratio1_identity_dbfs = -80.0
+
+# Rate-following output-length tolerance (owner L-6: do NOT invent a final
+# value; the calibration test T-LEN-CAL (varispeed reference over the full
+# curve battery x sample-rate set) produces the evidence for OD-6).
+# Provisional starting point from architecture §N.6: +/- 1 harness block.
+length_rate_following_frames = 4096
+
+# Declared-vs-measured latency discrepancy (architecture §H.1 provisional).
+latency_declared_vs_measured_ms = 1.0
+
+# Pitch-error budget (provisional; REQUIRES EMPIRICAL VALIDATION, OD-9).
+pitch_error_median_cents = 25.0
+
+# Golden regression headroom (architecture §L provisional +/-20% relative).
+regression_band_relative = 0.20

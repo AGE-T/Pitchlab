@@ -28,9 +28,9 @@ if [[ -z "$TOKEN" || -z "$REPO" ]]; then
   exit 1
 fi
 
-MSG="${1:-sync: docs, worklog and artifacts $(date -u '+%Y-%m-%d %H:%M UTC')}"
+MSG="${1:-sync: docs, worklog and repo state $(date -u '+%Y-%m-%d %H:%M UTC')}"
 
-echo "==> Staging everything (docs, worklog, artifacts, app source)"
+echo "==> Staging everything (docs, worklog, sources; generated trees are gitignored)"
 git add -A
 
 if git diff --cached --quiet; then

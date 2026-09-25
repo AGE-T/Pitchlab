@@ -1,0 +1,28 @@
+# Pitch Lab — metric alignment parameters (all PROVISIONAL, architecture §H).
+# Schema: implementation specification §15.2. Values are calibration inputs,
+# not validated thresholds (see tolerances.toml for the tolerances themselves).
+version = 1
+
+# The input timeline is the common comparison axis (architecture §H preamble).
+[alignment]
+common_axis = "input-timeline"
+rate_following_warp = "emission-map"        # reconstructed from manifest (curve hash + lengths + latency)
+cross_class_warp = "warp-reference-to-engine-timeline"
+
+# Metric enable flags (analysis layer, C++ metric modules — spec §10).
+[metrics]
+pitch_error = true
+pitch_lag = true
+spectral_error = true
+transient_preservation = true
+onset_timing = true
+phase_coherence = true
+stereo_coherence = true
+latency = true
+realised_duration = true
+cpu_cost = true
+peak_rms_crest = true
+hf_energy = true
+aliasing_indicator = true
+amplitude_modulation = true
+warble_instability = true

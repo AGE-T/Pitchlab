@@ -61,3 +61,12 @@ server.out.log
 # sync state (workbench UI)
 .sync-state.json
 .zscripts/dev.pid
+
+# pitch-lab C++ project — generated trees are never committed (architecture §B.2/B.3)
+pitch-lab/build/
+pitch-lab/artifacts/
+
+# CI workflow — READY but not pushable by the current PAT (missing fine-grained
+# "Workflows" permission). To activate: grant the token the Workflows permission,
+# remove the next line, then: git add -f .github/workflows/ci.yml && bash scripts/push-to-github.sh
+.github/workflows/ci.yml

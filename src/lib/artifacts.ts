@@ -10,7 +10,10 @@ export type ArtifactNode = {
   children?: ArtifactNode[]
 }
 
-const ARTIFACTS_ROOT = path.join(process.cwd(), 'artifacts')
+// Generated DSP outputs live in the pitch-lab/ C++ project tree
+// (architecture §B.3: pitch-lab/artifacts/ — generated, gitignored,
+// reconstructable). The workbench observes them read-only.
+const ARTIFACTS_ROOT = path.join(process.cwd(), 'pitch-lab', 'artifacts')
 
 /** Recursively list artifacts/ — .gitkeep keepers are hidden from the tree. */
 export function listArtifacts(): { tree: ArtifactNode[]; fileCount: number; totalSize: number } {
