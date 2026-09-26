@@ -1,0 +1,9 @@
+# §11.3 curve battery — slow ramp, +1 semitone/second (research §B.2 item 2).
+# kind ramp_exp RATE form (§4.4.3.1 item 5): per-frame growth factor
+# g = 2^(stps/(12*fs)) applied multiplicatively; ramp bounded by time,
+# then hold-last. time = 5 s matches the §11.2 5 s corpus default.
+id = "ramp-slow-plus-1stps"
+kind = "ramp_exp"
+from = { semitones = 0.0 }
+rate = { stps = 1.0 }
+time = { s = 5.0 }

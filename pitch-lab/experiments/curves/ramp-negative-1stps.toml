@@ -1,0 +1,6 @@
+# §11.3 curve battery — downward ramp, -1 semitone/second.
+id = "ramp-negative-1stps"
+kind = "ramp_exp"
+from = { semitones = 0.0 }
+rate = { stps = -1.0 }
+time = { s = 5.0 }

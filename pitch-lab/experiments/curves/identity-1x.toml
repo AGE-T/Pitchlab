@@ -1,0 +1,4 @@
+# §11.3 curve battery — mandatory static 1:1 identity curve (task §13).
+id = "identity-1x"
+kind = "static"
+value = { ratio = 1.0 }

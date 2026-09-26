@@ -30,6 +30,9 @@ add_library(pitchlab_core
   src/core/rng.cpp
   src/core/wav_io.cpp
   src/core/resampler.cpp
+  src/core/toml_lite.cpp
+  src/core/curve.cpp
+  src/core/corpus_gen.cpp
 )
 
 target_include_directories(pitchlab_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -108,6 +111,29 @@ pitchlab_add_doctest(wav_io_test tests/wav_io_test.cpp)
 
 # T-R1/T-R2: shared resampler acceptance (spec §7.7).
 pitchlab_add_doctest(resampler_test tests/resampler_test.cpp)
+
+# T-CV* / T-E15 (curve slice): curve spec parsing, validation, deterministic
+# compilation; battery gate (spec §4.4 + §4.4.3.1 + §17 step 2).
+pitchlab_add_doctest(curve_test tests/curve_test.cpp)
+target_compile_definitions(curve_test PRIVATE
+  PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+# T-C1: deterministic corpus — regeneration bit-identity vs the committed
+# corpus + generator behaviour (spec §11, §17 step 2).
+pitchlab_add_doctest(corpus_gen_test tests/corpus_gen_test.cpp)
+target_compile_definitions(corpus_gen_test PRIVATE
+  PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+# Stand-alone corpus generator tool (spec §11.1 — NOT a harness component).
+add_executable(corpus_gen tools/corpus_gen.cpp)
+target_link_libraries(corpus_gen PRIVATE pitchlab_core)
+target_compile_features(corpus_gen PRIVATE cxx_std_20)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(corpus_gen PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off)
+  if(PITCHLAB_WERROR)
+    target_compile_options(corpus_gen PRIVATE -Werror)
+  endif()
+endif()
 
 foreach(t IN ITEMS toolchain_smoke engine_registry_smoke version_smoke)
   add_test(NAME ${t} COMMAND ${t})

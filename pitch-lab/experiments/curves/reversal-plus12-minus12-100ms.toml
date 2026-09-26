@@ -1,0 +1,10 @@
+# §11.3 curve battery — rapid pitch reversal, THE killer test (research
+# §B.2 item 6; §15.3 example verbatim): +12 st held 400 ms (pre-hold),
+# linear-in-ratio transition to -12 st over 100 ms, then hold-last.
+# Derivative discontinuity at the window edges is always allowed (§4.4.3).
+id = "reversal-plus12-minus12-100ms"
+kind = "reversal"
+from = { semitones = +12.0 }
+to = { semitones = -12.0 }
+time = { ms = 100 }
+hold = { ms = 400 }

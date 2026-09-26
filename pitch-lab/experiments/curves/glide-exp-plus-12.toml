@@ -1,0 +1,7 @@
+# §11.3 curve battery — exponential glide from identity to +12 st.
+# kind ramp_exp ENDPOINT form: geometric ratio interpolation a*(b/a)^u.
+id = "glide-exp-plus-12"
+kind = "ramp_exp"
+from = { ratio = 1.0 }
+to = { semitones = +12.0 }
+time = { s = 5.0 }

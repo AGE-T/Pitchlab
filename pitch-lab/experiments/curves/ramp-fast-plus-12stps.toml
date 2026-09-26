@@ -1,0 +1,6 @@
+# §11.3 curve battery — fast Doppler-class ramp, +12 st/s (research §B.2 item 3).
+id = "ramp-fast-plus-12stps"
+kind = "ramp_exp"
+from = { semitones = 0.0 }
+rate = { stps = 12.0 }
+time = { s = 5.0 }

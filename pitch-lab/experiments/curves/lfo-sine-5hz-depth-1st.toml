@@ -1,0 +1,8 @@
+# §11.3 curve battery — sine LFO, 5 Hz, +-1 semitone depth around identity.
+# log2-domain LFO (§4.4.3.1 item 7): ratio = 2^((0 + 1*sin(2*pi*5*t))/12).
+id = "lfo-sine-5hz-depth-1st"
+kind = "lfo"
+wave = "sine"
+rate = 5.0
+depth = { semitones = 1.0 }
+centre = { semitones = 0.0 }

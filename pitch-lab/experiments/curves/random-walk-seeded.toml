@@ -1,0 +1,11 @@
+# §11.3 curve battery — seeded random walk (§4.4.3.1 item 8): zero-order-
+# hold walk in the semitone domain, 4 steps/s, +-1 st steps, clamped to
+# +-12 st, starting at identity. RNG: PCG64 consumer "curve.random-walk".
+id = "random-walk-seeded"
+kind = "random"
+rate = 4.0
+depth = { semitones = 1.0 }
+centre = { semitones = 0.0 }
+min = { semitones = -12.0 }
+max = { semitones = +12.0 }
+seed = 0x5EEDC0DE

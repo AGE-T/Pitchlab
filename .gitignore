@@ -71,3 +71,4 @@ pitch-lab/artifacts/
 # gitignored between the freeze commit and OD-17 activation because the PAT
 # then lacked the Workflows permission; activation removed the ignore entry
 # (build/CI spec §12.1).
+build-asan/

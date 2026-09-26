@@ -1,0 +1,5 @@
+# §11.3 curve battery — static shift, 5 semitones down.
+# Schema: spec §15.3 + §4.4.3.1. Compiled: constant ratio = 2^(-5/12).
+id = "static-minus-5"
+kind = "static"
+value = { semitones = -5.0 }

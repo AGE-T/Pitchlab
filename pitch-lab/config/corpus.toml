@@ -1,0 +1,168 @@
+# Pitch Lab — deterministic synthetic corpus generator config (§11).
+#
+# THIS FILE IS THE COMMITTED GENERATOR CONFIG (§11.4): every recipe
+# parameter is owner-visible here; changing masterSeed (or any parameter)
+# = a new corpus version — regenerate assets/corpus/ with tools/corpus_gen
+# and T-C1 / `corpus_gen --verify` gate the change.
+#
+# Item schema (frozen cycle 2):
+#   id          asset directory name (assets/corpus/<id>/), "syn-" prefix
+#   class       generator class (see src/core/corpus_gen.cpp table)
+#   sampleRate  must be in the §8 supported set
+#   durationSec seconds (transients 2 s per §11.2; default 5 s)
+#   channels    1|2 — per-class (v0.1 instantiation of "mono and stereo
+#               variants where meaningful": the two stereo-noise classes
+#               are the channel-behaviour fixtures; all others mono)
+#   params      class-specific recipe parameters (unknown keys rejected)
+#
+# Per-item seeds derive as splitMix64(masterSeed XOR fnv1a64(id)) (§11.4);
+# stochastic streams use the PCG64 consumer tag "corpus" (§11.1).
+version = "v0.1"
+masterSeed = 0x50E5A1AB
+
+# --- §11.2 sine: 440 Hz, 5 s, at 44.1/48/96/192 kHz -------------------------
+[[item]]
+id = "syn-sine-440-5s-44k1"
+class = "sine"
+sampleRate = 44100
+durationSec = 5.0
+channels = 1
+params = { freqHz = 440.0 }
+
+[[item]]
+id = "syn-sine-440-5s-48k"
+class = "sine"
+sampleRate = 48000
+durationSec = 5.0
+channels = 1
+params = { freqHz = 440.0 }
+
+[[item]]
+id = "syn-sine-440-5s-96k"
+class = "sine"
+sampleRate = 96000
+durationSec = 5.0
+channels = 1
+params = { freqHz = 440.0 }
+
+[[item]]
+id = "syn-sine-440-5s-192k"
+class = "sine"
+sampleRate = 192000
+durationSec = 5.0
+channels = 1
+params = { freqHz = 440.0 }
+
+# --- §11.2 harmonic: saw-equivalent stack with vibrato + plain stack --------
+[[item]]
+id = "syn-harmonic-saw-220-vibrato-5s-48k"
+class = "harmonic-stack"
+sampleRate = 48000
+durationSec = 5.0
+channels = 1
+params = { freqHz = 220.0, partials = 40, vibratoHz = 5.0, vibratoSt = 0.5 }
+
+[[item]]
+id = "syn-harmonic-stack-220-5s-48k"
+class = "harmonic-stack"
+sampleRate = 48000
+durationSec = 5.0
+channels = 1
+params = { freqHz = 220.0, partials = 40, vibratoHz = 0.0, vibratoSt = 0.0 }
+
+# --- §11.2 polyphonic: 3-tone chord + octave-fifth stack --------------------
+[[item]]
+id = "syn-poly-chord-5s-48k"
+class = "polyphonic"
+sampleRate = 48000
+durationSec = 5.0
+channels = 1
+params = { freqHz = [220.0, 277.18, 329.63], partials = 4, stackHz = [110.0, 165.0], stackPartials = 4 }
+
+# --- §11.2 transient: impulse train + filtered-noise percussive bursts -----
+[[item]]
+id = "syn-transient-impulses-2s-48k"
+class = "impulse-train"
+sampleRate = 48000
+durationSec = 2.0
+channels = 1
+params = { spacingMs = 1.0 }
+
+[[item]]
+id = "syn-transient-percussive-2s-48k"
+class = "percussive-bursts"
+sampleRate = 48000
+durationSec = 2.0
+channels = 1
+params = { burstPeriodMs = 250.0, burstMs = 50.0, decayTauMs = 15.0, cutoffHz = 2000.0 }
+
+# --- §11.2 noise: white + pink (Voss/McCartney, 16 fixed layers) -----------
+[[item]]
+id = "syn-noise-white-5s-48k"
+class = "noise-white"
+sampleRate = 48000
+durationSec = 5.0
+channels = 1
+params = { }
+
+[[item]]
+id = "syn-noise-pink-5s-48k"
+class = "noise-pink"
+sampleRate = 48000
+durationSec = 5.0
+channels = 1
+params = { }
+
+# --- §11.2 sweep: logarithmic 20 Hz -> 0.45*Ny (10800 Hz at 48k), 4 s ------
+[[item]]
+id = "syn-sweep-log-20-10800-4s-48k"
+class = "sweep-log"
+sampleRate = 48000
+durationSec = 4.0
+channels = 1
+params = { startHz = 20.0, endHz = 10800.0 }
+
+# --- §11.2 voice-like: 120 Hz stack, 5 Hz vibrato, 3 resonators -------------
+[[item]]
+id = "syn-voice-vowel-120-5s-48k"
+class = "voice-like"
+sampleRate = 48000
+durationSec = 5.0
+channels = 1
+params = { freqHz = 120.0, partials = 20, vibratoHz = 5.0, vibratoSt = 0.5, formantHz = [500.0, 1500.0, 2500.0], formantQ = 10.0 }
+
+# --- §11.2 stereo: correlated (identical) + decorrelated (independent
+#     streams, shared slow envelope; research §B.5.1 item 10) ----------------
+[[item]]
+id = "syn-stereo-correlated-noise-5s-48k"
+class = "stereo-correlated-noise"
+sampleRate = 48000
+durationSec = 5.0
+channels = 2
+params = { }
+
+[[item]]
+id = "syn-stereo-decorrelated-noise-5s-48k"
+class = "stereo-decorrelated-noise"
+sampleRate = 48000
+durationSec = 5.0
+channels = 2
+params = { envelopeHz = 0.5 }
+
+# --- §11.2 wideband: multi-tone stack to 80 kHz + band-limited noise
+#     40-80 kHz, at 176.4 / 192 kHz -------------------------------------------
+[[item]]
+id = "syn-wideband-5s-176k4"
+class = "wideband"
+sampleRate = 176400
+durationSec = 5.0
+channels = 1
+params = { toneHz = [1000.0, 5000.0, 10000.0, 20000.0, 40000.0, 80000.0], noiseLoHz = 40000.0, noiseHiHz = 80000.0 }
+
+[[item]]
+id = "syn-wideband-5s-192k"
+class = "wideband"
+sampleRate = 192000
+durationSec = 5.0
+channels = 1
+params = { toneHz = [1000.0, 5000.0, 10000.0, 20000.0, 40000.0, 80000.0], noiseLoHz = 40000.0, noiseHiHz = 80000.0 }

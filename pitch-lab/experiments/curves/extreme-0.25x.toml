@@ -1,0 +1,4 @@
+# §11.3 curve battery — extreme static ratio 0.25x.
+id = "extreme-0.25x"
+kind = "static"
+value = { ratio = 0.25 }
