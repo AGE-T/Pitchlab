@@ -16,13 +16,12 @@
 //     (architecture §L "Reference comparison" layer).
 //
 // FREEZE STATE (superseded 2026-09-26, cycles 3-4): the production list now
-// contains exactly the IMPLEMENTED engines. Current content: exactly four —
-// native.varispeed (spec §17 step 3 / §14), native.vardelay (spec §17 step 4
-// / §6.2/§6.2.1, cycle 4), native.granular (spec §17 step 4 / §6.5/§6.5.1,
-// cycle 4) and native.pv.classic (spec §17 step 4 / §6.3/§6.3.1, cycle 4).
-// The remaining v0.1 engine (native.pv.phaselocked) is NOT implemented and
-// MUST NOT appear here until it is; the engine_registry_smoke test (T-E19)
-// asserts the exact intended content.
+// contains exactly the IMPLEMENTED engines. Current content (cycle 4
+// closure, §17 step 4): ALL FIVE v0.1 engines — native.varispeed (§17 step 3
+// / §14), native.vardelay (§6.2/§6.2.1), native.pv.classic (§6.3/§6.3.1),
+// native.pv.phaselocked (§6.4/§6.4.1) and native.granular (§6.5/§6.5.1) —
+// the registry EQUALS the §14 "v0.1 end state" table (order aligned to it).
+// The engine_registry_smoke test (T-E19) asserts the exact intended content.
 
 #include <string_view>
 #include <vector>

@@ -5,6 +5,7 @@
 
 #include "engines/granular_engine.h"
 #include "engines/pv_classic_engine.h"
+#include "engines/pv_phaselocked_engine.h"
 #include "engines/vardelay_engine.h"
 #include "engines/varispeed_engine.h"
 
@@ -46,24 +47,28 @@ const EngineDescriptor* EngineRegistry::findById(std::string_view id) const {
 // config file (config holds tunable parameter defaults only, keyed by engine
 // id). Unknown engine ids referenced by experiments are CONFIG ERRORS.
 //
-// IMPLEMENTATION PHASE (cycle 4, spec §17 step 4): the registry contains
-// EXACTLY the implemented engines, in the order of implementation
-// specification §14 ("v0.1 end state"). Currently implemented:
+// V0.1 END STATE (cycle 4 closure, spec §17 step 4): ALL FIVE v0.1 engines
+// are implemented, tested and registered — the registry content now EQUALS
+// the §14 "v0.1 end state" table, and the registration order is aligned to
+// that table's order (the interim registration order followed the
+// implementation chronology while the table was still incomplete):
 //
-//   1. "native.varispeed"   Prototype, reference role, RateFollowing, PerSample
-//   2. "native.vardelay"    Prototype, Preserving, PerSample (§6.2/§6.2.1)
-//   3. "native.granular"    Prototype, Preserving, per-grain hop (§6.5/§6.5.1)
-//   4. "native.pv.classic"   Prototype, baseline, Preserving, hop-rate (§6.3/§6.3.1)
+//   1. "native.varispeed"       Prototype, reference role, RateFollowing, PerSample
+//   2. "native.vardelay"        Prototype, Preserving, PerSample (§6.2/§6.2.1)
+//   3. "native.pv.classic"       Prototype, baseline, Preserving, hop-rate (§6.3/§6.3.1)
+//   4. "native.pv.phaselocked"  Prototype, Preserving, hop-rate, L-D'99 peak shift (§6.4/§6.4.1)
+//   5. "native.granular"        Prototype, creative-leaning, Preserving, per-grain hop (§6.5/§6.5.1)
 //
-// The remaining one (native.pv.phaselocked) is NOT implemented and MUST
-// NOT appear here (registry content == implemented engines, always —
-// asserted by the engine_registry_smoke test, T-E19).
+// Registry content == implemented engines, always — asserted by the
+// engine_registry_smoke test (T-E19: exactly these five, constructible
+// through their factories).
 // ---------------------------------------------------------------------------
 void registerProductionEngines(EngineRegistry& registry) {
   registry.registerEngine(varispeedEngineDescriptor());
   registry.registerEngine(vardelayEngineDescriptor());
-  registry.registerEngine(granularEngineDescriptor());
   registry.registerEngine(pvClassicEngineDescriptor());
+  registry.registerEngine(pvPhaseLockedEngineDescriptor());
+  registry.registerEngine(granularEngineDescriptor());
 }
 
 }  // namespace pitchlab

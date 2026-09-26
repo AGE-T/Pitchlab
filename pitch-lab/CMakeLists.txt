@@ -38,6 +38,7 @@ add_library(pitchlab_core
   src/engines/vardelay_engine.cpp
   src/engines/granular_engine.cpp
   src/engines/pv_classic_engine.cpp
+  src/engines/pv_phaselocked_engine.cpp
   src/harness/json_writer.cpp
   src/harness/experiment_compiler.cpp
   src/harness/manifest.cpp
