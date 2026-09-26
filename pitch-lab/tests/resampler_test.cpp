@@ -19,7 +19,15 @@
 //       composite alias suppression);
 //   (b) clearly-labelled REGRESSION BANDS pinning the frozen behaviour
 //       (headroom >= 4x over the 2026-09-26 measurements — these are NOT
-//       §7.7 acceptance values).
+//       §7.7 acceptance values);
+//   (c) deterministic-structure invariants of the PRIMITIVE — block-split
+//       bit-identity (T-R2g, §7.2.1 item 9). This is a resampler-specific
+//       property, deliberately STRONGER than the owner-locked engine-level
+//       block-boundary criterion (L-5 / T-E7: audio-equivalent within
+//       −80 dBFS, provisional). It must NOT be read as promoting bit-exact
+//       block-boundary equality to a project-wide requirement: engines with
+//       internal state (e.g. block-wise AA pre-filtering, §7.4/§6.1) are
+//       held to the audio-equivalence criterion only.
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
@@ -443,10 +451,24 @@ TEST_CASE("T-R2f: deterministic repeatability (same-binary bit-exactness)") {
   CHECK(p1 == p2);
 }
 
-TEST_CASE("T-R2g: block-boundary independence (any split is bit-identical)") {
+TEST_CASE("T-R2g: primitive block-split bit-identity — resampler invariant, "
+          "stronger than the engine-level L-5/T-E7 audio-equivalence contract") {
   // §7.2.1 item 9: one call == any sequence of block splits with the same
   // per-frame ratio sequence. Harness block size 4096 (owner L-3) plus
   // adversarial splits.
+  //
+  // CONTRACT RELATION (clarified 2026-09-26, contract-consistency check):
+  // this bit-identity is a PRIMITIVE-level invariant — each output sample is
+  // a pure function of the exact double position, and the caller-owned
+  // accumulator performs the identical ordered additions regardless of the
+  // split, so bit-identity genuinely holds by construction (same binary).
+  // It is NOT the normative block-boundary contract: the owner-locked L-5
+  // criterion (engine/integration level, T-E7) is audio-equivalent within
+  // −80 dBFS (provisional) and "must not silently become a bit-exact
+  // requirement". Engines with internal state (block-wise AA pre-filtering
+  // per §7.4/§6.1; PV/granular engines) do not inherit this property and
+  // are not held to it. The test stays at full strength as a regression pin
+  // on the primitive's stateless design.
   const int N = 30000, M = 17647;
   const auto x = makeNoise(N, 78);
   std::vector<double> ratio(M);

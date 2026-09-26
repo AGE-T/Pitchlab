@@ -78,7 +78,14 @@ struct ResampleKernelSpec {
 /// y[outputFrames] (p after outputFrames ratio additions).
 ///
 /// A single call and any sequence of block splits producing the identical
-/// per-frame ratio sequence are bit-identical (§7.2.1 item 9; tested).
+/// per-frame ratio sequence are bit-identical (§7.2.1 item 9; tested) — a
+/// PRIMITIVE-level invariant: each output is a pure function of the exact
+/// double position, and the caller-owned accumulator adds the same ratios
+/// in the same order regardless of the split. It is deliberately stronger
+/// than, and does NOT transfer to, the engine-level block-boundary contract
+/// (owner-locked L-5 / T-E7: audio-equivalent within −80 dBFS,
+/// provisional): engines with internal state (e.g. block-wise AA
+/// pre-filtering, §7.4/§6.1) are held to the audio-equivalence criterion.
 /// Ratios must be finite and strictly positive (curve contract §4.4.1).
 /// outputFrames == 0 is a no-op (position unchanged). y must not alias x.
 void resampleBlock(const double* x, FrameCount frameCount, double& positionInOut,
