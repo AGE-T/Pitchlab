@@ -1,0 +1,99 @@
+# Pitch Lab — CI workflow (implementation-freeze state)
+#
+# WHAT THIS RUNS (honest scope): the T-INF1 infrastructure suite only —
+# configure, build and test the C++20 project on the canonical pinned
+# environment (implementation specification §13.3, build/CI specification
+# §12.2). It does NOT build, test or prove any DSP behaviour: no engine is
+# implemented at freeze and none is faked — the engine-registry smoke test
+# asserts that the production registry is EMPTY (anti-fake-completeness).
+# The suite will grow as real DSP is implemented (CTest discovers tests;
+# this workflow file does not change).
+#
+# Canonical environment: research/pitch-lab-build-and-ci-environment.md
+#   - runner: ubuntu-24.04 x64, pinned (never ubuntu-latest: the latest
+#     label migrates to 26.04 during 2026-10-19..2026-11-19)
+#   - GCC 13.2.0, exact-asserted at job start (anti-drift, fail loudly)
+#   - CMake 3.31.6, checksum-pinned official tarball (sha256-verified)
+#   - Ninja >= 1.11, CTest with --output-on-failure + JUnit XML
+#   - zero third-party dependencies at freeze; no cache; no matrix
+#
+# Evidence artefacts uploaded on every run (including failures):
+# configure.log, build.log, test.log, build/test-results.xml.
+# These are CI evidence only — never Pitch Lab DSP render outputs.
+
+name: ci
+
+on:
+  push: # all branches
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  t-inf1-infrastructure:
+    name: T-INF1 infrastructure (freeze state — NOT DSP)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout (pinned by commit SHA)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Build/CI spec §6: print and assert the toolchain; fail loudly on
+      # image drift instead of failing silently later. GCC and CMake are
+      # exact-pinned; Ninja is minimum-version (image drift tolerated).
+      - name: Toolchain report + assertions (anti-drift)
+        shell: bash
+        run: |
+          echo "Runner image: ${ImageVersion:-unknown}"
+          g++ --version | head -1
+          cmake --version | head -1
+          ninja --version
+          [ "$(g++ -dumpfullversion)" = "13.2.0" ] || { echo "FAIL: unexpected GCC version"; exit 1; }
+          [ "$(cmake --version | head -1 | awk '{print $3}')" = "3.31.6" ] || { echo "FAIL: unexpected CMake version"; exit 1; }
+          ninja --version | awk '{ if ($1+0 < 1.11) { print "FAIL: ninja too old"; exit 1 } }'
+
+      # Build/CI spec §4: install the exact 3.31.6 release from the official
+      # Kitware tarball, verified by SHA-256 (defeats weekly image drift).
+      - name: Install pinned CMake 3.31.6 (sha256-verified)
+        shell: bash
+        run: |
+          curl -fsSL -o /tmp/cmake.tar.gz \
+            https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-linux-x86_64.tar.gz
+          echo "5a1133ff103c71eb5120e2cc3de922733e7d8a26a98ae716397e8676adb367bf  /tmp/cmake.tar.gz" | sha256sum --check
+          tar -xzf /tmp/cmake.tar.gz -C "$HOME/.local"
+          echo "$HOME/.local/cmake-3.31.6-linux-x86_64/bin" >> "$GITHUB_PATH"
+
+      # Build/CI spec §11: the exact canonical configure/build/test commands.
+      # shell: bash => -eo pipefail, so tee cannot mask step failures.
+      - name: Configure (Ninja, Release)
+        shell: bash
+        run: |
+          cmake -S pitch-lab -B build -G Ninja -DCMAKE_BUILD_TYPE=Release 2>&1 | tee configure.log
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build --parallel 2>&1 | tee build.log
+
+      - name: Test (CTest, JUnit XML)
+        shell: bash
+        run: |
+          # NOTE: --output-junit paths resolve INSIDE --test-dir, so the
+          # report lands at build/test-results.xml (empirically verified;
+          # passing "build/test-results.xml" here would create
+          # build/build/test-results.xml and break the artefact upload).
+          ctest --test-dir build --output-on-failure --output-junit test-results.xml 2>&1 | tee test.log
+
+      # Build/CI spec §10: evidence artefacts on every run (incl. failures).
+      - name: Upload CI evidence (logs + JUnit)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ci-evidence
+          path: |
+            configure.log
+            build.log
+            test.log
+            build/test-results.xml
+          if-no-files-found: error

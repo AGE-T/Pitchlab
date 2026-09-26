@@ -66,7 +66,7 @@ server.out.log
 pitch-lab/build/
 pitch-lab/artifacts/
 
-# CI workflow — READY but not pushable by the current PAT (missing fine-grained
-# "Workflows" permission). To activate: grant the token the Workflows permission,
-# remove the next line, then: git add -f .github/workflows/ci.yml && bash scripts/push-to-github.sh
-.github/workflows/ci.yml
+# CI workflow is TRACKED (.github/workflows/ci.yml). Historical note: it was
+# gitignored between the freeze commit and OD-17 activation because the PAT
+# then lacked the Workflows permission; activation removed the ignore entry
+# (build/CI spec §12.1).

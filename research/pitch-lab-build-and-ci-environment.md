@@ -1,6 +1,6 @@
 # PITCH LAB — Build, CI & Development Environment Specification
 
-**Document status:** SPECIFICATION (implementation freeze). The environment facts below were verified against live official sources on **2026-09-25** (runner-images README, image manifests, action release pages, gcc.gnu.org, cmake.org — sources listed in worklog Task 10-b). The CI workflow is implemented at `.github/workflows/ci.yml` and was validated end-to-end **locally on the identical pinned toolchain** (CMake 3.31.6, sha256-verified tarball; 3/3 tests green). **Activation on GitHub Actions is PENDING** — the repository's current fine-grained PAT lacks the `Workflows` permission; see §12.1 for the exact error and remediation. Everything in this document is `ENVIRONMENT CONSTRAINT` unless tagged otherwise.
+**Document status:** SPECIFICATION (implementation freeze). The environment facts below were verified against live official sources on **2026-09-25** (runner-images README, image manifests, action release pages, gcc.gnu.org, cmake.org — sources listed in worklog Task 10-b). The CI workflow is implemented at `.github/workflows/ci.yml` (tracked in git) and was validated end-to-end **locally on the identical pinned toolchain** (CMake 3.31.6, sha256-verified tarball; 3/3 tests green; re-validated 2026-09-26 after workspace reset, see §12.1). **Activation on GitHub Actions is PENDING** — the owner granted the PAT the `Workflows` permission on 2026-09-26, but the workspace reset lost the gitignored PAT value from `.env`; see §12.1 for the exact status and remediation. Everything in this document is `ENVIRONMENT CONSTRAINT` unless tagged otherwise.
 **Version:** v1.0 (initial issue)
 **Date:** 2026-09-25
 **Companion to:** `research/pitch-lab-v0.1-implementation-specification.md` (authority order there, §0)
@@ -113,19 +113,36 @@ Triggers: `push` (all branches), `pull_request`, `workflow_dispatch`. Permission
 
 ## 12. What CI actually runs and proves at freeze — `DEFINED` (honesty section)
 
-### 12.1 Activation status (2026-09-25) — `ENVIRONMENT CONSTRAINT` / OD-17
+### 12.1 Activation status (2026-09-26) — `ENVIRONMENT CONSTRAINT` / OD-17
 
-The workflow file is implemented and locally validated (see header), but the push to GitHub was **rejected by credentials**:
+**Chronology (honest record):**
+
+1. **2026-09-25 — push rejected by credentials.** The original workflow push failed with:
+
+   ```text
+   git push → ! [remote rejected] main -> main
+   (refusing to allow a Personal Access Token to create or update workflow
+   `.github/workflows/ci.yml` without `workflow` scope)
+   ```
+
+   The Contents API path also returned `403 Resource not accessible by personal access token`. The fine-grained PAT (account AGE-T) held repo admin/push permissions but not the **Workflows** permission. The freeze commit was therefore pushed WITHOUT the workflow file; the file was kept ready locally, gitignored until activation (so that doc-sync pushes kept working). **No claim was made that CI ran on GitHub.**
+
+2. **2026-09-26 — owner granted the permission; workspace reset lost the file and the token.** The owner granted the fine-grained PAT the *Workflows* permission (owner message, 2026-09-26). However, the workspace was rebuilt between the sessions: the gitignored, never-committed local copy of `ci.yml` was destroyed, and the gitignored `.env` lost `GITHUB_TOKEN`/`GITHUB_REPO` (only `DATABASE_URL` remained). Recovery executed in the project:
+
+   - `.github/workflows/ci.yml` **re-authored from this specification** (§§1, 4, 5, 6, 10, 11 — pinned runner, toolchain assertions, checksum-verified CMake, Ninja Release build, CTest with JUnit, evidence upload) and made **tracked** (the `.gitignore` entry removed, file committed locally).
+   - **Local re-validation on the pinned toolchain (2026-09-26):** pinned CMake 3.31.6 tarball downloaded and sha256-verified (`cmake.tar.gz: OK`); clean configure + build (GCC 14.2.0, Unix Makefiles — generator portability per §13; CI canonical remains Ninja); `ctest` 3/3 passed; JUnit XML generated at `build/test-results.xml` with 0 failures; `pitchlab --version` / `pitchlab engines` output the honest freeze state; workflow YAML parsed (1 job, 7 steps, 3 triggers).
+   - **Defect found and fixed during re-validation (empirical):** `ctest --output-junit` paths resolve **inside** `--test-dir`, so `--output-junit build/test-results.xml` produced `build/build/test-results.xml`, which would have broken the evidence upload (`if-no-files-found: error`). The workflow now passes `--output-junit test-results.xml`; the artefact path `build/test-results.xml` is correct. Recorded because the original (lost) file may not have had this fix — the current file is authoritative.
+
+3. **2026-09-26 — activation push attempted, blocked locally by the missing token value.** `bash scripts/push-to-github.sh` exits at the credential check: `GITHUB_TOKEN`/`GITHUB_REPO` are absent from `.env` (workspace reset). The workflow file and all documentation updates are **committed locally** and ready to push. **No push reached GitHub; no CI run exists; no claim is made that CI ran on GitHub.**
+
+Remediation (owner, one-time): re-add to the **gitignored** `.env` in the project root:
 
 ```text
-git push → ! [remote rejected] main -> main
-(refusing to allow a Personal Access Token to create or update workflow
-`.github/workflows/ci.yml` without `workflow` scope)
+GITHUB_TOKEN=<the fine-grained PAT — now holding the Workflows permission>
+GITHUB_REPO=AGE-T/Pitchlab
 ```
 
-The Contents API path also returns `403 Resource not accessible by personal access token`. The fine-grained PAT (account AGE-T) holds repo admin/push permissions but not the **Workflows** permission. Consequently the freeze commit is pushed WITHOUT the workflow file; the file remains ready locally (gitignored until activation so that doc-sync pushes keep working). **No claim is made that CI ran on GitHub.**
-
-Remediation (owner, one-time): grant the fine-grained PAT the *Workflows* permission (Read and write), then in the project remove the `.github/workflows/ci.yml` entry from `.gitignore` and run `git add -f .github/workflows/ci.yml && bash scripts/push-to-github.sh`. The workflow triggers on the next push; the Actions tab then provides the run URL and green conclusion (the exact CI commands of §11 run unchanged — nothing else is needed).
+then run `bash scripts/push-to-github.sh` (or tell the agent, who will push). The workflow file is tracked in the commit, so the next successful push carries it and **triggers the first CI run automatically**; the Actions tab then provides the run URL and conclusion (the exact CI commands of §11 run unchanged — nothing else is needed). Evidence to record on activation: run URL, green conclusion, toolchain-assertion log lines.
 
 ### 12.2 Runs (once activated)
 
