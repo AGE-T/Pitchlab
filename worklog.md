@@ -1,8 +1,8 @@
 # PITCH LAB — WORKLOG
 
-## CURRENT STATE (2026-09-26, after Task 11 — CI activation attempt / workspace-reset recovery)
+## CURRENT STATE (2026-09-26, after Task 11 — CI ACTIVATED and PROVEN; OD-17 resolved)
 
-**Project identity:** Pitch Lab — local offline DSP research laboratory for sound-design-oriented pitch processing (C++20 + offline harness; agent-side Next.js workbench for owner observability). Repository: `github.com/AGE-T/Pitchlab`, branch `main` (pushed through cc59727 + the GCC re-pin commit; see OD-17 chronology in build spec §12.1).
+**Project identity:** Pitch Lab — local offline DSP research laboratory for sound-design-oriented pitch processing (C++20 + offline harness; agent-side Next.js workbench for owner observability). Repository: `github.com/AGE-T/Pitchlab`, branch `main` (GitHub in sync; CI green at head).
 
 **Reading order (authoritative documents and their roles):**
 1. `research/AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0.md` — governing engineering process (130 sections).
@@ -12,21 +12,21 @@
 5. `research/doppler-whip-pitch-research-report.md` — research findings ([RESEARCH FINDING] tags).
 6. `README.md` + this worklog (current-state block first).
 
-**Current phase:** IMPLEMENTATION FREEZE COMPLETE → awaiting owner resolution of OD-12 (reference pitch tracker) and OD-6 ratification inputs; implementation may begin otherwise.
+**Current phase:** IMPLEMENTATION FREEZE COMPLETE, CI ACTIVE → awaiting owner resolution of OD-12 (reference pitch tracker) and OD-6 ratification inputs; implementation may begin otherwise.
 
 **Current implementation state:** No DSP engine is implemented and none is faked. Implemented infrastructure: `pitch-lab/` C++20 CMake project (version/phase constants, engine-registry mechanism with deliberately EMPTY production list, CLI stub `--version`/`engines`), CI workflow `.github/workflows/ci.yml` (**tracked in git** — re-authored 2026-09-26 from the canonical build spec after a workspace reset destroyed the original gitignored local copy; includes the empirical `--output-junit`/`--test-dir` path fix), config TOMLs with locked/provisional values, experiment/asset tree skeleton. Web workbench (repo root) observes `pitch-lab/artifacts/` and indexes the specs. Architecture tree reconciled (root `artifacts/` removed — architecture wins, publication policy = OD-15).
 
 **Known limitations:** all numeric tolerances provisional (calibration procedures defined: T-LEN-CAL, T-E7 calibration); tracker-dependent metrics blocked on OD-12; Amendment A-1 pending architecture v1.2 fold-in (OD-16); RIFF 4 GiB WAV cap (OD-14).
 
-**Open decisions:** OD-6 (rate-following length tolerance value), OD-7, OD-8, OD-9 (metric tolerances), OD-10, OD-11, **OD-12 (pYIN C++ route — options A/B/C/D, B recommended)**, OD-13, OD-14, OD-15 (artifact publication), OD-16 (architecture v1.2), **OD-17 (CI activation on GitHub — IN PROGRESS: token restored, workflow pushed (cc59727), first run 36237006396 failed at the anti-drift GCC assertion (image ships 13.3.0, not the documented 13.2.0 — guard worked as designed); GCC re-pinned to 13.3.0 (build spec v1.1); verification run pending)**. Full table: implementation specification §16.
+**Open decisions:** OD-6 (rate-following length tolerance value), OD-7, OD-8, OD-9 (metric tolerances), OD-10, OD-11, **OD-12 (pYIN C++ route — options A/B/C/D, B recommended)**, OD-13, OD-14, OD-15 (artifact publication), OD-16 (architecture v1.2), ~~OD-17 (CI activation — **RESOLVED 2026-09-26**: run 36237247935 green end-to-end on the canonical runner, evidence artefact content-verified; GCC empirically re-pinned 13.2.0→13.3.0; chronology in build spec §12.1)~~. Full table: implementation specification §16.
 
-**Blockers:** none blocking the start of implementation (package state: READY WITH KNOWN LIMITATION). OD-17 blocks only the *execution* of CI on GitHub, not its design or any DSP work.
+**Blockers:** none. CI is active and green (OD-17 resolved). Package state remains READY WITH KNOWN LIMITATION (provisional tolerances, OD-12 tracker, A-1 fold-in, OD-14/OD-15) — CI scope is infrastructure/smoke only and does NOT prove DSP correctness; no DSP is implemented.
 
 **Dependency and environment state:** canonical = GitHub Actions `ubuntu-24.04` x64, GCC 13.3.0 (asserted; empirically re-pinned 2026-09-26 — live image evidence, build spec v1.1), CMake 3.31.6 (sha256-pinned), Ninja (≥1.11), CTest; ZERO third-party code at freeze; planned vendoring (pocketfft BSD-3, doctest BSL-1.0) audited in the build spec §7. Token restored to the gitignored `.env` (owner-supplied; never logged, never committed).
 
-**Validation state:** local clean build + all 3 smoke tests green (pinned CMake 3.31.6 sha256-verified; GCC 14.2.0 local vs 13.3.0 CI — exact-asserted in the workflow; Unix Makefiles generator locally, Ninja canonical; re-validated 2026-09-26 including JUnit XML at `build/test-results.xml`, 0 failures). GitHub CI: ACTIVATED — workflow pushed, run 1 (36237006396) executed and failed at the anti-drift GCC assertion by design (drift found: 13.2.0→13.3.0); GCC re-pinned, verification run pending. No DSP validation exists (nothing DSP is implemented — honestly).
+**Validation state:** local clean build + all 3 smoke tests green (pinned CMake 3.31.6 sha256-verified; GCC 14.2.0 local; Unix Makefiles locally, Ninja canonical). GitHub CI: **ACTIVE and PROVEN** — run 36237247935 (head 593a2d5, image 20260920.314.1): all 10 steps green, GCC 13.3.0/CMake 3.31.6/Ninja 1.13.2 asserted, clean checkout configure+build+ctest 3/3, `ci-evidence` artefact downloaded and content-verified (JUnit: 3 tests, 0 failures; registry-freeze guard ran in CI). Activation cost 2 honestly-recorded failures (GCC drift; runner `~/.local` gap) — both diagnosed from live logs and fixed as recorded amendments (build spec v1.1). No DSP validation exists (nothing DSP is implemented — honestly).
 
-**Exact next action:** verification run of the re-pinned workflow (green + artefacts) → record evidence and close OD-17 → then owner resolves OD-12 (tracker option) → implementation begins at implementation-specification §17 step 1 (core types + RNG + WAV I/O + resampler + acceptance tests).
+**Exact next action:** owner resolves OD-12 (tracker option A/B/C/D — B recommended) → implementation begins at implementation-specification §17 step 1 (core types + RNG + WAV I/O + resampler + acceptance tests); every push now runs CI automatically (CTest grows with the real test suite; the workflow file does not change).
 
 *(Historical entries follow below, oldest first. This block supersedes nothing — it summarises.)*
 
@@ -554,3 +554,23 @@ Stage Summary:
 - Deliverables: re-authored + tracked `.github/workflows/ci.yml` (canonical, with the empirical JUnit-path fix), updated .gitignore, updated build spec §12.1 / README / implementation spec (§1.4, §13.3, OD-17), this worklog entry + current-state block; local re-validation evidence (sha256-verified pinned CMake, 3/3 tests green, JUnit 0 failures).
 - Honest record: NO GitHub push, NO CI run, NO fake green. Package state remains READY WITH KNOWN LIMITATION; the only pending piece of OD-17 is the token value restoration (owner action).
 - Exact next action: owner re-adds `GITHUB_TOKEN`/`GITHUB_REPO` to `.env` → push → record first CI run URL + conclusion (build spec §12.1 evidence requirements) → then OD-12 owner resolution → implementation per §17 step 1.
+
+**ACTIVATION COMPLETION — Task 11 addendum (2026-09-26, same day; owner supplied the token and confirmed the Workflows permission):**
+
+Work Log (continuation):
+- Credential verified via the API without ever printing the token (login AGE-T; repo admin/push; `.env` still gitignored, values never logged, never committed).
+- Remote reconciliation: the remote tip was 77ac6fe — a mode-normalised re-commit of 1cb1f10 (same parent c17e5b5, same message, content-identical trees: 0 insertions/deletions across 108 files; only 755→644 mode changes). Integration: `git rebase --onto origin/main 1cb1f10 main` — the two local activation commits replayed cleanly onto 77ac6fe (linear history preserved, NO force-push, no history rewritten on the remote; new SHAs a2cf69a, cc59727).
+- ACTIVATION PUSH: `77ac6fe..cc59727 main -> main` — the tracked `.github/workflows/ci.yml` reached GitHub and triggered the first real CI run.
+- RUN 1 (36237006396, head cc59727): **failure at the toolchain-assertion step — the anti-drift guard worked exactly as designed.** Live log evidence: image 20260920.314.1 ships `g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0`, `cmake version 3.31.6`, `ninja 1.13.2` — the pinned GCC 13.2.0 assertion failed loudly (the runner-images README's documented GCC version was stale). Deviation flagged per owner instruction; remediation executed as a recorded re-pin: GCC 13.2.0 → 13.3.0 in the workflow + build spec §1/§3/§6 (v1.1); pushed as 6e49db9.
+- RUN 2 (36237155501, head 6e49db9): **GCC assertion GREEN; CMake extraction failed — sandbox-vs-runner gap.** `/tmp/cmake.tar.gz: OK` (download + sha256 fine), then `tar: /home/runner/.local: Cannot open: No such file or directory` — the canonical runner has no `~/.local` by default (the development sandbox does; that is why local validation passed). Deviation flagged; fix: `mkdir -p "$HOME/.local"` prepended to the canonical command (build spec §4 + workflow) — environment bootstrap only, no build/test semantics changed; pushed as 593a2d5.
+- RUN 3 (36237247935, head 593a2d5, job 108391152798, 10:55:37→10:55:48 UTC): **CONCLUSION SUCCESS — every step green.** Evidence captured from the live run and the artefact:
+  * steps: checkout ✓, toolchain report + assertions ✓ (GCC 13.3.0, CMake 3.31.6, Ninja 1.13.2, image 20260920.314.1), pinned CMake install ✓ (`/tmp/cmake.tar.gz: OK`), configure ✓ (Ninja/Release, `GNU 13.3.0`), build ✓ (11 targets), test ✓, evidence upload ✓;
+  * `ci-evidence` artefact (id 10904079295) downloaded via the API and content-verified: configure.log (391 B), build.log (738 B), test.log (516 B, `100% tests passed, 0 tests failed out of 3`), build/test-results.xml (891 B, JUnit `tests="3" failures="0"`, per-test output confirms toolchain_smoke / engine_registry_smoke (freeze-state EMPTY guard) / version_smoke (`gcc 13.3.0`));
+  * run URL: https://github.com/AGE-T/Pitchlab/actions/runs/36237247935
+- Documentation closed out per owner instruction: build spec v1.1 (§12.1 chronology steps 4-6 + activation proof; §12.2 "activated"), implementation specification (§1.4, §13.3, §16 OD-17 → RESOLVED, §18 final-gate row, blocker assessment), README activation status, this worklog. OD-17 closed ONLY on the basis of the executed green run with content-verified artefacts — no green-by-fiat.
+
+Stage Summary (activation):
+- **OD-17: RESOLVED — CI is live on AGE-T/Pitchlab.** The workflow runs on every push; the canonical environment is proven by execution (not by documentation): ubuntu-24.04 x64 / GCC 13.3.0 / CMake 3.31.6 sha256-verified / Ninja / CTest, clean checkout, zero third-party dependencies.
+- Two honest intermediate failures were part of the cost, not hidden: (1) a stale documented fact (GCC 13.2.0→13.3.0) caught by the designed anti-drift assertion; (2) a sandbox-vs-runner environment gap (`~/.local`) caught by real execution. Both diagnosed from live logs, flagged before fixing, and recorded as amendments in build spec v1.1.
+- Scope honesty unchanged: CI proves ENVIRONMENT + INFRASTRUCTURE only (T-INF1; registry-freeze emptiness asserted). It does NOT prove DSP correctness — no DSP is implemented, none is faked. Package state stays READY WITH KNOWN LIMITATION (provisional tolerances, OD-12 tracker, OD-16 fold-in, OD-14/OD-15).
+- Exact next action: owner resolves OD-12 (pYIN route A/B/C/D; B recommended) → implementation begins at implementation-specification §17 step 1.

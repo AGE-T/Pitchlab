@@ -37,16 +37,15 @@ test → evidence upload, zero third-party dependencies at freeze. CI proves
 the environment and the infrastructure (toolchain, FP determinism guards,
 engine-registry freeze state); it does **not** prove any DSP behaviour.
 
-**Activation status (2026-09-26):** the workflow is implemented (tracked in
-git) and validated end-to-end locally on the identical pinned toolchain
-(3/3 tests green; re-validated after the workspace reset). The owner has
-granted the PAT the `Workflows` permission, but the workspace reset also
-removed the gitignored `GITHUB_TOKEN`/`GITHUB_REPO` values from `.env`, so
-the activation push is blocked **locally** at the credential check. One-time
-remediation: re-add the token values to `.env` and run
-`bash scripts/push-to-github.sh` — the next push carries the workflow file
-and triggers the first CI run automatically. Full record:
-`research/pitch-lab-build-and-ci-environment.md` §12.1 (OD-17).
+**Activation status (2026-09-26): ACTIVATED AND PROVEN.** The workflow is
+tracked in git and executing on GitHub Actions. Proof: run
+[36237247935](https://github.com/AGE-T/Pitchlab/actions/runs/36237247935)
+(head 593a2d5) — every step green, CTest 3/3 passed, and the `ci-evidence`
+artefact (configure.log, build.log, test.log, JUnit test-results.xml) was
+downloaded and content-verified. Activation took two honestly-recorded
+empirical fixes (GCC re-pin 13.2.0→13.3.0 per live evidence; `mkdir -p`
+for the runner's missing `~/.local`) — full chronology in
+`research/pitch-lab-build-and-ci-environment.md` §12.1 (OD-17, resolved).
 
 ## Artifacts
 

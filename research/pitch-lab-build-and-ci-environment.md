@@ -1,6 +1,6 @@
 # PITCH LAB — Build, CI & Development Environment Specification
 
-**Document status:** SPECIFICATION (implementation freeze). The environment facts below were verified against live official sources on **2026-09-25** (runner-images README, image manifests, action release pages, gcc.gnu.org, cmake.org — sources listed in worklog Task 10-b), with one fact **empirically corrected on 2026-09-26 by live CI evidence** (GCC: the image ships 13.3.0, not the 13.2.0 documented by runner-images — first CI run 36237006396; see §1/§3/§12.1). The CI workflow is implemented at `.github/workflows/ci.yml` (tracked in git) and was validated end-to-end **locally on the identical pinned toolchain** (CMake 3.31.6, sha256-verified tarball; 3/3 tests green; re-validated 2026-09-26 after workspace reset, see §12.1). **Activation on GitHub Actions: IN PROGRESS** — the token was restored on 2026-09-26 and the workflow is pushed (first run failed at the anti-drift assertion by design — GCC drift; re-pinned; see §12.1 for the run-by-run chronology). Everything in this document is `ENVIRONMENT CONSTRAINT` unless tagged otherwise.
+**Document status:** SPECIFICATION (implementation freeze). The environment facts below were verified against live official sources on **2026-09-25** (runner-images README, image manifests, action release pages, gcc.gnu.org, cmake.org — sources listed in worklog Task 10-b), with one fact **empirically corrected on 2026-09-26 by live CI evidence** (GCC: the image ships 13.3.0, not the 13.2.0 documented by runner-images — first CI run 36237006396; see §1/§3/§12.1). The CI workflow is implemented at `.github/workflows/ci.yml` (tracked in git) and was validated end-to-end **locally on the identical pinned toolchain** (CMake 3.31.6, sha256-verified tarball; 3/3 tests green; re-validated 2026-09-26 after workspace reset, see §12.1). **Activation on GitHub Actions: COMPLETE and PROVEN (2026-09-26)** — run 36237247935 (head 593a2d5) is green end-to-end: all steps success, CTest 3/3 passed, evidence artefact `ci-evidence` downloaded and content-verified (see §12.1 for the full run-by-run chronology, including two honestly-recorded intermediate failures and their empirical fixes). Everything in this document is `ENVIRONMENT CONSTRAINT` unless tagged otherwise.
 **Version:** v1.1 (v1.0 2026-09-25 initial issue; v1.1 2026-09-26 — GCC fact empirically re-pinned 13.2.0 → 13.3.0 from live CI evidence, §12.1 chronology recorded, §11 example command synced with the verified `--output-junit` path semantics)
 **Date:** 2026-09-26
 **Companion to:** `research/pitch-lab-v0.1-implementation-specification.md` (authority order there, §0)
@@ -114,7 +114,7 @@ Triggers: `push` (all branches), `pull_request`, `workflow_dispatch`. Permission
 
 ## 12. What CI actually runs and proves at freeze — `DEFINED` (honesty section)
 
-### 12.1 Activation status (2026-09-26) — `ENVIRONMENT CONSTRAINT` / OD-17
+### 12.1 Activation status (2026-09-26) — `ENVIRONMENT CONSTRAINT` / OD-17 — **RESOLVED (CI activated and proven)**
 
 **Chronology (honest record):**
 
@@ -138,11 +138,20 @@ Triggers: `push` (all branches), `pull_request`, `workflow_dispatch`. Permission
 
 5. **2026-09-26 — run 2 (re-pinned assertion) executed: GCC assertion GREEN, CMake extraction failed — sandbox-vs-runner environment gap found and fixed.** **Run 2: id 36237155501** (`https://github.com/AGE-T/Pitchlab/actions/runs/36237155501`, event=push, head=6e49db9, image 20260920.314.1). Step-by-step: toolchain report + assertions **success** (GCC 13.3.0 assertion passes after the re-pin; CMake 3.31.6 and Ninja 1.13.2 also reported as pinned); pinned-CMake install step **failed** after a successful download and sha256 check (`/tmp/cmake.tar.gz: OK`) at the extraction: `tar: /home/runner/.local: Cannot open: No such file or directory`. **Diagnosis: the canonical runner does not have `$HOME/.local` by default; the development sandbox does — the §4 snippet worked locally but not on the runner (exactly the class of environment gap CI exists to catch).** Deviation flagged per owner instruction; fix executed and recorded: `mkdir -p "$HOME/.local"` prepended to the canonical command (§4, workflow) — a two-word, no-behaviour-change fix to the environment bootstrap, not to any build or test semantics. No other step ran (skipped); the evidence upload correctly errored on missing files.
 
-6. **2026-09-26 — mkdir fix pushed; verification run recorded below (activation record).**
+6. **2026-09-26 — VERIFICATION RUN GREEN: CI is active and proven (OD-17 resolved).** **Run 3: id 36237247935** (`https://github.com/AGE-T/Pitchlab/actions/runs/36237247935`, event=push, head=593a2d5, image 20260920.314.1, job 108391152798, 10:55:37→10:55:48 UTC). Result: **conclusion=success, every step success**, including:
 
-Remediation status: the token restoration is **done** (step 4). The remaining one-time action — observing a green run and recording its evidence — is recorded below in the activation record.
+   - *Toolchain report + assertions:* `Runner image: 20260920.314.1`; `g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0`; `cmake version 3.31.6`; `ninja 1.13.2` — all pins matched (post-re-pin).
+   - *Install pinned CMake 3.31.6:* `/tmp/cmake.tar.gz: OK` (sha256-verified), extraction succeeded with the `mkdir -p` fix.
+   - *Configure (Ninja, Release):* `The CXX compiler identification is GNU 13.3.0` (configure.log).
+   - *Build:* 11 Ninja targets built (core, CLI, 3 tests; build.log).
+   - *Test (CTest, JUnit):* `100% tests passed, 0 tests failed out of 3` — `toolchain_smoke`, `engine_registry_smoke`, `version_smoke` (test.log).
+   - *Evidence artefact:* `ci-evidence` (id 10904079295, 1524 B) **downloaded via the API and content-verified**: `configure.log` (391 B), `build.log` (738 B), `test.log` (516 B), `build/test-results.xml` (891 B). The JUnit XML reports `tests="3" failures="0" disabled="0" skipped="0"` with per-test output — including `engine_registry_smoke: all checks passed (freeze state empty; mechanism sound)`, i.e. the anti-fake-completeness guard ran in CI, and `version_smoke: ... gcc 13.3.0`, i.e. the compiler identity matches the re-pinned environment.
 
-### 12.2 Runs (once activated)
+   **What this proves:** a clean checkout of the repository configures, builds and tests the C++20 project on the canonical pinned environment with zero third-party dependencies (build spec §12.2). **What this does NOT prove:** any DSP behaviour — no engine is implemented, none is faked; CI scope remains infrastructure/smoke only (T-INF1).
+
+   Activation cost: two honest intermediate failures (run 1: documented-stale GCC fact; run 2: sandbox-vs-runner `~/.local` gap), each diagnosed from live logs, flagged, and fixed as recorded amendments (§1/§3/§6 re-pin; §4 `mkdir -p`) — the anti-drift and evidence-upload design worked exactly as specified. OD-17 is **resolved**: the workflow file is tracked, pushed and executing on every push; the token lives only in the gitignored `.env` (never logged, never committed).
+
+### 12.2 Runs (activated 2026-09-26 — proven by run 36237247935)
 
 **Runs:** the `T-INF1` infrastructure suite only (implementation spec §13.3): C++20 feature checks (concepts/ranges/format compile-and-run), FP determinism guards (`__FAST_MATH__` undefined; deterministic double accumulation), engine-registry freeze-state assertions (production registry empty; registration/seal/duplicate/unknown-id semantics), version/phase constants.
 
