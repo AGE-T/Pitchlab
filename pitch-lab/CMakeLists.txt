@@ -36,6 +36,9 @@ add_library(pitchlab_core
   src/core/hash.cpp
   src/engines/varispeed_engine.cpp
   src/harness/json_writer.cpp
+  src/harness/experiment_compiler.cpp
+  src/harness/manifest.cpp
+  src/harness/offline_renderer.cpp
 )
 
 target_include_directories(pitchlab_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

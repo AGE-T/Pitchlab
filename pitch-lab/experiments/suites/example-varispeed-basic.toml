@@ -1,0 +1,25 @@
+# Pitch Lab v0.1 — cycle 3 example render (§17-step-3 first human-testable
+# artifact configuration). Reproducible: `pitchlab render
+# experiments/suites/example-varispeed-basic.toml --root .` regenerates
+# byte-identical WAVs + manifests (T-E6 determinism).
+#
+# Content: the committed 48 kHz sine corpus through native.varispeed with
+# three battery curves — identity (bypass reference), +12 st (FIR AA path),
+# 2x extreme (FIR AA path) — float64 masters + float32 listening copies.
+id = "example-varispeed-basic"
+kind = "benchmark"
+[suite]
+inputs  = ["syn-sine-440-5s-48k"]
+curves  = ["identity-1x", "static-plus-12", "extreme-2x"]
+engines = ["native.varispeed"]
+sampleRates = [48000]
+channels = [1]
+[[engine_config]]
+engine = "native.varispeed"
+params = { resample_quality = "reference" }
+seed = 7
+[output]
+master = true
+listening = true
+[analysis]
+metrics = ["spectral-error"]
