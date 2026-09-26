@@ -619,11 +619,16 @@ TEST_CASE_FIXTURE(Fixture, "T-E11: output-length policy golden deltas") {
   }
 }
 
-// GCC 14's -Wmismatched-new-delete cannot see the whole-binary interposition
+// GCC's -Wmismatched-new-delete cannot see the whole-binary interposition
 // (every allocation funnels through THESE operators at link time), so its
-// analysis produces false positives here — suppressed for GCC >= 14 only
-// (GCC 13, the canonical CI compiler, does not have the warning).
-#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 14
+// analysis produces false positives here. Empirical evidence: it fires on
+// BOTH compilers we build with — local GCC 14.2 AND the canonical CI
+// GCC 13.3.0 (run 36269701944: 18 analysis paths, all at the sized
+// operator delete, line 637:64 — the earlier "GCC 13 does not have the
+// warning" assumption was wrong and cost that run). Suppressed for ALL
+// GCC versions (not Clang: not observed there, and this audit is
+// GCC-centric anyway).
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wmismatched-new-delete"
 #endif
 
