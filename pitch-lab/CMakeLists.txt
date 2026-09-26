@@ -153,6 +153,12 @@ pitchlab_add_doctest(varispeed_contract_test tests/varispeed_contract_test.cpp)
 # -80 dBFS (L-5) — NOT bit-exact.
 pitchlab_add_doctest(vardelay_contract_test tests/vardelay_contract_test.cpp)
 
+# T-E1..T-E13 + T-A1 + T-D3 + seed sensitivity + failure fixtures:
+# native.granular engine contract suite through the real harness (spec
+# §13.1 matrix, cycle 4 / §17 step 4; frozen behaviour §6.5.1).
+# Engine-level audio-equivalence at -80 dBFS (L-5) — NOT bit-exact.
+pitchlab_add_doctest(granular_contract_test tests/granular_contract_test.cpp)
+
 # T-E14 / T-LEN-CAL: rate-following output-length calibration evidence
 # (spec §4.3.4/§13.1; the OD-6 evidence pack — full battery x 6 rates).
 pitchlab_add_doctest(length_calibration_test tests/length_calibration_test.cpp)
