@@ -29,6 +29,7 @@ add_library(pitchlab_core
   src/core/engine_registry.cpp
   src/core/rng.cpp
   src/core/wav_io.cpp
+  src/core/resampler.cpp
 )
 
 target_include_directories(pitchlab_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -104,6 +105,9 @@ pitchlab_add_doctest(rng_test tests/rng_test.cpp)
 
 # T-W1..T-W3: WAV I/O (spec §9).
 pitchlab_add_doctest(wav_io_test tests/wav_io_test.cpp)
+
+# T-R1/T-R2: shared resampler acceptance (spec §7.7).
+pitchlab_add_doctest(resampler_test tests/resampler_test.cpp)
 
 foreach(t IN ITEMS toolchain_smoke engine_registry_smoke version_smoke)
   add_test(NAME ${t} COMMAND ${t})
