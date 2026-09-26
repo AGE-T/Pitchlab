@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "engines/granular_engine.h"
 #include "engines/vardelay_engine.h"
 #include "engines/varispeed_engine.h"
 
@@ -50,15 +51,16 @@ const EngineDescriptor* EngineRegistry::findById(std::string_view id) const {
 //
 //   1. "native.varispeed"   Prototype, reference role, RateFollowing, PerSample
 //   2. "native.vardelay"    Prototype, Preserving, PerSample (§6.2/§6.2.1)
+//   3. "native.granular"    Prototype, Preserving, per-grain hop (§6.5/§6.5.1)
 //
-// The remaining three (native.pv.classic, native.pv.phaselocked,
-// native.granular) are NOT implemented and MUST NOT appear here (registry
-// content == implemented engines, always — asserted by the
-// engine_registry_smoke test, T-E19).
+// The remaining two (native.pv.classic, native.pv.phaselocked) are NOT
+// implemented and MUST NOT appear here (registry content == implemented
+// engines, always — asserted by the engine_registry_smoke test, T-E19).
 // ---------------------------------------------------------------------------
 void registerProductionEngines(EngineRegistry& registry) {
   registry.registerEngine(varispeedEngineDescriptor());
   registry.registerEngine(vardelayEngineDescriptor());
+  registry.registerEngine(granularEngineDescriptor());
 }
 
 }  // namespace pitchlab

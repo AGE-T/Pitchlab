@@ -2,9 +2,9 @@
 //
 // Verifies the architecture §D.6 rules (one authoritative in-code registry):
 //   * production registry content always equals IMPLEMENTED engines (the
-//     anti-fake-engine guard). CYCLE 4 STATE: exactly TWO engines —
-//     native.varispeed (spec §17 step 3 / §14) and native.vardelay
-//     (spec §17 step 4 / §6.2/§6.2.1, cycle 4). The other three v0.1
+//     anti-fake-engine guard). CYCLE 4 STATE: exactly THREE engines —
+//     native.varispeed (spec §17 step 3 / §14), native.vardelay (§6.2/§6.2.1)
+//     and native.granular (§6.5/§6.5.1, cycle 4). The other two v0.1
 //     engines are unimplemented and MUST NOT be registered; this assertion
 //     is updated together with each real engine registration;
 //   * registration order is deterministic (registration order);
@@ -86,14 +86,15 @@ pitchlab::EngineDescriptor makeDummy(const char* id, int order) {
 }  // namespace
 
 int main() {
-  // ---- CYCLE 4 STATE: exactly two implemented production engines ----
+  // ---- CYCLE 4 STATE: exactly three implemented production engines ----
   {
     pitchlab::EngineRegistry registry;
     pitchlab::registerProductionEngines(registry);
     registry.seal();
-    CHECK(registry.size() == 2);  // UPDATE TOGETHER WITH EVERY REAL ENGINE
-    CHECK(std::string(registry.at(0).info.id) == "native.varispeed");  // §14 order
+    CHECK(registry.size() == 3);  // UPDATE TOGETHER WITH EVERY REAL ENGINE
+    CHECK(std::string(registry.at(0).info.id) == "native.varispeed");   // §14 order
     CHECK(std::string(registry.at(1).info.id) == "native.vardelay");
+    CHECK(std::string(registry.at(2).info.id) == "native.granular");
     const pitchlab::EngineDescriptor* d = registry.findById("native.varispeed");
     CHECK(d != nullptr);
     CHECK(d->factory != nullptr);
@@ -114,10 +115,24 @@ int main() {
     CHECK(vd->capabilities.determinism == pitchlab::Determinism::Deterministic);
     CHECK(vd->capabilities.channelMode == pitchlab::ChannelMode::MonoAndStereo);
     CHECK(vd->parameterKeys.size() == 3);
-    // The OTHER three v0.1 engines are unimplemented: they MUST NOT be here.
+    // native.granular (§6.5/§6.5.1): Preserving, per-grain hop (FixedBlock,
+    // blockFrames = 0 — the honest static declaration), [0.125, 8.0],
+    // SeededDeterministic, MonoAndStereo, four parameter keys.
+    const pitchlab::EngineDescriptor* gr = registry.findById("native.granular");
+    CHECK(gr != nullptr);
+    CHECK(gr->factory != nullptr);
+    CHECK(!gr->isReferenceRole);
+    CHECK(gr->capabilities.duration == pitchlab::DurationBehaviour::Preserving);
+    CHECK(gr->capabilities.minRatio == 0.125);
+    CHECK(gr->capabilities.maxRatio == 8.0);
+    CHECK(gr->capabilities.controlRate.kind == pitchlab::ControlRateSpec::Kind::FixedBlock);
+    CHECK(gr->capabilities.controlRate.blockFrames == 0);
+    CHECK(gr->capabilities.determinism == pitchlab::Determinism::SeededDeterministic);
+    CHECK(gr->capabilities.channelMode == pitchlab::ChannelMode::MonoAndStereo);
+    CHECK(gr->parameterKeys.size() == 4);
+    // The OTHER two v0.1 engines are unimplemented: they MUST NOT be here.
     CHECK(registry.findById("native.pv.classic") == nullptr);
     CHECK(registry.findById("native.pv.phaselocked") == nullptr);
-    CHECK(registry.findById("native.granular") == nullptr);
     // The registered engines are constructible through their factories.
     std::unique_ptr<pitchlab::PitchEngine> engine = d->factory();
     CHECK(engine != nullptr);
@@ -125,6 +140,9 @@ int main() {
     std::unique_ptr<pitchlab::PitchEngine> vengine = vd->factory();
     CHECK(vengine != nullptr);
     CHECK(std::string(vengine->engineId()) == "native.vardelay");
+    std::unique_ptr<pitchlab::PitchEngine> gengine = gr->factory();
+    CHECK(gengine != nullptr);
+    CHECK(std::string(gengine->engineId()) == "native.granular");
     CHECK(registry.sealed());
   }
 
@@ -198,6 +216,6 @@ int main() {
     std::fprintf(stderr, "engine_registry_smoke: %d check(s) FAILED\n", g_failures);
     return 1;
   }
-  std::printf("engine_registry_smoke: all checks passed (2 implemented engines: native.varispeed, native.vardelay; mechanism + factory binding sound)\n");
+  std::printf("engine_registry_smoke: all checks passed (3 implemented engines: native.varispeed, native.vardelay, native.granular; mechanism + factory binding sound)\n");
   return 0;
 }

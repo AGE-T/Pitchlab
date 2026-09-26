@@ -36,6 +36,7 @@ add_library(pitchlab_core
   src/core/hash.cpp
   src/engines/varispeed_engine.cpp
   src/engines/vardelay_engine.cpp
+  src/engines/granular_engine.cpp
   src/harness/json_writer.cpp
   src/harness/experiment_compiler.cpp
   src/harness/manifest.cpp
