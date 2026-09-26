@@ -45,13 +45,14 @@ GCC 13.3.0 covers the C++20 feature set this project uses (concepts and ranges s
 The image's preinstalled CMake (3.31.6 today) drifts with weekly image redeployments. The workflow therefore installs the **exact 3.31.6 release from the official Kitware tarball, verified by SHA-256**:
 
 ```bash
+mkdir -p "$HOME/.local"   # empirical: the runner's $HOME/.local does not exist by default (run 36237155501)
 curl -fsSL -o /tmp/cmake.tar.gz \
   https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-linux-x86_64.tar.gz
 echo "5a1133ff103c71eb5120e2cc3de922733e7d8a26a98ae716397e8676adb367bf  /tmp/cmake.tar.gz" | sha256sum --check
 tar -xzf /tmp/cmake.tar.gz -C "$HOME/.local" && echo "$HOME/.local/cmake-3.31.6-linux-x86_64/bin" >> "$GITHUB_PATH"
 ```
 
-Rationale: exact-version, checksum-verified, no apt repo drift (Kitware APT is rolling-latest and cannot exact-pin), identical to the version preinstalled on the image at research time (so behaviour matches the image's own tooling). `cmake_minimum_required(VERSION 3.21)` in `pitch-lab/CMakeLists.txt` allows local builds with ≥ 3.21.
+Rationale: exact-version, checksum-verified, no apt repo drift (Kitware APT is rolling-latest and cannot exact-pin), identical to the version preinstalled on the image at research time (so behaviour matches the image's own tooling). `cmake_minimum_required(VERSION 3.21)` in `pitch-lab/CMakeLists.txt` allows local builds with ≥ 3.21. **Empirical note (2026-09-26):** the original snippet omitted `mkdir -p` and worked in the development sandbox (where `~/.local` exists) but failed on the canonical runner — run 36237155501, `tar: /home/runner/.local: Cannot open: No such file or directory`; the download and sha256 check themselves passed (`/tmp/cmake.tar.gz: OK`). The `mkdir -p` line is now part of the canonical command.
 
 ## 5. Action pinning — `KNOWN`
 
@@ -135,7 +136,9 @@ Triggers: `push` (all branches), `pull_request`, `workflow_dispatch`. Permission
 
 4. **2026-09-26 — token restored, workflow pushed, FIRST CI RUN executed (failed at the anti-drift assertion — by design).** The owner supplied the PAT value (message; never logged, never committed — `.env` remains gitignored) and confirmed the `Workflows` permission. The local activation commits were rebased onto the remote mode-normalised tip (remote 77ac6fe is content-identical to local 1cb1f10, mode-only 755→644 differences; linear history preserved, no force-push) and pushed: `77ac6fe..cc59727 main -> main`. **Run 1: id 36237006396** (`https://github.com/AGE-T/Pitchlab/actions/runs/36237006396`, event=push, head=cc59727, runner image 20260920.314.1). Result: **failure at step "Toolchain report + assertions"** — toolchain report printed `g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0`, `cmake version 3.31.6`, `ninja 1.13.2`, so the GCC exact-assertion (then 13.2.0) failed loudly; build/test steps skipped; the evidence upload then also failed (`if-no-files-found: error`, correct behaviour when no build happened). **Diagnosis: the live image ships GCC 13.3.0, not the 13.2.0 documented by the runner-images README at research time — a documented-stale fact, not a design error; the anti-drift guard worked exactly as specified (§6: fail loudly on drift instead of failing silently later).** Deviation flagged per owner instruction; remediation executed as a recorded re-pin: GCC 13.2.0 → **13.3.0** in the workflow assertion and this specification (§1, §3, §6; v1.1). CMake 3.31.6 and Ninja 1.13.2 matched the pins — no other drift found.
 
-5. **2026-09-26 — re-pin pushed; verification run pending below (see the activation record).**
+5. **2026-09-26 — run 2 (re-pinned assertion) executed: GCC assertion GREEN, CMake extraction failed — sandbox-vs-runner environment gap found and fixed.** **Run 2: id 36237155501** (`https://github.com/AGE-T/Pitchlab/actions/runs/36237155501`, event=push, head=6e49db9, image 20260920.314.1). Step-by-step: toolchain report + assertions **success** (GCC 13.3.0 assertion passes after the re-pin; CMake 3.31.6 and Ninja 1.13.2 also reported as pinned); pinned-CMake install step **failed** after a successful download and sha256 check (`/tmp/cmake.tar.gz: OK`) at the extraction: `tar: /home/runner/.local: Cannot open: No such file or directory`. **Diagnosis: the canonical runner does not have `$HOME/.local` by default; the development sandbox does — the §4 snippet worked locally but not on the runner (exactly the class of environment gap CI exists to catch).** Deviation flagged per owner instruction; fix executed and recorded: `mkdir -p "$HOME/.local"` prepended to the canonical command (§4, workflow) — a two-word, no-behaviour-change fix to the environment bootstrap, not to any build or test semantics. No other step ran (skipped); the evidence upload correctly errored on missing files.
+
+6. **2026-09-26 — mkdir fix pushed; verification run recorded below (activation record).**
 
 Remediation status: the token restoration is **done** (step 4). The remaining one-time action — observing a green run and recording its evidence — is recorded below in the activation record.
 

@@ -57,9 +57,12 @@ jobs:
 
       # Build/CI spec §4: install the exact 3.31.6 release from the official
       # Kitware tarball, verified by SHA-256 (defeats weekly image drift).
+      # mkdir -p: the runner's $HOME/.local does not exist by default
+      # (empirical: run 36237155501 — tar failed with "Cannot open").
       - name: Install pinned CMake 3.31.6 (sha256-verified)
         shell: bash
         run: |
+          mkdir -p "$HOME/.local"
           curl -fsSL -o /tmp/cmake.tar.gz \
             https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-linux-x86_64.tar.gz
           echo "5a1133ff103c71eb5120e2cc3de922733e7d8a26a98ae716397e8676adb367bf  /tmp/cmake.tar.gz" | sha256sum --check
