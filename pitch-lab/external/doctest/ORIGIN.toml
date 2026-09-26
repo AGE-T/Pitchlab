@@ -1,0 +1,30 @@
+# Vendored dependency provenance (architecture §J; external/README.md rules).
+# Re-vendoring or version drift requires a NEW entry in this file
+# (Operating Principles §123 — locked dependency state).
+
+[[origin]]
+name = "doctest"
+version = "2.4.12"
+upstream = "https://github.com/doctest/doctest"
+source_url = "https://raw.githubusercontent.com/doctest/doctest/v2.4.12/doctest/doctest.h"
+source_url_license = "https://raw.githubusercontent.com/doctest/doctest/v2.4.12/LICENSE.txt"
+retrieved = "2026-09-26"
+files = [
+    { path = "doctest.h", sha256 = "94029a7d32da24a56249658147dbd2b33ff0b9ed665295cbbaf19aafff5b0ced" },
+    { path = "LICENSE.txt", sha256 = "0fe0b331fa1513dcce8604ff1fa925f32d1cea17d8aeb1c2471fad40d291adc5" },
+]
+
+# Licence: MIT (Copyright (c) 2016-2023 Viktor Kirilov), verified 2026-09-26
+# against the LICENSE.txt shipped WITH the v2.4.12 tag (sha256 above), copied
+# verbatim into this directory.
+#
+# CORRECTION (empirical, vendoring-time re-verification): the build/CI
+# environment specification §7 and architecture §J previously recorded doctest
+# as "BSL-1.0" (confusion with Catch2 v3, which is BSL-1.0). The actual
+# doctest 2.4.12 license is MIT. Both are permissive (BSD/MIT/BSL/ISC-class,
+# allowed by the vendoring rules), so this is a documentation correction, not
+# a vendoring blocker. Recorded here and in the build spec §7 (v1.2).
+licence = "MIT"
+
+purpose = "Unit/contract test framework for the Pitch Lab C++ test suite (dev/test only; never linked into DSP runtime code). Chosen over Catch2 v3 for single-header, low compile-time weight."
+consumer = "pitch-lab/tests/*"

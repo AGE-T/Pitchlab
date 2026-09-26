@@ -64,6 +64,7 @@ server.out.log
 
 # pitch-lab C++ project — generated trees are never committed (architecture §B.2/B.3)
 pitch-lab/build/
+pitch-lab/build-local/
 pitch-lab/artifacts/
 
 # CI workflow is TRACKED (.github/workflows/ci.yml). Historical note: it was

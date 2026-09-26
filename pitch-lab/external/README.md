@@ -1,8 +1,10 @@
 # Vendored third-party code (architecture §J)
 
 This directory holds vendored third-party sources — one sub-directory per
-library. **At the implementation freeze it is EMPTY by design: the CI build
-has zero third-party dependencies.**
+library. **It was empty by design at the implementation freeze; the first
+implementation cycle (2026-09-26, implementation spec §17 step 1) vendored
+`doctest` per the plan below.** The DSP core remains zero-dependency: vendored
+code is dev/test tooling only, never linked into DSP runtime code.
 
 Vendoring rules (architecture §J; enforced for every future vendoring):
 
@@ -18,13 +20,17 @@ Vendoring rules (architecture §J; enforced for every future vendoring):
 6. Re-vendoring = new `ORIGIN.toml` entry; silent version drift is forbidden
    (Operating Principles §123 — locked dependency state).
 
-Planned v0.1 implementation-phase vendoring (audited in the build & CI
-environment specification §7):
+Vendored so far:
+
+| Library | Vendored | Version | Licence (vendoring-time verified) | Purpose |
+|---|---|---|---|---|
+| doctest | 2026-09-26 (cycle 1) | 2.4.12 | **MIT** (see `doctest/ORIGIN.toml` — the previously recorded "BSL-1.0" was an empirical documentation error, corrected at vendoring-time re-verification) | unit/contract test framework |
+
+Still planned (build & CI environment specification §7):
 
 | Library | Purpose | Licence | Consumer |
 |---|---|---|---|
 | pocketfft | FFT for the phase-vocoder engines + STFT analysis helpers | BSD-3-Clause (re-verify at vendoring) | `native.pv.classic`, `native.pv.phaselocked`, analysis STFT |
-| doctest | unit/contract test framework | BSL-1.0 | `pitch-lab/tests/` |
 
 Explicit non-dependencies: FFTW (GPL), libsndfile (own WAV I/O), JUCE
 (future VST project only), Python anything (owner lock L-1).

@@ -52,8 +52,33 @@ endif()
 # Tests (CTest). Freeze state = T-INF1 infrastructure suite (spec §13.3):
 # toolchain / FP-determinism / registry freeze-state / version constants.
 # These are explicitly NOT DSP correctness tests.
+#
+# IMPLEMENTATION PHASE (spec §17 step 1, cycle 1): the suite grows with real
+# components — core types, deterministic RNG (T-D), WAV I/O (T-W), shared
+# resampler (T-R). CTest discovers tests, so the CI workflow never changes.
+# Test framework: vendored doctest (MIT, external/doctest/ — dev/test only,
+# never linked into DSP runtime code).
 # ---------------------------------------------------------------------------
 enable_testing()
+
+# Vendored doctest (interface target; include path -> #include <doctest/doctest.h>).
+add_library(pitchlab_doctest INTERFACE)
+target_include_directories(pitchlab_doctest INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/external)
+
+# New-style component tests (doctest). -ffp-contract=off per spec §7.5 (FP
+# determinism rules apply to the numeric tests, not just the core library).
+function(pitchlab_add_doctest name)
+  add_executable(${name} ${ARGN})
+  target_link_libraries(${name} PRIVATE pitchlab_core pitchlab_doctest)
+  target_compile_features(${name} PRIVATE cxx_std_20)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(${name} PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off)
+    if(PITCHLAB_WERROR)
+      target_compile_options(${name} PRIVATE -Werror)
+    endif()
+  endif()
+  add_test(NAME ${name} COMMAND ${name})
+endfunction()
 
 # T-INF1a: toolchain + floating-point determinism guards (no project code).
 add_executable(toolchain_smoke tests/toolchain_smoke.cpp)
@@ -68,6 +93,9 @@ target_compile_features(engine_registry_smoke PRIVATE cxx_std_20)
 add_executable(version_smoke tests/version_smoke.cpp)
 target_link_libraries(version_smoke PRIVATE pitchlab_core)
 target_compile_features(version_smoke PRIVATE cxx_std_20)
+
+# T-T1: core primitives (spec §4.1).
+pitchlab_add_doctest(types_test tests/types_test.cpp)
 
 foreach(t IN ITEMS toolchain_smoke engine_registry_smoke version_smoke)
   add_test(NAME ${t} COMMAND ${t})
