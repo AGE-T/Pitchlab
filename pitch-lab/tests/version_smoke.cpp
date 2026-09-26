@@ -1,7 +1,10 @@
 // T-INF1d — version / phase constants (infrastructure).
 //
-// The binary's self-reported phase must match the implementation freeze
-// (Operating Principles §81: nothing is implemented; the report is honest).
+// The binary's self-reported phase must match the honest build state
+// (Operating Principles §81). Since implementation cycle 1 (2026-09-26,
+// spec §17 step 1: core types + RNG + WAV I/O + resampler) the phase is
+// "implementation" (foundational components implemented and unit-tested;
+// still zero engines — the registry test asserts that separately).
 
 #include <cstring>
 #include <cstdio>
@@ -25,7 +28,7 @@ int g_failures = 0;
 int main() {
   CHECK(std::strcmp(pitchlab::versionString(), "0.1.0") == 0);
   CHECK(pitchlab::kVersionMajor == 0 && pitchlab::kVersionMinor == 1 && pitchlab::kVersionPatch == 0);
-  CHECK(std::strcmp(pitchlab::phaseString(), "implementation-freeze") == 0);
+  CHECK(std::strcmp(pitchlab::phaseString(), "implementation") == 0);
   CHECK(pitchlab::compilerId() != nullptr && pitchlab::compilerId()[0] != '\0');
 
   if (g_failures != 0) {

@@ -3,10 +3,13 @@
 **Local DSP research laboratory for sound-design-oriented pitch processing.**
 Product: knowledge and tested DSP components — not shippable audio software.
 
-> Current status: **IMPLEMENTATION FREEZE** — specification, repository
-> reconciliation and CI infrastructure complete. No DSP engine is
+> Current status: **IMPLEMENTATION PHASE — cycle 1 complete** (2026-09-26,
+> implementation specification §17 step 1): core types, deterministic RNG,
+> WAV I/O and the shared resampling primitive are implemented and
+> unit-tested (7 CTest tests, CI green per §13.3). No DSP engine is
 > implemented; none is faked (the engine registry is deliberately empty and
-> CI asserts it). The v0.1 build can start without hidden design decisions.
+> CI asserts it). Resampler acceptance evidence and the open decision it
+> produced (OD-18) are recorded in the implementation specification §7.7.1.
 
 This repository hosts **two systems with a hard boundary**:
 
@@ -33,9 +36,14 @@ This repository hosts **two systems with a hard boundary**:
 `.github/workflows/ci.yml` — pinned `ubuntu-24.04`, GCC 13.3.0 (empirically
 re-pinned 2026-09-26 from live CI evidence), CMake 3.31.6
 (sha256-verified tarball), Ninja, CTest. Clean checkout → configure → build →
-test → evidence upload, zero third-party dependencies at freeze. CI proves
-the environment and the infrastructure (toolchain, FP determinism guards,
-engine-registry freeze state); it does **not** prove any DSP behaviour.
+test → evidence upload. Dependencies: vendored doctest 2.4.12 (MIT,
+`pitch-lab/external/` — dev/test only; the DSP core is zero-dependency). CI
+proves the environment, the infrastructure (toolchain, FP determinism
+guards, engine-registry freeze state) and — since implementation cycle 1
+(2026-09-26, spec §17 step 1) — the unit-level correctness of the
+foundational components (types, RNG, WAV I/O, resampler); it does **not**
+prove any engine behaviour (no engine exists — the registry test asserts
+emptiness).
 
 **Activation status (2026-09-26): ACTIVATED AND PROVEN.** The workflow is
 tracked in git and executing on GitHub Actions. Proof: run

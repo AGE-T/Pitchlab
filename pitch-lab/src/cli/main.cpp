@@ -1,9 +1,9 @@
-// Pitch Lab CLI — freeze state.
+// Pitch Lab CLI — implementation-phase introspection state.
 //
 // Architecture §B.1 entry points (compile|render|analyze|report|verify|
-// listen-index + engines introspection) are v0.1 IMPLEMENTATION work. At the
-// freeze state the CLI offers only honest introspection: --version and the
-// (empty) engine registry listing. Nothing pretends to render audio.
+// listen-index + engines introspection) are v0.1 IMPLEMENTATION work. Only
+// honest introspection exists so far: --version and the (empty) engine
+// registry listing. Nothing pretends to render audio.
 
 #include <cstdio>
 #include <cstring>
@@ -54,14 +54,14 @@ int main(int argc, char** argv) {
   if (argc == 2 && (std::strcmp(argv[1], "--help") == 0 || std::strcmp(argv[1], "help") == 0)) {
     std::printf(
         "pitchlab %s (%s)\n"
-        "freeze state: only introspection is implemented\n"
+        "implemented so far: --version, engines (registry introspection)\n"
         "  pitchlab --version   print version, phase, compiler\n"
         "  pitchlab engines     list registered engines (authoritative registry)\n",
         pitchlab::versionString(), pitchlab::phaseString());
     return 0;
   }
   std::fprintf(stderr,
-               "pitchlab: '%s' is not implemented at the implementation freeze\n"
+               "pitchlab: '%s' is not implemented yet\n"
                "(v0.1 subcommands compile|render|analyze|report|verify|listen-index are "
                "implementation-phase work — see research/pitch-lab-v0.1-implementation-specification.md)\n",
                argc > 1 ? argv[1] : "");

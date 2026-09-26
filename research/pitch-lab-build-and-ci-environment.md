@@ -1,7 +1,7 @@
 # PITCH LAB — Build, CI & Development Environment Specification
 
 **Document status:** SPECIFICATION (implementation freeze). The environment facts below were verified against live official sources on **2026-09-25** (runner-images README, image manifests, action release pages, gcc.gnu.org, cmake.org — sources listed in worklog Task 10-b), with one fact **empirically corrected on 2026-09-26 by live CI evidence** (GCC: the image ships 13.3.0, not the 13.2.0 documented by runner-images — first CI run 36237006396; see §1/§3/§12.1). The CI workflow is implemented at `.github/workflows/ci.yml` (tracked in git) and was validated end-to-end **locally on the identical pinned toolchain** (CMake 3.31.6, sha256-verified tarball; 3/3 tests green; re-validated 2026-09-26 after workspace reset, see §12.1). **Activation on GitHub Actions: COMPLETE and PROVEN (2026-09-26)** — run 36237247935 (head 593a2d5) is green end-to-end: all steps success, CTest 3/3 passed, evidence artefact `ci-evidence` downloaded and content-verified (see §12.1 for the full run-by-run chronology, including two honestly-recorded intermediate failures and their empirical fixes). Everything in this document is `ENVIRONMENT CONSTRAINT` unless tagged otherwise.
-**Version:** v1.1 (v1.0 2026-09-25 initial issue; v1.1 2026-09-26 — GCC fact empirically re-pinned 13.2.0 → 13.3.0 from live CI evidence, §12.1 chronology recorded, §11 example command synced with the verified `--output-junit` path semantics)
+**Version:** v1.2 (v1.0 2026-09-25 initial issue; v1.1 2026-09-26 — GCC fact empirically re-pinned 13.2.0 → 13.3.0 from live CI evidence, §12.1 chronology recorded, §11 example command synced with the verified `--output-junit` path semantics; v1.2 2026-09-26 — first implementation cycle: doctest VENDORED per plan (§7) with an empirical licence correction (MIT, not the previously recorded BSL-1.0), §1/§7/§12.2 updated)
 **Date:** 2026-09-26
 **Companion to:** `research/pitch-lab-v0.1-implementation-specification.md` (authority order there, §0)
 
@@ -23,7 +23,7 @@ Research sources for all runner/toolchain facts: live retrieval on **2026-09-25*
 | Generator | **Ninja** (image 1.13.2; asserted `>= 1.11`) | `cmake -G Ninja` |
 | Build configuration | `Release` (single; debug builds are local-only) | `-DCMAKE_BUILD_TYPE=Release` |
 | Test runner | **CTest** (`--output-on-failure`, JUnit XML via `--output-junit`) | CMake/CTest ≥ 3.21 |
-| Dependency acquisition | **none at freeze** — zero third-party code; planned phase vendoring under `pitch-lab/external/` with `LICENSE.txt` + `ORIGIN.toml` (§7) | — |
+| Dependency acquisition | **doctest 2.4.12 vendored 2026-09-26 (implementation cycle 1)** under `pitch-lab/external/doctest/` (`LICENSE.txt` verbatim + `ORIGIN.toml` with sha256) — dev/test only, never linked into DSP runtime code; **empirical licence correction: MIT, not the BSL-1.0 previously recorded here and in architecture §J** (confusion with Catch2 v3; see §7). The DSP core remains zero-dependency. pocketfft still planned (§7) | — |
 | Cache strategy | **none** (clean build is seconds at freeze; revisit only if build time grows) | — |
 | Actions | `actions/checkout`, `actions/upload-artifact` — pinned by full commit SHA (§5) | workflow |
 | Artefact upload | build/test logs + JUnit report; `if-no-files-found: error` | workflow |
@@ -77,12 +77,12 @@ GCC and CMake are exact-pinned (both are deterministic in this setup); Ninja is 
 ## 7. Dependency policy — `DEFINED`
 
 - **Freeze state: ZERO third-party dependencies.** The CI build vendors nothing; this is the strongest possible proof of "no ambient dependency" (a clean checkout + declared tools only).
-- **Planned v0.1 implementation-phase dependencies** (audit per task §17; both consistent with architecture §J):
+- **Implementation-phase vendoring (first entry: 2026-09-26, cycle 1):**
 
 | Dependency | Purpose | Version | Licence | Mechanism | Runtime? | Network at build? | Reproducibility | Licensing compatibility |
 |---|---|---|---|---|---|---|---|---|
+| **doctest** | unit/contract test framework (chosen over Catch2 v3 for single-header, low compile-time weight; both were architecture-§J-sanctioned options) | **2.4.12 — VENDORED 2026-09-26** (cycle 1, spec §17 step 1) | **MIT — EMPIRICALLY CORRECTED at vendoring-time re-verification** (the actual v2.4.12 `LICENSE.txt` is MIT, Copyright (c) 2016-2023 Viktor Kirilov; the "BSL-1.0" recorded in v1.0 of this spec and in architecture §J was a documentation error, confused with Catch2 v3. Both are permissive and inside the allowed class, so this is a recorded correction, not a vendoring blocker) | `pitch-lab/external/doctest/` with verbatim `LICENSE.txt` + `ORIGIN.toml` (version, URL, retrieval date, sha256 of both files, verification note) | dev/test only — never linked into DSP runtime code | no (vendored) | yes (pinned tree, sha256-recorded) | safe (permissive; future VST unaffected) |
 | **pocketfft** | FFT for `native.pv.classic` / `native.pv.phaselocked` + STFT helpers in analysis | commit-pinned at vendoring time (latest stable at that date; recorded in `ORIGIN.toml`) | BSD-3-Clause (re-verify the header at vendoring — architecture §J ⚠ rule) | vendored header under `pitch-lab/external/pocketfft/` with `LICENSE.txt` + `ORIGIN.toml` (version, URL, retrieval date, verification note) | yes (lab binary) | no (vendored) | yes (pinned tree) | safe (permissive; future VST unaffected) |
-| **doctest** | unit/contract test framework (BSL-1.0, single header, fast compile — chosen over Catch2 v3 for compile-time weight; both were architecture-§J-sanctioned options) | release-pinned at vendoring time | BSL-1.0 | vendored header, same rules | dev/test only | no | yes | safe |
 
 - Explicit non-dependencies (inherited): no FFTW (GPL), no libsndfile (own WAV I/O), no JUCE (future VST only), no Python (owner lock L-1), no framework du jour. No dependency is added merely because it makes implementation easier (Operating Principles §64/§112).
 - Kitware CMake tarball (§4): tooling, checksum-verified per run — listed here for completeness, not a project source dependency.
@@ -151,13 +151,13 @@ Triggers: `push` (all branches), `pull_request`, `workflow_dispatch`. Permission
 
    Activation cost: two honest intermediate failures (run 1: documented-stale GCC fact; run 2: sandbox-vs-runner `~/.local` gap), each diagnosed from live logs, flagged, and fixed as recorded amendments (§1/§3/§6 re-pin; §4 `mkdir -p`) — the anti-drift and evidence-upload design worked exactly as specified. OD-17 is **resolved**: the workflow file is tracked, pushed and executing on every push; the token lives only in the gitignored `.env` (never logged, never committed).
 
-### 12.2 Runs (activated 2026-09-26 — proven by run 36237247935)
+### 12.2 Runs (activated 2026-09-26 — proven by run 36237247935; suite growing since cycle 1)
 
-**Runs:** the `T-INF1` infrastructure suite only (implementation spec §13.3): C++20 feature checks (concepts/ranges/format compile-and-run), FP determinism guards (`__FAST_MATH__` undefined; deterministic double accumulation), engine-registry freeze-state assertions (production registry empty; registration/seal/duplicate/unknown-id semantics), version/phase constants.
+**Runs:** T-INF1 infrastructure suite (implementation spec §13.3): C++20 feature checks (concepts/ranges/format compile-and-run), FP determinism guards (`__FAST_MATH__` undefined; deterministic double accumulation), engine-registry freeze-state assertions (production registry empty; registration/seal/duplicate/unknown-id semantics), version/phase constants. **Since implementation cycle 1 (2026-09-26, spec §17 step 1): the component test suite** — `types_test` (T-T1 §4.1 contract), `rng_test` (T-D1/T-D2 golden streams + determinism + consumer separation), `wav_io_test` (T-W1..T-W3 round-trips incl. 192 kHz + multichannel extensible, deterministic bytes, invalid-input rejection matrix, 4 GiB cap boundary), `resampler_test` (T-R1/T-R2 §7.7 acceptance + behaviour: identity, constant/changing ratios, block-split bit-identity, supported rates, stereo coherence, boundaries, invalid config; OD-18 evidence printed into the JUnit output). CTest discovers them; **the workflow file has not changed** (as designed at freeze).
 
-**Proves:** a clean checkout of the repository configures, builds and tests the C++20 project on the pinned environment with zero third-party dependencies and zero ambient state; the registry mechanism behaves per §D.6; the toolchain is what the spec says it is.
+**Proves:** a clean checkout of the repository configures, builds and tests the C++20 project on the pinned environment with only the declared vendored test framework and zero ambient state; the registry mechanism behaves per §D.6; the foundational components (types, RNG, WAV I/O, resampler) satisfy their unit-level contracts and the measured §7.7 acceptance evidence (implementation spec §7.7.1).
 
-**Does NOT prove:** any DSP behaviour, any engine correctness, any benchmark validity, any metric value. No fake engines exist to make it green: the registry test *asserts emptiness* — the opposite of fake completeness. CI will grow real DSP tests only as real DSP is implemented (CTest discovery; the workflow file does not change).
+**Does NOT prove:** any engine correctness, any benchmark validity, any metric value. No fake engines exist to make it green: the registry test *asserts emptiness* — the opposite of fake completeness. CI grows real DSP tests only as real DSP is implemented (CTest discovery; the workflow file does not change).
 
 ## 13. Local development — `ENVIRONMENT CONSTRAINT` (non-authoritative)
 
