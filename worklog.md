@@ -724,3 +724,22 @@ Stage Summary:
 - GitHub credentials operational again (owner-supplied PAT in the gitignored `.env`).
 - No spec/Open-Decision changes required by this verification: the one failure was a test-code diagnostic-suppression gap, fixed in place; OD-6 (ratification of the §13.4 pack), OD-18, OD-9 all unchanged; no new open decisions introduced.
 - Honest scope note (unchanged): CI green proves the infrastructure + component + engine-contract suite on the canonical runner — it is not, by itself, broader DSP-correctness ratification beyond the recorded T-E/T-LEN-CAL evidence (spec §12.2 "Does NOT prove", §13.4).
+
+---
+Task ID: 16 (cycle 4, IN PROGRESS — honest partial state)
+Agent: implementation-cycle-4 (main implementation agent, DSP boundary)
+Task: §17 step 4 — vardelay, pv.classic, pv.phaselocked, granular; each entering the SAME contract suite T-E1..T-E13.
+
+Work Log:
+- Reconstructed state (worklog/specs/git/CTest 14/registry == {varispeed}); verified the four engines absent.
+- FFT DEPENDENCY QUESTION resolved from the SoT (NOT an invented resolution): build/CI spec §7 carries the full pocketfft vendoring recipe since the freeze (vendored header, BSD-3, commit-pinned, ORIGIN.toml); impl spec §2.2 and arch §J concur. Vendoring = executing the documented plan.
+- native.vardelay: §6.2.1 frozen BEFORE coding (the direction-asymmetric crossfade placement forced by causality — lower wraps fade-before via exact curve lookahead, upper wraps fade-after; one fade at a time; the retention window with the 2E end-state span; v(0)=0; Preserving exact N_in + W). Implemented, registered, T-E1..T-E13 + T-A1 + T-D3 + failure fixtures GREEN (identity residue 2.78e-17; pitch 0.00-0.09 cents; cross-schedule bit-identity observed). Commits 0cd9608, 8deb5c5.
+- native.granular: §6.5.1 frozen BEFORE coding (the quantised read grid; the OLA local-sum normalisation; the jitter rule — grain-indexed RNG draws, consumer tag engine.native.granular; the READ HORIZON + consume-and-discard — REQUIRED for ratio < 1 where the reads lag by (1−r_min)·N_in; the first implementation deadlocked at 0.25/0.75 before the rule was derived). Implemented, registered, T-E1..T-E13 + T-A1 + T-D3 + seed-sensitivity + fixtures GREEN. Commits 6ab63c8, 89c10ee.
+- pocketfft vendored at cpp-branch commit c90e55b3d529f8efa40ed01a20de22405f45fc65 (BSD-3 re-verified against BOTH the LICENSE file and the header's own block; sha256s in ORIGIN.toml).
+- native.pv.classic: §6.3.1 + §7.2.2 (the interpolateAtAbs amendment — the exact-fraction absolute-position read; empirical: the PV phase accumulators amplify the relative read's ~ulp seed to 0.29 signal-scale across schedules) frozen BEFORE coding. TWO gating bugs found by direct-drive diagnosis and fixed: (1) the analysis advance after the output-cap break froze the synthesis and deadlocked the padded-stream consumption at small blocks; (2) the FIR gate used varispeed's sequential-stream rule on an OLA accumulator — cells in [s_head, s_head+N) are incomplete and schedule-dependent; the correct gate is the completion boundary sCur_−K. After both: BIT-IDENTICAL across schedules (contract stays L-5 −80 dBFS). T-E1..T-E13 + T-A1 (the pocketfft allocation audit: 0 allocations) + T-D3 + fixtures GREEN. Commits 9b230be, 11ae1b0.
+- Local state at this boundary: CTest 17/17 (73.0 s); ASAN+UBSAN clean on every new suite; clean builds (0 warnings, -Werror) throughout; every intermediate commit standalone-buildable (worktree-verified for the engine commits).
+
+Stage Summary (partial, honest):
+- IMPLEMENTED + TESTED + REGISTERED: varispeed, vardelay, granular, pv.classic (4 of 5). REMAINING: native.pv.phaselocked (§6.4/§6.4.1 NOT YET FROZEN — the L-D'99 peak-shift formulation needs its freeze-then-implement cycle; the design analysis is started: the identity-locking regions, the peak phase advance at ρ·ω̂_p·H with the synthesis grid at the analysis hop — duration-preserving without stretch+resample — and the open question of the magnitude placement (verbatim vs region-shifted with sideband interpolation) must be resolved in the freeze, not in code).
+- Registry content == exactly the 4 implemented engines (T-E19).
+- NOT claimed: §17 step 4 completion. The next session continues: freeze §6.4.1 → implement → T-E1..T-E13 → register (T-E19 → 5) → docs closure (§13.3/§14/§16/§17, build/CI spec §7 pocketfft vendored, READMEs, worklog) → push → CI verification.
