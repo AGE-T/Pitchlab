@@ -15,10 +15,12 @@
 //     binaries only, flagged "test-only" in EngineInfo::origin
 //     (architecture §L "Reference comparison" layer).
 //
-// FREEZE STATE (superseded 2026-09-26, cycle 3): the production list now
-// contains exactly the IMPLEMENTED engines. Current content: exactly one —
-// native.varispeed (spec §17 step 3 / §14). The remaining four v0.1 engines
-// are NOT implemented and MUST NOT appear here until they are; the
+// FREEZE STATE (superseded 2026-09-26, cycles 3-4): the production list now
+// contains exactly the IMPLEMENTED engines. Current content: exactly two —
+// native.varispeed (spec §17 step 3 / §14) and native.vardelay (spec §17
+// step 4 / §6.2/§6.2.1, cycle 4). The remaining three v0.1 engines
+// (native.pv.classic, native.pv.phaselocked, native.granular) are NOT
+// implemented and MUST NOT appear here until they are; the
 // engine_registry_smoke test (T-E19) asserts the exact intended content.
 
 #include <string_view>

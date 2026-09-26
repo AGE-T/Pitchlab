@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "engines/vardelay_engine.h"
 #include "engines/varispeed_engine.h"
 
 namespace pitchlab {
@@ -43,19 +44,21 @@ const EngineDescriptor* EngineRegistry::findById(std::string_view id) const {
 // config file (config holds tunable parameter defaults only, keyed by engine
 // id). Unknown engine ids referenced by experiments are CONFIG ERRORS.
 //
-// IMPLEMENTATION PHASE (cycle 3, spec §17 step 3): the registry contains
+// IMPLEMENTATION PHASE (cycle 4, spec §17 step 4): the registry contains
 // EXACTLY the implemented engines, in the order of implementation
 // specification §14 ("v0.1 end state"). Currently implemented:
 //
-//   1. "native.varispeed"      Prototype, reference role, RateFollowing, PerSample
+//   1. "native.varispeed"   Prototype, reference role, RateFollowing, PerSample
+//   2. "native.vardelay"    Prototype, Preserving, PerSample (§6.2/§6.2.1)
 //
-// The remaining four (native.vardelay, native.pv.classic,
-// native.pv.phaselocked, native.granular) are NOT implemented and MUST NOT
-// appear here (registry content == implemented engines, always — asserted
-// by the engine_registry_smoke test, T-E19).
+// The remaining three (native.pv.classic, native.pv.phaselocked,
+// native.granular) are NOT implemented and MUST NOT appear here (registry
+// content == implemented engines, always — asserted by the
+// engine_registry_smoke test, T-E19).
 // ---------------------------------------------------------------------------
 void registerProductionEngines(EngineRegistry& registry) {
   registry.registerEngine(varispeedEngineDescriptor());
+  registry.registerEngine(vardelayEngineDescriptor());
 }
 
 }  // namespace pitchlab
