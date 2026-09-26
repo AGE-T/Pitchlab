@@ -2,7 +2,7 @@
 
 ## CURRENT STATE (2026-09-26, after Task 11 — CI activation attempt / workspace-reset recovery)
 
-**Project identity:** Pitch Lab — local offline DSP research laboratory for sound-design-oriented pitch processing (C++20 + offline harness; agent-side Next.js workbench for owner observability). Repository: `github.com/AGE-T/Pitchlab`, branch `main` (GitHub head = 1cb1f10; local head has the activation commit — see OD-17).
+**Project identity:** Pitch Lab — local offline DSP research laboratory for sound-design-oriented pitch processing (C++20 + offline harness; agent-side Next.js workbench for owner observability). Repository: `github.com/AGE-T/Pitchlab`, branch `main` (pushed through cc59727 + the GCC re-pin commit; see OD-17 chronology in build spec §12.1).
 
 **Reading order (authoritative documents and their roles):**
 1. `research/AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0.md` — governing engineering process (130 sections).
@@ -18,15 +18,15 @@
 
 **Known limitations:** all numeric tolerances provisional (calibration procedures defined: T-LEN-CAL, T-E7 calibration); tracker-dependent metrics blocked on OD-12; Amendment A-1 pending architecture v1.2 fold-in (OD-16); RIFF 4 GiB WAV cap (OD-14).
 
-**Open decisions:** OD-6 (rate-following length tolerance value), OD-7, OD-8, OD-9 (metric tolerances), OD-10, OD-11, **OD-12 (pYIN C++ route — options A/B/C/D, B recommended)**, OD-13, OD-14, OD-15 (artifact publication), OD-16 (architecture v1.2), **OD-17 (CI activation on GitHub — owner granted the PAT's Workflows permission 2026-09-26, but the workspace reset also lost the gitignored `GITHUB_TOKEN`/`GITHUB_REPO` values from `.env`; workflow re-authored, locally re-validated and committed — the activation push is blocked LOCALLY at the credential check; one-time remediation in build spec §12.1)**. Full table: implementation specification §16.
+**Open decisions:** OD-6 (rate-following length tolerance value), OD-7, OD-8, OD-9 (metric tolerances), OD-10, OD-11, **OD-12 (pYIN C++ route — options A/B/C/D, B recommended)**, OD-13, OD-14, OD-15 (artifact publication), OD-16 (architecture v1.2), **OD-17 (CI activation on GitHub — IN PROGRESS: token restored, workflow pushed (cc59727), first run 36237006396 failed at the anti-drift GCC assertion (image ships 13.3.0, not the documented 13.2.0 — guard worked as designed); GCC re-pinned to 13.3.0 (build spec v1.1); verification run pending)**. Full table: implementation specification §16.
 
 **Blockers:** none blocking the start of implementation (package state: READY WITH KNOWN LIMITATION). OD-17 blocks only the *execution* of CI on GitHub, not its design or any DSP work.
 
-**Dependency and environment state:** canonical = GitHub Actions `ubuntu-24.04` x64, GCC 13.2.0 (asserted), CMake 3.31.6 (sha256-pinned), Ninja (≥1.11), CTest; ZERO third-party code at freeze; planned vendoring (pocketfft BSD-3, doctest BSL-1.0) audited in the build spec §7. Token should live in the gitignored `.env` — **currently ABSENT (workspace reset); owner must re-add `GITHUB_TOKEN`/`GITHUB_REPO`.**
+**Dependency and environment state:** canonical = GitHub Actions `ubuntu-24.04` x64, GCC 13.3.0 (asserted; empirically re-pinned 2026-09-26 — live image evidence, build spec v1.1), CMake 3.31.6 (sha256-pinned), Ninja (≥1.11), CTest; ZERO third-party code at freeze; planned vendoring (pocketfft BSD-3, doctest BSL-1.0) audited in the build spec §7. Token restored to the gitignored `.env` (owner-supplied; never logged, never committed).
 
-**Validation state:** local clean build + all 3 smoke tests green (pinned CMake 3.31.6 sha256-verified; GCC 14.2.0 local vs 13.2.0 CI — exact-asserted in the workflow; Unix Makefiles generator locally, Ninja canonical; re-validated 2026-09-26 including JUnit XML at `build/test-results.xml`, 0 failures). GitHub CI: workflow tracked in git and ready to push; **no push has reached GitHub and no CI run exists** (activation blocked locally by the missing token — OD-17). No DSP validation exists (nothing DSP is implemented — honestly).
+**Validation state:** local clean build + all 3 smoke tests green (pinned CMake 3.31.6 sha256-verified; GCC 14.2.0 local vs 13.3.0 CI — exact-asserted in the workflow; Unix Makefiles generator locally, Ninja canonical; re-validated 2026-09-26 including JUnit XML at `build/test-results.xml`, 0 failures). GitHub CI: ACTIVATED — workflow pushed, run 1 (36237006396) executed and failed at the anti-drift GCC assertion by design (drift found: 13.2.0→13.3.0); GCC re-pinned, verification run pending. No DSP validation exists (nothing DSP is implemented — honestly).
 
-**Exact next action:** owner re-adds `GITHUB_TOKEN`/`GITHUB_REPO` to `.env` → run `bash scripts/push-to-github.sh` (or ask the agent) → the push carries the workflow and triggers the first CI run → record run URL + conclusion (evidence per build spec §12.1). Then owner resolves OD-12 (tracker option) → implementation begins at implementation-specification §17 step 1 (core types + RNG + WAV I/O + resampler + acceptance tests).
+**Exact next action:** verification run of the re-pinned workflow (green + artefacts) → record evidence and close OD-17 → then owner resolves OD-12 (tracker option) → implementation begins at implementation-specification §17 step 1 (core types + RNG + WAV I/O + resampler + acceptance tests).
 
 *(Historical entries follow below, oldest first. This block supersedes nothing — it summarises.)*
 

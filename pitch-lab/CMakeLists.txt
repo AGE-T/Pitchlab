@@ -19,7 +19,7 @@ project(PitchLab
 # implemented; CTest discovers tests, so the CI workflow never changes.
 #
 # Canonical environment: research/pitch-lab-build-and-ci-environment.md
-# (ubuntu-24.04, GCC 13.2, CMake 3.31.6, Ninja, C++20).
+# (ubuntu-24.04, GCC 13.3, CMake 3.31.6, Ninja, C++20).
 # ---------------------------------------------------------------------------
 
 option(PITCHLAB_WERROR "Treat compiler warnings as errors for Pitch Lab code" ON)

@@ -12,7 +12,9 @@
 # Canonical environment: research/pitch-lab-build-and-ci-environment.md
 #   - runner: ubuntu-24.04 x64, pinned (never ubuntu-latest: the latest
 #     label migrates to 26.04 during 2026-10-19..2026-11-19)
-#   - GCC 13.2.0, exact-asserted at job start (anti-drift, fail loudly)
+#   - GCC 13.3.0, exact-asserted at job start (anti-drift, fail loudly;
+#     re-pinned 2026-09-26 from 13.2.0 on live CI evidence: image
+#     20260920.314.1 ships GCC 13.3.0, run 36237006396 — build spec §1/§6)
 #   - CMake 3.31.6, checksum-pinned official tarball (sha256-verified)
 #   - Ninja >= 1.11, CTest with --output-on-failure + JUnit XML
 #   - zero third-party dependencies at freeze; no cache; no matrix
@@ -49,7 +51,7 @@ jobs:
           g++ --version | head -1
           cmake --version | head -1
           ninja --version
-          [ "$(g++ -dumpfullversion)" = "13.2.0" ] || { echo "FAIL: unexpected GCC version"; exit 1; }
+          [ "$(g++ -dumpfullversion)" = "13.3.0" ] || { echo "FAIL: unexpected GCC version"; exit 1; }
           [ "$(cmake --version | head -1 | awk '{print $3}')" = "3.31.6" ] || { echo "FAIL: unexpected CMake version"; exit 1; }
           ninja --version | awk '{ if ($1+0 < 1.11) { print "FAIL: ninja too old"; exit 1 } }'
 

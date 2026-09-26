@@ -81,7 +81,7 @@ The workbench stays as-is (owner mandate; architecture has no workbench concept 
 
 ### 1.4 Canonical environment summary — `ENVIRONMENT CONSTRAINT`
 
-Canonical build/test target = GitHub Actions, pinned `ubuntu-24.04` x64, GCC 13.2.0, C++20, CMake 3.31.6 (checksum-pinned tarball), Ninja, CTest. Full specification, justification and exact commands: `research/pitch-lab-build-and-ci-environment.md`. Local builds are permitted but never authoritative; a clean checkout must configure/build/test with zero ambient dependencies (the freeze build vendors **no** third-party code). CI activation status (2026-09-26): workflow tracked in git, re-authored from the canonical spec and locally re-validated on the pinned toolchain after a workspace reset; the owner has granted the PAT's Workflows permission, but the reset also lost the gitignored token value from `.env`, so the activation push is blocked locally at the credential check — build spec §12.1 / OD-17.
+Canonical build/test target = GitHub Actions, pinned `ubuntu-24.04` x64, GCC 13.3.0 (empirically re-pinned 2026-09-26 from live CI evidence — build spec v1.1 §1/§3), C++20, CMake 3.31.6 (checksum-pinned tarball), Ninja, CTest. Full specification, justification and exact commands: `research/pitch-lab-build-and-ci-environment.md`. Local builds are permitted but never authoritative; a clean checkout must configure/build/test with zero ambient dependencies (the freeze build vendors **no** third-party code). CI activation status (2026-09-26): the token was restored and the workflow pushed; the first run failed at the anti-drift assertion (image ships GCC 13.3.0, not the documented 13.2.0) — re-pinned, verification run recorded in build spec §12.1 / OD-17.
 
 ---
 

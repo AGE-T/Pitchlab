@@ -30,7 +30,8 @@ This repository hosts **two systems with a hard boundary**:
 
 ## CI (canonical build/test target)
 
-`.github/workflows/ci.yml` — pinned `ubuntu-24.04`, GCC 13.2.0, CMake 3.31.6
+`.github/workflows/ci.yml` — pinned `ubuntu-24.04`, GCC 13.3.0 (empirically
+re-pinned 2026-09-26 from live CI evidence), CMake 3.31.6
 (sha256-verified tarball), Ninja, CTest. Clean checkout → configure → build →
 test → evidence upload, zero third-party dependencies at freeze. CI proves
 the environment and the infrastructure (toolchain, FP determinism guards,

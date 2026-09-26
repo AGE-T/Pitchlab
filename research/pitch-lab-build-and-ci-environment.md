@@ -1,8 +1,8 @@
 # PITCH LAB — Build, CI & Development Environment Specification
 
-**Document status:** SPECIFICATION (implementation freeze). The environment facts below were verified against live official sources on **2026-09-25** (runner-images README, image manifests, action release pages, gcc.gnu.org, cmake.org — sources listed in worklog Task 10-b). The CI workflow is implemented at `.github/workflows/ci.yml` (tracked in git) and was validated end-to-end **locally on the identical pinned toolchain** (CMake 3.31.6, sha256-verified tarball; 3/3 tests green; re-validated 2026-09-26 after workspace reset, see §12.1). **Activation on GitHub Actions is PENDING** — the owner granted the PAT the `Workflows` permission on 2026-09-26, but the workspace reset lost the gitignored PAT value from `.env`; see §12.1 for the exact status and remediation. Everything in this document is `ENVIRONMENT CONSTRAINT` unless tagged otherwise.
-**Version:** v1.0 (initial issue)
-**Date:** 2026-09-25
+**Document status:** SPECIFICATION (implementation freeze). The environment facts below were verified against live official sources on **2026-09-25** (runner-images README, image manifests, action release pages, gcc.gnu.org, cmake.org — sources listed in worklog Task 10-b), with one fact **empirically corrected on 2026-09-26 by live CI evidence** (GCC: the image ships 13.3.0, not the 13.2.0 documented by runner-images — first CI run 36237006396; see §1/§3/§12.1). The CI workflow is implemented at `.github/workflows/ci.yml` (tracked in git) and was validated end-to-end **locally on the identical pinned toolchain** (CMake 3.31.6, sha256-verified tarball; 3/3 tests green; re-validated 2026-09-26 after workspace reset, see §12.1). **Activation on GitHub Actions: IN PROGRESS** — the token was restored on 2026-09-26 and the workflow is pushed (first run failed at the anti-drift assertion by design — GCC drift; re-pinned; see §12.1 for the run-by-run chronology). Everything in this document is `ENVIRONMENT CONSTRAINT` unless tagged otherwise.
+**Version:** v1.1 (v1.0 2026-09-25 initial issue; v1.1 2026-09-26 — GCC fact empirically re-pinned 13.2.0 → 13.3.0 from live CI evidence, §12.1 chronology recorded, §11 example command synced with the verified `--output-junit` path semantics)
+**Date:** 2026-09-26
 **Companion to:** `research/pitch-lab-v0.1-implementation-specification.md` (authority order there, §0)
 
 Research sources for all runner/toolchain facts: live retrieval on **2026-09-25** from the `actions/runner-images` repository (README + `images/ubuntu/Ubuntu2404-Readme.md`, image version 20260920.314.1), the GitHub-hosted runners reference, the actions/checkout and actions/upload-artifact release pages, gcc.gnu.org C++ status pages, and cmake.org/download. Details and links in worklog Task 10-b.
@@ -17,7 +17,7 @@ Research sources for all runner/toolchain facts: live retrieval on **2026-09-25*
 | Runner image | **Ubuntu 24.04 (x64)** — 4 vCPU, 16 GB RAM, 14 GB SSD | `runs-on: ubuntu-24.04` — **never `ubuntu-latest`** (§2) |
 | Architecture | x86-64 | runner-native |
 | OS | Ubuntu 24.04.5 LTS (kernel 6.17.0-1022-azure at research time) | image |
-| Compiler | **GCC 13.2.0** (`g++`, distro package `4:13.2.0-7ubuntu1` — the only GCC on the image) | image-preinstalled; **asserted at job start** (§6) |
+| Compiler | **GCC 13.3.0** (`g++`, distro package `13.3.0-6ubuntu2~24.04.1` — the only GCC on the image) | image-preinstalled; **asserted at job start** (§6). v1.0 pinned 13.2.0 from the runner-images README; **live CI evidence 2026-09-26 (run 36237006396, image 20260920.314.1) shows 13.3.0 — empirical fact wins** |
 | C++ standard | **C++20** (`target_compile_features(... cxx_std_20)`) | CMake-enforced |
 | CMake | **3.31.6** | **checksum-pinned binary tarball** (§4) |
 | Generator | **Ninja** (image 1.13.2; asserted `>= 1.11`) | `cmake -G Ninja` |
@@ -38,7 +38,7 @@ Research sources for all runner/toolchain facts: live retrieval on **2026-09-25*
 
 ## 3. Compiler and C++20 — `KNOWN`
 
-GCC 13.2.0 covers the C++20 feature set this project uses (concepts and ranges since GCC 10–12; `std::format` since 13.1; full C++20 language features by GCC 12, per gcc.gnu.org status pages). The runner image ships exactly one GCC (13.2.0, from Ubuntu's frozen noble archive — stable, not a rolling toolchain). The ABI caution on the GCC status page (C++20 ABI not stable until GCC 16) is respected by pinning one compiler version for all v0.1 CI.
+GCC 13.3.0 covers the C++20 feature set this project uses (concepts and ranges since GCC 10–12; `std::format` since 13.1; full C++20 language features by GCC 12, per gcc.gnu.org status pages — 13.3 is a bugfix release of the same GCC 13 series, feature-identical for these purposes). The runner image ships exactly one GCC (from Ubuntu's noble archive — stable, not a rolling toolchain). **Empirical note (2026-09-26):** the runner-images README documented 13.2.0, but the live image 20260920.314.1 ships 13.3.0 (proven by the first CI run's toolchain report); documentation was stale on this point — the runtime assertion (§6) caught it exactly as designed. The ABI caution on the GCC status page (C++20 ABI not stable until GCC 16) is respected by pinning one compiler version for all v0.1 CI.
 
 ## 4. CMake pinning — `KNOWN`
 
@@ -66,7 +66,7 @@ A dedicated workflow step prints and asserts, failing the job loudly on drift in
 
 ```bash
 g++ --version | head -1; cmake --version | head -1; ninja --version
-[ "$(g++ -dumpfullversion)" = "13.2.0" ] || { echo "FAIL: unexpected GCC version"; exit 1; }
+[ "$(g++ -dumpfullversion)" = "13.3.0" ] || { echo "FAIL: unexpected GCC version"; exit 1; }
 [ "$(cmake --version | head -1 | awk '{print $3}')" = "3.31.6" ] || { echo "FAIL: unexpected CMake version"; exit 1; }
 ninja --version | awk '{ if ($1+0 < 1.11) { print "FAIL: ninja too old"; exit 1 } }'
 ```
@@ -133,16 +133,11 @@ Triggers: `push` (all branches), `pull_request`, `workflow_dispatch`. Permission
    - **Local re-validation on the pinned toolchain (2026-09-26):** pinned CMake 3.31.6 tarball downloaded and sha256-verified (`cmake.tar.gz: OK`); clean configure + build (GCC 14.2.0, Unix Makefiles — generator portability per §13; CI canonical remains Ninja); `ctest` 3/3 passed; JUnit XML generated at `build/test-results.xml` with 0 failures; `pitchlab --version` / `pitchlab engines` output the honest freeze state; workflow YAML parsed (1 job, 7 steps, 3 triggers).
    - **Defect found and fixed during re-validation (empirical):** `ctest --output-junit` paths resolve **inside** `--test-dir`, so `--output-junit build/test-results.xml` produced `build/build/test-results.xml`, which would have broken the evidence upload (`if-no-files-found: error`). The workflow now passes `--output-junit test-results.xml`; the artefact path `build/test-results.xml` is correct. Recorded because the original (lost) file may not have had this fix — the current file is authoritative.
 
-3. **2026-09-26 — activation push attempted, blocked locally by the missing token value.** `bash scripts/push-to-github.sh` exits at the credential check: `GITHUB_TOKEN`/`GITHUB_REPO` are absent from `.env` (workspace reset). The workflow file and all documentation updates are **committed locally** and ready to push. **No push reached GitHub; no CI run exists; no claim is made that CI ran on GitHub.**
+4. **2026-09-26 — token restored, workflow pushed, FIRST CI RUN executed (failed at the anti-drift assertion — by design).** The owner supplied the PAT value (message; never logged, never committed — `.env` remains gitignored) and confirmed the `Workflows` permission. The local activation commits were rebased onto the remote mode-normalised tip (remote 77ac6fe is content-identical to local 1cb1f10, mode-only 755→644 differences; linear history preserved, no force-push) and pushed: `77ac6fe..cc59727 main -> main`. **Run 1: id 36237006396** (`https://github.com/AGE-T/Pitchlab/actions/runs/36237006396`, event=push, head=cc59727, runner image 20260920.314.1). Result: **failure at step "Toolchain report + assertions"** — toolchain report printed `g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0`, `cmake version 3.31.6`, `ninja 1.13.2`, so the GCC exact-assertion (then 13.2.0) failed loudly; build/test steps skipped; the evidence upload then also failed (`if-no-files-found: error`, correct behaviour when no build happened). **Diagnosis: the live image ships GCC 13.3.0, not the 13.2.0 documented by the runner-images README at research time — a documented-stale fact, not a design error; the anti-drift guard worked exactly as specified (§6: fail loudly on drift instead of failing silently later).** Deviation flagged per owner instruction; remediation executed as a recorded re-pin: GCC 13.2.0 → **13.3.0** in the workflow assertion and this specification (§1, §3, §6; v1.1). CMake 3.31.6 and Ninja 1.13.2 matched the pins — no other drift found.
 
-Remediation (owner, one-time): re-add to the **gitignored** `.env` in the project root:
+5. **2026-09-26 — re-pin pushed; verification run pending below (see the activation record).**
 
-```text
-GITHUB_TOKEN=<the fine-grained PAT — now holding the Workflows permission>
-GITHUB_REPO=AGE-T/Pitchlab
-```
-
-then run `bash scripts/push-to-github.sh` (or tell the agent, who will push). The workflow file is tracked in the commit, so the next successful push carries it and **triggers the first CI run automatically**; the Actions tab then provides the run URL and conclusion (the exact CI commands of §11 run unchanged — nothing else is needed). Evidence to record on activation: run URL, green conclusion, toolchain-assertion log lines.
+Remediation status: the token restoration is **done** (step 4). The remaining one-time action — observing a green run and recording its evidence — is recorded below in the activation record.
 
 ### 12.2 Runs (once activated)
 
