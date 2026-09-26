@@ -167,6 +167,12 @@ pitchlab_add_doctest(vardelay_contract_test tests/vardelay_contract_test.cpp)
 # Engine-level audio-equivalence at -80 dBFS (L-5) — NOT bit-exact.
 pitchlab_add_doctest(granular_contract_test tests/granular_contract_test.cpp)
 
+# T-E1..T-E13 + T-A1 + T-D3 + failure fixtures: native.pv.classic engine
+# contract suite through the real harness (spec §13.1 matrix, cycle 4 /
+# §17 step 4; frozen behaviour §6.3.1). Includes the pocketfft allocation
+# audit (the persistent plan exec in the processing path).
+pitchlab_add_doctest(pv_classic_contract_test tests/pv_classic_contract_test.cpp)
+
 # T-E14 / T-LEN-CAL: rate-following output-length calibration evidence
 # (spec §4.3.4/§13.1; the OD-6 evidence pack — full battery x 6 rates).
 pitchlab_add_doctest(length_calibration_test tests/length_calibration_test.cpp)
