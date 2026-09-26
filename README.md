@@ -3,23 +3,30 @@
 **Local DSP research laboratory for sound-design-oriented pitch processing.**
 Product: knowledge and tested DSP components — not shippable audio software.
 
-> Current status: **IMPLEMENTATION PHASE — cycles 1-3 complete** (2026-09-26,
-> implementation specification §17 steps 1-3): cycle 1 = core types,
-> deterministic RNG, WAV I/O and the shared resampling primitive; cycle 2 =
-> the curve library (own TOML-subset parser, spec validation, deterministic
-> compilation to the dense per-frame ratio signal — §4.4.3.1), the 21-file
-> curve battery, and the deterministic synthetic corpus (17 items committed
-> under `pitch-lab/assets/corpus/`, regeneration byte-identity gated by
-> T-C1); **cycle 3 = the first real engine — `native.varispeed`, the
-> rate-following reference (§6.1/§6.1.1) — plus the harness
-> (ExperimentCompiler → OfflineRenderer → canonical-JSON manifests with
-> SHA-256 provenance, CLI compile/render)**. 14 CTest tests, CI green per
-> §13.3; the registry contains exactly the one implemented engine (the
-> other four remain unimplemented and unregistered — none is faked). The
-> T-LEN-CAL length-calibration evidence for OD-6 is produced (worst |Δ| = 8
-> frames over the full battery × 6 rates, §13.4 — ratification pending).
-> Resampler acceptance evidence and the open decision it produced (OD-18)
-> are recorded in the implementation specification §7.7.1.
+> Current status: **IMPLEMENTATION PHASE — cycles 1-4 complete; the v0.1
+> engine registry is COMPLETE** (2026-09-26, implementation specification
+> §17 steps 1-4): cycle 1 = core types, deterministic RNG, WAV I/O and the
+> shared resampling primitive; cycle 2 = the curve library (own TOML-subset
+> parser, spec validation, deterministic compilation to the dense per-frame
+> ratio signal — §4.4.3.1), the 21-file curve battery, and the deterministic
+> synthetic corpus (17 items committed under `pitch-lab/assets/corpus/`,
+> regeneration byte-identity gated by T-C1); cycle 3 = the first real
+> engine — `native.varispeed`, the rate-following reference (§6.1/§6.1.1) —
+> plus the harness (ExperimentCompiler → OfflineRenderer → canonical-JSON
+> manifests with SHA-256 provenance, CLI compile/render); **cycle 4 = ALL
+> FOUR remaining engines, each frozen (§6.x.1) BEFORE coding and run through
+> the SAME contract suite T-E1..T-E13 — `native.vardelay` (§6.2),
+> `native.granular` (§6.5), `native.pv.classic` (§6.3, pocketfft vendored
+> BSD-3 per the documented plan) and `native.pv.phaselocked` (§6.4, the
+> L-D'99 peak-shift phase-locked vocoder)**. 18 CTest tests, CI per §13.3;
+> the registry contains EXACTLY the five implemented v0.1 engines — the §14
+> end state, asserted by T-E19 (nothing more is registered; nothing is
+> faked). The T-LEN-CAL length-calibration evidence for OD-6 is produced
+> (worst |Δ| = 8 frames over the full battery × 6 rates, §13.4 —
+> ratification pending). Resampler acceptance evidence and the open decision
+> it produced (OD-18) are recorded in the implementation specification
+> §7.7.1. Remaining v0.1 work: §17 step 5 (metrics) and step 6 (the
+> reproducibility gate) — owner-triggered.
 
 This repository hosts **two systems with a hard boundary**:
 
