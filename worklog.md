@@ -2,7 +2,7 @@
 
 ## CURRENT STATE (2026-09-26, after Task 12 — IMPLEMENTATION CYCLE 1 COMPLETE: §17 step 1 done, CI-proven)
 
-**Project identity:** Pitch Lab — local offline DSP research laboratory for sound-design-oriented pitch processing (C++20 + offline harness; agent-side Next.js workbench for owner observability). Repository: `github.com/AGE-T/Pitchlab`, branch `main` (GitHub in sync; CI green at head f6f5bf2: run 36241070135, CTest 7/7, evidence artefact content-verified).
+**Project identity:** Pitch Lab — local offline DSP research laboratory for sound-design-oriented pitch processing (C++20 + offline harness; agent-side Next.js workbench for owner observability). Repository: `github.com/AGE-T/Pitchlab`, branch `main` (GitHub in sync; CI green at head; verified cycle-1 runs: 36241070135 @ f6f5bf2 (code, CTest 7/7) and 36241266441 @ bec1c52 (closure docs, CTest 7/7) — both evidence artefacts downloaded and content-verified).
 
 **Reading order (authoritative documents and their roles):**
 1. `research/AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0.md` — governing engineering process (130 sections).
@@ -24,7 +24,7 @@
 
 **Dependency and environment state:** canonical = GitHub Actions `ubuntu-24.04` x64, GCC 13.3.0 (asserted), CMake 3.31.6 (sha256-pinned), Ninja (≥1.11), CTest. Vendored: **doctest 2.4.12, MIT** (build spec v1.2; empirical licence correction — the previously recorded BSL-1.0 was wrong; dev/test only, DSP core zero-dependency). pocketfft (BSD-3) still planned for the PV-engine cycle. Token in the gitignored `.env` (never logged, never committed).
 
-**Validation state:** local clean build + 7/7 CTest green (pinned CMake 3.31.6; GCC 14.2.0 local; Unix Makefiles locally, Ninja canonical). GitHub CI: run **36241070135** (head f6f5bf2, pushed 4eda444..f6f5bf2 = cycle-1 commits 1-4): conclusion **success**, all steps green, CTest **7/7** (1.07 s), `ci-evidence` artefact (id 10905559488) downloaded and content-verified: JUnit `tests="7" failures="0"`; the OD-18 evidence and T-R2a identity measurements present in the CI test output. Zero doctest/behaviour surprises on the canonical runner (GCC 13.3 compiled the same sources warning-free under -Werror).
+**Validation state:** local clean build + 7/7 CTest green (pinned CMake 3.31.6; GCC 14.2.0 local; Unix Makefiles locally, Ninja canonical). GitHub CI: run **36241070135** (head f6f5bf2, pushed 4eda444..f6f5bf2 = cycle-1 commits 1-4): conclusion **success**, all steps green, CTest **7/7** (1.07 s), `ci-evidence` artefact (id 10905559488) downloaded and content-verified: JUnit `tests="7" failures="0"`; the OD-18 evidence and T-R2a identity measurements present in the CI test output. Closure-docs run **36241266441** (head bec1c52): also green, CTest 7/7, JUnit 7/0 — `version_smoke` confirms phase `implementation` + `gcc 13.3.0` on the runner. Zero doctest/behaviour surprises on the canonical runner (GCC 13.3 compiled the same sources warning-free under -Werror).
 
 **Exact next action:** §17 step 2 — curve library (`experiments/curves/*.toml` schema §15.3, compilation rules §4.4.3, validation §4.4.4, T-E15 fixture matrix) + deterministic corpus generator (`tools/corpus_gen`, §11) with T-C1 regeneration bit-identity; then step 3 (registry factory + harness skeleton + `native.varispeed` first, using the frozen resampler §7.2.1 + the AA policy; T-LEN-CAL evidence pack for OD-6).
 
