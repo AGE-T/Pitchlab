@@ -136,6 +136,21 @@ pitchlab_add_doctest(hash_test tests/hash_test.cpp)
 # T-J1: canonical JSON writer (spec §4.8.1 item 8 — manifest serialisation).
 pitchlab_add_doctest(json_writer_test tests/json_writer_test.cpp)
 
+# T-E15 harness slice + skip/saturation semantics: ExperimentCompiler
+# validation matrix (spec §4.8/§4.8.1 items 1-4, cycle 3).
+pitchlab_add_doctest(experiment_compiler_test tests/experiment_compiler_test.cpp)
+
+# T-E1..T-E11 + T-A1 + T-D3: native.varispeed engine contract suite through
+# the real harness (spec §13.1 matrix, cycle 3). Engine-level audio-
+# equivalence at -80 dBFS (L-5) — NOT bit-exact.
+pitchlab_add_doctest(varispeed_contract_test tests/varispeed_contract_test.cpp)
+
+# T-E14 / T-LEN-CAL: rate-following output-length calibration evidence
+# (spec §4.3.4/§13.1; the OD-6 evidence pack — full battery x 6 rates).
+pitchlab_add_doctest(length_calibration_test tests/length_calibration_test.cpp)
+target_compile_definitions(length_calibration_test PRIVATE
+  PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 # Stand-alone corpus generator tool (spec §11.1 — NOT a harness component).
 add_executable(corpus_gen tools/corpus_gen.cpp)
 target_link_libraries(corpus_gen PRIVATE pitchlab_core)
