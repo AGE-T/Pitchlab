@@ -1,10 +1,11 @@
-// T-INF1c / T-E19 — engine registry mechanism + freeze-state expectation.
+// T-INF1c / T-E19 — engine registry mechanism + intended-content assertion.
 //
 // Verifies the architecture §D.6 rules (one authoritative in-code registry):
-//   * production registry is EMPTY at the implementation freeze (registry
-//     content always equals implemented engines — this assertion is the
-//     anti-fake-engine guard and will be updated together with the FIRST
-//     real engine registration);
+//   * production registry content always equals IMPLEMENTED engines (the
+//     anti-fake-engine guard). CYCLE 3 STATE: exactly ONE engine —
+//     native.varispeed (spec §17 step 3 / §14). The other four v0.1 engines
+//     are unimplemented and MUST NOT be registered; this assertion is
+//     updated together with each real engine registration;
 //   * registration order is deterministic (registration order);
 //   * duplicate ids are rejected; empty ids are rejected; NULL FACTORIES are
 //     rejected (§4.2.1 item 5 — an unconstructible engine must not appear);
@@ -84,13 +85,28 @@ pitchlab::EngineDescriptor makeDummy(const char* id, int order) {
 }  // namespace
 
 int main() {
-  // ---- FREEZE STATE: the production list is empty (anti-fake-engine guard) ----
+  // ---- CYCLE 3 STATE: exactly one implemented production engine ----
   {
     pitchlab::EngineRegistry registry;
     pitchlab::registerProductionEngines(registry);
     registry.seal();
-    CHECK(registry.size() == 0);  // UPDATE TOGETHER WITH THE FIRST REAL ENGINE
-    CHECK(registry.findById("native.varispeed") == nullptr);
+    CHECK(registry.size() == 1);  // UPDATE TOGETHER WITH EVERY REAL ENGINE
+    const pitchlab::EngineDescriptor* d = registry.findById("native.varispeed");
+    CHECK(d != nullptr);
+    CHECK(d->factory != nullptr);
+    CHECK(d->isReferenceRole);  // harness reference role (§H.2)
+    CHECK(d->capabilities.duration == pitchlab::DurationBehaviour::RateFollowing);
+    CHECK(d->capabilities.minRatio == 0.0625);
+    CHECK(d->capabilities.maxRatio == 16.0);
+    // The OTHER four v0.1 engines are unimplemented: they MUST NOT be here.
+    CHECK(registry.findById("native.vardelay") == nullptr);
+    CHECK(registry.findById("native.pv.classic") == nullptr);
+    CHECK(registry.findById("native.pv.phaselocked") == nullptr);
+    CHECK(registry.findById("native.granular") == nullptr);
+    // The registered engine is constructible through its factory.
+    std::unique_ptr<pitchlab::PitchEngine> engine = d->factory();
+    CHECK(engine != nullptr);
+    CHECK(std::string(engine->engineId()) == "native.varispeed");
     CHECK(registry.sealed());
   }
 
@@ -164,6 +180,6 @@ int main() {
     std::fprintf(stderr, "engine_registry_smoke: %d check(s) FAILED\n", g_failures);
     return 1;
   }
-  std::printf("engine_registry_smoke: all checks passed (freeze state empty; mechanism + factory binding sound)\n");
+  std::printf("engine_registry_smoke: all checks passed (1 implemented engine: native.varispeed; mechanism + factory binding sound)\n");
   return 0;
 }

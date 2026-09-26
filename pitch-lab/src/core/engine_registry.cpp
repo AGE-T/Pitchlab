@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "engines/varispeed_engine.h"
+
 namespace pitchlab {
 
 void EngineRegistry::registerEngine(EngineDescriptor descriptor) {
@@ -41,22 +43,19 @@ const EngineDescriptor* EngineRegistry::findById(std::string_view id) const {
 // config file (config holds tunable parameter defaults only, keyed by engine
 // id). Unknown engine ids referenced by experiments are CONFIG ERRORS.
 //
-// FREEZE STATE: this list is deliberately EMPTY. Registry content always
-// equals implemented engines, and none is implemented. During v0.1
-// implementation the five descriptors are added IN THIS ORDER
-// (implementation specification §14, "v0.1 end state"):
+// IMPLEMENTATION PHASE (cycle 3, spec §17 step 3): the registry contains
+// EXACTLY the implemented engines, in the order of implementation
+// specification §14 ("v0.1 end state"). Currently implemented:
 //
 //   1. "native.varispeed"      Prototype, reference role, RateFollowing, PerSample
-//   2. "native.vardelay"       Prototype, Preserving, PerSample
-//   3. "native.pv.classic"     Prototype, baseline role, Preserving, FixedBlock(hop)
-//   4. "native.pv.phaselocked" Prototype, Preserving, FixedBlock(hop)
-//   5. "native.granular"       Prototype, creative-leaning, Preserving, FixedBlock(grain hop)
 //
-// The engine_registry_smoke test asserts the freeze-state emptiness and will
-// be updated together with the first real registration.
+// The remaining four (native.vardelay, native.pv.classic,
+// native.pv.phaselocked, native.granular) are NOT implemented and MUST NOT
+// appear here (registry content == implemented engines, always — asserted
+// by the engine_registry_smoke test, T-E19).
 // ---------------------------------------------------------------------------
 void registerProductionEngines(EngineRegistry& registry) {
-  (void)registry;  // no production engines exist yet
+  registry.registerEngine(varispeedEngineDescriptor());
 }
 
 }  // namespace pitchlab

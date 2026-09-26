@@ -4,11 +4,12 @@
 //
 // Per Operating Principles §81 the status chain of everything in the build is
 // tracked in kPhase. The implementation freeze (2026-09-25) shipped
-// specification + infrastructure only; cycle 1 (2026-09-26, implementation
-// specification §17 step 1) began the implementation phase: core types,
-// deterministic RNG, WAV I/O and the shared resampling primitive are now
-// implemented and unit-tested. NO engine is implemented (the registry remains
-// empty and a CI test asserts it). The value is mirrored in manifests and
+// specification + infrastructure only; cycle 1 (§17 step 1) implemented the
+// core primitives; cycle 2 (§17 step 2) the curve library + corpus; cycle 3
+// (2026-09-26, §17 step 3) implemented the FIRST REAL ENGINE
+// (native.varispeed, the rate-following reference) — the registry now
+// contains exactly the implemented engines (one). The remaining four v0.1
+// engines are §17 step-4 work. The value is mirrored in manifests and
 // reported by `pitchlab --version`.
 
 namespace pitchlab {
