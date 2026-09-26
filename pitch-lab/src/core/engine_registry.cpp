@@ -13,6 +13,12 @@ void EngineRegistry::registerEngine(EngineDescriptor descriptor) {
   if (descriptor.info.id == nullptr || descriptor.info.id[0] == '\0') {
     throw std::logic_error("engine id must not be empty");
   }
+  if (descriptor.factory == nullptr) {
+    // §4.2.1 item 5: registry content == implemented engines; an entry is
+    // constructible by definition (the anti-fake-engine rule).
+    throw std::logic_error("engine descriptor '" + std::string(descriptor.info.id) +
+                           "' has no factory (an unconstructible engine must not be registered)");
+  }
   if (findById(descriptor.info.id) != nullptr) {
     throw std::logic_error("duplicate engine id '" + std::string(descriptor.info.id) + "'");
   }
@@ -37,7 +43,7 @@ const EngineDescriptor* EngineRegistry::findById(std::string_view id) const {
 //
 // FREEZE STATE: this list is deliberately EMPTY. Registry content always
 // equals implemented engines, and none is implemented. During v0.1
-// implementation the five descriptors below are added IN THIS ORDER
+// implementation the five descriptors are added IN THIS ORDER
 // (implementation specification §14, "v0.1 end state"):
 //
 //   1. "native.varispeed"      Prototype, reference role, RateFollowing, PerSample
@@ -50,7 +56,7 @@ const EngineDescriptor* EngineRegistry::findById(std::string_view id) const {
 // be updated together with the first real registration.
 // ---------------------------------------------------------------------------
 void registerProductionEngines(EngineRegistry& registry) {
-  (void)registry;  // no production engines exist at the implementation freeze
+  (void)registry;  // no production engines exist yet
 }
 
 }  // namespace pitchlab

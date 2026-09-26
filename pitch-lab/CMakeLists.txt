@@ -33,6 +33,8 @@ add_library(pitchlab_core
   src/core/toml_lite.cpp
   src/core/curve.cpp
   src/core/corpus_gen.cpp
+  src/core/hash.cpp
+  src/harness/json_writer.cpp
 )
 
 target_include_directories(pitchlab_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -123,6 +125,12 @@ target_compile_definitions(curve_test PRIVATE
 pitchlab_add_doctest(corpus_gen_test tests/corpus_gen_test.cpp)
 target_compile_definitions(corpus_gen_test PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+# T-H1: own SHA-256 (spec §4.8.1 item 8 — manifest content hashing).
+pitchlab_add_doctest(hash_test tests/hash_test.cpp)
+
+# T-J1: canonical JSON writer (spec §4.8.1 item 8 — manifest serialisation).
+pitchlab_add_doctest(json_writer_test tests/json_writer_test.cpp)
 
 # Stand-alone corpus generator tool (spec §11.1 — NOT a harness component).
 add_executable(corpus_gen tools/corpus_gen.cpp)

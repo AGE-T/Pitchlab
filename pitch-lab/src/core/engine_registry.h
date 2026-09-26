@@ -24,6 +24,8 @@
 #include <string_view>
 #include <vector>
 
+#include "core/pitch_engine.h"
+
 namespace pitchlab {
 
 enum class UsageClass {
@@ -72,21 +74,29 @@ struct Capabilities {
   BandwidthSpec bandwidth;
   DurationBehaviour duration = DurationBehaviour::Preserving;
   Determinism determinism = Determinism::Deterministic;
+  // Engine-declared supported sample rates (spec §8 "engine support declared
+  // per engine"; frozen shape §4.2.1 item 5). Jobs at rates outside this set
+  // are JOB SKIP sample-rate-unsupported (compiler-side check).
+  std::vector<uint32_t> supportedSampleRates;
 };
 
-/// One registry entry. The construction binding (factory) joins when engine
-/// implementations exist; identity and binding must never diverge.
+/// One registry entry: identity + capabilities + the construction binding
+/// (factory). Identity and binding must never diverge (spec §4.6/§4.2.1
+/// item 5): registerEngine() REJECTS a null factory — registry content ==
+/// implemented engines means an entry is constructible by definition.
 struct EngineDescriptor {
   EngineInfo info;
   Capabilities capabilities;
   bool isReferenceRole = false;                 // harness reference role (§H.2)
   std::vector<const char*> parameterKeys;      // engine-declared parameter names
+  EngineFactory factory = nullptr;             // REQUIRED non-null (§4.2.1 item 5)
 };
 
 class EngineRegistry {
  public:
-  /// Register one engine (before seal() only). Duplicate or empty id throws
-  /// std::logic_error.
+  /// Register one engine (before seal() only). Duplicate/empty id or a
+  /// NULL FACTORY throws std::logic_error (§4.2.1 item 5: an entry is
+  /// constructible by definition — the anti-fake-engine rule).
   void registerEngine(EngineDescriptor descriptor);
 
   /// Freeze the registry (after all registrations). Further registration

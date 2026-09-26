@@ -1,4 +1,4 @@
-// T-INF1c / T-E19 — engine registry mechanism + FREEZE-STATE expectation.
+// T-INF1c / T-E19 — engine registry mechanism + freeze-state expectation.
 //
 // Verifies the architecture §D.6 rules (one authoritative in-code registry):
 //   * production registry is EMPTY at the implementation freeze (registry
@@ -6,16 +6,20 @@
 //     anti-fake-engine guard and will be updated together with the FIRST
 //     real engine registration);
 //   * registration order is deterministic (registration order);
-//   * duplicate ids are rejected; empty ids are rejected;
+//   * duplicate ids are rejected; empty ids are rejected; NULL FACTORIES are
+//     rejected (§4.2.1 item 5 — an unconstructible engine must not appear);
 //   * registration after seal() is rejected;
 //   * unknown-id lookup returns nullptr (never an implicit default engine);
-//   * test-only dummies are registrable via the public API in test binaries.
+//   * test-only dummies are registrable via the public API in test binaries
+//     and constructible through their factories.
 
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "core/engine_registry.h"
+#include "core/pitch_engine.h"
 
 namespace {
 
@@ -28,6 +32,30 @@ int g_failures = 0;
       std::fprintf(stderr, "CHECK failed: %s (%s:%d)\n", #cond, __FILE__, __LINE__); \
     }                                                                  \
   } while (false)
+
+// Minimal test-only dummy engine (architecture §L: dummies live in test
+// binaries only, flagged "test-only" in origin). Just enough to satisfy the
+// contract surface and be constructible through a factory.
+class DummyEngine : public pitchlab::PitchEngine {
+ public:
+  const char* engineId() const override { return "test.dummy"; }
+  void configure(const pitchlab::EngineConfiguration&) override {}
+  void prepare(const pitchlab::ProcessContext&) override {}
+  Latency latency() const override { return Latency{0, 0}; }
+  pitchlab::ProcessReport process(const pitchlab::AudioBlockView&, int inFrames,
+                                  pitchlab::AudioBlockOut&, int, const pitchlab::PitchCurveView&,
+                                  pitchlab::FrameCount) override {
+    return pitchlab::ProcessReport{inFrames, 0, false};
+  }
+  pitchlab::ProcessReport finish(pitchlab::AudioBlockOut&, int) override {
+    return pitchlab::ProcessReport{0, 0, false};
+  }
+  void reset() override {}
+};
+
+std::unique_ptr<pitchlab::PitchEngine> makeDummyEngine() {
+  return std::make_unique<DummyEngine>();
+}
 
 pitchlab::EngineDescriptor makeDummy(const char* id, int order) {
   pitchlab::EngineDescriptor d;
@@ -48,6 +76,8 @@ pitchlab::EngineDescriptor makeDummy(const char* id, int order) {
   d.capabilities.bandwidth.notes = "dummy";
   d.capabilities.duration = pitchlab::DurationBehaviour::Preserving;
   d.capabilities.determinism = pitchlab::Determinism::Deterministic;
+  d.capabilities.supportedSampleRates = {44100u, 48000u};
+  d.factory = &makeDummyEngine;
   return d;
 }
 
@@ -64,7 +94,7 @@ int main() {
     CHECK(registry.sealed());
   }
 
-  // ---- mechanism: registration, ordering, lookup ----
+  // ---- mechanism: registration, ordering, lookup, factory construction ----
   {
     pitchlab::EngineRegistry registry;
     registry.registerEngine(makeDummy("test.b", 1));
@@ -78,6 +108,16 @@ int main() {
     CHECK(registry.findById("test.a") != nullptr);
     CHECK(registry.findById("test.a")->capabilities.maxRatio == 2.0);
     CHECK(registry.findById("native.pv.classic") == nullptr);  // unknown -> nullptr
+
+    // Factory construction: every registered engine is instantiable through
+    // its descriptor factory (§4.2.1 item 5).
+    for (std::size_t i = 0; i < registry.size(); ++i) {
+      const pitchlab::EngineDescriptor& d = registry.at(i);
+      CHECK(d.factory != nullptr);
+      std::unique_ptr<pitchlab::PitchEngine> engine = d.factory();
+      CHECK(engine != nullptr);
+      CHECK(std::string(engine->engineId()) == "test.dummy");
+    }
   }
 
   // ---- failure semantics ----
@@ -90,6 +130,17 @@ int main() {
       threw = true;
     }
     CHECK(threw);
+    threw = false;
+    {
+      pitchlab::EngineDescriptor noFactory = makeDummy("test.nofactory", 1);
+      noFactory.factory = nullptr;
+      try {
+        registry.registerEngine(noFactory);  // §4.2.1 item 5: no factory
+      } catch (const std::logic_error&) {
+        threw = true;
+      }
+      CHECK(threw);
+    }
     threw = false;
     registry.registerEngine(makeDummy("test.dup", 1));
     try {
@@ -113,6 +164,6 @@ int main() {
     std::fprintf(stderr, "engine_registry_smoke: %d check(s) FAILED\n", g_failures);
     return 1;
   }
-  std::printf("engine_registry_smoke: all checks passed (freeze state empty; mechanism sound)\n");
+  std::printf("engine_registry_smoke: all checks passed (freeze state empty; mechanism + factory binding sound)\n");
   return 0;
 }
