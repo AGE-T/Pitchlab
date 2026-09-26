@@ -3,13 +3,17 @@
 **Local DSP research laboratory for sound-design-oriented pitch processing.**
 Product: knowledge and tested DSP components — not shippable audio software.
 
-> Current status: **IMPLEMENTATION PHASE — cycle 1 complete** (2026-09-26,
-> implementation specification §17 step 1): core types, deterministic RNG,
-> WAV I/O and the shared resampling primitive are implemented and
-> unit-tested (7 CTest tests, CI green per §13.3). No DSP engine is
-> implemented; none is faked (the engine registry is deliberately empty and
-> CI asserts it). Resampler acceptance evidence and the open decision it
-> produced (OD-18) are recorded in the implementation specification §7.7.1.
+> Current status: **IMPLEMENTATION PHASE — cycles 1-2 complete** (2026-09-26,
+> implementation specification §17 steps 1-2): cycle 1 = core types,
+> deterministic RNG, WAV I/O and the shared resampling primitive; cycle 2 =
+> the curve library (own TOML-subset parser, spec validation, deterministic
+> compilation to the dense per-frame ratio signal — §4.4.3.1), the 21-file
+> curve battery, and the deterministic synthetic corpus (17 items committed
+> under `pitch-lab/assets/corpus/`, regeneration byte-identity gated by
+> T-C1). 9 CTest tests, CI green per §13.3. No DSP engine is implemented;
+> none is faked (the engine registry is deliberately empty and CI asserts
+> it). Resampler acceptance evidence and the open decision it produced
+> (OD-18) are recorded in the implementation specification §7.7.1.
 
 This repository hosts **two systems with a hard boundary**:
 
@@ -39,9 +43,10 @@ re-pinned 2026-09-26 from live CI evidence), CMake 3.31.6
 test → evidence upload. Dependencies: vendored doctest 2.4.12 (MIT,
 `pitch-lab/external/` — dev/test only; the DSP core is zero-dependency). CI
 proves the environment, the infrastructure (toolchain, FP determinism
-guards, engine-registry freeze state) and — since implementation cycle 1
-(2026-09-26, spec §17 step 1) — the unit-level correctness of the
-foundational components (types, RNG, WAV I/O, resampler); it does **not**
+guards, engine-registry freeze state) and — since implementation cycles 1-2
+(2026-09-26, spec §17 steps 1-2) — the unit-level correctness of the
+foundational components (types, RNG, WAV I/O, resampler, curve compiler,
+corpus generator); it does **not**
 prove any engine behaviour (no engine exists — the registry test asserts
 emptiness).
 
