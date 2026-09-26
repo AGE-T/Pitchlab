@@ -174,6 +174,13 @@ pitchlab_add_doctest(granular_contract_test tests/granular_contract_test.cpp)
 # audit (the persistent plan exec in the processing path).
 pitchlab_add_doctest(pv_classic_contract_test tests/pv_classic_contract_test.cpp)
 
+# T-E1..T-E13 + T-A1 + T-D3 + failure fixtures + harmonic-peak sanity:
+# native.pv.phaselocked engine contract suite through the real harness (spec
+# §13.1 matrix, cycle 4 / §17 step 4; frozen behaviour §6.4.1). Includes the
+# pocketfft allocation audit and the L-D'99 multi-region sanity fixture
+# (the peak/region/rotation machinery on harmonic material).
+pitchlab_add_doctest(pv_phaselocked_contract_test tests/pv_phaselocked_contract_test.cpp)
+
 # T-E14 / T-LEN-CAL: rate-following output-length calibration evidence
 # (spec §4.3.4/§13.1; the OD-6 evidence pack — full battery x 6 rates).
 pitchlab_add_doctest(length_calibration_test tests/length_calibration_test.cpp)
