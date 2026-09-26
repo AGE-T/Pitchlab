@@ -106,7 +106,7 @@ Uploaded on every run (including failures): `configure.log`, `build.log`, `test.
 # 2. pinned CMake install (§4)
 cmake -S pitch-lab -B build -G Ninja -DCMAKE_BUILD_TYPE=Release   # configure
 cmake --build build --parallel                                    # build
-ctest --test-dir build --output-on-failure --output-junit build/test-results.xml   # test
+ctest --test-dir build --output-on-failure --output-junit test-results.xml   # test (JUnit lands at build/test-results.xml — the path resolves INSIDE --test-dir; see §12.1)
 ```
 
 Triggers: `push` (all branches), `pull_request`, `workflow_dispatch`. Permissions: `contents: read` only. The workflow is intentionally minimal: no matrix, no containers, no services — every environmental fact is either pinned or asserted.
