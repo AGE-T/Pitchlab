@@ -3,17 +3,23 @@
 **Local DSP research laboratory for sound-design-oriented pitch processing.**
 Product: knowledge and tested DSP components — not shippable audio software.
 
-> Current status: **IMPLEMENTATION PHASE — cycles 1-2 complete** (2026-09-26,
-> implementation specification §17 steps 1-2): cycle 1 = core types,
+> Current status: **IMPLEMENTATION PHASE — cycles 1-3 complete** (2026-09-26,
+> implementation specification §17 steps 1-3): cycle 1 = core types,
 > deterministic RNG, WAV I/O and the shared resampling primitive; cycle 2 =
 > the curve library (own TOML-subset parser, spec validation, deterministic
 > compilation to the dense per-frame ratio signal — §4.4.3.1), the 21-file
 > curve battery, and the deterministic synthetic corpus (17 items committed
 > under `pitch-lab/assets/corpus/`, regeneration byte-identity gated by
-> T-C1). 9 CTest tests, CI green per §13.3. No DSP engine is implemented;
-> none is faked (the engine registry is deliberately empty and CI asserts
-> it). Resampler acceptance evidence and the open decision it produced
-> (OD-18) are recorded in the implementation specification §7.7.1.
+> T-C1); **cycle 3 = the first real engine — `native.varispeed`, the
+> rate-following reference (§6.1/§6.1.1) — plus the harness
+> (ExperimentCompiler → OfflineRenderer → canonical-JSON manifests with
+> SHA-256 provenance, CLI compile/render)**. 14 CTest tests, CI green per
+> §13.3; the registry contains exactly the one implemented engine (the
+> other four remain unimplemented and unregistered — none is faked). The
+> T-LEN-CAL length-calibration evidence for OD-6 is produced (worst |Δ| = 8
+> frames over the full battery × 6 rates, §13.4 — ratification pending).
+> Resampler acceptance evidence and the open decision it produced (OD-18)
+> are recorded in the implementation specification §7.7.1.
 
 This repository hosts **two systems with a hard boundary**:
 
