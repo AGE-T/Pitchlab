@@ -27,6 +27,7 @@ option(PITCHLAB_WERROR "Treat compiler warnings as errors for Pitch Lab code" ON
 add_library(pitchlab_core
   src/core/version.cpp
   src/core/engine_registry.cpp
+  src/core/rng.cpp
 )
 
 target_include_directories(pitchlab_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -96,6 +97,9 @@ target_compile_features(version_smoke PRIVATE cxx_std_20)
 
 # T-T1: core primitives (spec §4.1).
 pitchlab_add_doctest(types_test tests/types_test.cpp)
+
+# T-D1/T-D2: deterministic RNG (spec §4.7).
+pitchlab_add_doctest(rng_test tests/rng_test.cpp)
 
 foreach(t IN ITEMS toolchain_smoke engine_registry_smoke version_smoke)
   add_test(NAME ${t} COMMAND ${t})
