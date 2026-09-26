@@ -2,11 +2,12 @@
 //
 // Verifies the architecture §D.6 rules (one authoritative in-code registry):
 //   * production registry content always equals IMPLEMENTED engines (the
-//     anti-fake-engine guard). CYCLE 4 STATE: exactly THREE engines —
-//     native.varispeed (spec §17 step 3 / §14), native.vardelay (§6.2/§6.2.1)
-//     and native.granular (§6.5/§6.5.1, cycle 4). The other two v0.1
-//     engines are unimplemented and MUST NOT be registered; this assertion
-//     is updated together with each real engine registration;
+//     anti-fake-engine guard). CYCLE 4 STATE: exactly FOUR engines —
+//     native.varispeed (spec §17 step 3 / §14), native.vardelay (§6.2/§6.2.1),
+//     native.granular (§6.5/§6.5.1) and native.pv.classic (§6.3/§6.3.1,
+//     cycle 4). The other v0.1 engine is unimplemented and MUST NOT be
+//     registered; this assertion is updated together with each real engine
+//     registration;
 //   * registration order is deterministic (registration order);
 //   * duplicate ids are rejected; empty ids are rejected; NULL FACTORIES are
 //     rejected (§4.2.1 item 5 — an unconstructible engine must not appear);
@@ -86,15 +87,16 @@ pitchlab::EngineDescriptor makeDummy(const char* id, int order) {
 }  // namespace
 
 int main() {
-  // ---- CYCLE 4 STATE: exactly three implemented production engines ----
+  // ---- CYCLE 4 STATE: exactly four implemented production engines ----
   {
     pitchlab::EngineRegistry registry;
     pitchlab::registerProductionEngines(registry);
     registry.seal();
-    CHECK(registry.size() == 3);  // UPDATE TOGETHER WITH EVERY REAL ENGINE
+    CHECK(registry.size() == 4);  // UPDATE TOGETHER WITH EVERY REAL ENGINE
     CHECK(std::string(registry.at(0).info.id) == "native.varispeed");   // §14 order
     CHECK(std::string(registry.at(1).info.id) == "native.vardelay");
     CHECK(std::string(registry.at(2).info.id) == "native.granular");
+    CHECK(std::string(registry.at(3).info.id) == "native.pv.classic");
     const pitchlab::EngineDescriptor* d = registry.findById("native.varispeed");
     CHECK(d != nullptr);
     CHECK(d->factory != nullptr);
@@ -130,8 +132,21 @@ int main() {
     CHECK(gr->capabilities.determinism == pitchlab::Determinism::SeededDeterministic);
     CHECK(gr->capabilities.channelMode == pitchlab::ChannelMode::MonoAndStereo);
     CHECK(gr->parameterKeys.size() == 4);
-    // The OTHER two v0.1 engines are unimplemented: they MUST NOT be here.
-    CHECK(registry.findById("native.pv.classic") == nullptr);
+    // native.pv.classic (§6.3/§6.3.1): Preserving, FixedBlock(512) — the
+    // default hop, [0.25, 4.0], Deterministic, MonoAndStereo, three keys.
+    const pitchlab::EngineDescriptor* pv = registry.findById("native.pv.classic");
+    CHECK(pv != nullptr);
+    CHECK(pv->factory != nullptr);
+    CHECK(!pv->isReferenceRole);
+    CHECK(pv->capabilities.duration == pitchlab::DurationBehaviour::Preserving);
+    CHECK(pv->capabilities.minRatio == 0.25);
+    CHECK(pv->capabilities.maxRatio == 4.0);
+    CHECK(pv->capabilities.controlRate.kind == pitchlab::ControlRateSpec::Kind::FixedBlock);
+    CHECK(pv->capabilities.controlRate.blockFrames == 512);
+    CHECK(pv->capabilities.determinism == pitchlab::Determinism::Deterministic);
+    CHECK(pv->capabilities.channelMode == pitchlab::ChannelMode::MonoAndStereo);
+    CHECK(pv->parameterKeys.size() == 3);
+    // The OTHER v0.1 engine is unimplemented: it MUST NOT be here.
     CHECK(registry.findById("native.pv.phaselocked") == nullptr);
     // The registered engines are constructible through their factories.
     std::unique_ptr<pitchlab::PitchEngine> engine = d->factory();
@@ -143,6 +158,9 @@ int main() {
     std::unique_ptr<pitchlab::PitchEngine> gengine = gr->factory();
     CHECK(gengine != nullptr);
     CHECK(std::string(gengine->engineId()) == "native.granular");
+    std::unique_ptr<pitchlab::PitchEngine> pvengine = pv->factory();
+    CHECK(pvengine != nullptr);
+    CHECK(std::string(pvengine->engineId()) == "native.pv.classic");
     CHECK(registry.sealed());
   }
 
@@ -216,6 +234,6 @@ int main() {
     std::fprintf(stderr, "engine_registry_smoke: %d check(s) FAILED\n", g_failures);
     return 1;
   }
-  std::printf("engine_registry_smoke: all checks passed (3 implemented engines: native.varispeed, native.vardelay, native.granular; mechanism + factory binding sound)\n");
+  std::printf("engine_registry_smoke: all checks passed (4 implemented engines: native.varispeed, native.vardelay, native.granular, native.pv.classic; mechanism + factory binding sound)\n");
   return 0;
 }

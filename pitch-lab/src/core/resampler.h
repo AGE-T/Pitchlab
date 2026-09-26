@@ -70,6 +70,19 @@ struct ResampleKernelSpec {
 [[nodiscard]] double interpolateAt(const double* x, FrameCount frameCount, double position,
                                    double cutoff, ResampleQuality quality);
 
+/// §7.2.2 absolute-position fractional read (amendment, cycle 4): the SAME
+/// read as interpolateAt but with an EXACT-fraction, window-placement-
+/// invariant arithmetic order for engines with cross-frame accumulator
+/// state (the PV phase propagation amplifies the relative variant's
+/// ~ulp(p)-scale rounding seed to signal scale across block schedules).
+/// `position` is the caller's ABSOLUTE input-timeline coordinate;
+/// `baseIndex` is the absolute index of x[0]. Taps
+/// n = llround(position) + i, i in {-K..K}; the fraction
+/// u = position - (double)llround(position) (Sterbenz-exact); x[n - baseIndex];
+/// taps outside [0, frameCount) read zero (§7.6).
+[[nodiscard]] double interpolateAtAbs(const double* x, FrameCount frameCount, int64_t baseIndex,
+                                      double position, double cutoff, ResampleQuality quality);
+
 /// §7.5 per-sample-advance block resampling. Produces `outputFrames` output
 /// samples: y[m] = interpolateAt(x, p_m); then p advances by the
 /// instantaneous ratio (ratioPerOutputFrame[m] when non-null, else

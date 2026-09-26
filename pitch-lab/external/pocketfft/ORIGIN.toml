@@ -1,0 +1,28 @@
+# Vendored dependency provenance (architecture §J; external/README.md rules).
+# Re-vendoring or version drift requires a NEW entry in this file
+# (Operating Principles §123 — locked dependency state).
+
+[[origin]]
+name = "pocketfft"
+version = "cpp-branch commit c90e55b3d529f8efa40ed01a20de22405f45fc65 (2026-06-30)"
+upstream = "https://github.com/mreineck/pocketfft (branch: cpp)"
+source_url = "https://raw.githubusercontent.com/mreineck/pocketfft/c90e55b3d529f8efa40ed01a20de22405f45fc65/pocketfft_hdronly.h"
+source_url_license = "https://raw.githubusercontent.com/mreineck/pocketfft/c90e55b3d529f8efa40ed01a20de22405f45fc65/LICENSE.md"
+retrieved = "2026-09-26"
+files = [
+    { path = "pocketfft_hdronly.h", sha256 = "3e9a05318d8e3b1446bda1c4617e6a103cdd23599ae0a776a92a6e8800e92fdc" },
+    { path = "LICENSE.txt", sha256 = "a85ca13fdf90160b64a0698215868c13b74d835ad0a4e2ba44713b8c5058a056" },
+]
+
+# Licence: BSD-3-Clause (Copyright (C) 2010-2018 Max-Planck-Society, per
+# LICENSE.md; the header's own block additionally credits 2019-2020 Peter
+# Bell, and — for the DCT-IV/good-size subroutines — Matteo Frigo/MIT,
+# Tan Ping Liang/Peter Bell and Cris Luengo, all under the same BSD-3-class
+# terms). Verified 2026-09-26 at vendoring time against BOTH files (the
+# architecture §J re-verification rule): matches the "BSD-3-Clause
+# (re-verify the header at vendoring)" expectation recorded in the build &
+# CI environment specification §7. Permissive — allowed.
+licence = "BSD-3-Clause"
+
+purpose = "FFT for the phase-vocoder engines (native.pv.classic, native.pv.phaselocked) and future STFT analysis helpers. The ONLY vendored dependency linked into DSP runtime code (the documented plan, build/CI spec §7: 'use: lab binary'); the DSP core stays otherwise zero-dependency."
+consumer = "pitch-lab/src/engines/pv_* (runtime); pitch-lab analysis STFT (future, §17 step 5)"

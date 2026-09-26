@@ -171,7 +171,9 @@ TEST_CASE_FIXTURE(Fixture, "schema validation matrix (T-E15 harness slice)") {
                       "id");
   }
   SUBCASE("unknown engine id (T-E15)") {
-    expectConfigError([&] { compileText(validToml("native.pv.classic")); }, "suite.engines");
+    // A permanently-unknown id (cycle-3 used "native.pv.classic", which
+    // became real in cycle 4 — updated together with the registration).
+    expectConfigError([&] { compileText(validToml("native.nonexistent")); }, "suite.engines");
   }
   SUBCASE("non-first-class rate") {
     expectConfigError(

@@ -37,6 +37,7 @@ add_library(pitchlab_core
   src/engines/varispeed_engine.cpp
   src/engines/vardelay_engine.cpp
   src/engines/granular_engine.cpp
+  src/engines/pv_classic_engine.cpp
   src/harness/json_writer.cpp
   src/harness/experiment_compiler.cpp
   src/harness/manifest.cpp
@@ -45,6 +46,7 @@ add_library(pitchlab_core
 
 target_include_directories(pitchlab_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_features(pitchlab_core PUBLIC cxx_std_20)
+target_link_libraries(pitchlab_core PRIVATE pitchlab_pocketfft)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # -ffp-contract=off: FP determinism (implementation spec §7.5 — no FMA
@@ -78,6 +80,12 @@ enable_testing()
 # Vendored doctest (interface target; include path -> #include <doctest/doctest.h>).
 add_library(pitchlab_doctest INTERFACE)
 target_include_directories(pitchlab_doctest INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/external)
+
+# Vendored pocketfft (interface target; include path ->
+# #include <pocketfft/pocketfft_hdronly.h>). The ONE documented DSP-runtime
+# vendoring (build/CI spec §7 "lab binary"; external/pocketfft/ORIGIN.toml).
+add_library(pitchlab_pocketfft INTERFACE)
+target_include_directories(pitchlab_pocketfft INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/external)
 
 # New-style component tests (doctest). -ffp-contract=off per spec §7.5 (FP
 # determinism rules apply to the numeric tests, not just the core library).

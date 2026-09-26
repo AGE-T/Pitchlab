@@ -100,6 +100,46 @@ double resampleKernelValue(double u, double cutoff, ResampleQuality quality) {
                             1.0 / besselI0(spec.beta));
 }
 
+double interpolateAtAbs(const double* x, FrameCount frameCount, int64_t baseIndex,
+                       double position, double cutoff, ResampleQuality quality) {
+  // §7.2.2: the exact-fraction, placement-invariant variant. Same validation
+  // and kernel machinery as interpolateAt; the tap set and the fraction are
+  // computed from the ABSOLUTE position only.
+  validateCutoff(cutoff);
+  if (!std::isfinite(position)) {
+    throw ConfigError("", "position", "read position must be finite");
+  }
+  if (std::fabs(position) >= 9.2e18) {
+    throw ConfigError("", "position", "read position magnitude exceeds the int64 frame range");
+  }
+  if (frameCount < 0) {
+    throw ConfigError("", "frameCount", "frame count must be >= 0");
+  }
+  if (x == nullptr && frameCount > 0) {
+    throw ConfigError("", "x", "input buffer is null with non-zero frame count");
+  }
+  const ResampleKernelSpec spec = validatedSpec(quality);
+  const int k = spec.halfWidthTaps;
+  const double invI0Beta = 1.0 / besselI0(spec.beta);
+
+  const long long n0 = std::llround(position);
+  const double u0 = position - static_cast<double>(n0);  // Sterbenz-exact
+  double acc = 0.0;
+  for (int i = -k; i <= k; ++i) {  // ascending tap order (§7.2.1 item 4)
+    const long long n = n0 + i;
+    const long long idx = n - static_cast<long long>(baseIndex);
+    if (idx < 0 || idx >= static_cast<long long>(frameCount)) {
+      continue;  // zero-padding edge semantics (§7.6 / §7.2.1 item 5)
+    }
+    const double u = u0 - static_cast<double>(i);
+    const double tap = kernelValueWithInv(u, cutoff, k, spec.beta, invI0Beta);
+    if (tap != 0.0) {
+      acc += x[idx] * tap;
+    }
+  }
+  return acc;
+}
+
 double interpolateAt(const double* x, FrameCount frameCount, double position, double cutoff,
                      ResampleQuality quality) {
   validateCutoff(cutoff);
