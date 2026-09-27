@@ -51,7 +51,14 @@ class Value {
 
   [[nodiscard]] bool asBool() const { return bool_; }
   [[nodiscard]] int64_t asInt() const { return int_; }
-  [[nodiscard]] double asDouble() const { return double_; }
+  // Total numeric read: an Int-kind value yields its integer as double.
+  // REQUIRED by the canonical round-trip: %.17g serialises Double(1.0) as
+  // "1", the reader parses that back as Int — a consumer calling asDouble()
+  // on the round-tripped value must still read the numeric value (not the
+  // uninitialised union member).
+  [[nodiscard]] double asDouble() const {
+    return kind_ == Kind::Int ? static_cast<double>(int_) : double_;
+  }
   [[nodiscard]] const std::string& asString() const { return str_; }
   [[nodiscard]] const Object& asObject() const { return object_; }
   [[nodiscard]] Object& asObject() { return object_; }
