@@ -40,9 +40,20 @@ add_library(pitchlab_core
   src/engines/pv_classic_engine.cpp
   src/engines/pv_phaselocked_engine.cpp
   src/harness/json_writer.cpp
+  src/harness/json_reader.cpp
   src/harness/experiment_compiler.cpp
   src/harness/manifest.cpp
   src/harness/offline_renderer.cpp
+  src/analysis/analysis_context.cpp
+  src/analysis/spectral.cpp
+  src/analysis/metric_registry.cpp
+  src/analysis/metrics_waveform.cpp
+  src/analysis/metrics_temporal.cpp
+  src/analysis/metrics_spectral.cpp
+  src/analysis/metrics_modulation.cpp
+  src/analysis/metrics_phase.cpp
+  src/analysis/metrics_tracker.cpp
+  src/analysis/analyzer.cpp
 )
 
 target_include_directories(pitchlab_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -185,6 +196,24 @@ pitchlab_add_doctest(pv_phaselocked_contract_test tests/pv_phaselocked_contract_
 # (spec §4.3.4/§13.1; the OD-6 evidence pack — full battery x 6 rates).
 pitchlab_add_doctest(length_calibration_test tests/length_calibration_test.cpp)
 target_compile_definitions(length_calibration_test PRIVATE
+  PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+# T-M suites (spec §10.4 item 22 — cycle 5, §17 step 5): metric analytic
+# goldens + the Analyzer end-to-end through the real harness.
+pitchlab_add_doctest(metric_waveform_test tests/metric_waveform_test.cpp)
+
+pitchlab_add_doctest(metric_duration_test tests/metric_duration_test.cpp)
+
+pitchlab_add_doctest(metric_onset_test tests/metric_onset_test.cpp)
+
+pitchlab_add_doctest(metric_spectral_test tests/metric_spectral_test.cpp)
+
+pitchlab_add_doctest(metric_stereo_test tests/metric_stereo_test.cpp)
+
+pitchlab_add_doctest(metric_modulation_test tests/metric_modulation_test.cpp)
+
+pitchlab_add_doctest(metric_analyzer_test tests/metric_analyzer_test.cpp)
+target_compile_definitions(metric_analyzer_test PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Stand-alone corpus generator tool (spec §11.1 — NOT a harness component).
