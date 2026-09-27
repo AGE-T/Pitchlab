@@ -1,0 +1,40 @@
+# Pitch Lab v0.1 — cycle 5 cross-engine metric matrix (stereo materials,
+# §17 step 5 evidence run). Reproducible:
+#   pitchlab render experiments/suites/cross-engine-metrics-stereo.toml --root .
+#   pitchlab analyze experiments/suites/cross-engine-metrics-stereo.toml --root .
+# Five engines x {identity, +7 st} over the committed correlated +
+# decorrelated stereo corpora (stereo-coherence evidence; the varispeed
+# renders in each run double as the reference for spectral-error).
+id = "cross-engine-metrics-stereo"
+kind = "benchmark"
+[suite]
+inputs  = ["syn-stereo-correlated-noise-5s-48k", "syn-stereo-decorrelated-noise-5s-48k"]
+curves  = ["identity-1x", "static-plus-7"]
+engines = ["native.varispeed", "native.vardelay", "native.pv.classic", "native.pv.phaselocked", "native.granular"]
+sampleRates = [48000]
+channels = [2]
+[[engine_config]]
+engine = "native.varispeed"
+params = { resample_quality = "reference" }
+seed = 7
+[[engine_config]]
+engine = "native.vardelay"
+params = { }
+seed = 7
+[[engine_config]]
+engine = "native.pv.classic"
+params = { }
+seed = 7
+[[engine_config]]
+engine = "native.pv.phaselocked"
+params = { }
+seed = 7
+[[engine_config]]
+engine = "native.granular"
+params = { grain_seconds = 0.05, overlap = 4 }
+seed = 7
+[output]
+master = true
+listening = false
+[analysis]
+metrics = ["peak-rms-crest", "realised-duration", "latency", "stereo-coherence", "spectral-error", "amplitude-modulation", "hf-energy", "cpu-cost"]

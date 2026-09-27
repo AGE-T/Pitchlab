@@ -3,8 +3,8 @@
 **Local DSP research laboratory for sound-design-oriented pitch processing.**
 Product: knowledge and tested DSP components — not shippable audio software.
 
-> Current status: **IMPLEMENTATION PHASE — cycles 1-4 complete; the v0.1
-> engine registry is COMPLETE** (2026-09-26, implementation specification
+> Current status: **IMPLEMENTATION PHASE — cycles 1-5 complete; the v0.1
+> engine registry AND analysis layer are COMPLETE** (2026-09-26/27, implementation specification
 > §17 steps 1-4): cycle 1 = core types, deterministic RNG, WAV I/O and the
 > shared resampling primitive; cycle 2 = the curve library (own TOML-subset
 > parser, spec validation, deterministic compilation to the dense per-frame
@@ -25,8 +25,18 @@ Product: knowledge and tested DSP components — not shippable audio software.
 > (worst |Δ| = 8 frames over the full battery × 6 rates, §13.4 —
 > ratification pending). Resampler acceptance evidence and the open decision
 > it produced (OD-18) are recorded in the implementation specification
-> §7.7.1. Remaining v0.1 work: §17 step 5 (metrics) and step 6 (the
-> reproducibility gate) — owner-triggered.
+> §7.7.1. **Cycle 5 (2026-09-27, §17 step 5) = the ANALYSIS LAYER — complete**: the 15-metric analysis
+> stack per the frozen §10.4 (metric registry as the single in-code identity authority; pure-function metric
+> modules; the Analyzer reading render manifests + SHA-256-verified masters + hash-cross-checked curve
+> recompilations; the `pitchlab analyze` CLI; deterministic `pitchlab.analysis.v1` artifacts under
+> `artifacts/analysis/` — byte-identical on delete + re-run). Analytic goldens landed for every implemented
+> metric (seven T-M suites; the varispeed self-reference spectral error ≡ 0 exactly; the 8-onset
+> percussive-recipe golden; bin-centred leakage-floor classes); tracker-dependent metrics are honestly gated
+> `tracker-unavailable` (OD-12 clean-room pYIN route — no substitute estimator) and cpu-cost gated
+> `not-applicable`; NO global quality score exists anywhere. 25 CTest tests, CI per §13.3; the 60-job
+> cross-engine metric matrix evidence in §13.6 (60/60 analysed, zero analysis errors). OD-9/OD-6/OD-18
+> remain OPEN. Remaining v0.1 work: §17 step 6 (the full-suite reproducibility gate, `pitchlab verify`)
+> — owner-triggered.
 
 This repository hosts **two systems with a hard boundary**:
 

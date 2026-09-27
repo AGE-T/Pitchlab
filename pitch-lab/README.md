@@ -5,9 +5,9 @@ processing.** This sub-tree is the Pitch Lab DSP system defined by the
 architecture. It is NOT the web workbench (repo root) and shares nothing
 with it at runtime.
 
-**Current state: IMPLEMENTATION PHASE, cycles 1-4 complete (2026-09-26,
-implementation specification §17 steps 1-4 — the v0.1 engine registry is
-COMPLETE).** Cycle 1: core audio/frame types (§4.1), deterministic PCG64 RNG
+**Current state: IMPLEMENTATION PHASE, cycles 1-5 complete (2026-09-26/27,
+implementation specification §17 steps 1-5 — the v0.1 engine registry AND
+the analysis layer are COMPLETE).** Cycle 1: core audio/frame types (§4.1), deterministic PCG64 RNG
 + SplitMix64 consumer mixing (§4.7), own WAV I/O — IEEE float 32/64,
 extensible, deterministic writer (§9), and the shared band-limited
 resampling primitive (§7, frozen behaviour §7.2.1). Cycle 2: the curve
@@ -33,11 +33,31 @@ evidence §13.5 — e.g. pv.phaselocked: identity residue 2.7e-11, 0.00-cent
 pitch at 1.5x/0.75x/2.0x, bit-identical across block schedules, zero
 allocations in the processing path). Example render: `./build/pitchlab
 render experiments/suites/example-varispeed-basic.toml --root .` —
-byte-identical regeneration (T-E6). Remaining v0.1 work: §17 step 5
-(metrics) and step 6 (the full-suite reproducibility gate) — owner-triggered.
-Measured §7.7 acceptance evidence and OD-18 (resampler constants) are
-recorded in the implementation specification §7.7.1; OD-6 (length-tolerance
-ratification) remains open with its §13.4 evidence pack.
+byte-identical regeneration (T-E6). **Cycle 5 (2026-09-27, §17 step 5):
+the ANALYSIS LAYER — complete.** `src/analysis/` implements the frozen
+§10.4: the metric registry (single in-code identity authority — 15 ids,
+unknown id ⇒ CONFIG ERROR), pure-function metric modules (peak-rms-crest,
+realised-duration, latency, onset-timing, transient-preservation, hf-energy,
+aliasing-indicator, spectral-error, amplitude-modulation, phase-coherence,
+stereo-coherence; the tracker-dependent trio gated `tracker-unavailable`,
+cpu-cost gated `not-applicable`), the shared spectral primitives (per-rate
+STFT, exact-frequency projection, Hilbert envelope, the frozen onset
+detector, emission-map warp), the analyzer (manifest + SHA-256-verified
+master + hash-cross-checked curve recompilation, varispeed reference
+resolution, the full failure model) and the `pitchlab analyze` CLI writing
+deterministic `pitchlab.analysis.v1` artifacts under `artifacts/analysis/`
+(byte-identical on delete + re-run). **25 CTest tests are green** (the seven
+T-M suites carry the analytic goldens: self-reference spectral error ≡ 0
+exactly, the 8-onset percussive-recipe golden, bin-centred leakage-floor
+classes, artifact determinism, the failure-model matrix); the 60-job
+cross-engine metric matrix evidence is §13.6. NO global quality score
+exists anywhere — metrics are independent reported dimensions. Remaining
+v0.1 work: §17 step 6 (the full-suite reproducibility gate) —
+owner-triggered. Measured §7.7 acceptance evidence and OD-18 (resampler
+constants) are recorded in the implementation specification §7.7.1; OD-6
+(length-tolerance ratification) remains open with its §13.4 evidence pack;
+OD-9 (metric tolerance values) remains open — nothing in cycle 5 ratified
+or weakened any tolerance.
 
 ## Authoritative documents (live in the repository root `research/`)
 
@@ -75,7 +95,9 @@ bit-for-bit for deterministic engines — never source of truth).
 `config/` authoritative defaults (incl. `corpus.toml`, the committed generator
 config) · `experiments/curves/` the 21-file curve battery (implemented) ·
 `experiments/suites/` experiment files (`example-varispeed-basic.toml` —
-the cycle-3 example render configuration) · `assets/corpus/` authoritative
+the cycle-3 example render configuration; `cross-engine-metrics-mono.toml` +
+`-stereo.toml` — the cycle-5 60-job cross-engine metric matrix evidence
+suites) · `assets/corpus/` authoritative
 inputs — the committed synthetic corpus (generated once by
 `tools/corpus_gen`, byte-identity gated) · `src/core` harness contracts +
 shared primitives (types, errors, engine contract, registry, RNG, WAV I/O,
@@ -83,11 +105,16 @@ resampler, TOML subset parser, curve compiler, corpus generator, SHA-256 —
 implemented) · `src/engines/` own engines — **ALL FIVE v0.1 engines
 implemented + registered** (`varispeed`, `vardelay`, `pv_classic`,
 `pv_phaselocked`, `granular`; the registry == the §14 v0.1 end state) ·
-`src/harness/` ExperimentCompiler + OfflineRenderer + manifest/JSON writer
-(implemented) · `src/cli/` the `pitchlab` CLI (`compile`, `render`,
-`engines`, `--version`) · `external/` vendored permissive third-party
-(doctest 2.4.12; pocketfft — BSD-3, FFT for the PV engines, ORIGIN.toml-
-pinned) · `tests/` C++ tests (18 CTest targets) · `tools/`
-stand-alone tools (`corpus_gen` — implemented) · `artifacts/` GENERATED
-(gitignored; deterministic regeneration, manifests are sidecar provenance —
-never source of truth).
+`src/harness/` ExperimentCompiler + OfflineRenderer + manifest/JSON
+writer + canonical-JSON reader (implemented) · `src/analysis/` the analysis
+layer (metric registry, metric modules, spectral primitives, analyzer —
+implemented, §10.4) · `src/cli/` the `pitchlab` CLI (`compile`, `render`,
+`analyze`, `engines`, `--version`) · `external/` vendored permissive
+third-party (doctest 2.4.12; pocketfft — BSD-3, FFT for the PV engines AND
+the analysis STFT/Hilbert primitives, ORIGIN.toml-pinned) · `tests/` C++
+tests (25 CTest targets — 18 engine/component suites + 7 T-M metric
+suites) · `tools/` stand-alone tools (`corpus_gen` — implemented) ·
+`artifacts/` GENERATED (gitignored; deterministic regeneration — renders
+via `pitchlab render`, analysis via `pitchlab analyze` (byte-identical on
+re-run); manifests and analysis artifacts are sidecar provenance — never
+source of truth).

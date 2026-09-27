@@ -1,0 +1,39 @@
+# Pitch Lab v0.1 — cycle 5 cross-engine metric matrix (mono materials,
+# §17 step 5 / §10.4 item 27-class evidence run). Reproducible:
+#   pitchlab render experiments/suites/cross-engine-metrics-mono.toml --root .
+#   pitchlab analyze experiments/suites/cross-engine-metrics-mono.toml --root .
+# Five engines x four curves over the committed transient + harmonic mono
+# corpora; every metric (tracker-dependent ones report their gated status).
+id = "cross-engine-metrics-mono"
+kind = "benchmark"
+[suite]
+inputs  = ["syn-transient-percussive-2s-48k", "syn-harmonic-stack-220-5s-48k"]
+curves  = ["identity-1x", "static-plus-1", "static-plus-7", "reversal-plus12-minus12-100ms"]
+engines = ["native.varispeed", "native.vardelay", "native.pv.classic", "native.pv.phaselocked", "native.granular"]
+sampleRates = [48000]
+channels = [1]
+[[engine_config]]
+engine = "native.varispeed"
+params = { resample_quality = "reference" }
+seed = 7
+[[engine_config]]
+engine = "native.vardelay"
+params = { }
+seed = 7
+[[engine_config]]
+engine = "native.pv.classic"
+params = { }
+seed = 7
+[[engine_config]]
+engine = "native.pv.phaselocked"
+params = { }
+seed = 7
+[[engine_config]]
+engine = "native.granular"
+params = { grain_seconds = 0.05, overlap = 4 }
+seed = 7
+[output]
+master = true
+listening = false
+[analysis]
+metrics = ["peak-rms-crest", "realised-duration", "latency", "onset-timing", "transient-preservation", "hf-energy", "aliasing-indicator", "spectral-error", "amplitude-modulation", "phase-coherence", "cpu-cost", "pitch-error", "pitch-lag", "warble-instability"]
