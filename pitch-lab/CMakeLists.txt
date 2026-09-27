@@ -199,16 +199,21 @@ target_compile_definitions(length_calibration_test PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # T-M suites (spec §10.4 item 22 — cycle 5, §17 step 5): metric analytic
-# goldens + the Analyzer end-to-end through the real harness.
+# goldens + the Analyzer end-to-end through the real harness. onset/stereo/
+# analyzer need PITCHLAB_SOURCE_DIR for the committed corpus/config.
 pitchlab_add_doctest(metric_waveform_test tests/metric_waveform_test.cpp)
 
 pitchlab_add_doctest(metric_duration_test tests/metric_duration_test.cpp)
 
 pitchlab_add_doctest(metric_onset_test tests/metric_onset_test.cpp)
+target_compile_definitions(metric_onset_test PRIVATE
+  PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 pitchlab_add_doctest(metric_spectral_test tests/metric_spectral_test.cpp)
 
 pitchlab_add_doctest(metric_stereo_test tests/metric_stereo_test.cpp)
+target_compile_definitions(metric_stereo_test PRIVATE
+  PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 pitchlab_add_doctest(metric_modulation_test tests/metric_modulation_test.cpp)
 

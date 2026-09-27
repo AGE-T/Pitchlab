@@ -15,11 +15,16 @@
 #include <string>
 #include <vector>
 
+#include "analysis/analysis_context.h"
+#include "analysis/analyzer.h"
+#include "analysis/metric_registry.h"
 #include "core/engine_registry.h"
 #include "core/pitch_engine.h"
 #include "core/wav_io.h"
 #include "harness/experiment_compiler.h"
+#include "harness/json_reader.h"
 #include "harness/offline_renderer.h"
+#include "harness/paths.h"
 
 namespace pitchlab::test {
 
@@ -102,6 +107,18 @@ struct TestRoot {
               "version = 1\n[tolerances]\nblock_boundary_dbfs = -80.0\nratio1_identity_dbfs = "
               "-80.0\nlength_rate_following_frames = 4096\nlatency_declared_vs_measured_ms = "
               "1.0\npitch_error_median_cents = 25.0\nregression_band_relative = 0.20\n");
+    // Committed-shape metrics config (§15.2/§10.4 item 2 — the analysis layer
+    // parses this; the committed shape with the [alignment] frozen values and
+    // all 15 enable keys).
+    writeFile(root / "config" / "metrics.toml",
+              "version = 1\n[alignment]\ncommon_axis = \"input-timeline\"\n"
+              "rate_following_warp = \"emission-map\"\n"
+              "cross_class_warp = \"warp-reference-to-engine-timeline\"\n[metrics]\n"
+              "pitch_error = true\npitch_lag = true\nspectral_error = true\n"
+              "transient_preservation = true\nonset_timing = true\nphase_coherence = true\n"
+              "stereo_coherence = true\nlatency = true\nrealised_duration = true\ncpu_cost = "
+              "true\npeak_rms_crest = true\nhf_energy = true\naliasing_indicator = true\n"
+              "amplitude_modulation = true\nwarble_instability = true\n");
   }
 
   static void writeFile(const fs::path& p, const std::string& content) {
@@ -111,18 +128,46 @@ struct TestRoot {
   }
 
   /// Write a corpus asset (mono/stereo planar data, float64 WAV + metadata).
-  void makeAsset(const std::string& id, uint32_t fs, const std::vector<std::vector<double>>& ch) const {
+  /// `category`/`bandContentHz` override the default test metadata (the
+  /// metrics consume these — §15.5).
+  void makeAsset(const std::string& id, uint32_t fs, const std::vector<std::vector<double>>& ch,
+                 const std::string& category = "sine",
+                 const std::vector<double>* bandContentHz = nullptr) const {
     const fs::path dir = root / "assets" / "corpus" / id;
     fs::create_directories(dir);
     std::vector<const double*> ptrs;
     for (const auto& c : ch) ptrs.push_back(c.data());
     writeWav(dir / "signal.wav", ptrs.data(), static_cast<ChannelCount>(ch.size()),
              static_cast<FrameCount>(ch[0].size()), fs, WavSampleFormat::Float64);
-    std::string meta = "# test asset\nid = \"" + id + "\"\ncategory = \"sine\"\nsampleRate = " +
-                       std::to_string(fs) + "\nchannels = " + std::to_string(ch.size()) +
+    std::string meta = "# test asset\nid = \"" + id + "\"\ncategory = \"" + category +
+                       "\"\nsampleRate = " + std::to_string(fs) +
+                       "\nchannels = " + std::to_string(ch.size()) +
                        "\ndurationSec = " + std::to_string(static_cast<double>(ch[0].size()) / fs) +
                        "\nsourceDescription = \"test fixture\"\nreferenceStatus = \"test-fixture\"\n";
+    if (bandContentHz != nullptr && bandContentHz->size() == 2) {
+      meta += "bandContentHz = [" + std::to_string((*bandContentHz)[0]) + ", " +
+              std::to_string((*bandContentHz)[1]) + "]\n";
+    }
     writeFile(dir / "metadata.toml", meta);
+  }
+
+  /// Copy a COMMITTED corpus asset (signal.wav + metadata.toml) from the
+  /// source tree into this TestRoot (for the recipe-derived goldens — the
+  /// committed percussive/stereo corpora). Requires PITCHLAB_SOURCE_DIR
+  /// (defined only for the suites that need committed files).
+  void copyCommittedAsset(const std::string& assetId) const {
+#ifdef PITCHLAB_SOURCE_DIR
+    const fs::path src = fs::path(PITCHLAB_SOURCE_DIR) / "assets" / "corpus" / assetId;
+    const fs::path dst = root / "assets" / "corpus" / assetId;
+    fs::create_directories(dst);
+    std::error_code ec;
+    fs::copy_file(src / "signal.wav", dst / "signal.wav", fs::copy_options::overwrite_existing, ec);
+    fs::copy_file(src / "metadata.toml", dst / "metadata.toml",
+                  fs::copy_options::overwrite_existing, ec);
+#else
+    (void)assetId;
+    throw std::runtime_error("copyCommittedAsset requires PITCHLAB_SOURCE_DIR");
+#endif
   }
 
   void makeCurve(const std::string& id, const std::string& tomlText) const {
@@ -280,3 +325,80 @@ inline DriveReport driveEngine(PitchEngine& engine, const EngineConfiguration& c
 
 // NOTE: each including test defines DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN and
 // includes <doctest/doctest.h> BEFORE this header (driveEngine uses REQUIRE).
+
+namespace pitchlab::test {
+
+// --- cycle-5 metric-test helpers (§10.4 item 22) ---------------------------
+//
+// The metric modules are pure functions of the AnalysisContext (§4.10).
+// Direct-construction contexts unit-test the frozen math WITHOUT files; the
+// end-to-end path goes through the REAL harness (renderExperiment +
+// analyzeExperiment below — the production registry, the real renderer, the
+// real analyzer; no second renderer, no fake engines).
+
+/// Build a minimal loaded AnalysisContext for direct metric-function calls.
+/// Output/input signals are constructed in-memory; the caller tweaks the
+/// manifest-mirror fields it needs (durationBehaviour, effectiveMax, ...).
+[[nodiscard]] inline pitchlab::analysis::AnalysisContext makeCtx(
+    const std::vector<std::vector<double>>& outputChannels, uint32_t fs,
+    const std::vector<std::vector<double>>& inputChannels = {}) {
+  pitchlab::analysis::AnalysisContext ctx;
+  ctx.sampleRate = fs;
+  ctx.channels = static_cast<int>(outputChannels.size());
+  ctx.output.wav.meta.sampleRate = fs;
+  ctx.output.wav.meta.channels = static_cast<ChannelCount>(outputChannels.size());
+  ctx.output.wav.meta.frames =
+      outputChannels.empty() ? 0 : static_cast<FrameCount>(outputChannels[0].size());
+  ctx.output.wav.channels = outputChannels;
+  ctx.output.loaded = true;
+  if (!inputChannels.empty()) {
+    ctx.input.wav.meta.sampleRate = fs;
+    ctx.input.wav.meta.channels = static_cast<ChannelCount>(inputChannels.size());
+    ctx.input.wav.meta.frames = static_cast<FrameCount>(inputChannels[0].size());
+    ctx.input.wav.channels = inputChannels;
+    ctx.input.loaded = true;
+  }
+  ctx.inputFrames = ctx.input.loaded ? ctx.input.wav.meta.frames : 0;
+  ctx.actualOutputFrames = ctx.output.wav.meta.frames;
+  ctx.expectedOutputFrames = ctx.output.wav.meta.frames;
+  return ctx;
+}
+
+/// The production metric registry (registerProductionMetrics — the single
+/// authoritative registration point, §10.4 item 2).
+[[nodiscard]] inline pitchlab::analysis::MetricRegistry productionMetricRegistry() {
+  pitchlab::analysis::MetricRegistry registry;
+  pitchlab::analysis::registerProductionMetrics(registry);
+  return registry;
+}
+
+/// Compile + analyse an experiment's EXISTING renders (never renders; render
+/// first with renderExperiment). Metric ids are validated against the
+/// production registry exactly as the CLI does.
+[[nodiscard]] inline pitchlab::analysis::AnalyzeOutcome analyzeExperiment(
+    const fs::path& experimentToml, const TestRoot& tr,
+    const std::vector<std::string>& metrics) {
+  pitchlab::analysis::MetricRegistry metricRegistry = productionMetricRegistry();
+  for (const std::string& id : metrics) {
+    if (metricRegistry.findById(id) == nullptr) {
+      throw ConfigError("", id, "unknown metric id (test harness)");
+    }
+  }
+  const HarnessConfig cfg = loadHarnessConfig(tr.root);
+  const EngineRegistry engines = TestRoot::productionRegistry();
+  const CompileOutcome outcome =
+      compileExperiment(experimentToml, engines, tr.root, tr.artifacts, cfg);
+  const pitchlab::analysis::MetricConfig metricConfig =
+      pitchlab::analysis::loadMetricConfig(tr.root);
+  return pitchlab::analysis::analyzeJobs(outcome.jobs, metrics, metricRegistry, metricConfig);
+}
+
+/// Read a whole file as bytes (artifact byte-identity comparisons).
+[[nodiscard]] inline std::string readBytes(const fs::path& p) {
+  std::ifstream in(p, std::ios::binary);
+  std::ostringstream ss;
+  ss << in.rdbuf();
+  return ss.str();
+}
+
+}  // namespace pitchlab::test
