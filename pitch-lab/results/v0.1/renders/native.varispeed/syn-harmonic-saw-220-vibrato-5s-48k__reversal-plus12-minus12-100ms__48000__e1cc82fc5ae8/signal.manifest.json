@@ -1,0 +1,139 @@
+{
+  "build": {
+    "compiler": "gcc 14.2.0",
+    "phase": "implementation",
+    "pitchlabVersion": "0.1.0"
+  },
+  "curve": {
+    "access": {
+      "clampCount": 48,
+      "maxIndexRequested": 240023,
+      "minIndexRequested": 0
+    },
+    "effective": {
+      "derivation": "identity",
+      "max": 2,
+      "min": 0.5,
+      "sha256": "3ca59f4d5596f8ca5242f052d3b8e80d394eacb34a4366c0f91e96775a851707"
+    },
+    "requested": {
+      "max": 2,
+      "min": 0.5,
+      "sha256": "3ca59f4d5596f8ca5242f052d3b8e80d394eacb34a4366c0f91e96775a851707",
+      "specId": "reversal-plus12-minus12-100ms"
+    }
+  },
+  "engine": {
+    "capabilities": {
+      "bandwidth": {
+        "notes": "AA pre-filter at 0.95*Ny/r_max (whole-curve max, conservative); kernel cutoff 0.95/r_max for r_max>1; content legitimately moves with ratio; allow_aliasing=true disables the pre-filter (creative)",
+        "nyquistFraction": 0.45000000000000001
+      },
+      "channelMode": "MonoAndStereo",
+      "controlRate": {
+        "blockFrames": 0,
+        "kind": "PerSample"
+      },
+      "determinism": "Deterministic",
+      "duration": "RateFollowing",
+      "maxChannels": 2,
+      "maxRatio": 16,
+      "minRatio": 0.0625,
+      "supportedSampleRates": [
+        44100,
+        48000,
+        88200,
+        96000,
+        176400,
+        192000
+      ],
+      "supportsDynamicRatio": true
+    },
+    "displayName": "Varispeed (rate-following reference)",
+    "id": "native.varispeed",
+    "isReferenceRole": true,
+    "license": "own code, no dependency",
+    "origin": "own implementation",
+    "parameters": {
+      "resample_quality": "reference"
+    },
+    "seed": 7,
+    "usageClass": "Prototype",
+    "version": "0.1.0"
+  },
+  "execution": {
+    "status": "ok",
+    "taints": []
+  },
+  "experiment": {
+    "analysisMetrics": [
+      "peak-rms-crest",
+      "realised-duration",
+      "latency",
+      "onset-timing",
+      "transient-preservation",
+      "hf-energy",
+      "aliasing-indicator",
+      "spectral-error",
+      "amplitude-modulation",
+      "phase-coherence",
+      "cpu-cost",
+      "pitch-error",
+      "pitch-lag",
+      "warble-instability"
+    ],
+    "file": "experiments/suites/result-product-v0.1.toml",
+    "id": "result-product-v0.1",
+    "kind": "benchmark"
+  },
+  "input": {
+    "assetId": "syn-harmonic-saw-220-vibrato-5s-48k",
+    "channels": 1,
+    "file": "assets/corpus/syn-harmonic-saw-220-vibrato-5s-48k/signal.wav",
+    "frames": 240000,
+    "sampleRate": 48000,
+    "sha256": "709a8a7e31e25e2f9cf8ba1bcde1deabb7a97fc866300a9f6b72f4b7f22c5074"
+  },
+  "output": {
+    "listening": {
+      "file": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-saw-220-vibrato-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/listening/signal.f32.wav",
+      "format": "float32",
+      "frames": 446082,
+      "sha256": ""
+    },
+    "master": {
+      "file": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-saw-220-vibrato-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.wav",
+      "format": "float64",
+      "frames": 446082,
+      "sha256": "dc01bd559e45544b9ef4e19092405718ce4892119e47481db59876ba1fc722ff"
+    }
+  },
+  "render": {
+    "actualOutputFrames": 446082,
+    "blockSchedule": {
+      "frames": [
+        4096
+      ],
+      "kind": "constant"
+    },
+    "channels": 1,
+    "declaredLatency": {
+      "inputFrames": 48,
+      "outputFrames": 48
+    },
+    "expectedOutputFrames": 446083,
+    "flushFrames": 48,
+    "inputExhaustionTransitions": 1,
+    "inputFramesActual": 240000,
+    "inputFramesConsumed": 240000,
+    "inputPaddingFrames": 48,
+    "lengthDeltaFrames": -1,
+    "lengthPolicy": {
+      "status": "ok",
+      "toleranceFrames": 4096
+    },
+    "outputFramesProduced": 446082,
+    "sampleRate": 48000
+  },
+  "schema": "pitchlab.manifest.v1"
+}

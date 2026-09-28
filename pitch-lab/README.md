@@ -62,12 +62,25 @@ medians, the delayed-curve lag golden == 4 frames EXACTLY, the control-rate
 lag discriminants (varispeed/vardelay/pv.classic 0.000 ms vs pv.phaselocked
 21.3 ms / granular 32.0 ms); CTest 27, byte-deterministic artifacts).** NO
 global quality score
-exists anywhere — metrics are independent reported dimensions. Remaining
-v0.1 work: §17 step 6 (the full-suite reproducibility gate) —
-owner-triggered. Measured §7.7 acceptance evidence and OD-18 (resampler
+exists anywhere — metrics are independent reported dimensions. **Cycle 7
+(2026-09-28): §17.6 — THE FINAL GATE — PASS, and the RESULT PRODUCT.** The
+repository-level verification & reproducibility gate (owner final-gate
+directive: existing evidence reconciled, genuinely missing checks executed —
+clean-checkout CI re-verified, the full artifacts tree regenerated 180/180
+byte-identical, corpus `--verify` 17/17, hidden-dependency scan clean,
+provenance sha256 4/4, source/build separation + doc/SoT consistency
+verified; the record is spec §17 step 6). Then the first tangible v0.1
+result: **`results/v0.1/` — the committed comparative five-engine battery**
+(30 jobs, 3 materials × 2 curves × 5 engines through the REAL pipeline;
+float32 listening renders + manifests + analysis JSONs + the human-readable
+report at `results/v0.1/README.md`; evidence §13.8; `pitchlab verify` /
+`report` / `listen-index` stay unimplemented by owner decision — the T-G2
+semantics were executed as the recorded gate checks). v0.1 is COMPLETE:
+§17.6 is the LAST gate; the roadmap continues at the owner's direction.
+Measured §7.7 acceptance evidence and OD-18 (resampler
 constants) are recorded in the implementation specification §7.7.1; OD-6
 (length-tolerance ratification) remains open with its §13.4 evidence pack;
-OD-9 (metric tolerance values) remains open — nothing in cycle 5 ratified
+OD-9 (metric tolerance values) remains open — nothing in any cycle ratified
 or weakened any tolerance.
 
 ## Authoritative documents (live in the repository root `research/`)
@@ -108,7 +121,8 @@ config) · `experiments/curves/` the 21-file curve battery (implemented) ·
 `experiments/suites/` experiment files (`example-varispeed-basic.toml` —
 the cycle-3 example render configuration; `cross-engine-metrics-mono.toml` +
 `-stereo.toml` — the cycle-5 60-job cross-engine metric matrix evidence
-suites) · `assets/corpus/` authoritative
+suites; `result-product-v0.1.toml` — the RESULT PRODUCT battery, §13.8) ·
+`assets/corpus/` authoritative
 inputs — the committed synthetic corpus (generated once by
 `tools/corpus_gen`, byte-identity gated) · `src/core` harness contracts +
 shared primitives (types, errors, engine contract, registry, RNG, WAV I/O,
@@ -118,14 +132,19 @@ implemented + registered** (`varispeed`, `vardelay`, `pv_classic`,
 `pv_phaselocked`, `granular`; the registry == the §14 v0.1 end state) ·
 `src/harness/` ExperimentCompiler + OfflineRenderer + manifest/JSON
 writer + canonical-JSON reader (implemented) · `src/analysis/` the analysis
-layer (metric registry, metric modules, spectral primitives, analyzer —
-implemented, §10.4) · `src/cli/` the `pitchlab` CLI (`compile`, `render`,
-`analyze`, `engines`, `--version`) · `external/` vendored permissive
+layer (metric registry, metric modules, spectral primitives, analyzer,
+the clean-room pYIN tracker — implemented, §10.4/§10.5) · `src/cli/` the
+`pitchlab` CLI (`compile`, `render`, `analyze`, `engines`, `--version`) ·
+`external/` vendored permissive
 third-party (doctest 2.4.12; pocketfft — BSD-3, FFT for the PV engines AND
 the analysis STFT/Hilbert primitives, ORIGIN.toml-pinned) · `tests/` C++
-tests (25 CTest targets — 18 engine/component suites + 7 T-M metric
-suites) · `tools/` stand-alone tools (`corpus_gen` — implemented) ·
+tests (27 CTest targets — 18 engine/component suites + 7 T-M metric
+suites + the 2 tracker suites `pitch_tracker_test`/`metric_tracker_test`) · `tools/` stand-alone tools
+(`corpus_gen` — implemented) ·
 `artifacts/` GENERATED (gitignored; deterministic regeneration — renders
 via `pitchlab render`, analysis via `pitchlab analyze` (byte-identical on
 re-run); manifests and analysis artifacts are sidecar provenance — never
-source of truth).
+source of truth) · `results/v0.1/` **RETAINED OUTPUT (committed): the v0.1
+RESULT PRODUCT** — the 30-job comparative five-engine battery with f32
+listening renders, manifests, analysis JSONs and the human-readable report
+(`results/v0.1/README.md`); regenerable byte-identically (§13.8, §3).

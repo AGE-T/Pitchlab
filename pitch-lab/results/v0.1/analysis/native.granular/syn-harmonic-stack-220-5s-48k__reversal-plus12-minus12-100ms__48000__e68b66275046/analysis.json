@@ -1,0 +1,633 @@
+{
+  "build": {
+    "compiler": "gcc 14.2.0",
+    "phase": "implementation",
+    "pitchlabVersion": "0.1.0"
+  },
+  "experiment": {
+    "file": "experiments/suites/result-product-v0.1.toml",
+    "id": "result-product-v0.1",
+    "kind": "benchmark"
+  },
+  "reference": {
+    "manifestFile": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+    "masterWav": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.wav"
+  },
+  "render": {
+    "assetId": "syn-harmonic-stack-220-5s-48k",
+    "channels": 1,
+    "curveId": "reversal-plus12-minus12-100ms",
+    "engineId": "native.granular",
+    "manifestFile": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+    "masterWav": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.wav",
+    "renderStatus": "ok",
+    "sampleRate": 48000,
+    "taints": []
+  },
+  "requestedMetrics": [
+    "peak-rms-crest",
+    "realised-duration",
+    "latency",
+    "onset-timing",
+    "transient-preservation",
+    "hf-energy",
+    "aliasing-indicator",
+    "spectral-error",
+    "amplitude-modulation",
+    "phase-coherence",
+    "cpu-cost",
+    "pitch-error",
+    "pitch-lag",
+    "warble-instability"
+  ],
+  "results": [
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "emission-map (rate-followers) / identity (preserving), frame centers"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "frameCount": 470,
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "bandHz": "[50, 1000]",
+        "boltzmannKappa": 2,
+        "hmmBins": "10-cent bins over the band, 2K voiced/unvoiced states",
+        "hmmMaxJumpBins": 40,
+        "hmmStick": 0.98999999999999999,
+        "hmmVoiceSwitch": 0.01,
+        "hop": "window/4 (frames start at 0, centers timestamped)",
+        "noTroughProb": 0.01,
+        "thresholdPrior": "100-point grid 0.01..1.0, Beta(2, 18)",
+        "tracker": "clean-room C++ pYIN (OD-12, §10.5)",
+        "window": "nextPow2(ceil(fs*2048/48000)) (the §10.4 item 6a per-rate rule)"
+      },
+      "metricId": "pitch-error",
+      "metricVersion": 1,
+      "notes": [
+        "tolerance is REPORTED CONTEXT (the owner's provisional budget), never a gate — the metric measures (OD-9 discipline)",
+        "tracker on output channel 0 (the v0.1 tracker-material is mono — the phase-coherence precedent)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "source": "pitch_error_median_cents",
+        "status": "provisional",
+        "value": 25
+      },
+      "unit": "cents",
+      "values": {
+        "comparedFrameCount": 460,
+        "droppedTailFrames": 224,
+        "excludedVoicedFraction": 0.021276595744680851,
+        "f0MedianMeasuredHz": 110.00041361806218,
+        "medianCents": 0.0065109070454410622,
+        "p95Cents": 0.19973125355760071,
+        "trackerFrameCount": 470,
+        "trackerHop": 512,
+        "trackerWindowFrames": 2048,
+        "voicedFrameCount": 462
+      }
+    },
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "emission-map (rate-followers) / identity (preserving), frame centers"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "frameCount": 470,
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "bandHz": "[50, 1000]",
+        "boltzmannKappa": 2,
+        "hmmBins": "10-cent bins over the band, 2K voiced/unvoiced states",
+        "hmmMaxJumpBins": 40,
+        "hmmStick": 0.98999999999999999,
+        "hmmVoiceSwitch": 0.01,
+        "hop": "window/4 (frames start at 0, centers timestamped)",
+        "lagScanOrder": "0, +1, -1, ..., +-L (first strict max wins)",
+        "lagSearchFrames": 16,
+        "noTroughProb": 0.01,
+        "sign": "positive lagMs = the measured LAGS the expected",
+        "thresholdPrior": "100-point grid 0.01..1.0, Beta(2, 18)",
+        "tracker": "clean-room C++ pYIN (OD-12, §10.5)",
+        "window": "nextPow2(ceil(fs*2048/48000)) (the §10.4 item 6a per-rate rule)"
+      },
+      "metricId": "pitch-lag",
+      "metricVersion": 1,
+      "notes": [
+        "the §10.1 sheet carries a provisional ±1 ms intent (arch §H.1); no tolerances.toml key exists and none is invented (OD-9) — pure measurement, correlationAtLag carries discriminability",
+        "on slowly-monotone curves the correlation surface is flat (a line correlates with its shifted self) — the metric is designed for ramps/reversals (direction changes)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "ms",
+      "values": {
+        "correlationAtLag": 0.99999998875827056,
+        "lagFrames": 3,
+        "lagMs": 32,
+        "pairsAtLag": 454,
+        "trackerFrameCount": 470,
+        "trackerHop": 512,
+        "voicedFrameCount": 460
+      }
+    },
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "class-dependent: engine master vs warped reference (Preserving) / output-timeline (RateFollowing)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "frameCount": 242400,
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "distance": "log-spectral distance (own STFT)",
+        "logFloor": 1.0000000000000001e-09,
+        "window": "analysis STFT (per-rate window, hop Nw/4)"
+      },
+      "metricId": "spectral-error",
+      "metricVersion": 1,
+      "notes": [
+        "Preserving engine vs RateFollowing reference: reference warped to the input timeline via the emission map (§H preamble)",
+        "channel 0: engine/reference frame coverage differs (470 vs 465 STFT frames)",
+        "distance from reference behaviour (§10.3) — a measurement, not a quality gate; tolerance class provisional (OD-9)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "dB",
+      "values": {
+        "frameCountCh0": 465,
+        "maxLsdDbCh0": 67.98396396754751,
+        "meanLsdDbCh0": 49.293391481268166,
+        "medianLsdDbCh0": 48.664914275485522
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "onset-aligned windows"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "attackWindow": "half the analysis STFT window, centred on each signal's own measured onset",
+        "components": "onset-time error and attack correlation reported SEPARATELY",
+        "detector": "energy threshold 0.25*max(channel-max envelope)"
+      },
+      "metricId": "transient-preservation",
+      "metricVersion": 1,
+      "notes": [
+        "comparison against the varispeed reference = distance from reference behaviour (§10.3), not a quality ranking"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "frames",
+      "values": {
+        "attackCorrelation": [
+          0.99944869025602989
+        ],
+        "attackWindowPairsCh0": 1,
+        "extraVsInput": 0,
+        "meanAttackCorrelationCh0": 0.99944869025602989,
+        "missedVsInput": 0,
+        "onsetPairsVsReference": 1,
+        "onsetTimeErrorVsInputFrames": [
+          1
+        ],
+        "onsetTimeErrorVsReferenceFrames": [
+          1
+        ],
+        "onsetsVsInput": 1
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "expected positions from input onsets (identity / emission-map)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "frameCount": 242400,
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "detector": "energy threshold 0.25*max(channel-max envelope)",
+        "matchWindowMs": 50,
+        "refractoryMs": 50
+      },
+      "metricId": "onset-timing",
+      "metricVersion": 1,
+      "notes": [],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "frames",
+      "values": {
+        "expectedOnsetCount": 1,
+        "extra": 0,
+        "matched": 1,
+        "maxAbsErrorFrames": 1,
+        "meanAbsErrorFrames": 1,
+        "measuredOnsetCount": 1,
+        "missed": 0,
+        "onsetErrorsFrames": [
+          1
+        ],
+        "onsetErrorsMs": [
+          0.020833333333333332
+        ]
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "frame-aligned (STFT frames)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "frameCount": 470,
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "applicability": "asset category in {harmonic, voice-like} (declared material class)",
+        "f0SearchHz": "50 .. 1000 (parabolic peak per frame)",
+        "partials": "h = 2..6, exact-frequency projection at h*f0",
+        "participation": "partial magnitude >= 1e-3 * fundamental magnitude (both frames)",
+        "statistic": "R_h = |mean exp(j*princarg(dPhi_h - h*dPhi_1))| (circular concentration of increment coherence)"
+      },
+      "metricId": "phase-coherence",
+      "metricVersion": 1,
+      "notes": [
+        "R_h ~ 1: partials frequency/phase-locked across frames; R_h -> 0: incoherent. The statistic is sensitive to sub-sample delay modulation (fractional-read periodicity) — a real, measurable behaviour, not a defect",
+        "channel 0 (declared harmonic material is mono in the v0.1 corpus)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "ratio",
+      "values": {
+        "R2": 0.99930192251495709,
+        "R3": 0.99154540147666737,
+        "R4": 0.98936892372885066,
+        "R5": 0.98748532456724702,
+        "R6": 0.99046567290307264,
+        "f0MedianHz": 112.69930751760027,
+        "frameCount": 470,
+        "participatingFrames2": 469,
+        "participatingFrames3": 469,
+        "participatingFrames4": 469,
+        "participatingFrames5": 469,
+        "participatingFrames6": 469,
+        "stftHop": 512,
+        "stftWindowFrames": 2048
+      }
+    },
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "impulse-aligned (detector onset, timeline-aligned)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "declaredSource": "render manifest declaredLatency",
+        "measuredFlush": "actualOutputFrames - output frames covering real input",
+        "onsetDetector": "threshold 0.25*max envelope, 50 ms refractory",
+        "testSignal": "syn-harmonic-stack-220-5s-48k"
+      },
+      "metricId": "latency",
+      "metricVersion": 1,
+      "notes": [
+        "capability-honesty comparison at the provisional tolerance latency_declared_vs_measured_ms (reported flag, never a gate)",
+        "non-zero onset offset: pre-echo (negative) or delay (positive) measured relative to the timeline-aligned expectation — a measurement, not a failure"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "source": "latency_declared_vs_measured_ms",
+        "status": "provisional",
+        "value": 1
+      },
+      "unit": "frames",
+      "values": {
+        "conformant": true,
+        "declaredInputLatencyFrames": 2400,
+        "declaredInputLatencyMs": 50,
+        "declaredOutputLatencyFrames": 2400,
+        "declaredOutputLatencyMs": 50,
+        "deltaDeclaredVsMeasuredFlushFrames": 0,
+        "deltaDeclaredVsMeasuredFlushMs": 0,
+        "expectedOnsetFrame": 0,
+        "measuredFlushFrames": 2400,
+        "measuredFlushMs": 50,
+        "measuredOnsetFrame": 1,
+        "measuredOnsetOffsetFrames": 1,
+        "measuredOnsetOffsetMs": 0.020833333333333332
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "manifest-accounting"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "frameCount": 242400,
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "preservingPolicy": "N_in + outputLatency (contract, §4.3.3)",
+        "rateFollowingPolicy": "integrated-curve expectation + flush (§4.3.4, OD-6)",
+        "source": "render manifest (expected/actual) + master WAV frames"
+      },
+      "metricId": "realised-duration",
+      "metricVersion": 1,
+      "notes": [
+        "Preserving engines: canonical length N_in + outputLatency (§4.3.3) — exact contract, no tolerance band"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "exact"
+      },
+      "unit": "frames",
+      "values": {
+        "declaredLatency": {
+          "inputFrames": 2400,
+          "outputFrames": 2400
+        },
+        "durationBehaviour": "Preserving",
+        "expectedOutputFrames": 242400,
+        "expectedRatio": 1.01,
+        "inputDurationSec": 5,
+        "inputFrames": 240000,
+        "lengthDeltaFrames": 0,
+        "lengthPolicy": {
+          "status": "ok",
+          "toleranceFrames": 4096
+        },
+        "outputDurationSec": 5.0499999999999998,
+        "outputFrames": 242400,
+        "realisedRatio": 1.01,
+        "relativeDelta": 0
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "renderer-measured (measurement-only)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "declaredInputs": "per block size {32..4096}: real-time factor, single thread"
+      },
+      "metricId": "cpu-cost",
+      "metricVersion": 1,
+      "notes": [
+        "not-applicable: renderer-side timing instrumentation is not implemented in v0.1; cpu-cost is a measurement-only metric (machine-dependent, never a CI gate) — the timing boundary is not faked (§10.4 item 19, unchanged by OD-12)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "not-applicable",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "none",
+      "values": {
+        "blockFrames": null,
+        "processingTimeSec": null,
+        "realTimeFactor": null
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "none"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "crestDefinition": "peak/rms (+ 20log10 crest)",
+        "peakDefinition": "absolute (max |x|), ascending scan",
+        "rmsDefinition": "sqrt(sum(x^2)/N), ascending accumulation"
+      },
+      "metricId": "peak-rms-crest",
+      "metricVersion": 1,
+      "notes": [],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleCount": 242400,
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "exact"
+      },
+      "unit": "linear-amplitude",
+      "values": {
+        "crestCh0": 2.0273119626044456,
+        "crestDbCh0": 6.1384116607178996,
+        "peakCh0": 0.25119372853267807,
+        "rmsCh0": 0.12390482232935414
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "none"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "frameCount": 470,
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "above04Ny": "context: the v0.1 engines' declared-bandwidth class — NOT a threshold",
+        "bandGuardHz": "4 bin spacings (Hann main lobe + sidelobes)",
+        "stft": "analysis STFT (per-rate window, periodic Hann, hop Nw/4)"
+      },
+      "metricId": "hf-energy",
+      "metricVersion": 1,
+      "notes": [
+        "band edges exact; band-energy interpretation provisional (§10.1)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "exact"
+      },
+      "unit": "ratio",
+      "values": {
+        "bandEdgesUsedHz": [
+          126.25,
+          8893.75
+        ],
+        "nyquistHz": 24000,
+        "relativeEnergyAbove04NyCh0": 0.00083738330407112974,
+        "relativeEnergyAboveContentBandCh0": 0.0012617770305126336,
+        "relativeEnergyBelowContentBandCh0": 0.53163780827630014,
+        "relativeEnergyInContentBandCh0": 0.46710041469342062,
+        "stftWindowFrames": 2048,
+        "totalSpectralEnergyCh0": 5673070.8297806485
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "none"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "frameCount": 470,
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "expectedMax": "bandContentHz[1] * curve.effective.max (manifest)",
+        "guardHz": "4 bin spacings",
+        "interpretation": "aliasing-indicator | band-occupancy (expected max beyond Nyquist)"
+      },
+      "metricId": "aliasing-indicator",
+      "metricVersion": 1,
+      "notes": [],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "ratio",
+      "values": {
+        "bandEdgesUsedHz": [
+          17693.75,
+          24000
+        ],
+        "expectedMaxHz": 17600,
+        "interpretation": "aliasing-indicator",
+        "relativeEnergyAboveExpectedMaxCh0": 6.6372608800888308e-11,
+        "stftWindowFrames": 2048
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "none"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "bandIntegration": "peak/expected ±3 bins",
+        "envelope": "Hilbert analytic-signal magnitude (full length)",
+        "envelopeSpectrum": "r2c FFT of (envelope - mean), full-length periodic Hann",
+        "searchBandHz": "0.5 .. 500"
+      },
+      "metricId": "amplitude-modulation",
+      "metricVersion": 1,
+      "notes": [
+        "AM at grain/crossfade/hop rates is intentional engine behaviour — measured, never suppressed (§10.1)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleCount": 242400,
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "Hz",
+      "values": {
+        "envelopePeakHzCh0": 109.9009900990099,
+        "expectedModulationHz": 80,
+        "relativeEnergyAtExpectedCh0": 1.0094219474652961e-06,
+        "relativeEnergyAtPeakCh0": 0.51066226582189556
+      }
+    },
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "emission-map (rate-followers) / identity (preserving), frame centers"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.granular",
+      "inputAssetId": "syn-harmonic-stack-220-5s-48k",
+      "method": {
+        "bandHz": "[50, 1000]",
+        "boltzmannKappa": 2,
+        "hmmBins": "10-cent bins over the band, 2K voiced/unvoiced states",
+        "hmmMaxJumpBins": 40,
+        "hmmStick": 0.98999999999999999,
+        "hmmVoiceSwitch": 0.01,
+        "hop": "window/4 (frames start at 0, centers timestamped)",
+        "noTroughProb": 0.01,
+        "thresholdPrior": "100-point grid 0.01..1.0, Beta(2, 18)",
+        "tracker": "clean-room C++ pYIN (OD-12, §10.5)",
+        "window": "nextPow2(ceil(fs*2048/48000)) (the §10.4 item 6a per-rate rule)"
+      },
+      "metricId": "warble-instability",
+      "metricVersion": 1,
+      "notes": [
+        "dynamic curve: the curve's own modulation dominates — the metric is defined under static ratios (§10.1)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.granular/syn-harmonic-stack-220-5s-48k__reversal-plus12-minus12-100ms__48000__e68b66275046/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "not-applicable",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "cents",
+      "values": {}
+    }
+  ],
+  "schema": "pitchlab.analysis.v1",
+  "statusSummary": "not-applicable:2 ok:12"
+}

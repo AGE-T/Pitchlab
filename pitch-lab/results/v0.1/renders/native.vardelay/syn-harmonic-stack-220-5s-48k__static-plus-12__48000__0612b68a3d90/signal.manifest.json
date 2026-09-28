@@ -1,0 +1,137 @@
+{
+  "build": {
+    "compiler": "gcc 14.2.0",
+    "phase": "implementation",
+    "pitchlabVersion": "0.1.0"
+  },
+  "curve": {
+    "access": {
+      "clampCount": 0,
+      "maxIndexRequested": 0,
+      "minIndexRequested": 0
+    },
+    "effective": {
+      "derivation": "identity",
+      "max": 2,
+      "min": 2,
+      "sha256": "065d8dccdbdd3a1db3a6c14112f8e89ec225648c583f7103e1afdf57cd1123bd"
+    },
+    "requested": {
+      "max": 2,
+      "min": 2,
+      "sha256": "065d8dccdbdd3a1db3a6c14112f8e89ec225648c583f7103e1afdf57cd1123bd",
+      "specId": "static-plus-12"
+    }
+  },
+  "engine": {
+    "capabilities": {
+      "bandwidth": {
+        "notes": "wrap/crossfade AM at |r-1|/E cadence is the family artefact (intentional); no AA pre-filter (sheet §6.2 specifies none): upward excursions (ratio > 1) alias above Nyquist/ratio; full-band sinc reads avoid HF loss",
+        "nyquistFraction": 0.45000000000000001
+      },
+      "channelMode": "MonoAndStereo",
+      "controlRate": {
+        "blockFrames": 0,
+        "kind": "PerSample"
+      },
+      "determinism": "Deterministic",
+      "duration": "Preserving",
+      "maxChannels": 2,
+      "maxRatio": 2,
+      "minRatio": 0.5,
+      "supportedSampleRates": [
+        44100,
+        48000,
+        88200,
+        96000,
+        176400,
+        192000
+      ],
+      "supportsDynamicRatio": true
+    },
+    "displayName": "Vardelay — variable-delay musical shifter",
+    "id": "native.vardelay",
+    "isReferenceRole": false,
+    "license": "own code, no dependency",
+    "origin": "own implementation",
+    "parameters": {},
+    "seed": 7,
+    "usageClass": "Prototype",
+    "version": "0.1.0"
+  },
+  "execution": {
+    "status": "ok",
+    "taints": []
+  },
+  "experiment": {
+    "analysisMetrics": [
+      "peak-rms-crest",
+      "realised-duration",
+      "latency",
+      "onset-timing",
+      "transient-preservation",
+      "hf-energy",
+      "aliasing-indicator",
+      "spectral-error",
+      "amplitude-modulation",
+      "phase-coherence",
+      "cpu-cost",
+      "pitch-error",
+      "pitch-lag",
+      "warble-instability"
+    ],
+    "file": "experiments/suites/result-product-v0.1.toml",
+    "id": "result-product-v0.1",
+    "kind": "benchmark"
+  },
+  "input": {
+    "assetId": "syn-harmonic-stack-220-5s-48k",
+    "channels": 1,
+    "file": "assets/corpus/syn-harmonic-stack-220-5s-48k/signal.wav",
+    "frames": 240000,
+    "sampleRate": 48000,
+    "sha256": "264b5793d50d2c14205194c8abf8eb13522459c088ffa94a7728b50f22970a7d"
+  },
+  "output": {
+    "listening": {
+      "file": "artifacts/renders/result-product-v0.1/native.vardelay/syn-harmonic-stack-220-5s-48k__static-plus-12__48000__0612b68a3d90/listening/signal.f32.wav",
+      "format": "float32",
+      "frames": 242048,
+      "sha256": ""
+    },
+    "master": {
+      "file": "artifacts/renders/result-product-v0.1/native.vardelay/syn-harmonic-stack-220-5s-48k__static-plus-12__48000__0612b68a3d90/signal.wav",
+      "format": "float64",
+      "frames": 242048,
+      "sha256": "795fc879f173c140bd10db41c3636b63412112e917c10424430546b77d6ded7b"
+    }
+  },
+  "render": {
+    "actualOutputFrames": 242048,
+    "blockSchedule": {
+      "frames": [
+        4096
+      ],
+      "kind": "constant"
+    },
+    "channels": 1,
+    "declaredLatency": {
+      "inputFrames": 24008,
+      "outputFrames": 2048
+    },
+    "expectedOutputFrames": 242048,
+    "flushFrames": 2048,
+    "inputExhaustionTransitions": 1,
+    "inputFramesActual": 240000,
+    "inputFramesConsumed": 240000,
+    "inputPaddingFrames": 24008,
+    "lengthDeltaFrames": 0,
+    "lengthPolicy": {
+      "status": "ok",
+      "toleranceFrames": 4096
+    },
+    "outputFramesProduced": 242048,
+    "sampleRate": 48000
+  },
+  "schema": "pitchlab.manifest.v1"
+}

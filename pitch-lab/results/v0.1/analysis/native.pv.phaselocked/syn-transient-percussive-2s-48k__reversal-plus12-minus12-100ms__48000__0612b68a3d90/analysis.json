@@ -1,0 +1,616 @@
+{
+  "build": {
+    "compiler": "gcc 14.2.0",
+    "phase": "implementation",
+    "pitchlabVersion": "0.1.0"
+  },
+  "experiment": {
+    "file": "experiments/suites/result-product-v0.1.toml",
+    "id": "result-product-v0.1",
+    "kind": "benchmark"
+  },
+  "reference": {
+    "manifestFile": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+    "masterWav": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.wav"
+  },
+  "render": {
+    "assetId": "syn-transient-percussive-2s-48k",
+    "channels": 1,
+    "curveId": "reversal-plus12-minus12-100ms",
+    "engineId": "native.pv.phaselocked",
+    "manifestFile": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+    "masterWav": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.wav",
+    "renderStatus": "ok",
+    "sampleRate": 48000,
+    "taints": []
+  },
+  "requestedMetrics": [
+    "peak-rms-crest",
+    "realised-duration",
+    "latency",
+    "onset-timing",
+    "transient-preservation",
+    "hf-energy",
+    "aliasing-indicator",
+    "spectral-error",
+    "amplitude-modulation",
+    "phase-coherence",
+    "cpu-cost",
+    "pitch-error",
+    "pitch-lag",
+    "warble-instability"
+  ],
+  "results": [
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "emission-map (rate-followers) / identity (preserving)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "bandHz": "[50, 1000]",
+        "boltzmannKappa": 2,
+        "hmmBins": "10-cent bins over the band, 2K voiced/unvoiced states",
+        "hmmMaxJumpBins": 40,
+        "hmmStick": 0.98999999999999999,
+        "hmmVoiceSwitch": 0.01,
+        "hop": "window/4 (frames start at 0, centers timestamped)",
+        "noTroughProb": 0.01,
+        "thresholdPrior": "100-point grid 0.01..1.0, Beta(2, 18)",
+        "tracker": "clean-room C++ pYIN (OD-12, §10.5)",
+        "window": "nextPow2(ceil(fs*2048/48000)) (the §10.4 item 6a per-rate rule)"
+      },
+      "metricId": "pitch-error",
+      "metricVersion": 1,
+      "notes": [
+        "asset 'syn-transient-percussive-2s-48k' declares no analytic f0 recipe — the expected-f0 model is undefined for this material class (§10.5 item 10; no substitute expected-f0 estimator exists)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "not-applicable",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "cents",
+      "values": {}
+    },
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "emission-map (rate-followers) / identity (preserving)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "bandHz": "[50, 1000]",
+        "boltzmannKappa": 2,
+        "hmmBins": "10-cent bins over the band, 2K voiced/unvoiced states",
+        "hmmMaxJumpBins": 40,
+        "hmmStick": 0.98999999999999999,
+        "hmmVoiceSwitch": 0.01,
+        "hop": "window/4 (frames start at 0, centers timestamped)",
+        "noTroughProb": 0.01,
+        "thresholdPrior": "100-point grid 0.01..1.0, Beta(2, 18)",
+        "tracker": "clean-room C++ pYIN (OD-12, §10.5)",
+        "window": "nextPow2(ceil(fs*2048/48000)) (the §10.4 item 6a per-rate rule)"
+      },
+      "metricId": "pitch-lag",
+      "metricVersion": 1,
+      "notes": [
+        "asset 'syn-transient-percussive-2s-48k' declares no analytic f0 recipe — the expected-f0 model is undefined for this material class (§10.5 item 10; no substitute expected-f0 estimator exists)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "not-applicable",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "ms",
+      "values": {}
+    },
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "class-dependent: engine master vs warped reference (Preserving) / output-timeline (RateFollowing)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "frameCount": 98048,
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "distance": "log-spectral distance (own STFT)",
+        "logFloor": 1.0000000000000001e-09,
+        "window": "analysis STFT (per-rate window, hop Nw/4)"
+      },
+      "metricId": "spectral-error",
+      "metricVersion": 1,
+      "notes": [
+        "Preserving engine vs RateFollowing reference: reference warped to the input timeline via the emission map (§H preamble)",
+        "channel 0: engine/reference frame coverage differs (188 vs 184 STFT frames)",
+        "distance from reference behaviour (§10.3) — a measurement, not a quality gate; tolerance class provisional (OD-9)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "dB",
+      "values": {
+        "frameCountCh0": 184,
+        "maxLsdDbCh0": 134.96689631533533,
+        "meanLsdDbCh0": 27.731665409944249,
+        "medianLsdDbCh0": 17.101549873872521
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "onset-aligned windows"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "attackWindow": "half the analysis STFT window, centred on each signal's own measured onset",
+        "components": "onset-time error and attack correlation reported SEPARATELY",
+        "detector": "energy threshold 0.25*max(channel-max envelope)"
+      },
+      "metricId": "transient-preservation",
+      "metricVersion": 1,
+      "notes": [
+        "comparison against the varispeed reference = distance from reference behaviour (§10.3), not a quality ranking"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "frames",
+      "values": {
+        "attackCorrelation": [
+          0.074163862697897279,
+          -0.015060748993870094,
+          0.040114254549072678,
+          0.12781692882006887,
+          0.040173634147287009
+        ],
+        "attackWindowPairsCh0": 5,
+        "extraVsInput": 0,
+        "meanAttackCorrelationCh0": 0.053441586244091156,
+        "missedVsInput": 0,
+        "onsetPairsVsReference": 5,
+        "onsetTimeErrorVsInputFrames": [
+          0,
+          -55,
+          113,
+          107,
+          15,
+          44,
+          -34,
+          17
+        ],
+        "onsetTimeErrorVsReferenceFrames": [
+          -1,
+          -2090,
+          -1972,
+          -2009,
+          -2019
+        ],
+        "onsetsVsInput": 8
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "expected positions from input onsets (identity / emission-map)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "frameCount": 98048,
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "detector": "energy threshold 0.25*max(channel-max envelope)",
+        "matchWindowMs": 50,
+        "refractoryMs": 50
+      },
+      "metricId": "onset-timing",
+      "metricVersion": 1,
+      "notes": [],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "frames",
+      "values": {
+        "expectedOnsetCount": 8,
+        "extra": 0,
+        "matched": 8,
+        "maxAbsErrorFrames": 113,
+        "meanAbsErrorFrames": 48.125,
+        "measuredOnsetCount": 8,
+        "missed": 0,
+        "onsetErrorsFrames": [
+          0,
+          -55,
+          113,
+          107,
+          15,
+          44,
+          -34,
+          17
+        ],
+        "onsetErrorsMs": [
+          0,
+          -1.1458333333333333,
+          2.3541666666666665,
+          2.2291666666666665,
+          0.3125,
+          0.91666666666666663,
+          -0.70833333333333337,
+          0.35416666666666669
+        ]
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "frame-aligned (STFT frames)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "applicability": "asset category in {harmonic, voice-like} (declared material class)",
+        "f0SearchHz": "50 .. 1000 (parabolic peak per frame)",
+        "partials": "h = 2..6, exact-frequency projection at h*f0",
+        "participation": "partial magnitude >= 1e-3 * fundamental magnitude (both frames)",
+        "statistic": "R_h = |mean exp(j*princarg(dPhi_h - h*dPhi_1))| (circular concentration of increment coherence)"
+      },
+      "metricId": "phase-coherence",
+      "metricVersion": 1,
+      "notes": [
+        "material category 'transient' has no declared harmonic structure: phase coherence not applicable (a score is never manufactured)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "not-applicable",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "ratio",
+      "values": {}
+    },
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "impulse-aligned (detector onset, timeline-aligned)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "declaredSource": "render manifest declaredLatency",
+        "measuredFlush": "actualOutputFrames - output frames covering real input",
+        "onsetDetector": "threshold 0.25*max envelope, 50 ms refractory",
+        "testSignal": "syn-transient-percussive-2s-48k"
+      },
+      "metricId": "latency",
+      "metricVersion": 1,
+      "notes": [
+        "capability-honesty comparison at the provisional tolerance latency_declared_vs_measured_ms (reported flag, never a gate)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "source": "latency_declared_vs_measured_ms",
+        "status": "provisional",
+        "value": 1
+      },
+      "unit": "frames",
+      "values": {
+        "conformant": true,
+        "declaredInputLatencyFrames": 2560,
+        "declaredInputLatencyMs": 53.333333333333336,
+        "declaredOutputLatencyFrames": 2048,
+        "declaredOutputLatencyMs": 42.666666666666664,
+        "deltaDeclaredVsMeasuredFlushFrames": 0,
+        "deltaDeclaredVsMeasuredFlushMs": 0,
+        "expectedOnsetFrame": 1,
+        "measuredFlushFrames": 2048,
+        "measuredFlushMs": 42.666666666666664,
+        "measuredOnsetFrame": 1,
+        "measuredOnsetOffsetFrames": 0,
+        "measuredOnsetOffsetMs": 0
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "manifest-accounting"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "frameCount": 98048,
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "preservingPolicy": "N_in + outputLatency (contract, §4.3.3)",
+        "rateFollowingPolicy": "integrated-curve expectation + flush (§4.3.4, OD-6)",
+        "source": "render manifest (expected/actual) + master WAV frames"
+      },
+      "metricId": "realised-duration",
+      "metricVersion": 1,
+      "notes": [
+        "Preserving engines: canonical length N_in + outputLatency (§4.3.3) — exact contract, no tolerance band"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "exact"
+      },
+      "unit": "frames",
+      "values": {
+        "declaredLatency": {
+          "inputFrames": 2560,
+          "outputFrames": 2048
+        },
+        "durationBehaviour": "Preserving",
+        "expectedOutputFrames": 98048,
+        "expectedRatio": 1.0213333333333334,
+        "inputDurationSec": 2,
+        "inputFrames": 96000,
+        "lengthDeltaFrames": 0,
+        "lengthPolicy": {
+          "status": "ok",
+          "toleranceFrames": 4096
+        },
+        "outputDurationSec": 2.0426666666666669,
+        "outputFrames": 98048,
+        "realisedRatio": 1.0213333333333334,
+        "relativeDelta": 0
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "renderer-measured (measurement-only)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "declaredInputs": "per block size {32..4096}: real-time factor, single thread"
+      },
+      "metricId": "cpu-cost",
+      "metricVersion": 1,
+      "notes": [
+        "not-applicable: renderer-side timing instrumentation is not implemented in v0.1; cpu-cost is a measurement-only metric (machine-dependent, never a CI gate) — the timing boundary is not faked (§10.4 item 19, unchanged by OD-12)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "not-applicable",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "none",
+      "values": {
+        "blockFrames": null,
+        "processingTimeSec": null,
+        "realTimeFactor": null
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "none"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "crestDefinition": "peak/rms (+ 20log10 crest)",
+        "peakDefinition": "absolute (max |x|), ascending scan",
+        "rmsDefinition": "sqrt(sum(x^2)/N), ascending accumulation"
+      },
+      "metricId": "peak-rms-crest",
+      "metricVersion": 1,
+      "notes": [],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleCount": 98048,
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "exact"
+      },
+      "unit": "linear-amplitude",
+      "values": {
+        "crestCh0": 26.075172432087861,
+        "crestDbCh0": 28.324543780940999,
+        "peakCh0": 0.24742802414075529,
+        "rmsCh0": 0.0094890273414365879
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "none"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "frameCount": 188,
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "above04Ny": "context: the v0.1 engines' declared-bandwidth class — NOT a threshold",
+        "bandGuardHz": "4 bin spacings (Hann main lobe + sidelobes)",
+        "stft": "analysis STFT (per-rate window, periodic Hann, hop Nw/4)"
+      },
+      "metricId": "hf-energy",
+      "metricVersion": 1,
+      "notes": [
+        "band edges exact; band-energy interpretation provisional (§10.1)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "exact"
+      },
+      "unit": "ratio",
+      "values": {
+        "bandEdgesUsedHz": [
+          0,
+          2093.75
+        ],
+        "nyquistHz": 24000,
+        "relativeEnergyAbove04NyCh0": 0.037929727365317238,
+        "relativeEnergyAboveContentBandCh0": 0.35695711088482546,
+        "relativeEnergyBelowContentBandCh0": 0,
+        "relativeEnergyInContentBandCh0": 0.6430428891151927,
+        "stftWindowFrames": 2048,
+        "totalSpectralEnergyCh0": 9888.7519447544
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "none"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "frameCount": 188,
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "expectedMax": "bandContentHz[1] * curve.effective.max (manifest)",
+        "guardHz": "4 bin spacings",
+        "interpretation": "aliasing-indicator | band-occupancy (expected max beyond Nyquist)"
+      },
+      "metricId": "aliasing-indicator",
+      "metricVersion": 1,
+      "notes": [],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "ratio",
+      "values": {
+        "bandEdgesUsedHz": [
+          4093.75,
+          24000
+        ],
+        "expectedMaxHz": 4000,
+        "interpretation": "aliasing-indicator",
+        "relativeEnergyAboveExpectedMaxCh0": 0.21595094411444127,
+        "stftWindowFrames": 2048
+      }
+    },
+    {
+      "alignment": {
+        "axis": "output-timeline",
+        "method": "none"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "bandIntegration": "peak/expected ±3 bins",
+        "envelope": "Hilbert analytic-signal magnitude (full length)",
+        "envelopeSpectrum": "r2c FFT of (envelope - mean), full-length periodic Hann",
+        "searchBandHz": "0.5 .. 500"
+      },
+      "metricId": "amplitude-modulation",
+      "metricVersion": 1,
+      "notes": [
+        "no declared characteristic rate derivable from the manifest parameters for this engine/curve combination",
+        "AM at grain/crossfade/hop rates is intentional engine behaviour — measured, never suppressed (§10.1)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleCount": 98048,
+      "sampleRate": 48000,
+      "status": "ok",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "Hz",
+      "values": {
+        "envelopePeakHzCh0": 3.9164490861618799,
+        "expectedModulationHz": null,
+        "relativeEnergyAtPeakCh0": 0.24447421125007293
+      }
+    },
+    {
+      "alignment": {
+        "axis": "input-timeline",
+        "method": "emission-map (rate-followers) / identity (preserving)"
+      },
+      "channels": 1,
+      "curveId": "reversal-plus12-minus12-100ms",
+      "engineId": "native.pv.phaselocked",
+      "inputAssetId": "syn-transient-percussive-2s-48k",
+      "method": {
+        "bandHz": "[50, 1000]",
+        "boltzmannKappa": 2,
+        "hmmBins": "10-cent bins over the band, 2K voiced/unvoiced states",
+        "hmmMaxJumpBins": 40,
+        "hmmStick": 0.98999999999999999,
+        "hmmVoiceSwitch": 0.01,
+        "hop": "window/4 (frames start at 0, centers timestamped)",
+        "noTroughProb": 0.01,
+        "thresholdPrior": "100-point grid 0.01..1.0, Beta(2, 18)",
+        "tracker": "clean-room C++ pYIN (OD-12, §10.5)",
+        "window": "nextPow2(ceil(fs*2048/48000)) (the §10.4 item 6a per-rate rule)"
+      },
+      "metricId": "warble-instability",
+      "metricVersion": 1,
+      "notes": [
+        "asset 'syn-transient-percussive-2s-48k' declares no analytic f0 recipe — the expected-f0 model is undefined for this material class (§10.5 item 10; no substitute expected-f0 estimator exists)"
+      ],
+      "referenceReference": "artifacts/renders/result-product-v0.1/native.varispeed/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__e1cc82fc5ae8/signal.manifest.json",
+      "renderManifestReference": "artifacts/renders/result-product-v0.1/native.pv.phaselocked/syn-transient-percussive-2s-48k__reversal-plus12-minus12-100ms__48000__0612b68a3d90/signal.manifest.json",
+      "sampleRate": 48000,
+      "status": "not-applicable",
+      "tolerance": {
+        "status": "none"
+      },
+      "unit": "cents",
+      "values": {}
+    }
+  ],
+  "schema": "pitchlab.analysis.v1",
+  "statusSummary": "not-applicable:5 ok:9"
+}

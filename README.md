@@ -44,8 +44,20 @@ Product: knowledge and tested DSP components — not shippable audio software.
 > MEASURED with analytic goldens — evidence §13.7: sub-cent identity medians, the delayed-curve lag
 > golden == 4 frames EXACTLY, the control-rate lag discriminants separating the engine families;
 > CTest 25 → 27, ASAN+UBSAN clean, the 60-job matrix re-run byte-deterministic with zero errors).
-> Remaining v0.1 work: §17 step 6 (the full-suite reproducibility gate, `pitchlab verify`)
-> — owner-triggered.
+> **Cycle 7 (2026-09-28) = §17.6 THE FINAL GATE — PASS, and the RESULT PRODUCT** (owner
+> final-gate directive): the repository-level verification & reproducibility gate closed
+> with existing evidence reconciled + the genuinely missing checks executed (clean-checkout
+> CI runs 36407493452 @ 1eee3a3 and 36408075811 @ 99d4c56 re-verified via the GitHub API;
+> full generated-tree regeneration 180/180 files byte-identical; corpus `--verify` 17/17;
+> hidden-dependency scan clean; vendored-dependency provenance sha256 4/4; source/build
+> separation and documentation/SoT consistency verified — spec §17 step 6). Then, per the
+> same directive, the first tangible v0.1 RESULT PRODUCT: `pitch-lab/results/v0.1/` — the
+> committed comparative five-engine battery (30 jobs: 3 materials × 2 curves × 5 engines)
+> with float32 listening renders, analysis JSONs and the human-readable report
+> (`results/v0.1/README.md`; evidence §13.8). `report|verify|listen-index` CLI
+> subcommands stay unimplemented by owner decision (§4.8.1 item 10). OD-6/OD-9/OD-18
+> remain OPEN. **v0.1 is COMPLETE: no further verification gate exists (§17.6 is the last
+> gate); the roadmap continues at the owner's direction.**
 
 This repository hosts **two systems with a hard boundary**:
 

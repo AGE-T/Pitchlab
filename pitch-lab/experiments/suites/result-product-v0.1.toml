@@ -1,0 +1,57 @@
+# Pitch Lab v0.1 — THE RESULT PRODUCT experiment (owner final-gate handoff
+# 2026-09-28: the first tangible output of the completed v0.1 research
+# system — the retained comparative five-engine battery).
+#
+# Material (committed corpus, [f0]-recipe analytic classes + the percussive
+# transient class — every job has at least one measured story):
+#   * syn-harmonic-stack-220-5s-48k      harmonic stack, constant 220 Hz
+#   * syn-harmonic-saw-220-vibrato-5s-48k saw-equivalent stack, vibrato input
+#   * syn-transient-percussive-2s-48k     8-recipe-onset percussive material
+# Curves:
+#   * static-plus-12                     static +12 st (pitch/warble/onset
+#                                         stories under a static ratio)
+#   * reversal-plus12-minus12-100ms      +-12 st in 100 ms (the control-rate
+#                                         lag discriminant + pitch tracking
+#                                         through direction changes)
+# Engines: the full v0.1 registry (§14 end state), identical configs to the
+# §13.6 cross-engine matrix (seeds 7) so the evidence lines up.
+#
+# Reproduce (from pitch-lab/, same binary — §7.5 same-binary determinism):
+#   ./build/pitchlab render experiments/suites/result-product-v0.1.toml --root .
+#   ./build/pitchlab analyze experiments/suites/result-product-v0.1.toml --root .
+# Outputs: artifacts/renders/result-product-v0.1/... (f64 masters + f32
+# listening copies) and artifacts/analysis/result-product-v0.1/... (the
+# analysis JSON evidence). Retained presentation copy: results/v0.1/.
+id = "result-product-v0.1"
+kind = "benchmark"
+[suite]
+inputs  = ["syn-harmonic-stack-220-5s-48k", "syn-harmonic-saw-220-vibrato-5s-48k", "syn-transient-percussive-2s-48k"]
+curves  = ["static-plus-12", "reversal-plus12-minus12-100ms"]
+engines = ["native.varispeed", "native.vardelay", "native.pv.classic", "native.pv.phaselocked", "native.granular"]
+sampleRates = [48000]
+channels = [1]
+[[engine_config]]
+engine = "native.varispeed"
+params = { resample_quality = "reference" }
+seed = 7
+[[engine_config]]
+engine = "native.vardelay"
+params = { }
+seed = 7
+[[engine_config]]
+engine = "native.pv.classic"
+params = { }
+seed = 7
+[[engine_config]]
+engine = "native.pv.phaselocked"
+params = { }
+seed = 7
+[[engine_config]]
+engine = "native.granular"
+params = { grain_seconds = 0.05, overlap = 4 }
+seed = 7
+[output]
+master = true
+listening = true
+[analysis]
+metrics = ["peak-rms-crest", "realised-duration", "latency", "onset-timing", "transient-preservation", "hf-energy", "aliasing-indicator", "spectral-error", "amplitude-modulation", "phase-coherence", "cpu-cost", "pitch-error", "pitch-lag", "warble-instability"]

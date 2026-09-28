@@ -1,6 +1,7 @@
-// Pitch Lab CLI — implementation-phase state (cycle 5: compile + render +
-// analyze are REAL; report/verify/listen-index remain honestly unimplemented,
-// §17 step 6).
+// Pitch Lab CLI — v0.1 final state (§17.6 closed 2026-09-28): compile +
+// render + analyze are REAL; report/verify/listen-index remain honestly
+// unimplemented per the owner's final-gate decision (the T-G2 semantics were
+// executed as repository-level checks at gate closure — §17 step 6 record).
 //
 // Architecture §B.1 entry points: compile | render | analyze | report |
 // verify | listen-index + registry introspection engines. The corpus_gen
@@ -147,7 +148,8 @@ void printHelp() {
       "  pitchlab analyze <experiment.toml>    compile + analyse existing renders (never re-renders)\n"
       "    [--metrics <id,...>]                metric selection (overrides [analysis].metrics)\n"
       "    [--root <dir>]                      pitch-lab root (default: working directory)\n"
-      "not implemented yet (v0.1 step 6): report, verify, listen-index\n",
+      "not implemented in v0.1 (owner final-gate decision 2026-09-28, §17.6):\n"
+      "  report, verify, listen-index\n",
       pitchlab::versionString(), pitchlab::phaseString());
 }
 
@@ -290,9 +292,10 @@ int main(int argc, char** argv) {
     return 0;
   }
   std::fprintf(stderr,
-               "pitchlab: '%s' is not implemented yet\n"
-               "(v0.1: report|verify|listen-index are step 6 — see "
-               "research/pitch-lab-v0.1-implementation-specification.md §17)\n",
+               "pitchlab: '%s' is not implemented in v0.1\n"
+               "(owner final-gate decision 2026-09-28: report|verify|listen-index stay "
+               "unimplemented — see research/pitch-lab-v0.1-implementation-specification.md "
+               "§17 step 6)\n",
                argc > 1 ? argv[1] : "");
   return 2;
 }
