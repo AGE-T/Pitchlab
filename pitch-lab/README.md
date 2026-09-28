@@ -39,18 +39,29 @@ the ANALYSIS LAYER — complete.** `src/analysis/` implements the frozen
 unknown id ⇒ CONFIG ERROR), pure-function metric modules (peak-rms-crest,
 realised-duration, latency, onset-timing, transient-preservation, hf-energy,
 aliasing-indicator, spectral-error, amplitude-modulation, phase-coherence,
-stereo-coherence; the tracker-dependent trio gated `tracker-unavailable`,
-cpu-cost gated `not-applicable`), the shared spectral primitives (per-rate
+stereo-coherence; the tracker-dependent trio MEASURED through the OD-12
+clean-room pYIN since cycle 6, cpu-cost gated `not-applicable`), the shared
+spectral primitives (per-rate
 STFT, exact-frequency projection, Hilbert envelope, the frozen onset
 detector, emission-map warp), the analyzer (manifest + SHA-256-verified
 master + hash-cross-checked curve recompilation, varispeed reference
 resolution, the full failure model) and the `pitchlab analyze` CLI writing
 deterministic `pitchlab.analysis.v1` artifacts under `artifacts/analysis/`
-(byte-identical on delete + re-run). **25 CTest tests are green** (the seven
+(byte-identical on delete + re-run). **27 CTest tests are green** (the seven
 T-M suites carry the analytic goldens: self-reference spectral error ≡ 0
 exactly, the 8-onset percussive-recipe golden, bin-centred leakage-floor
 classes, artifact determinism, the failure-model matrix); the 60-job
-cross-engine metric matrix evidence is §13.6. NO global quality score
+cross-engine metric matrix evidence is §13.6. **Cycle 6 (2026-09-28, OD-12):
+the clean-room C++ pYIN ReferencePitchTracker — complete** (`src/analysis/pitch_tracker.{h,cpp}`
+per the frozen §10.5: YIN CMND stage + 100-threshold Beta(2,18) prior +
+parabolic refinement + the 2M-state HMM + Viterbi + forward-backward
+posteriors; no external pYIN source imported or linked; the corpus [f0]
+recipe metadata supplies the analytic expected side; pitch-error/
+pitch-lag/warble-instability now MEASURE — evidence §13.7: sub-cent identity
+medians, the delayed-curve lag golden == 4 frames EXACTLY, the control-rate
+lag discriminants (varispeed/vardelay/pv.classic 0.000 ms vs pv.phaselocked
+21.3 ms / granular 32.0 ms); CTest 27, byte-deterministic artifacts).** NO
+global quality score
 exists anywhere — metrics are independent reported dimensions. Remaining
 v0.1 work: §17 step 6 (the full-suite reproducibility gate) —
 owner-triggered. Measured §7.7 acceptance evidence and OD-18 (resampler

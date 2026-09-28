@@ -35,7 +35,16 @@ Product: knowledge and tested DSP components — not shippable audio software.
 > `tracker-unavailable` (OD-12 clean-room pYIN route — no substitute estimator) and cpu-cost gated
 > `not-applicable`; NO global quality score exists anywhere. 25 CTest tests, CI per §13.3; the 60-job
 > cross-engine metric matrix evidence in §13.6 (60/60 analysed, zero analysis errors). OD-9/OD-6/OD-18
-> remain OPEN. Remaining v0.1 work: §17 step 6 (the full-suite reproducibility gate, `pitchlab verify`)
+> remain OPEN. **Cycle 6 (2026-09-28, OD-12) = the CLEAN-ROOM C++ pYIN REFERENCE PITCH TRACKER —
+> complete** (per the frozen implementation specification §10.5, recorded BEFORE coding: the Mauch &
+> Dixon 2014 algorithm + librosa PUBLIC API documentation parameter values, NO external pYIN source
+> imported/read-for-derivation/linked; YIN CMND + 100-threshold Beta(2,18) prior + parabolic
+> refinement + the 2M-state HMM + Viterbi + forward-backward posteriors; the corpus [f0] recipe
+> metadata extension with byte-identical signals; pitch-error/pitch-lag/warble-instability now
+> MEASURED with analytic goldens — evidence §13.7: sub-cent identity medians, the delayed-curve lag
+> golden == 4 frames EXACTLY, the control-rate lag discriminants separating the engine families;
+> CTest 25 → 27, ASAN+UBSAN clean, the 60-job matrix re-run byte-deterministic with zero errors).
+> Remaining v0.1 work: §17 step 6 (the full-suite reproducibility gate, `pitchlab verify`)
 > — owner-triggered.
 
 This repository hosts **two systems with a hard boundary**:
