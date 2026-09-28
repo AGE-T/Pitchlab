@@ -46,6 +46,7 @@ add_library(pitchlab_core
   src/harness/offline_renderer.cpp
   src/analysis/analysis_context.cpp
   src/analysis/spectral.cpp
+  src/analysis/pitch_tracker.cpp
   src/analysis/metric_registry.cpp
   src/analysis/metrics_waveform.cpp
   src/analysis/metrics_temporal.cpp
@@ -220,6 +221,16 @@ pitchlab_add_doctest(metric_modulation_test tests/metric_modulation_test.cpp)
 pitchlab_add_doctest(metric_analyzer_test tests/metric_analyzer_test.cpp)
 target_compile_definitions(metric_analyzer_test PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+# T-PY suite (spec §10.5 item 12 — cycle 6, OD-12): the clean-room pYIN
+# tracker's own contract — clean pitched / unvoiced / silent / steps /
+# vibrato / confidence / boundary / determinism / sample rates.
+pitchlab_add_doctest(pitch_tracker_test tests/pitch_tracker_test.cpp)
+
+# T-M-TR suite (spec §10.5 item 12 — cycle 6, OD-12): the tracker-dependent
+# metric modules (pitch-error / pitch-lag / warble-instability) — direct
+# makeCtx goldens + end-to-end through the real harness.
+pitchlab_add_doctest(metric_tracker_test tests/metric_tracker_test.cpp)
 
 # Stand-alone corpus generator tool (spec §11.1 — NOT a harness component).
 add_executable(corpus_gen tools/corpus_gen.cpp)

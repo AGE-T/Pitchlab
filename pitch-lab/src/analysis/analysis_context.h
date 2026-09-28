@@ -10,6 +10,7 @@
 // modules are pure functions of this context (§4.10); they never see engines,
 // the registry, or harness internals.
 
+#include <cmath>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -41,14 +42,44 @@ struct MetricConfig {
                       true, true, true, true, true, true, true};
 };
 
+/// The analytic f0 recipe (§10.5 item 9 — the metadata.toml [f0] block).
+/// `f0At(tSec)` evaluates the recipe's instantaneous fundamental frequency
+/// EXACTLY as the corpus generator synthesised it.
+struct F0Recipe {
+  std::string className;   // "constant" | "vibrato" | "sweep-log"
+  double freqHz = 0.0;     // constant
+  double baseHz = 0.0;     // vibrato
+  double vibratoHz = 0.0;
+  double vibratoSt = 0.0;
+  double startHz = 0.0;    // sweep-log (T supplied at evaluation)
+  double endHz = 0.0;
+
+  [[nodiscard]] double f0At(double tSec, double totalSec) const {
+    const double kPi = 3.14159265358979323846;
+    if (className == "constant") {
+      return freqHz;
+    }
+    if (className == "vibrato") {
+      // The generator's instantaneous-frequency formula, verbatim
+      // (corpus_gen synthesizeMono).
+      return baseHz * std::exp2(vibratoSt * std::sin(2.0 * kPi * vibratoHz * tSec) / 12.0);
+    }
+    // sweep-log: f(t) = startHz * (endHz/startHz)^(t/T).
+    return startHz * std::pow(endHz / startHz, tSec / totalSec);
+  }
+};
+
 /// Corpus asset metadata (§15.5 — category + bandContentHz are the fields
-/// the metrics consume).
+/// the metrics consume; cycle 6/§10.5 item 9 adds the optional analytic f0
+/// recipe).
 struct AssetMeta {
   std::string assetId;
   std::string category;
   bool hasBand = false;
   double bandLo = 0.0;
   double bandHi = 0.0;
+  bool hasF0Recipe = false;
+  F0Recipe f0;
 };
 
 struct DeclaredLatency {

@@ -28,7 +28,8 @@ int cmdVersion() {
   std::printf("pitchlab %s (%s)\ncompiler: %s\nstatus: all five v0.1 engines implemented "
               "(varispeed, vardelay, pv.classic, pv.phaselocked, granular) — registry "
               "content equals implemented engines; analysis layer implemented (§17 "
-              "step 5, analytic metrics; tracker-dependent metrics gated)",
+              "step 5, analytic metrics; the OD-12 clean-room pYIN tracker implemented "
+              "— the tracker-dependent metrics measure)",
               pitchlab::versionString(), pitchlab::phaseString(), pitchlab::compilerId());
   return 0;
 }

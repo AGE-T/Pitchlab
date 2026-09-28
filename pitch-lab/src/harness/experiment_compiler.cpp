@@ -128,8 +128,12 @@ ResolvedAsset resolveAsset(const std::string& assetId, const std::filesystem::pa
   const toml::TomlTable meta = toml::parseTomlFile(metadataPath);
   checkAllowedKeys(meta,
                    {"id", "category", "sampleRate", "channels", "durationSec", "sourceDescription",
-                    "referenceStatus", "bandContentHz"},
+                    "referenceStatus", "bandContentHz", "f0"},
                    metadataPath.string(), "");
+  // NOTE: the optional [f0] analytic recipe table (§10.5 item 9, cycle 6)
+  // is presence-checked here for typo protection only — its semantic
+  // validation (per-class keys, values) lives in the analysis layer's
+  // loadAssetMeta, which is its sole consumer.
   const int64_t metaRate = meta.at("sampleRate").asInteger(metadataPath.string(), "sampleRate");
   const int64_t metaCh = meta.at("channels").asInteger(metadataPath.string(), "channels");
   if (metaRate != static_cast<int64_t>(asset.sampleRate) || metaCh != asset.channels) {

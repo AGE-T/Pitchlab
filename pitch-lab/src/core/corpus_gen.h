@@ -75,6 +75,24 @@ struct CorpusConfig {
 /// unsupported rate, channel-count mismatch, invalid param values).
 [[nodiscard]] CorpusConfig parseCorpusConfig(const std::filesystem::path& tomlFile);
 
+/// The analytic fundamental-frequency recipe of a corpus asset (§10.5 item 9,
+/// cycle 6 / OD-12): the metadata.toml [f0] block for classes with an analytic
+/// f0. The recipes EXACTLY mirror the generator's instantaneous-frequency
+/// math (synthesizeMono) so the analysis layer's expected-f0 model derives
+/// from the SAME formula the signal was synthesised with. Classes without a
+/// single analytic fundamental (polyphonic, noise, transients, stereo,
+/// wideband) carry NO recipe (present = false).
+struct CorpusF0Recipe {
+  bool present = false;
+  std::string className;   // "constant" | "vibrato" | "sweep-log"
+  double freqHz = 0.0;     // constant: f0(t) = freqHz
+  double baseHz = 0.0;     // vibrato: f0(t) = baseHz * 2^(vibratoSt*sin(2*pi*vibratoHz*t)/12)
+  double vibratoHz = 0.0;  //   (the synthesizeMono instantaneous frequency, verbatim)
+  double vibratoSt = 0.0;
+  double startHz = 0.0;    // sweep-log: f0(t) = startHz * (endHz/startHz)^(t/T),
+  double endHz = 0.0;      //   T = frames/fs (the analytic phase-integral inverse)
+};
+
 /// A generated corpus item: planar channels (pre-normalisation synthesis,
 /// then normalised) + metadata text.
 struct GeneratedCorpusItem {
@@ -84,6 +102,7 @@ struct GeneratedCorpusItem {
   double peakLinear = 0.0;                    // exact max |sample| before scaling
   std::vector<double> bandContentHz;          // [lo, hi] for metadata
   std::string sourceDescription;              // §11.2 formula
+  CorpusF0Recipe f0;                          // §10.5 item 9 (optional block)
 };
 
 /// Generate ONE item (pure + deterministic: a function of spec + itemSeed).

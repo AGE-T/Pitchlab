@@ -132,6 +132,69 @@ AssetMeta loadAssetMeta(const fs::path& pitchlabRoot, const std::string& assetId
     }
     meta.hasBand = true;
   }
+  // §10.5 item 9: the optional analytic f0 recipe ([f0] table). Per-class
+  // key validation with unknown-key rejection; a malformed block is a
+  // CONFIG ERROR (the §10.5 item 11 failure model — the run continues with
+  // a per-job analysis-error).
+  const auto f0Node = doc.find("f0");
+  if (f0Node != doc.end()) {
+    const toml::TomlTable& f0 = f0Node->second.asTable(file.string(), "f0");
+    F0Recipe recipe;
+    const auto cls = f0.find("class");
+    if (cls == f0.end()) {
+      throw ConfigError(file.string(), "f0.class", "the [f0] block needs a class");
+    }
+    recipe.className = cls->second.asString(file.string(), "f0.class");
+    if (recipe.className == "constant") {
+      const auto it = f0.find("freqHz");
+      if (it == f0.end()) {
+        throw ConfigError(file.string(), "f0.freqHz", "constant recipe needs freqHz");
+      }
+      recipe.freqHz = it->second.asDouble(file.string(), "f0.freqHz");
+      if (!(recipe.freqHz > 0.0)) {
+        throw ConfigError(file.string(), "f0.freqHz", "freqHz must be > 0");
+      }
+      if (f0.size() != 2) {
+        throw ConfigError(file.string(), "f0", "unknown keys in the [f0] constant recipe");
+      }
+    } else if (recipe.className == "vibrato") {
+      for (const char* key : {"baseHz", "vibratoHz", "vibratoSt"}) {
+        if (f0.find(key) == f0.end()) {
+          throw ConfigError(file.string(), std::string("f0.") + key,
+                            std::string("vibrato recipe needs ") + key);
+        }
+      }
+      recipe.baseHz = f0.at("baseHz").asDouble(file.string(), "f0.baseHz");
+      recipe.vibratoHz = f0.at("vibratoHz").asDouble(file.string(), "f0.vibratoHz");
+      recipe.vibratoSt = f0.at("vibratoSt").asDouble(file.string(), "f0.vibratoSt");
+      if (!(recipe.baseHz > 0.0) || recipe.vibratoHz < 0.0) {
+        throw ConfigError(file.string(), "f0", "vibrato recipe values out of range");
+      }
+      if (f0.size() != 4) {
+        throw ConfigError(file.string(), "f0", "unknown keys in the [f0] vibrato recipe");
+      }
+    } else if (recipe.className == "sweep-log") {
+      for (const char* key : {"startHz", "endHz"}) {
+        if (f0.find(key) == f0.end()) {
+          throw ConfigError(file.string(), std::string("f0.") + key,
+                            std::string("sweep-log recipe needs ") + key);
+        }
+      }
+      recipe.startHz = f0.at("startHz").asDouble(file.string(), "f0.startHz");
+      recipe.endHz = f0.at("endHz").asDouble(file.string(), "f0.endHz");
+      if (!(recipe.startHz > 0.0) || !(recipe.endHz > recipe.startHz)) {
+        throw ConfigError(file.string(), "f0", "sweep-log recipe needs 0 < startHz < endHz");
+      }
+      if (f0.size() != 3) {
+        throw ConfigError(file.string(), "f0", "unknown keys in the [f0] sweep-log recipe");
+      }
+    } else {
+      throw ConfigError(file.string(), "f0.class",
+                        "unknown f0 recipe class '" + recipe.className + "'");
+    }
+    meta.f0 = recipe;
+    meta.hasF0Recipe = true;
+  }
   return meta;
 }
 
