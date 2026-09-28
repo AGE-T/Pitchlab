@@ -896,3 +896,17 @@ Stage Summary:
 - **The v0.1 RESULT PRODUCT exists as a retained, reproducible project artifact: `pitch-lab/results/v0.1/`** — 30 real renders (audible f32 WAVs), 30 real analysis artifacts, the human-readable comparative report; produced by the real five-engine + Analyzer + pYIN-tracker pipeline from the committed state; 120/120 byte-deterministic on regeneration.
 - The product demonstrates the system as a usable research OUTPUT tool: per-metric engine signatures (control-rate lag, vibrato tracking, transient behaviour, duration behaviour, steady-state accuracy) with honest statuses and NO global score.
 - v0.1 terminal state: §17.6 PASS (the last gate) + the result product produced. OD-6/OD-9/OD-18 remain OPEN (owner ratification). No further verification work; the roadmap continues at the owner's direction.
+
+---
+Task ID: 20 (continuation)
+Agent: orchestrator (result product)
+Task: CI verification of the §17.6-gate + result-product push (the canonical runner evidence — the terminal v0.1 CI state)
+
+Work Log:
+- ACTIVATION PUSH: `99d4c56..8004ec6 main -> main` — **run 36434307334: SUCCESS** on the canonical environment (GCC 13.3.0 asserted; CMake 3.31.6 sha256-pinned; every step green: Checkout -> Toolchain report + anti-drift assertions -> pinned CMake install -> Configure -> Build -> Test -> Upload CI evidence).
+- ci-evidence artefact (id 10974877704) downloaded and content-verified: configure.log "The CXX compiler identification is GNU 13.3.0"; build.log clean (ZERO warnings/errors — the CLI-banner honesty change in src/cli/main.cpp compiles warning-free under -Wall -Wextra -Wpedantic -Werror); test.log "100% tests passed, 0 tests failed out of 27" (130.12 s); JUnit `tests="27" failures="0" disabled="0" skipped="0"`.
+- The retained results/v0.1/ tree rides this push as ordinary repository content (the committed experiment file + corpus are the inputs; CI runs the test suites, never DSP renders — build spec §10; the product's own 120/120 byte-determinism check is the recorded local same-binary evidence, §13.8).
+
+Stage Summary:
+- **The terminal v0.1 CI state: run 36434307334 GREEN at main @ 8004ec6** (JUnit 27/27, content-verified). Run history at the terminal head: ...36352620565 (cycle-5 @ a3dc0fe), 36407493452 (OD-12 cycle-6 @ 1eee3a3), 36408075811 (gate-day HEAD @ 99d4c56), 36434307334 (the §17.6-gate + result-product closure @ 8004ec6).
+- **v0.1 IS COMPLETE AND CLOSED END-TO-END**: §17.6 THE FINAL GATE — PASS (the last gate; no further verification gate may be created, owner stop condition); the RESULT PRODUCT retained at `pitch-lab/results/v0.1/`; OD-6/OD-9/OD-18 OPEN for owner ratification; the roadmap continues at the owner's direction.
