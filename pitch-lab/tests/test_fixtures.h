@@ -129,10 +129,13 @@ struct TestRoot {
 
   /// Write a corpus asset (mono/stereo planar data, float64 WAV + metadata).
   /// `category`/`bandContentHz` override the default test metadata (the
-  /// metrics consume these — §15.5).
+  /// metrics consume these — §15.5); `f0Toml` (optional, cycle 6/§10.5
+  /// item 9) appends an analytic-f0 recipe block to metadata.toml (the
+  /// tracker-dependent metrics consume it).
   void makeAsset(const std::string& id, uint32_t fs, const std::vector<std::vector<double>>& ch,
                  const std::string& category = "sine",
-                 const std::vector<double>* bandContentHz = nullptr) const {
+                 const std::vector<double>* bandContentHz = nullptr,
+                 const std::string& f0Toml = "") const {
     const fs::path dir = root / "assets" / "corpus" / id;
     fs::create_directories(dir);
     std::vector<const double*> ptrs;
@@ -147,6 +150,10 @@ struct TestRoot {
     if (bandContentHz != nullptr && bandContentHz->size() == 2) {
       meta += "bandContentHz = [" + std::to_string((*bandContentHz)[0]) + ", " +
               std::to_string((*bandContentHz)[1]) + "]\n";
+    }
+    if (!f0Toml.empty()) {
+      meta += f0Toml;
+      if (f0Toml.back() != '\n') meta += "\n";
     }
     writeFile(dir / "metadata.toml", meta);
   }

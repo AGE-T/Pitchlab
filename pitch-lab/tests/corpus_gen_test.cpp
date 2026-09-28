@@ -134,6 +134,100 @@ TEST_CASE("T-C1c: metadata.toml — §15.5 fields with honest values") {
   }
 }
 
+TEST_CASE("T-C1e: [f0] recipe block — the analytic-f0 classes declare the "
+          "synthesis-mirroring recipe; the others declare nothing (§10.5 item 9)") {
+  const auto config = pitchlab::parseCorpusConfig(kConfigFile);
+  const auto items = pitchlab::generateCorpus(config);
+  // The committed metadata must carry exactly the generator's recipe decision
+  // (regeneration-identity already proven by T-C1's tool gate; this pins the
+  // SCHEMA and the per-class values against the analytic expectations).
+  for (const auto& item : items) {
+    const auto metaPath = kCorpusDir / item.spec.id / "metadata.toml";
+    if (!std::filesystem::exists(metaPath)) {
+      FAIL_CHECK("committed metadata missing: " << metaPath.string());
+      continue;
+    }
+    const auto meta = pitchlab::toml::parseTomlFile(metaPath);
+    const auto hasBlock = meta.find("f0") != meta.end();
+    REQUIRE(hasBlock == item.f0.present);
+    if (!item.f0.present) continue;
+    const auto& f0 = meta.at("f0").asTable(metaPath.string(), "f0");
+    REQUIRE(f0.at("class").asString(metaPath.string(), "f0.class") ==
+            item.f0.className);
+    if (item.f0.className == "constant") {
+      REQUIRE(f0.size() == 2);
+      REQUIRE(f0.at("freqHz").asDouble(metaPath.string(), "f0.freqHz") ==
+              doctest::Approx(item.f0.freqHz));
+    } else if (item.f0.className == "vibrato") {
+      REQUIRE(f0.size() == 4);
+      REQUIRE(f0.at("baseHz").asDouble(metaPath.string(), "f0.baseHz") ==
+              doctest::Approx(item.f0.baseHz));
+      REQUIRE(f0.at("vibratoHz").asDouble(metaPath.string(), "f0.vibratoHz") ==
+              doctest::Approx(item.f0.vibratoHz));
+      REQUIRE(f0.at("vibratoSt").asDouble(metaPath.string(), "f0.vibratoSt") ==
+              doctest::Approx(item.f0.vibratoSt));
+    } else {  // sweep-log
+      REQUIRE(f0.size() == 3);
+      REQUIRE(f0.at("startHz").asDouble(metaPath.string(), "f0.startHz") ==
+              doctest::Approx(item.f0.startHz));
+      REQUIRE(f0.at("endHz").asDouble(metaPath.string(), "f0.endHz") ==
+              doctest::Approx(item.f0.endHz));
+    }
+  }
+  // Independent analytic pins (the corpus.toml recipe values, NOT the
+  // generator's in-memory structs): the four sines are constant 440; the
+  // saw-vibrato and voice assets are vibrato recipes; the plain stack is a
+  // zero-rate vibrato (constant by formula); the sweep is 20 -> 10800.
+  {
+    const auto read = [](const std::string& id) {
+      return pitchlab::toml::parseTomlFile(kCorpusDir / id / "metadata.toml");
+    };
+    for (const char* id : {"syn-sine-440-5s-44k1", "syn-sine-440-5s-48k",
+                           "syn-sine-440-5s-96k", "syn-sine-440-5s-192k"}) {
+      const auto m = read(id);
+      const auto& f0 = m.at("f0").asTable(id, "f0");
+      CHECK(f0.at("class").asString(id, "f0.class") == "constant");
+      CHECK(f0.at("freqHz").asDouble(id, "f0.freqHz") == doctest::Approx(440.0));
+    }
+    {
+      const auto m = read("syn-harmonic-saw-220-vibrato-5s-48k");
+      const auto& f0 = m.at("f0").asTable("saw", "f0");
+      CHECK(f0.at("class").asString("saw", "f0.class") == "vibrato");
+      CHECK(f0.at("baseHz").asDouble("saw", "f0.baseHz") ==
+            doctest::Approx(220.0));
+      CHECK(f0.at("vibratoHz").asDouble("saw", "f0.vibratoHz") ==
+            doctest::Approx(5.0));
+      CHECK(f0.at("vibratoSt").asDouble("saw", "f0.vibratoSt") ==
+            doctest::Approx(0.5));
+    }
+    {
+      const auto m = read("syn-voice-vowel-120-5s-48k");
+      const auto& f0 = m.at("f0").asTable("voice", "f0");
+      CHECK(f0.at("baseHz").asDouble("voice", "f0.baseHz") ==
+            doctest::Approx(120.0));
+    }
+    {
+      const auto m = read("syn-sweep-log-20-10800-4s-48k");
+      const auto& f0 = m.at("f0").asTable("sweep", "f0");
+      CHECK(f0.at("class").asString("sweep", "f0.class") == "sweep-log");
+      CHECK(f0.at("startHz").asDouble("sweep", "f0.startHz") ==
+            doctest::Approx(20.0));
+      CHECK(f0.at("endHz").asDouble("sweep", "f0.endHz") ==
+            doctest::Approx(10800.0));
+    }
+    // No recipe blocks on the non-analytic classes.
+    for (const char* id : {"syn-poly-chord-5s-48k", "syn-noise-white-5s-48k",
+                           "syn-noise-pink-5s-48k", "syn-transient-impulses-2s-48k",
+                           "syn-transient-percussive-2s-48k",
+                           "syn-stereo-correlated-noise-5s-48k",
+                           "syn-stereo-decorrelated-noise-5s-48k",
+                           "syn-wideband-5s-176k4", "syn-wideband-5s-192k"}) {
+      const auto m = read(id);
+      CHECK_MESSAGE(m.find("f0") == m.end(), id << " must declare no [f0] block");
+    }
+  }
+}
+
 TEST_CASE("T-C1d: -12 dBFS true-peak normalisation (exact-signal scaling)") {
   const auto config = pitchlab::parseCorpusConfig(kConfigFile);
   const auto items = pitchlab::generateCorpus(config);

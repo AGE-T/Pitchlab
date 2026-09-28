@@ -1,7 +1,7 @@
 // T-M-A suite (implementation specification §10.4 items 2/3/5/7/19/20/21/22,
 // cycle 5, §17 step 5): the Analyzer end-to-end — canonical-JSON reader
 // round-trip, metric-registry semantics, config loading, artifact schema +
-// determinism (byte identity), the failure-model matrix, tracker-gated
+// determinism (byte identity), the failure-model matrix, f0-recipe
 // statuses, reference resolution.
 //
 // The end-to-end path is the REAL one: TestRoot -> production engine
@@ -234,7 +234,7 @@ TEST_CASE("T-M-A6: the COMMITTED config/metrics.toml parses with the full "
 // Analyzer end-to-end (§10.4 items 3/20/21)
 // ---------------------------------------------------------------------------
 
-TEST_CASE("T-M-A7: end-to-end — schema, result ordering, provenance, tracker "
+TEST_CASE("T-M-A7: end-to-end — schema, result ordering, provenance, f0-recipe "
           "gating, cpu-cost gating, self-reference golden") {
   AnalyzeFixture fx;
   REQUIRE(fx.render().allOk());
@@ -315,16 +315,19 @@ TEST_CASE("T-M-A7: end-to-end — schema, result ordering, provenance, tracker "
   const Object& cc = findResult(art, "cpu-cost").asObject();
   CHECK(cc.at("status").asString() == "not-applicable");
   CHECK(cc.at("values").asObject().at("realTimeFactor").isNull());
-  // Tracker-gated metrics: tracker-unavailable with null values + OD-12 note.
+  // Tracker-dependent metric on an asset WITHOUT an analytic f0 recipe:
+  // not-applicable with the §10.5 item 10 recipe note (the tracker itself
+  // is implemented — the honest gate is the missing analytic expected f0,
+  // NOT a tracker-unavailable stub; OD-12 is DONE for this metric family).
   const Object& pe = findResult(art, "pitch-error").asObject();
-  CHECK(pe.at("status").asString() == "tracker-unavailable");
-  CHECK(pe.at("values").asObject().at("medianCents").isNull());
-  CHECK(pe.at("values").asObject().at("p95Cents").isNull());
-  bool od12 = false;
+  CHECK(pe.at("status").asString() == "not-applicable");
+  bool recipeNote = false;
   for (const Value& n : pe.at("notes").asArray()) {
-    if (n.asString().find("OD-12") != std::string::npos) od12 = true;
+    if (n.asString().find("no analytic f0 recipe") != std::string::npos) recipeNote = true;
   }
-  CHECK(od12);
+  CHECK(recipeNote);
+  // The tracker identity is recorded in the method metadata.
+  CHECK(pe.at("method").asObject().at("tracker").asString().find("pYIN") != std::string::npos);
   // The granular job: cross-class spectral-error measured (status ok,
   // finite; the reference is varispeed's render).
   const Value gart = json::parse(readBytes(granularJob->artifactPath), "analysis.json");
