@@ -597,13 +597,14 @@ int main(int argc, char** argv) {
     expectNear("CHECK2 crossfade: survives polling",
                edit->getParamNormalized(param::kVdCrossfade), xfU, kUiTol);
 
-    // ---- CHECK 3: ENGINE selector — every engine reachable from the UI ---
-    const int cycle[] = {0, 2, 3, 4, 1};  // varispeed, granular, classic, locked, back
-    for (int e : cycle) {
+    // ---- shared helpers for the engine phases -------------------------------
+    // engine panel slider rows (frame coords): the 1st..4th engine parameter
+    // of the selected engine's panel sits at y = 100 / 130 / 160 / 190
+    // (panel at (472,54), sliders local (12,y)-(170,y+20), y from 36).
+    constexpr int kRow1 = 100, kRow2 = 130, kRow3 = 160, kRow4 = 190;
+    // click an engine segment and wait (bounded) for the adapter to ADOPT it
+    auto selectEngine = [&](int e) {
       click(86, 70 + 34 * e + 17);
-      expectNear("CHECK3 engine: controller kEngine after click",
-                 edit->getParamNormalized(param::kEngine), e / 4.0, kUiTol);
-      // the chain adopts while audio runs; retry bounded
       bool adopted = false;
       for (int attempt = 0; attempt < 10 && !adopted; ++attempt) {
         processBlocks(2);
@@ -612,27 +613,225 @@ int main(int argc, char** argv) {
       }
       if (!adopted) ++failures;
       std::printf("ui-binding: %-46s %s (status engineIndex=%d want %d)\n",
-                  "CHECK3 engine: adapter adopted the engine", adopted ? "PASS" : "FAIL",
+                  "engine selection: adapter adopted", adopted ? "PASS" : "FAIL",
                   statusIface->getStatus().engineIndex, e);
-      frame.runFor(250);  // poll stability after the switch
-      expectNear("CHECK3 engine: selector survives polling",
-                 edit->getParamNormalized(param::kEngine), e / 4.0, kUiTol);
+      return adopted;
+    };
+    // the per-engine REALITY of the status (no fake indicators): the numeric
+    // fields must match the actual runtime (engine, adaptation mode, sample
+    // rate, block size, latency > 0, zero RT faults, chain ready)
+    auto expectStatusReality = [&](int engine, bool splice, const char* phase) {
+      const StatusSnapshot st = statusIface->getStatus();
+      char label[96];
+      std::snprintf(label, sizeof(label), "%s: status engine real", phase);
+      expectNear(label, st.engineIndex, engine, 0.0);
+      std::snprintf(label, sizeof(label), "%s: status adaptation (splice)", phase);
+      expectNear(label, st.spliceMode ? 1.0 : 0.0, splice ? 1.0 : 0.0, 0.0);
+      std::snprintf(label, sizeof(label), "%s: status sample rate real", phase);
+      expectNear(label, st.sampleRate, kFs, 0.0);
+      std::snprintf(label, sizeof(label), "%s: status max block real", phase);
+      expectNear(label, st.maxBlock, 1024, 0.0);
+      std::snprintf(label, sizeof(label), "%s: status latency real", phase);
+      expectNear(label, st.latencyFrames > 0 ? 1.0 : 0.0, 1.0, 0.0);
+      std::snprintf(label, sizeof(label), "%s: status RT faults", phase);
+      expectNear(label, static_cast<double>(st.faults), 0.0, 0.0);
+      std::snprintf(label, sizeof(label), "%s: status chain ready", phase);
+      expectNear(label, st.chainReady ? 1.0 : 0.0, 1.0, 0.0);
+    };
+    // drive one engine-panel slider: write-through + re-prepare (the adapter
+    // received it: every engine parameter is in the chain signature) + poll
+    // stability. Returns the EXACT normalized value for persistence checks.
+    auto driveSlider = [&](const char* name, uint32_t tag, int y, double u) {
+      const int x = 484 + static_cast<int>(u * 158.0 + 0.5);
+      const double uExact = (x - 484) / 158.0;
+      const uint64_t before = statusIface->getStatus().reprepares;
+      drag(484 + 20, x, y);
+      char label[96];
+      std::snprintf(label, sizeof(label), "%s: controller write-through", name);
+      expectNear(label, edit->getParamNormalized(tag), uExact, kUiTol);
+      frame.runFor(300);  // ~9 sync ticks
+      std::snprintf(label, sizeof(label), "%s: survives polling", name);
+      expectNear(label, edit->getParamNormalized(tag), uExact, kUiTol);
+      processBlocks(2);
+      frame.runFor(150);
+      // the chain rebuild is ASYNC by design (prep-thread debounce): wait
+      // bounded for the re-prepare (the unsanitised case lands within
+      // ~50 ms; the sanitizer runs are 10-20x slower)
+      bool bumped = statusIface->getStatus().reprepares > before;
+      for (int w = 0; w < 12 && !bumped; ++w) {
+        processBlocks(1);
+        frame.runFor(100);
+        bumped = statusIface->getStatus().reprepares > before;
+      }
+      if (!bumped) ++failures;
+      std::snprintf(label, sizeof(label), "%s: adapter re-prepared", name);
+      std::printf("ui-binding: %-46s %s (reprepares %llu -> %llu)\n", label,
+                  bumped ? "PASS" : "FAIL", static_cast<unsigned long long>(before),
+                  static_cast<unsigned long long>(statusIface->getStatus().reprepares));
+      return uExact;
+    };
+
+    // per-engine parameter values (for the persistence round; the vardelay
+    // values were set by CHECK1/2 above)
+    double vsQualityU = 0.0, vsAliasU = 0.0;
+    double grGrainU = 0.0, grOverlapU = 0.0, grJitterU = 0.0, grWindowU = 0.0;
+    double pvcFftU = 0.0, pvcHopU = 0.0;
+    double pvpFftU = 0.0, pvpHopU = 0.0;
+
+    // ---- PHASE A: VARISPEED (engine 0) --------------------------------------
+    if (selectEngine(0)) {
+      expectStatusReality(0, true, "A varispeed");
+      // the panel must contain ONLY varispeed's controls (a slider at row 1
+      // drives kVsQuality, row 2 kVsAllowAliasing — wrong panel content
+      // would drive the wrong tags and fail these write-throughs)
+      vsQualityU = driveSlider("A vs quality", param::kVsQuality, kRow1, 0.25);
+      vsAliasU = driveSlider("A vs allow aliasing", param::kVsAllowAliasing, kRow2, 0.8);
+    }
+
+    // ---- PHASE B: PV CLASSIC (engine 2, registry order) ---------------------
+    if (selectEngine(2)) {
+      expectStatusReality(2, false, "B pv-classic");
+      pvcFftU = driveSlider("B pvc fft (discrete)", param::kPvcFft, kRow1, 1.0);
+      pvcHopU = driveSlider("B pvc hop (discrete)", param::kPvcHop, kRow2, 0.25);
+    }
+
+    // ---- PHASE C: PV PHASELOCKED (engine 3) ---------------------------------
+    if (selectEngine(3)) {
+      expectStatusReality(3, false, "C pv-locked");
+      pvpFftU = driveSlider("C pvp fft (discrete)", param::kPvpFft, kRow1, 0.75);
+      pvpHopU = driveSlider("C pvp hop (discrete)", param::kPvpHop, kRow2, 0.5);
+      // locking mode is FIXED IDENTITY (buildEngineConfig: "identity"; no
+      // selectable lock-mode parameter exists in the model — verified: no
+      // parameter id/title mentions lock)
+      {
+        bool noLockParam = true;
+        const ParamMeta* table = parameterTable();
+        const uint32_t n = parameterCount();
+        for (uint32_t i = 0; i < n; ++i) {
+          if (std::strstr(table[i].id, "lock") != nullptr ||
+              std::strstr(table[i].title, "Lock") != nullptr ||
+              std::strstr(table[i].title, "lock") != nullptr) {
+            noLockParam = false;
+          }
+        }
+        if (!noLockParam) ++failures;
+        std::printf("ui-binding: %-46s %s\n",
+                    "C locking mode fixed identity (no lock param)",
+                    noLockParam ? "PASS" : "FAIL");
+      }
+    }
+
+    // ---- PHASE D: GRANULAR (engine 4) ---------------------------------------
+    if (selectEngine(4)) {
+      expectStatusReality(4, true, "D granular");
+      grGrainU = driveSlider("D gr grain (continuous)", param::kGrGrain, kRow1, 0.6);
+      grOverlapU = driveSlider("D gr overlap (discrete)", param::kGrOverlap, kRow2, 0.7);
+      grJitterU = driveSlider("D gr jitter (discrete)", param::kGrJitter, kRow3, 0.5);
+      grWindowU = driveSlider("D gr window (hann/tri)", param::kGrWindow, kRow4, 0.75);
+    }
+
+    // ---- the adapter's hop constraint probe (pv classic, engine 2) ----------
+    // fft index 0 (1024) + hop index 3 (1024) — the ENGINE receives
+    // min(hop, fft/2) = 512 (buildEngineConfig clamps); the chain must
+    // accept it (re-prepare, ready, fault-free). The reported latency uses
+    // the RAW hop (conservative — never under-reported).
+    if (selectEngine(2)) {
+      {
+        const uint64_t before = statusIface->getStatus().reprepares;
+        drag(484 + 20, 484, kRow1);          // fft -> index 0 (1024)
+        frame.runFor(60);
+        drag(484 + 20, 642, kRow2);          // hop -> index 3 (1024 > fft/2)
+        frame.runFor(300);
+        processBlocks(3);
+        frame.runFor(200);
+        // bounded wait for the async re-prepare (sanitizer-slow prep thread)
+        bool reprepared = statusIface->getStatus().reprepares > before;
+        for (int w = 0; w < 12 && !reprepared; ++w) {
+          processBlocks(1);
+          frame.runFor(100);
+          reprepared = statusIface->getStatus().reprepares > before;
+        }
+        const StatusSnapshot st = statusIface->getStatus();
+        const bool accepted = st.chainReady && st.faults == 0 && reprepared;
+        if (!accepted) ++failures;
+        std::printf("ui-binding: %-46s %s (fft=1024 hop=1024->clamped 512, ready=%d, "
+                    "faults=%llu)\n",
+                    "hop<=fft/2 constraint: engine accepted", accepted ? "PASS" : "FAIL",
+                    st.chainReady ? 1 : 0, static_cast<unsigned long long>(st.faults));
+      }
+      // restore the persistence state (fft index 2, hop index 1)
+      pvcFftU = driveSlider("B pvc fft restore", param::kPvcFft, kRow1, 1.0);
+      pvcHopU = driveSlider("B pvc hop restore", param::kPvcHop, kRow2, 0.25);
     }
 
     // ---- CHECK 4: switching away and back preserves per-engine edits -----
-    // (the cycle above just returned to vardelay: engine 1)
-    expectNear("CHECK4 excursion preserved across switches",
-               edit->getParamNormalized(param::kVdExcursion), excU, kUiTol);
-    expectNear("CHECK4 crossfade preserved across switches",
-               edit->getParamNormalized(param::kVdCrossfade), xfU, kUiTol);
+    // (the phases above cycled through every engine; now the explicit
+    // persistence round: select each engine and verify its values)
+    selectEngine(0);
+    expectNear("CHECK4 vs quality preserved", edit->getParamNormalized(param::kVsQuality),
+               vsQualityU, kUiTol);
+    expectNear("CHECK4 vs allow aliasing preserved", edit->getParamNormalized(param::kVsAllowAliasing),
+               vsAliasU, kUiTol);
+    selectEngine(1);
+    expectNear("CHECK4 excursion preserved", edit->getParamNormalized(param::kVdExcursion), excU,
+               kUiTol);
+    expectNear("CHECK4 crossfade preserved", edit->getParamNormalized(param::kVdCrossfade), xfU,
+               kUiTol);
+    selectEngine(2);
+    expectNear("CHECK4 gr grain preserved", edit->getParamNormalized(param::kGrGrain), grGrainU,
+               kUiTol);
+    expectNear("CHECK4 gr overlap preserved", edit->getParamNormalized(param::kGrOverlap), grOverlapU,
+               kUiTol);
+    expectNear("CHECK4 gr jitter preserved", edit->getParamNormalized(param::kGrJitter), grJitterU,
+               kUiTol);
+    expectNear("CHECK4 gr window preserved", edit->getParamNormalized(param::kGrWindow), grWindowU,
+               kUiTol);
+    selectEngine(3);
+    expectNear("CHECK4 pvc fft preserved", edit->getParamNormalized(param::kPvcFft), pvcFftU,
+               kUiTol);
+    expectNear("CHECK4 pvc hop preserved", edit->getParamNormalized(param::kPvcHop), pvcHopU,
+               kUiTol);
+    selectEngine(4);
+    expectNear("CHECK4 pvp fft preserved", edit->getParamNormalized(param::kPvpFft), pvpFftU,
+               kUiTol);
+    expectNear("CHECK4 pvp hop preserved", edit->getParamNormalized(param::kPvpHop), pvpHopU,
+               kUiTol);
+
+    // ---- CHECK M: the full ordered engine-switch matrix (20 pairs) ---------
+    // every a->b transition: the selector writes through, the adapter
+    // adopts, audio continues (the adoption retries process real blocks),
+    // no RT fault appears, the chain stays ready, and the live-control
+    // collections survive the panel rebuild churn (the poll timer runs
+    // throughout — a stale pointer would crash or corrupt here)
+    {
+      int pairFailures = 0;
+      for (int a = 0; a < 5; ++a) {
+        for (int b = 0; b < 5; ++b) {
+          if (a == b) continue;
+          selectEngine(a);
+          selectEngine(b);
+          const StatusSnapshot st = statusIface->getStatus();
+          if (st.engineIndex != b || !st.chainReady || st.faults != 0) ++pairFailures;
+        }
+      }
+      if (pairFailures > 0) ++failures;
+      const StatusSnapshot st = statusIface->getStatus();
+      std::printf("ui-binding: %-46s %s (%d/20 pairs clean, faults=%llu)\n",
+                  "M engine switch matrix: all ordered pairs", pairFailures == 0 ? "PASS" : "FAIL",
+                  20 - pairFailures, static_cast<unsigned long long>(st.faults));
+    }
 
     // ---- CHECK 5: the explicit long-poll stability pass --------------------
     frame.runFor(600);  // ~18 sync ticks
+    expectNear("CHECK5 final: vs quality stable", edit->getParamNormalized(param::kVsQuality),
+               vsQualityU, kUiTol);
     expectNear("CHECK5 final: excursion stable", edit->getParamNormalized(param::kVdExcursion),
                excU, kUiTol);
-    expectNear("CHECK5 final: crossfade stable", edit->getParamNormalized(param::kVdCrossfade),
-               xfU, kUiTol);
-    expectNear("CHECK5 final: engine stable", edit->getParamNormalized(param::kEngine), 0.25,
+    expectNear("CHECK5 final: gr grain stable", edit->getParamNormalized(param::kGrGrain), grGrainU,
+               kUiTol);
+    expectNear("CHECK5 final: pvc fft stable", edit->getParamNormalized(param::kPvcFft), pvcFftU,
+               kUiTol);
+    expectNear("CHECK5 final: pvp fft stable", edit->getParamNormalized(param::kPvpFft), pvpFftU,
                kUiTol);
 
     audio->setProcessing(false);

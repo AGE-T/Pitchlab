@@ -36,6 +36,15 @@ suites + the official Steinberg VST3 SDK validator: 47/47).
 | VARISPEED | native.varispeed | **Windowed-splice adaptation** (labelled amber in the UI): the true varispeed engine run in 0.2 s windows with 15 ms crossfades — the offline continuous render is impossible in sustained fixed-block realtime. Fixed worst-case latency ≈ 226 ms. |
 | GRANULAR | native.granular | **Windowed-splice adaptation** (labelled amber): the same measured boundary as varispeed, on the input side (the read grid advances at the pitch ratio per output frame). Fixed worst-case latency ≈ 325 ms at the default grain. |
 
+The ENGINE parameter's index follows the v0.1 **registry order** (§14-aligned,
+`engine_registry.cpp`): 0 varispeed, 1 vardelay, 2 pv.classic, 3
+pv.phaselocked, 4 granular — the engine identity ALWAYS comes from the
+registry (`engineIdForIndex` / `reg.at`); the editor's per-engine control
+panel is keyed to the same order. (A latent UI defect — the panel switch
+keyed to the implementation-chronology order, showing the granular panel
+for pv.classic and vice versa — was found and fixed by the CI `ui-binding`
+checks; the audio path was never affected.)
+
 The offline v0.1 pipeline (`pitchlab render`) remains the bit-exact research
 reference; the plug-in is the realtime product. Realtime output is
 deterministic for a fixed parameter trajectory, input and block schedule.

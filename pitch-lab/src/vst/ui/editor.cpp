@@ -486,17 +486,28 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
         tags = {param::kVdExcursion, param::kVdCrossfade};
         panelTitle_->set("VARDELAY", ui_::Palette::textDim());
         break;
-      case 2:  // native.granular
-        tags = {param::kGrGrain, param::kGrOverlap, param::kGrJitter, param::kGrWindow};
-        panelTitle_->set("GRANULAR", ui_::Palette::textDim());
-        break;
-      case 3:  // native.pv.classic
+      // ENGINE-INDEX MAPPING FIX: the cases MUST follow the v0.1 REGISTRY
+      // ORDER (engine_registry.cpp, §14-aligned): 0 varispeed, 1 vardelay,
+      // 2 native.pv.classic, 3 native.pv.phaselocked, 4 native.granular.
+      // The previous implementation assumed the implementation-chronology
+      // order (granular, pv.classic, pv.phaselocked at 2/3/4) — the
+      // SELECTOR LABELS and the AUDIO PATH were always correct
+      // (engineIdForIndex + reg.at), so selecting the segment labelled
+      // PV-CLASSIC ran pv.classic but showed the GRANULAR panel: the
+      // engine-specific controls edited parameters the running engine
+      // ignores (the "engine-specific controls do not behave as expected"
+      // symptom, persisting after the write-through fix).
+      case 2:  // native.pv.classic
         tags = {param::kPvcFft, param::kPvcHop};
         panelTitle_->set("PV-CLASSIC", ui_::Palette::textDim());
         break;
-      case 4:  // native.pv.phaselocked
+      case 3:  // native.pv.phaselocked
         tags = {param::kPvpFft, param::kPvpHop};
         panelTitle_->set("PV-LOCKED", ui_::Palette::textDim());
+        break;
+      case 4:  // native.granular
+        tags = {param::kGrGrain, param::kGrOverlap, param::kGrJitter, param::kGrWindow};
+        panelTitle_->set("GRANULAR", ui_::Palette::textDim());
         break;
       default:
         break;
@@ -684,7 +695,19 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
         std::snprintf(buf, sizeof(buf), "%lld", (long long)s.vdCrossfadeFrames);
         out.push_back(buf);
         break;
-      case 2:
+      case 2:  // native.pv.classic (registry order — see the panel fix above)
+        std::snprintf(buf, sizeof(buf), "%d", s.pvcFftSize);
+        out.push_back(buf);
+        std::snprintf(buf, sizeof(buf), "%d", s.pvcHop);
+        out.push_back(buf);
+        break;
+      case 3:  // native.pv.phaselocked
+        std::snprintf(buf, sizeof(buf), "%d", s.pvpFftSize);
+        out.push_back(buf);
+        std::snprintf(buf, sizeof(buf), "%d", s.pvpHop);
+        out.push_back(buf);
+        break;
+      case 4:  // native.granular
         std::snprintf(buf, sizeof(buf), "%.3f s", s.grGrainSec);
         out.push_back(buf);
         std::snprintf(buf, sizeof(buf), "%lld", (long long)s.grOverlap);
@@ -692,18 +715,6 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
         std::snprintf(buf, sizeof(buf), "%lld", (long long)s.grJitterFrames);
         out.push_back(buf);
         out.push_back(s.grWindowTriangular ? "tri" : "hann");
-        break;
-      case 3:
-        std::snprintf(buf, sizeof(buf), "%d", s.pvcFftSize);
-        out.push_back(buf);
-        std::snprintf(buf, sizeof(buf), "%d", s.pvcHop);
-        out.push_back(buf);
-        break;
-      case 4:
-        std::snprintf(buf, sizeof(buf), "%d", s.pvpFftSize);
-        out.push_back(buf);
-        std::snprintf(buf, sizeof(buf), "%d", s.pvpHop);
-        out.push_back(buf);
         break;
       default:
         break;

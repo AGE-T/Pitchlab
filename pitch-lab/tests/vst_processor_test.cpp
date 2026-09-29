@@ -333,6 +333,64 @@ TEST_CASE("state round trip: every parameter persists exactly") {
   b.shutdown();
 }
 
+TEST_CASE("state round trip: every ENGINE parameter persists exactly") {
+  // the engine-specific restoration surface (the UI-binding incident's
+  // persistence contract): varispeed quality/aliasing, vardelay
+  // excursion/crossfade, and both PV engines' FFT/hop — each engine's
+  // parameters must survive a save/load cycle with the ENGINE SELECTION
+  // itself (a preset saved on any engine restores that engine and its
+  // configuration).
+  Host a;
+  a.setup(48000.0, 1024);
+  a.setParam(param::kEngine, 3);            // save from pv.phaselocked (registry
+                                            // order: 2 = pv.classic, 3 = pv.phaselocked)
+  a.setParam(param::kVsQuality, 0);         // plain 0 = "small" (non-default)
+  a.setParam(param::kVsAllowAliasing, 1);
+  a.setParam(param::kVdExcursion, 0.31);    // non-default seconds
+  a.setParam(param::kVdCrossfade, 1234);    // non-default integer frames
+  a.setParam(param::kGrGrain, 0.23);
+  a.setParam(param::kGrOverlap, 9);
+  a.setParam(param::kGrJitter, 77);
+  a.setParam(param::kGrWindow, 1);
+  a.setParam(param::kPvcFft, 2);            // index 2 -> fft 4096
+  a.setParam(param::kPvcHop, 3);            // index 3 -> hop 1024
+  a.setParam(param::kPvpFft, 0);            // index 0 -> fft 1024
+  a.setParam(param::kPvpHop, 1);            // index 1 -> hop 256
+  const ParamSnapshot want = a.snapshot();
+
+  MemStream stream;
+  CHECK(a.plug->getState(&stream) == kResultOk);
+  Host b;  // a fresh instance
+  b.setup(48000.0, 1024);
+  stream.pos = 0;
+  CHECK(b.plug->setState(&stream) == kResultOk);
+  const ParamSnapshot got = b.snapshot();
+
+  CHECK(got.engineIndex == want.engineIndex);
+  CHECK(got.engineIndex == 3);  // the saved engine selection restores
+  CHECK(got.vsQuality == want.vsQuality);
+  CHECK(got.vsQuality == 0);
+  CHECK(got.vsAllowAliasing == want.vsAllowAliasing);
+  CHECK(got.vsAllowAliasing == true);
+  CHECK(std::fabs(got.vdExcursionSec - want.vdExcursionSec) < 1e-9);
+  CHECK(got.vdCrossfadeFrames == want.vdCrossfadeFrames);
+  CHECK(got.vdCrossfadeFrames == 1234);
+  CHECK(std::fabs(got.grGrainSec - want.grGrainSec) < 1e-9);
+  CHECK(got.grOverlap == want.grOverlap);
+  CHECK(got.grJitterFrames == want.grJitterFrames);
+  CHECK(got.grWindowTriangular == want.grWindowTriangular);
+  CHECK(got.pvcFftSize == want.pvcFftSize);
+  CHECK(got.pvcFftSize == 4096);
+  CHECK(got.pvcHop == want.pvcHop);
+  CHECK(got.pvcHop == 1024);
+  CHECK(got.pvpFftSize == want.pvpFftSize);
+  CHECK(got.pvpFftSize == 1024);
+  CHECK(got.pvpHop == want.pvpHop);
+  CHECK(got.pvpHop == 256);
+  a.shutdown();
+  b.shutdown();
+}
+
 TEST_CASE("automation: pitch ramps propagate into the processing") {
   Host h;
   h.setup(48000.0, 512);
