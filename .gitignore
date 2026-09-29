@@ -63,9 +63,9 @@ server.out.log
 .zscripts/dev.pid
 
 # pitch-lab C++ project — generated trees are never committed (architecture §B.2/B.3)
-pitch-lab/build/
-pitch-lab/build-local/
+pitch-lab/build*/
 pitch-lab/artifacts/
+pitch-lab/tools-diag/
 
 # CI workflow is TRACKED (.github/workflows/ci.yml). Historical note: it was
 # gitignored between the freeze commit and OD-17 activation because the PAT

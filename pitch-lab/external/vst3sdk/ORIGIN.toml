@@ -1,0 +1,46 @@
+# Vendored VST3 SDK + VSTGUI — provenance record (the v0.1 external/
+# ORIGIN.toml pattern, extended for a full buildable SDK tree).
+#
+# PRODUCT-PHASE EXCEPTION (research/pitch-lab-vst3-product-phase-specification.md §5):
+# the v0.1 external/ rule permits only BSD/MIT/BSL/ISC-class licences. The
+# Steinberg VST3 SDK is dual-licensed (GPLv3 OR the Steinberg VST3
+# proprietary licence agreement). Pitch Lab vendors and uses it under the
+# PROPRIETARY Steinberg VST3 licence (the intended path for closed-source
+# VST3 plug-ins) — NOT the GPLv3 path; no GPL code enters the DSP runtime
+# or the product binary through this tree. VSTGUI (inside this tree) is
+# BSD-3-Clause. The v0.1 DSP core remains zero-dependency and unlinked to
+# anything from this tree.
+
+version = 1
+
+[[origin]]
+name = "vst3sdk"
+version = "3.7.14 (tag v3.7.14_build_55)"
+upstream = "https://github.com/steinbergmedia/vst3sdk"
+source_url = "https://github.com/steinbergmedia/vst3sdk.git (tag v3.7.14_build_55)"
+commit = "43b4e366ff84afc9b4247776acbf5e234683b77f"
+submodules = [
+  { path = "vstgui4", upstream = "https://github.com/steinbergmedia/vstgui", commit = "b1e823550e23067c5adee67f05ac3ddaba7a25c9" },
+]
+retrieved = "2026-10-01"
+license = "VST3 SDK: dual Steinberg VST3 licence (agreement VST3_License_Agreement.pdf, verbatim in tree) OR GPLv3 — Pitch Lab uses the PROPRIETARY VST3 licence path (see the exception note above). VSTGUI: BSD-3-Clause (vstgui4/LICENSE, verbatim in tree)."
+license_verification = "Checked at vendoring time: LICENSE.txt (the VST3 licence text) and VST3_License_Agreement.pdf present at the tree root; vstgui4/LICENSE is the BSD-3-Clause text. Both read and confirmed before vendoring."
+purpose = "The official Steinberg VST3 SDK + VSTGUI: build and runtime dependency of the Pitch Lab VST3 product layer (plug-in module, VSTGUI editor, validator test infrastructure). Never linked into the v0.1 research DSP core."
+consumer = "pitch-lab src/vst/* (PITCHLAB_BUILD_VST3 CMake targets)"
+
+# Exact documented tree scope (no silent drift): the clone at the pinned
+# tag/commits above with ONLY these paths excluded —
+#   doc/          (149 MB HTML documentation — content, not buildable code)
+#   tutorials/    (tutorial sources)
+# NOTHING under base/, cmake/, pluginterfaces/, public.sdk/ (including
+# samples/ = validator + hosting examples), vstgui4/ was modified or
+# removed. The SDK is vendored VERBATIM: no patches inside this tree; any
+# platform accommodation lives in the product layer's CMake.
+excluded_paths = ["doc/", "tutorials/"]
+
+# Deterministic whole-tree digest (the v0.1 per-file sha256 pattern is
+# impractical for 2021 files): sorted null-delimited path list piped
+# through sha256sum, re-hashed:
+#   find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum
+tree_files = 2021
+tree_sha256 = "95c700b5a71f85903bd305614fdc9e8ae9a15363d7b10fddea91ba3d844ab25e"
