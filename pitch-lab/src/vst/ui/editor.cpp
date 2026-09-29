@@ -416,14 +416,19 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     // VSTGUI contract): an explicit forget() here would double-release
     // (use-after-free; found by opening the real editor under Xvfb).
     for (ui_::PLSlider* s : engineSliders_) {
-      enginePanel_->removeView(s);
       // P0.3 (Task 24): the authoritative live-control collection must
       // contain ONLY live controls — the removed slider is FORGOTTEN
-      // (freed) here, so the stale entry in sliderByTag_ left behind by the
-      // previous implementation was a use-after-free dereferenced by the
-      // 33 ms polling timer (syncControlValues) until the engine switched
-      // back to this engine's panel.
-      sliderByTag_.erase(static_cast<uint32_t>(s->getTag()));
+      // (freed) by removeView, so the stale entry in sliderByTag_ left
+      // behind by the previous implementation was a use-after-free
+      // dereferenced by the 33 ms polling timer (syncControlValues) until
+      // the engine switched back to this engine's panel. NOTE: the tag is
+      // read BEFORE the removal — removeView frees the view, so touching
+      // it afterwards is exactly the use-after-free class this fix closes
+      // (the first version of this fix read it after and crashed the
+      // editor open under Xvfb — caught by the CI run).
+      const uint32_t removedTag = static_cast<uint32_t>(s->getTag());
+      enginePanel_->removeView(s);
+      sliderByTag_.erase(removedTag);
     }
     for (ui_::MicroLabel* l : engineValues_) {
       enginePanel_->removeView(l);  // forgets (see note above)
