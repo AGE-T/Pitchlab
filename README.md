@@ -76,7 +76,13 @@ Product: knowledge and tested DSP components — not shippable audio software.
 > SDK validator run — **47/47**); the adapter/processor/parameter doctest
 > suites incl. every ordered engine-pair mid-stream switch; docs at
 > `pitch-lab/docs/vst3-product.md` + the product-phase specification
-> (`research/pitch-lab-vst3-product-phase-specification.md`). v0.1 remains
+> (`research/pitch-lab-vst3-product-phase-specification.md`).
+> **DELIVERY (2026-09-29): the downloadable Windows x64 product package is
+> published by CI as the `PitchLab-VST3-Windows-x64` artefact on every
+> successful run** (build spec §16 — the §11-deferred Windows CI lane owner
+> decision, executed as a delivery-layer-only change; the real
+> `PitchLab.vst3` bundle, SDK-validator 47/47-checked, packaged clean;
+> `vst3-evidence` stays the separate evidence artefact). v0.1 remains
 > closed and untouched; OD-6/OD-9/OD-18 remain OPEN.
 
 This repository hosts **two systems with a hard boundary**:

@@ -77,6 +77,29 @@ to latency-compensated dry (counted in the status as faults).
 Known limitations (the honest list, including the effective-latency
 monotonicity and the splice-adaptation seams) are in the specification §12.
 
+## Getting the plug-in (the distributable)
+
+The Windows x64 product is published by CI on every push as the GitHub
+Actions artefact **`PitchLab-VST3-Windows-x64`**:
+
+1. Open the repository's **Actions** tab → the latest successful `ci` run.
+2. Download the **`PitchLab-VST3-Windows-x64`** artefact (any signed-in
+   GitHub user can; artefacts are retained for the GitHub default of 90
+   days from the run).
+3. Extract the zip → you get the real **`PitchLab.vst3`** bundle
+   (`Contents/x86_64-win/PitchLab.vst3` is the Windows x64 PE module).
+4. Copy `PitchLab.vst3` into `C:\Program Files\Common Files\VST3`, rescan
+   your DAW's plug-in cache.
+
+The artefact is produced by the `vst3-windows-x64-product` CI job: the
+same sources built by the documented VS 2022 path, validated by the
+official Steinberg SDK validator (47/47, asserted before packaging) plus
+package-content checks (module present, PE x64, no build junk). The zip
+is uploaded **only from a fully validated build** — the SHA-256 of the
+package is printed in the run log (build spec §16). The `vst3-evidence`
+artefact of the same run carries the Linux validation evidence; the
+product artefact is separate and never mixed with evidence.
+
 ## Building
 
 Sandbox reference (Linux x64):

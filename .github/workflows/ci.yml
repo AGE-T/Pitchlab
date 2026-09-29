@@ -7,7 +7,11 @@
 # VST3 plug-in product layer (official SDK + VSTGUI, the realtime adapter,
 # the doctest suites, the official SDK validator, the host-simulation
 # examples and the Xvfb UI screenshot host). CTest discovers tests; the
-# product-phase specification §9/§13 defines the product lane.
+# product-phase specification §9/§13 defines the product lane. PLUS the
+# `vst3-windows-x64-product` delivery job (build spec §16): the SAME
+# plug-in built by the §11-documented Windows path (VS 2022, MSVC, x64),
+# SDK-validator-checked, packaged and published as the DOWNLOADABLE
+# product artefact `PitchLab-VST3-Windows-x64`.
 #
 # Canonical environment: research/pitch-lab-build-and-ci-environment.md
 #   - runner: ubuntu-24.04 x64, pinned (never ubuntu-latest: the latest
@@ -18,10 +22,13 @@
 #   - CMake 3.31.6, checksum-pinned official tarball (sha256-verified)
 #   - Ninja >= 1.11, CTest with --output-on-failure + JUnit XML
 #   - zero third-party dependencies at freeze; no cache; no matrix
+#   - Windows delivery lane: windows-2022, pinned (never windows-latest)
 #
 # Evidence artefacts uploaded on every run (including failures):
 # configure.log, build.log, test.log, build/test-results.xml.
 # These are CI evidence only — never Pitch Lab DSP render outputs.
+# The PRODUCT artefact (PitchLab-VST3-Windows-x64) is separate from the
+# evidence artefacts and uploads only on a fully validated build.
 
 name: ci
 
@@ -235,4 +242,150 @@ jobs:
             examples-vst3.log
             ui-vst3.log
             /tmp/ui/*.png
+          if-no-files-found: error
+
+  # -------------------------------------------------------------------------
+  # The VST3 product DELIVERY lane (Windows x64 — the distributable).
+  #
+  # The product-phase specification §11 documented the Windows x64 build
+  # path (Visual Studio 2022, MSVC, x64) and explicitly deferred "a
+  # Windows CI lane" to a future owner decision. This lane IS that owner
+  # decision, executed as a DELIVERY-LAYER-ONLY change: the SAME sources,
+  # the SAME vendored SDK tree, the SAME PitchLab_vst3 CMake target —
+  # built by the §11 documented path. The lane builds the real plug-in,
+  # validates it with the official SDK validator (the same 47/47
+  # assertion as the Linux lane), packages ONLY the PitchLab.vst3 bundle
+  # and publishes it as the downloadable product artefact
+  # PitchLab-VST3-Windows-x64 (PitchLab-VST3-Windows-x64.zip).
+  #
+  # The Linux jobs remain the canonical validation surface (CTest 30/30,
+  # the examples byte-determinism check, the Xvfb UI captures) —
+  # unchanged. The doctest test-executables are NOT built here: their
+  # unguarded GCC-only -ffp-contract=off compile options are a known,
+  # documented MSVC limitation (build spec §16); tests stay on the Linux
+  # lanes. The product artefact is uploaded ONLY on success: a failed
+  # validation must never publish a downloadable product (the run log
+  # keeps the evidence).
+  # -------------------------------------------------------------------------
+  vst3-windows-x64-product:
+    name: VST3 product (Windows x64 — the distributable)
+    runs-on: windows-2022
+    steps:
+      - name: Checkout (pinned by commit SHA)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Toolchain report + assertions (anti-drift)
+        shell: pwsh
+        run: |
+          echo "Runner image: ${env:ImageVersion}"
+          cmake --version | Select-Object -First 1
+          # Spec §11 Windows path: CMake >= 3.21; the vendored VST3 SDK
+          # build (src/vst/CMakeLists.txt) needs >= 3.25 — assert the
+          # binding constraint. The toolchain itself is pinned by the
+          # runner image (windows-2022, never windows-latest) + the VS
+          # 2022 generator string below.
+          $v = ((cmake --version | Select-Object -First 1) -replace '.*?(\d+(\.\d+)+).*', '$1')
+          if ([version]$v -lt [version]'3.25.0') {
+            echo "FAIL: CMake too old: $v (the VST3 SDK build needs >= 3.25)"
+            exit 1
+          }
+
+      - name: Configure (VS 2022 x64 — the spec §11 documented path)
+        shell: pwsh
+        run: |
+          & cmake -S pitch-lab -B build -G "Visual Studio 17 2022" -A x64 2>&1 | Tee-Object configure-win-x64.log
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Select-String -Path configure-win-x64.log -Pattern 'compiler identification|generating' |
+            ForEach-Object { echo $_.Line }
+
+      - name: Build (PitchLab_vst3 + validator — the delivery surface)
+        shell: pwsh
+        run: |
+          & cmake --build build --config Release --target PitchLab_vst3 validator --parallel 2>&1 | Tee-Object build-win-x64.log
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: "Official VST3 SDK validator (the Windows x64 bundle)"
+        shell: pwsh
+        run: |
+          $bundles = @(Get-ChildItem -Path build -Recurse -Directory -Filter 'PitchLab.vst3')
+          if ($bundles.Count -ne 1) {
+            echo "FAIL: expected exactly one PitchLab.vst3 bundle under build/, found $($bundles.Count)"
+            exit 1
+          }
+          echo "Bundle: $($bundles[0].FullName)"
+          $validators = @(Get-ChildItem -Path build -Recurse -File -Filter 'validator.exe')
+          if ($validators.Count -ne 1) {
+            echo "FAIL: expected exactly one validator.exe under build/, found $($validators.Count)"
+            exit 1
+          }
+          echo "Validator: $($validators[0].FullName)"
+          & $validators[0].FullName $bundles[0].FullName 2>&1 | Tee-Object validator-win-x64.log
+          if ($LASTEXITCODE -ne 0) { echo "FAIL: validator exited with $LASTEXITCODE"; exit 1 }
+          if (-not (Select-String -Path validator-win-x64.log -Pattern 'Result: 47 tests passed, 0 tests failed' -Quiet)) {
+            echo "FAIL: validator result changed (expected 47/47 PASS)"
+            exit 1
+          }
+
+      - name: "Package (PitchLab-VST3-Windows-x64.zip — the distributable)"
+        shell: pwsh
+        run: |
+          $bundle = @(Get-ChildItem -Path build -Recurse -Directory -Filter 'PitchLab.vst3')[0]
+          # System32 tar.exe is bsdtar: -a selects the zip format by
+          # extension; -C the bundle's parent makes PitchLab.vst3 the zip
+          # root; bsdtar preserves the bundle directory structure exactly
+          # as produced by the build (including any empty directories).
+          & tar.exe -a -c -f PitchLab-VST3-Windows-x64.zip -C $bundle.Parent.FullName $bundle.Name
+          if ($LASTEXITCODE -ne 0) { echo 'FAIL: packaging failed'; exit 1 }
+          echo "ZIP created: $((Get-Item PitchLab-VST3-Windows-x64.zip).Length) bytes"
+
+      - name: "Validate the package (delivery validation — not a project gate)"
+        shell: pwsh
+        run: |
+          $zip = 'PitchLab-VST3-Windows-x64.zip'
+          if (-not (Test-Path $zip)) { echo 'FAIL: zip missing'; exit 1 }
+          $size = (Get-Item $zip).Length
+          if ($size -le 0) { echo 'FAIL: zip is empty'; exit 1 }
+          echo "ZIP: $zip — $size bytes"
+          Get-FileHash $zip -Algorithm SHA256 | Format-List Algorithm, Hash, Path
+          $entries = @((tar.exe -tf $zip) | ForEach-Object { $_.Trim() })
+          echo '--- ZIP contents ---'
+          $entries | ForEach-Object { echo "  $_" }
+          # 1) the real Windows x64 module entry must be present
+          if (-not ($entries -contains 'PitchLab.vst3/Contents/x86_64-win/PitchLab.vst3')) {
+            echo 'FAIL: PitchLab.vst3/Contents/x86_64-win/PitchLab.vst3 is not in the zip'
+            exit 1
+          }
+          # 2) nothing outside the bundle may be packaged (no build/source junk)
+          $outside = @($entries | Where-Object { $_ -notmatch '^PitchLab\.vst3/' })
+          if ($outside.Count -gt 0) {
+            echo "FAIL: junk outside the bundle: $($outside -join ', ')"
+            exit 1
+          }
+          # 3) the built module is a real Windows x64 PE binary (MZ + machine 0x8664)
+          $modules = @(Get-ChildItem -Path build -Recurse -File -Filter 'PitchLab.vst3' |
+            Where-Object { $_.FullName -match 'x86_64-win' })
+          if ($modules.Count -ne 1) {
+            echo "FAIL: expected one x86_64-win module, found $($modules.Count)"
+            exit 1
+          }
+          $m = $modules[0]
+          echo "Module: $($m.FullName) — $($m.Length) bytes"
+          $bytes = [System.IO.File]::ReadAllBytes($m.FullName)
+          if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) {
+            echo 'FAIL: module is not a PE (MZ) binary'
+            exit 1
+          }
+          $peOff = [BitConverter]::ToInt32($bytes, 0x3C)
+          $machine = [BitConverter]::ToUInt16($bytes, $peOff + 4)
+          if ($machine -ne 0x8664) {
+            echo ("FAIL: PE machine is 0x{0:X4}, expected 0x8664 (x64)" -f $machine)
+            exit 1
+          }
+          echo 'PE check OK: MZ header + machine 0x8664 (x64)'
+
+      - name: Upload VST3 product (Windows x64 — the downloadable deliverable)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: PitchLab-VST3-Windows-x64
+          path: PitchLab-VST3-Windows-x64.zip
           if-no-files-found: error

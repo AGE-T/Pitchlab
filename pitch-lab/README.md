@@ -97,8 +97,13 @@ lifecycle driver `tools/vst_host_sim.cpp`), 4 UI screenshots
 Xvfb), the official SDK validator record **47/47**; the doctest suites
 (`tests/vst_*_test.cpp`) cover parameters/state/adapter/processor
 incl. every ordered engine-pair mid-stream switch. Docs:
-`docs/vst3-product.md`. The v0.1 research surface is untouched
-(`PITCHLAB_BUILD_VST3=OFF` restores it exactly).
+`docs/vst3-product.md`. **DELIVERY (2026-09-29): the downloadable Windows
+x64 product package is published by CI as the `PitchLab-VST3-Windows-x64`
+artefact on every successful run** (build spec §16; VS 2022 build of the
+same sources, SDK validator 47/47 + package-content checks asserted before
+upload; see `docs/vst3-product.md` "Getting the plug-in"). The v0.1
+research surface is untouched (`PITCHLAB_BUILD_VST3=OFF` restores it
+exactly).
 
 Measured §7.7 acceptance evidence and OD-18 (resampler
 constants) are recorded in the implementation specification §7.7.1; OD-6
