@@ -246,3 +246,21 @@ endif()
 foreach(t IN ITEMS toolchain_smoke engine_registry_smoke version_smoke)
   add_test(NAME ${t} COMMAND ${t})
 endforeach()
+
+# ---------------------------------------------------------------------------
+# VST3 product layer (research/pitch-lab-vst3-product-phase-specification.md).
+#
+# PITCHLAB_BUILD_VST3=OFF restores the exact v0.1 target surface (the
+# research pipeline stays independently usable — the layering rule of the
+# product-phase spec §2). The SDK + VSTGUI are vendored/pinned under
+# external/vst3sdk (ORIGIN.toml provenance).
+# ---------------------------------------------------------------------------
+option(PITCHLAB_BUILD_VST3 "Build the Pitch Lab VST3 plug-in product layer" ON)
+if(PITCHLAB_BUILD_VST3)
+  # The VST3 module is a shared object: the core static library must be
+  # position-independent when the product layer is built (a build-flag-only
+  # change; the v0.1 targets and sources are untouched, and per-build
+  # determinism is unaffected — fPIC applies uniformly within a build).
+  set_target_properties(pitchlab_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  add_subdirectory(src/vst)
+endif()
