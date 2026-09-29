@@ -417,12 +417,27 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     // (use-after-free; found by opening the real editor under Xvfb).
     for (ui_::PLSlider* s : engineSliders_) {
       enginePanel_->removeView(s);
+      // P0.3 (Task 24): the authoritative live-control collection must
+      // contain ONLY live controls — the removed slider is FORGOTTEN
+      // (freed) here, so the stale entry in sliderByTag_ left behind by the
+      // previous implementation was a use-after-free dereferenced by the
+      // 33 ms polling timer (syncControlValues) until the engine switched
+      // back to this engine's panel.
+      sliderByTag_.erase(static_cast<uint32_t>(s->getTag()));
     }
     for (ui_::MicroLabel* l : engineValues_) {
       enginePanel_->removeView(l);  // forgets (see note above)
     }
     engineSliders_.clear();
     engineValues_.clear();
+    // P2.2 (Task 24): the varispeed adaptation note is lifecycle-managed —
+    // previously a NEW note was created on every rebuild without removing
+    // the old one, so repeated engine switches ACCUMULATED overlapping
+    // notes (stale children, unbounded view growth).
+    if (varispeedNote_ != nullptr) {
+      enginePanel_->removeView(varispeedNote_);
+      varispeedNote_ = nullptr;
+    }
     if (getController() == nullptr) return;
 
     const ParamSnapshot snap = currentSnapshot();
@@ -472,12 +487,12 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       y += 30.0;
     }
     if (snap.engineIndex == 0) {
-      auto* note = new ui_::MicroLabel(
+      varispeedNote_ = new ui_::MicroLabel(
           CRect(12, 160, 190, 210),
           "RATE-FOLLOWING ENGINE: WINDOWED SPLICE ADAPTATION (0.2 s WINDOWS, "
           "15 ms SPLICES) — NOT THE OFFLINE RENDER",
           ui_::Palette::amber(), 0);
-      enginePanel_->addView(note);
+      enginePanel_->addView(varispeedNote_);
     }
   }
 
@@ -515,8 +530,11 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       const MetersSnapshot ms = m->getMeters();
       m->release();
       if (inMeters_ != nullptr) {
-        inMeters_->setLevels(ms.inPeak[0], ms.inPeak[1], ms.inRms[0], ms.inRms[1], ms.outClip[0],
-                             ms.outClip[1]);
+        // P2.4 (Task 24): the input panel shows the INPUT clip indicator —
+        // previously the shared runtime clip state (fed by BOTH the input
+        // and the output loop) was shown as "outClip" on both panels.
+        inMeters_->setLevels(ms.inPeak[0], ms.inPeak[1], ms.inRms[0], ms.inRms[1],
+                             ms.inClip[0], ms.inClip[1]);
       }
       if (outMeters_ != nullptr) {
         outMeters_->setLevels(ms.outPeak[0], ms.outPeak[1], ms.outRms[0], ms.outRms[1],
@@ -531,27 +549,37 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   }
 
   void updateStatusText(const StatusSnapshot& ss) {
+    // P1.11 (Task 24): the status snapshot is numeric-only (the audio thread
+    // no longer formats strings — spec §4.3); ALL string derivation happens
+    // here, on the UI thread, through the registry.
     char buf[160];
-    std::snprintf(buf, sizeof(buf), "%s", ss.chainReady ? ss.engineId : "building chain…");
+    const char* engineId = ss.engineIndex >= 0 ? engineIdForIndex(ss.engineIndex) : nullptr;
+    std::snprintf(buf, sizeof(buf), "%s",
+                  ss.chainReady ? (engineId != nullptr ? engineId : "?") : "building chain…");
     statusLine1_->set(buf, ui_::Palette::textDim());
     std::snprintf(buf, sizeof(buf), "fs %.0f Hz · %d ch · block %d · latency %lld fr (%.1f ms)",
                   ss.sampleRate, ss.channels, ss.maxBlock, (long long)ss.latencyFrames,
                   ss.sampleRate > 0.0 ? ss.latencyFrames / ss.sampleRate * 1000.0 : 0.0);
     statusLine2_->set(buf, ui_::Palette::textFaint());
-    std::snprintf(buf, sizeof(buf), "jobs %d · re-prepares %llu · clamps %llu · faults %llu",
+    std::snprintf(buf, sizeof(buf),
+                  "jobs %d · re-prepares %llu · clamps %llu · faults %llu · auto-drop %llu",
                   ss.liveJobs, (unsigned long long)ss.reprepares,
-                  (unsigned long long)ss.clampEvents, (unsigned long long)ss.faults);
+                  (unsigned long long)ss.clampEvents, (unsigned long long)ss.faults,
+                  (unsigned long long)ss.automationDropped);
     statusLine3_->set(buf, ss.faults > 0 ? ui_::Palette::rose() : ui_::Palette::textFaint());
     std::snprintf(buf, sizeof(buf), "envelope [%.4f, %.4f] %s", ss.envelopeMin, ss.envelopeMax,
                   ss.bypassActive ? "· BYPASSED" : "");
     statusLine4_->set(buf, ui_::Palette::textFaint());
 
     // header
-    const CColor adaptColor = (std::strcmp(ss.adaptation, "windowed splice adaptation") == 0)
-                                  ? ui_::Palette::amber()
-                                  : ui_::Palette::accent();
-    adaptation_->set(ss.chainReady ? ss.adaptation : "—", adaptColor);
-    std::snprintf(buf, sizeof(buf), "%s", ss.chainReady ? ss.engineName : "—");
+    const CColor adaptColor = ss.spliceMode ? ui_::Palette::amber() : ui_::Palette::accent();
+    adaptation_->set(ss.chainReady ? (ss.spliceMode ? "WINDOWED SPLICE ADAPTATION"
+                                                    : "CONTINUOUS REALTIME")
+                                   : "—",
+                     adaptColor);
+    const char* engineName = ss.engineIndex >= 0 ? engineNameForIndex(ss.engineIndex) : nullptr;
+    std::snprintf(buf, sizeof(buf), "%s", ss.chainReady ? (engineName != nullptr ? engineName : "—")
+                                                         : "—");
     engineName_->set(buf, ui_::Palette::textDim());
     std::snprintf(buf, sizeof(buf), "LATENCY %.1f ms",
                   ss.sampleRate > 0.0 ? ss.latencyFrames / ss.sampleRate * 1000.0 : 0.0);
@@ -649,12 +677,15 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   }
 
   void onUiStateChanged() {
-    // a control changed (e.g. engine) — rebuild dependent panels
+    // a control changed (e.g. engine) — rebuild dependent panels.
+    // P2.3 (Task 24): the last-engine state is INSTANCE-OWNED — the previous
+    // function-static was shared across ALL editor instances (incorrect
+    // ownership: instance A's switch would silently "fulfill" instance B's
+    // rebuild).
     if (getController() == nullptr || enginePanel_ == nullptr) return;
     const ParamSnapshot snap = currentSnapshot();
-    static int lastEngine = -1;
-    if (snap.engineIndex != lastEngine) {
-      lastEngine = snap.engineIndex;
+    if (snap.engineIndex != lastEngineIndex_) {
+      lastEngineIndex_ = snap.engineIndex;
       rebuildEnginePanelControls();
       updateValueLabels();
     }
@@ -663,7 +694,11 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   // ---- members ------------------------------------------------------------
   std::vector<ui_::PLSlider*> engineSliders_;
   std::vector<ui_::MicroLabel*> engineValues_;
-  std::map<uint32_t, ui_::PLSlider*> sliderByTag_;
+  std::map<uint32_t, ui_::PLSlider*> sliderByTag_;  // AUTHORITATIVE live-control
+                                                    // collection (P0.3: only live
+                                                    // controls, ever)
+  ui_::MicroLabel* varispeedNote_ = nullptr;  // lifecycle-managed (P2.2)
+  int lastEngineIndex_ = -1;                  // instance-owned (P2.3)
 
   ui_::PLSegmented* engineSelector_ = nullptr;
   ui_::PLSlider* pitchSlider_ = nullptr;

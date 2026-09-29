@@ -79,16 +79,34 @@ class PitchLabProcessor final : public Steinberg::Vst::SingleComponentEffect,
   // Publish the snapshot to the adapter (main thread).
   void publishSnapshot();
 
+  // Recompute the expected latency, update reportedLatency_ and notify the
+  // host via IComponentHandler::restartComponent(kLatencyChanged) when it
+  // changed (MAIN THREAD ONLY — the audio thread never calls the host).
+  void updateAndNotifyLatency();
+
   // The typed process path (Sample32/float and Sample64/double).
   template <typename SampleType>
   Steinberg::tresult processTyped(Steinberg::Vst::ProcessData& data);
 
-  // Extract the block automation from the VST3 parameter queues (audio thread).
-  void collectAutomation(Steinberg::Vst::ProcessData& data, BlockAutomation& out,
-                         int32_t chunkBase, int32_t chunkFrames) const;
+  // Extract the block automation from the VST3 parameter queues (audio
+  // thread). ONE scan per host block, BLOCK-RELATIVE coordinates (the
+  // authoritative VST3 domain); per-chunk slices are produced by
+  // sliceAutomation (each event converted exactly once, never clamped
+  // across chunk boundaries).
+  void collectBlockAutomation(Steinberg::Vst::ProcessData& data, int32_t blockFrames);
+
+  // Rebase the block-relative events into the owning processor chunk's
+  // local coordinates (audio thread, allocation-free).
+  static void sliceAutomation(const BlockAutomation& block, int32_t chunkBase,
+                              int32_t chunkFrames, BlockAutomation& out);
 
   RealtimeAdapter adapter_;
   std::atomic<uint32_t> reportedLatency_{0};
+  std::atomic<bool> processingSuspended_{false};
+
+  // Audio-thread scratch for the block-relative automation scan (bounded
+  // capacity, allocated once with the processor — never on the audio path).
+  BlockAutomation blockAutomation_{};
 
   // float<->double staging (allocated on the main thread at setActive; the
   // audio path only touches the buffers)

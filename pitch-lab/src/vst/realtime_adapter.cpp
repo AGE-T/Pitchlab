@@ -5,6 +5,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <limits>
+#include <string>
 #include <thread>
 
 #include "core/engine_registry.h"
@@ -36,6 +38,17 @@ constexpr double kPitchParamMinRatio = 0.5;         // ±12 st parameter range
 constexpr double kPitchParamMaxRatio = 2.0;
 constexpr double kAdoptionForceSeconds = 0.050;     // deferred-adoption deadline (§4.1 item 4)
 constexpr int kParamSettleMs = 2;                    // parameter-batch debounce (see prepLoop)
+constexpr int kFirstChainWaitMs = 2000;              // bounded MAIN-thread wait for the first
+                                                    // chain (activate/first publish — audio
+                                                    // never waits; Task 24 P0.1 fix)
+// Meter ballistics (Task 24, P2.5): time-based, block-size independent.
+// The per-sample decay factors are equivalent to the previous per-block
+// factors at a 1024-frame reference block (behaviour preserved at the
+// common case, schedule-independence gained):
+constexpr double kMeterPeakDecayPer1024 = 0.98;    // peak hold-decay per 1024 frames
+constexpr double kMeterClipDecayPer1024 = 0.9995;  // clip indicator decay per 1024 frames
+constexpr double kMeterRmsWindowFrames = 512.0;    // one-pole RMS window (≈ half the 1024
+                                                   // reference block)
 constexpr double kPi = 3.14159265358979323846;
 
 [[nodiscard]] inline double clampd(double v, double lo, double hi) {
@@ -275,10 +288,16 @@ struct RealtimeAdapter::Job {
   PitchCurveView curveView{};
   ProcessContext ctx{};
 
-  int64_t index = -1;       // job index within the chain (-1 = not scheduled)
-  int64_t spanStart = -1;   // absolute INPUT start
-  int64_t inputLen = 0;     // totalInputFrames of this job
-  int64_t wetLen = 0;       // emitted wet span length
+  // index is ATOMIC (Task 24 concurrency fix): the audio thread may read it
+  // from a stale slot pointer while the preparation thread re-stamps a
+  // recycled victim. Ordering correctness comes from the dead-flag and
+  // slot release/acquire protocol (read a job's other fields only after a
+  // dead==false acquire-load or a slot acquire-load); the atomicity of
+  // index removes the undefined-behaviour torn read.
+  std::atomic<int64_t> index{-1};  // job index within the chain (-1 = not scheduled)
+  int64_t spanStart = -1;          // absolute INPUT start
+  int64_t inputLen = 0;            // totalInputFrames of this job
+  int64_t wetLen = 0;              // emitted wet span length
 
   LaneWindow lane;
 
@@ -294,9 +313,10 @@ struct RealtimeAdapter::Job {
   [[nodiscard]] int64_t wetEnd() const { return spanStart + wetLen; }
 
   /// Stamp the job at an absolute position (audio thread at adoption, prep
-  /// thread for later jobs — the Job's atomics order the publication).
+  /// thread for later jobs — the dead-flag release store + the slot release
+  /// store order the publication; see the index note above).
   void stamp(int64_t newIndex, int64_t newSpanStart) {
-    index = newIndex;
+    index.store(newIndex, std::memory_order_relaxed);
     spanStart = newSpanStart;
     lane.reset(newSpanStart);
     consumed = 0;
@@ -313,7 +333,8 @@ struct RealtimeAdapter::Job {
 struct RealtimeAdapter::Chain final : RetireStack::Node {
   ParamSnapshot::ChainSignature sig{};
   int engineIndex = 1;
-  char engineId[48] = {};
+  char engineId[48] = {};  // prep-thread-written before publication (status
+                           // consumers derive strings from engineIndex)
   bool spliceMode = false;  // windowed-splice adaptation (varispeed, granular — §4.2 + the recorded §3 correction)
   double fs = 48000.0;
   int channels = 2;
@@ -328,7 +349,11 @@ struct RealtimeAdapter::Chain final : RetireStack::Node {
   int64_t pacingLead = 0;
   int laneCapacity = 0;
 
-  int64_t base = -1;  // adoption stamp (audio thread)
+  // base is ATOMIC (Task 24 concurrency fix): written by the audio thread
+  // at adoption (release), read by the preparation thread (acquire) for job
+  // scheduling. Audio-thread readers use relaxed loads (same thread as the
+  // writer).
+  std::atomic<int64_t> base{-1};  // adoption stamp (audio thread)
 
   std::atomic<Job*> slots[kJobSlots]{};
   std::vector<std::unique_ptr<Job>> ownedJobs;
@@ -336,19 +361,24 @@ struct RealtimeAdapter::Chain final : RetireStack::Node {
 
   ~Chain() override = default;
 
-  [[nodiscard]] int64_t jobSpanStart(int64_t j) const { return base + j * advance; }
+  [[nodiscard]] int64_t jobSpanStart(int64_t j) const {
+    // preparation-thread reader: acquire pairs with the audio thread's
+    // adoption store (base + the job0 rebase).
+    return base.load(std::memory_order_acquire) + j * advance;
+  }
 
   /// The chain's wet at absolute q with internal seam blending. Returns false
   /// when no lane covers q (caller falls back to dry + counts a fault).
   [[nodiscard]] bool readWet(double* outChannels, int channelCount, int64_t q) const {
-    if (base < 0 || q < base) return false;
-    const int64_t k = (q - base) / advance;
-    const int64_t r = q - base - k * advance;
+    const int64_t b = base.load(std::memory_order_relaxed);  // audio thread (writer)
+    if (b < 0 || q < b) return false;
+    const int64_t k = (q - b) / advance;
+    const int64_t r = q - b - k * advance;
     if (r >= wetLen) return false;
 
     Job* job = slots[k % kJobSlots].load(std::memory_order_acquire);
-    if (job == nullptr || job->index != k || q < job->lane.start ||
-        q >= job->lane.start + job->lane.count) {
+    if (job == nullptr || job->index.load(std::memory_order_relaxed) != k ||
+        q < job->lane.start || q >= job->lane.start + job->lane.count) {
       return false;  // lane compacted past q, not yet produced, or wrong job
     }
     if (k == 0 || r >= seamX) {
@@ -356,8 +386,8 @@ struct RealtimeAdapter::Chain final : RetireStack::Node {
       return true;
     }
     Job* prev = slots[(k - 1) % kJobSlots].load(std::memory_order_acquire);
-    if (prev == nullptr || prev->index != k - 1 || q < prev->lane.start ||
-        q >= prev->lane.start + prev->lane.count) {
+    if (prev == nullptr || prev->index.load(std::memory_order_relaxed) != k - 1 ||
+        q < prev->lane.start || q >= prev->lane.start + prev->lane.count) {
       return false;  // previous lane missing (should never happen; fault)
     }
     const double u = kPi * 0.5 * static_cast<double>(r + 1) / static_cast<double>(seamX);
@@ -432,20 +462,40 @@ struct RealtimeAdapter::Impl {
   // UI/preset moves write setParameter — both must reach the curve).
   bool everHadPitchAutomation = false;
   double lastSnapPitchSt = 0.0;
+  // bypass resolution state (P1.2 — frame-correct bypass): mirrors the
+  // pitch-carry model (lastBypass holds the automation end value while the
+  // parameter stays unchanged).
+  bool lastBypass = false;
+  bool lastSnapBypass = false;
+  bool everHadBypassAutomation = false;
+  std::atomic<bool> resumeResetPending{false};  // setProcessing(true) resume (P1.4)
   double bypassFade = 0.0;
   int64_t pendingSeenAt = -1;
   std::atomic<int64_t> streamPosMirror{0};
 
-  uint64_t reprepares = 0;
+  // reprepares is ATOMIC (Task 24 concurrency fix): the preparation thread
+  // increments it, the audio thread reads it for the status — telemetry
+  // only, relaxed ordering.
+  std::atomic<uint64_t> reprepares{0};
   uint64_t faults = 0;
   uint64_t clampEvents = 0;
-  int lastStatusJobs = 0;
+  uint64_t automationDropped = 0;  // audio-thread-accumulated (P1.3 diagnostics)
   bool blockFaultGuard = false;  // reset per process() block (audio thread)
   double meterInPeak[2] = {0.0, 0.0};
   double meterInRms[2] = {0.0, 0.0};
   double meterOutPeak[2] = {0.0, 0.0};
   double meterOutRms[2] = {0.0, 0.0};
-  double meterClip[2] = {0.0, 0.0};
+  // clip state is SPLIT in/out (Task 24, P2.4): the input meters clip on the
+  // pre-gain input, the output meters on the post-gain output — distinct
+  // indicators, previously one shared state shown as "outClip".
+  double meterInClip[2] = {0.0, 0.0};
+  double meterOutClip[2] = {0.0, 0.0};
+  // time-based ballistics (P2.5), precomputed at activate (main thread):
+  double meterPeakDecayPerSample = 0.99998;
+  double meterClipDecayPerSample = 0.99999995;
+  double meterRmsAlpha = 0.002;
+  double meterInMeanSq[2] = {0.0, 0.0};
+  double meterOutMeanSq[2] = {0.0, 0.0};
 
   std::thread prepThread;
   std::atomic<bool> prepRunning{false};
@@ -453,6 +503,10 @@ struct RealtimeAdapter::Impl {
   ParamSnapshot::ChainSignature builtSig{};
   double builtFs = 0.0;
   int builtChannels = 0;
+  // the built chain's signature, published for MAIN-thread comparison
+  // (requestHardReset's fulfilment check) — never dereference the chain
+  // pointer from the main thread (adoption/retirement can race it)
+  SeqLock<ParamSnapshot::ChainSignature> builtSigPub_{};
 
   // parameter-batch debounce (prep thread): a host restoring state (or the
   // UI applying a preset) publishes MANY snapshots in quick succession; each
@@ -545,7 +599,7 @@ struct RealtimeAdapter::Impl {
       job->ctx.totalInputFrames = chain->jobInputLen;
       job->ctx.curve = &job->curveView;
       job->lane.allocate(channels, chain->laneCapacity);
-      job->index = -1;
+      job->index.store(-1, std::memory_order_relaxed);
       job->spanStart = -1;
       chain->ownedJobs.push_back(std::move(job));
     }
@@ -567,7 +621,9 @@ struct RealtimeAdapter::Impl {
   /// reset()-reuse (the v0.1 reset contract: bit-identical to a fresh
   /// instance — T-D3).
   void prepareJob(Chain& chain, int64_t j) {
-    if (chain.base < 0) return;  // not adopted (base is needed for the stamp)
+    if (chain.base.load(std::memory_order_acquire) < 0) {
+      return;  // not adopted (base is needed for the stamp)
+    }
     if (j <= chain.highestPrepared.load(std::memory_order_relaxed)) return;
 
     // find a free Job: prefer an owned job not in any slot; otherwise a
@@ -622,7 +678,9 @@ struct RealtimeAdapter::Impl {
   }
 
   void serveJobNeeds(Chain* chain) {
-    if (chain == nullptr || chain->base < 0) return;
+    if (chain == nullptr || chain->base.load(std::memory_order_acquire) < 0) {
+      return;
+    }
     const int64_t frontier = streamPosMirror.load(std::memory_order_acquire);
     const int64_t lead = 2 * static_cast<int64_t>(maxBlock) + kPrepLeadExtra;
     int64_t j = chain->highestPrepared.load(std::memory_order_relaxed) + 1;
@@ -644,7 +702,6 @@ struct RealtimeAdapter::Impl {
       const uint64_t epoch = requestEpoch.load(std::memory_order_acquire);
       Chain* act = active.load(std::memory_order_acquire);
       Chain* pend = pending.load(std::memory_order_acquire);
-
       // debounce: never build for a superseded transient snapshot (the note
       // on lastSeenSig). Re-prepare REQUESTS (epoch bumps, envelope exits)
       // carry live audio evidence and are not debounced away — only the
@@ -739,9 +796,10 @@ struct RealtimeAdapter::Impl {
           pending.store(fresh, std::memory_order_release);
           builtRequestEpoch = epoch;
           builtSig = snap.chainSignature();
+          builtSigPub_.store(builtSig);
           builtFs = fs;
           builtChannels = channels;
-          ++reprepares;
+          reprepares.fetch_add(1, std::memory_order_relaxed);
         }
       }
 
@@ -769,8 +827,39 @@ struct RealtimeAdapter::Impl {
     requestEpoch.fetch_add(1, std::memory_order_acq_rel);
   }
 
+  /// MAIN THREAD ONLY (Task 24, P0.1): bounded wait for the first chain of
+  /// this activation. The audio thread never waits — this is the startup
+  /// contract (activate() when a snapshot is already published; every
+  /// setParameterSnapshot() while no audio has run). The exit condition is
+  /// SIGNATURE-MATCHED: a chain built from the CURRENTLY published
+  /// signature (this is what makes it freeze-proof for hosts that publish
+  /// parameters after activation — the wait returns as soon as the built
+  /// chain matches the current publish, never holding the main thread for
+  /// a state the preparation thread is not building toward).
+  void waitForFirstChain() {
+    if (!activated) return;
+    if (streamPosMirror.load(std::memory_order_acquire) != 0) {
+      return;  // audio already ran: later rebuilds are async by design
+    }
+    const ParamSnapshot::ChainSignature sig = params.load().chainSignature();
+    const auto chainMatches = [&]() {
+      return (active.load(std::memory_order_acquire) != nullptr ||
+              pending.load(std::memory_order_acquire) != nullptr) &&
+             builtSigPub_.load() == sig;
+    };
+    if (chainMatches()) return;
+    for (int waited = 0; waited < kFirstChainWaitMs; ++waited) {
+      if (chainMatches()) return;
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    // pathological timeout: the audio path runs the latency-compensated dry
+    // fallback (non-blocking) and the chain adopts mid-stream when ready
+  }
+
   void adoptPending(Chain* pend, int64_t t) {
-    if (pend == nullptr || pend->base >= 0) return;  // defensive
+    if (pend == nullptr || pend->base.load(std::memory_order_relaxed) >= 0) {
+      return;  // defensive (audio thread: base writer)
+    }
 
     Chain* act = active.load(std::memory_order_acquire);
     if (act != nullptr) {
@@ -783,9 +872,9 @@ struct RealtimeAdapter::Impl {
     }
 
     // stamp the new chain at the current input frontier
-    pend->base = t;
+    pend->base.store(t, std::memory_order_release);  // publishes job0's rebase below
     Job* job0 = pend->slots[0].load(std::memory_order_acquire);
-    if (job0 != nullptr && job0->index == 0) {
+    if (job0 != nullptr && job0->index.load(std::memory_order_relaxed) == 0) {
       job0->spanStart = t;
       job0->lane.reset(t);
     }
@@ -814,6 +903,15 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.channels = channels == 1 ? 1 : 2;
   im.maxBlock = maxBlockFrames > 64 ? maxBlockFrames : 64;
 
+  // Time-based meter ballistics (P2.5): per-sample factors derived from the
+  // per-1024-frame reference constants — computed once, on the MAIN thread
+  // (activation context; no transcendentals on the audio path).
+  im.meterPeakDecayPerSample =
+      std::pow(kMeterPeakDecayPer1024, 1.0 / 1024.0);
+  im.meterClipDecayPerSample =
+      std::pow(kMeterClipDecayPer1024, 1.0 / 1024.0);
+  im.meterRmsAlpha = 1.0 - std::exp(-1.0 / kMeterRmsWindowFrames);
+
   // The dry lane is read at the EFFECTIVE emission latency (Λ_eff), which
   // can grow to the parameter-range worst when chains switch mid-stream;
   // retain (and size) for that worst from the start (a fixed retention —
@@ -838,11 +936,24 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.lastSnapPitchSt = 0.0;
   im.lastMix = 1.0;
   im.lastLevelDb = 0.0;
+  im.lastBypass = false;
+  im.lastSnapBypass = false;
+  im.everHadBypassAutomation = false;
+  im.resumeResetPending.store(false, std::memory_order_release);
   im.bypassFade = 0.0;
   im.pendingSeenAt = -1;
-  im.reprepares = 0;
+  im.reprepares.store(0, std::memory_order_relaxed);
   im.faults = 0;
   im.clampEvents = 0;
+  im.automationDropped = 0;
+  im.meterInPeak[0] = im.meterInPeak[1] = 0.0;
+  im.meterInRms[0] = im.meterInRms[1] = 0.0;
+  im.meterOutPeak[0] = im.meterOutPeak[1] = 0.0;
+  im.meterOutRms[0] = im.meterOutRms[1] = 0.0;
+  im.meterInClip[0] = im.meterInClip[1] = 0.0;
+  im.meterOutClip[0] = im.meterOutClip[1] = 0.0;
+  im.meterInMeanSq[0] = im.meterInMeanSq[1] = 0.0;
+  im.meterOutMeanSq[0] = im.meterOutMeanSq[1] = 0.0;
 
   im.activated = true;
   im.builtRequestEpoch = 0;  // force first build
@@ -850,6 +961,19 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.lastSeenSig = ParamSnapshot::ChainSignature{};
   im.requestEpoch.fetch_add(1, std::memory_order_acq_rel);
   im.startPrepThread();
+
+  // Non-blocking startup (P0.1, Task 24): when a snapshot is ALREADY
+  // published (reactivation), the MAIN thread waits (bounded) for the first
+  // chain and presets the emission latency to the snapshot's expected value
+  // so the startup timeline is correct from frame 0 even on the
+  // wait-timeout path. When nothing is published yet, the first
+  // setParameterSnapshot() performs the wait instead (whichever prerequisite
+  // arrives last does the bounded wait — never the audio thread).
+  if (im.paramsPublished.load(std::memory_order_acquire)) {
+    im.latencyEff = expectedLatencyFrames(im.params.load(), im.fs);
+    im.latencyNow = im.latencyEff;
+    im.waitForFirstChain();
+  }
 }
 
 void RealtimeAdapter::deactivate() {
@@ -867,10 +991,51 @@ void RealtimeAdapter::setParameterSnapshot(const ParamSnapshot& snapshot) {
   if (!(old.chainSignature() == snapshot.chainSignature())) {
     im.requestEpoch.fetch_add(1, std::memory_order_acq_rel);
   }
+  // Non-blocking startup (P0.1, Task 24): if the adapter is active and NO
+  // chain exists yet, the MAIN thread waits (bounded) for the first chain
+  // so the first audio block starts wet at a deterministic adoption
+  // position (fast-render hosts would otherwise outrun the preparation
+  // thread and determinism would depend on thread timing). Later
+  // (mid-stream) snapshot changes never wait — rebuilds are async.
+  im.waitForFirstChain();
 }
 
 void RealtimeAdapter::requestHardReset() {
-  impl_->requestEpoch.fetch_add(1, std::memory_order_acq_rel);
+  Impl& im = *impl_;
+  // Request-time fulfilment (Task 24, determinism fix): when the already-
+  // built chain (pending, unadopted — or adopted with NO audio processed
+  // yet) matches the published snapshot exactly, the reset is a NO-OP: the
+  // requested state IS the live state. Deciding HERE (main thread, before
+  // the first block) is deterministic; the previous equivalent check in the
+  // preparation thread's poll was raced by the audio thread racing past
+  // the startup latency once the audio-thread startup wait was removed
+  // (the flaky identical-rebuild: a timing-dependent mid-stream adoption).
+  // Mid-stream (audio running) resets stay REAL resets — the host-flush
+  // contract.
+  const ParamSnapshot::ChainSignature sig = im.params.load().chainSignature();
+  const bool noAudioYet = im.streamPosMirror.load(std::memory_order_acquire) == 0;
+  if (noAudioYet) {
+    const bool hasChain = im.pending.load(std::memory_order_acquire) != nullptr ||
+                          im.active.load(std::memory_order_acquire) != nullptr;
+    // compare against the PUBLISHED built signature (seqlock — the chain
+    // pointer itself is never dereferenced from this thread: adoption and
+    // retirement can race it)
+    if (hasChain && im.builtSigPub_.load() == sig) {
+      return;  // already fulfilled: the built chain IS the requested state
+    }
+  }
+  im.requestEpoch.fetch_add(1, std::memory_order_acq_rel);
+}
+
+void RealtimeAdapter::requestProcessingReset() {
+  // Suspend/resume support (P1.4, spec §8 "resume = reset + fresh chain").
+  // Audio-thread-safe: an atomic flag only. The next process() block
+  // performs the reset (retire the active chain through the standard
+  // crossfade retirement + reset the streaming musical state); the epoch
+  // bump makes the preparation thread build the fresh chain.
+  Impl& im = *impl_;
+  im.resumeResetPending.store(true, std::memory_order_release);
+  im.requestEpoch.fetch_add(1, std::memory_order_acq_rel);
 }
 
 // ---------------------------------------------------------------------------
@@ -901,6 +1066,22 @@ namespace {
   return pts[count - 1].value;
 }
 
+/// Piecewise STEP value (bypass semantics — P1.2): the value of the LAST
+/// point at or before `frame`; `carry` before the first point. Points are
+/// ascending by frameOffset (the VST3 queue contract).
+[[nodiscard]] bool stepAt(const AutomationPoint* pts, int count, int64_t frame,
+                          bool carry) {
+  bool v = carry;
+  for (int i = 0; i < count; ++i) {
+    if (static_cast<int64_t>(pts[i].frameOffset) <= frame) {
+      v = pts[i].value >= 0.5;
+    } else {
+      break;
+    }
+  }
+  return v;
+}
+
 }  // namespace
 
 void RealtimeAdapter::process(const double* const* in, double* const* out, int32_t frames,
@@ -918,48 +1099,68 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
 
   // ---- effective musical state for this block -------------------------------
   const ParamSnapshot snap = im.params.load();
-  bool bypassTarget = snap.bypass;
-  if (automation.bypassFrame >= 0) bypassTarget = automation.bypassValue;
+  // bypass carry (P1.2): the pitch-carry model applied to the toggle — with
+  // no events this block, the base is the parameter's CURRENT value unless
+  // an earlier host ramp is still being held (automation does not write the
+  // parameter object; its end value persists while the parameter is
+  // unchanged). The per-sample resolution happens in the emission loop.
+  if (automation.bypassCount == 0 &&
+      (!im.everHadBypassAutomation || snap.bypass != im.lastSnapBypass)) {
+    im.lastBypass = snap.bypass;
+  }
+  if (automation.bypassCount > 0) {
+    im.everHadBypassAutomation = true;
+  }
+  im.lastSnapBypass = snap.bypass;
+  const bool bypassCarry = im.lastBypass;
   const double bypassRate = 1.0 / (kBypassFadeSeconds * im.fs);
 
-  // input meters (pre-gain)
+  // input meters (pre-gain): per-SAMPLE time-based ballistics (P2.5 — the
+  // values at any absolute stream position are identical regardless of the
+  // host's block schedule) + a dedicated INPUT clip state (P2.4).
   for (int c = 0; c < ch; ++c) {
-    double peak = 0.0, sumSq = 0.0;
+    double peak = im.meterInPeak[c];
+    double meanSq = im.meterInMeanSq[c];
+    double clip = im.meterInClip[c];
     for (int32_t i = 0; i < frames; ++i) {
       const double v = in[c][i];
       const double a = std::fabs(v);
-      if (a > peak) peak = a;
-      sumSq += v * v;
+      peak = a > peak ? a : peak * im.meterPeakDecayPerSample;
+      meanSq += (v * v - meanSq) * im.meterRmsAlpha;
+      clip *= im.meterClipDecayPerSample;
+      if (a > 1.0) clip = 1.0;
     }
-    im.meterInPeak[c] = std::max(peak, im.meterInPeak[c] * 0.98);  // ~1.4 s hold-decay @48k
-    im.meterInRms[c] = std::sqrt(sumSq / static_cast<double>(frames));
-    if (peak > 1.0) im.meterClip[c] = 1.0;
-    im.meterClip[c] *= 0.9995;
+    im.meterInPeak[c] = peak;
+    im.meterInMeanSq[c] = meanSq;
+    im.meterInRms[c] = std::sqrt(std::max(meanSq, 0.0));
+    im.meterInClip[c] = clip;
   }
 
-  const double blockLfoRate = snap.lfoRateHz;
-  const double blockLfoDepth = snap.lfoDepthSt;
+  // LFO values are resolved PER SAMPLE in the curve loop (P1.1: host
+  // automation of kLfoRate/kLfoDepth must reach the realtime curve —
+  // sample-aware, block-relative, deterministic). With no automation the
+  // per-sample values equal the snapshot constants (identical behaviour to
+  // the previous block-constant read).
 
-  // ---- fast-render startup assist -------------------------------------------
-  // With no chain yet (stream start, or a fast-render host that outruns the
-  // preparation thread's poll), give the preparation thread ONE bounded
-  // scheduling slice so the first chain appears within a block or two. This
-  // is a startup-only yield (the steady-state path never waits), and it is
-  // what makes faster-than-realtime bouncing (hosts reusing the realtime
-  // process() path) produce processed output instead of dry fallbacks.
-  if (im.active.load(std::memory_order_acquire) == nullptr &&
-      im.pending.load(std::memory_order_acquire) == nullptr && im.activated) {
-    // bounded wait (<= 25 ms, exits the moment a chain is published): the
-    // chain build itself takes ~1-10 ms; realtime hosts reach here only at
-    // stream start (covered by the latency silence), fast-render hosts get
-    // processed output within the first blocks
-    for (int waited = 0; waited < 100; ++waited) {
-      if (im.pending.load(std::memory_order_acquire) != nullptr ||
-          im.active.load(std::memory_order_acquire) != nullptr) {
-        break;
-      }
-      std::this_thread::sleep_for(std::chrono::microseconds(250));
-    }
+
+  // ---- resume reset (P1.4: suspend/resume — "reset + fresh chain") ----------
+  // A setProcessing(true) after a suspend asked for a fresh start: retire
+  // the active chain (through the standard crossfade retirement — audio
+  // thread, allocation-free) and reset the streaming musical state so no
+  // pre-suspend DSP/musical state survives past the standard seam blend.
+  if (im.resumeResetPending.exchange(false, std::memory_order_acq_rel)) {
+    im.retireActiveNow();
+    im.requestEpoch.fetch_add(1, std::memory_order_acq_rel);
+    im.lastPitchSt = snap.pitchSt;
+    im.everHadPitchAutomation = false;
+    im.lastSnapPitchSt = snap.pitchSt;
+    im.lastMix = snap.mix;
+    im.lastLevelDb = snap.outputDb;
+    im.lastBypass = snap.bypass;
+    im.lastSnapBypass = snap.bypass;
+    im.everHadBypassAutomation = false;
+    im.lfoPhase = 0.0;
+    im.bypassFade = 0.0;  // ramps toward the current target from a fresh state
   }
 
   // ---- pitch base resolution (the deterministic VST3-correct model) --------
@@ -1022,7 +1223,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
           int64_t coverageEnd = -1;
           for (int s = 0; s < kJobSlots; ++s) {
             Job* job = act->slots[s].load(std::memory_order_acquire);
-            if (job != nullptr && job->index >= 0 &&
+            if (job != nullptr && job->index.load(std::memory_order_relaxed) >= 0 &&
                 !job->dead.load(std::memory_order_acquire)) {
               coverageEnd = std::max(coverageEnd, job->spanStart + job->wetLen);
             }
@@ -1050,11 +1251,18 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       const int64_t frame = subStart + static_cast<int64_t>(i);
       double st = timelineAt(automation.pitch, automation.pitchCount, frame, blockFrames,
                              pitchCarry);
-      if (blockLfoDepth > 0.0 && blockLfoRate > 0.0) {
-        st += blockLfoDepth * std::sin(2.0 * kPi * im.lfoPhase);
+      // LFO with sample-aware rate/depth (P1.1): automation events are
+      // resolved at frame granularity; the phase integrates the automated
+      // rate (deterministic; identical events => identical curve).
+      const double lfoDepth = timelineAt(automation.lfoDepth, automation.lfoDepthCount,
+                                         frame, blockFrames, snap.lfoDepthSt);
+      const double lfoRate = timelineAt(automation.lfoRate, automation.lfoRateCount,
+                                        frame, blockFrames, snap.lfoRateHz);
+      if (lfoDepth > 0.0 && lfoRate > 0.0) {
+        st += lfoDepth * std::sin(2.0 * kPi * im.lfoPhase);
       }
       im.curveScratch[static_cast<std::size_t>(i)] = std::exp2(st / 12.0);
-      im.lfoPhase += blockLfoRate / im.fs;
+      im.lfoPhase += lfoRate / im.fs;
       if (im.lfoPhase >= 1.0) im.lfoPhase -= std::floor(im.lfoPhase);
     }
 
@@ -1074,12 +1282,14 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       for (int s = 0; s < kJobSlots; ++s) {
         if (im.active.load(std::memory_order_acquire) != act) break;  // faulted mid-loop
         Job* job = act->slots[s].load(std::memory_order_acquire);
-        if (job == nullptr || job->index < 0) continue;
-        if (job->dead.load(std::memory_order_acquire)) continue;
+        if (job == nullptr) continue;
+        if (job->dead.load(std::memory_order_acquire)) continue;  // dead-first: the
+        // release/acquire protocol guarantees the post-stamp fields below
+        if (job->index.load(std::memory_order_relaxed) < 0) continue;
         feedJob(*act, *job, t, subN, in, job->spanEnd(), historyFloor, clampDetected);
       }
     }
-    if (im.retiring != nullptr && act != nullptr) {
+    if (im.retiring != nullptr) {
       // The retiring chain is still read for q < act->base (its own wet) and
       // blended over [act->base, act->base + seamX). Its production must
       // cover that WET range: at ratio != 1 the wet lags the input timeline,
@@ -1092,11 +1302,22 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       // remaining job is fed through its own span — the engines' own
       // strict-delivery gates bound production, and the input arrives with
       // the stream either way.
-      const int64_t blendEnd = act->base + act->seamX;
+      //
+      // Task 24 (the P1.4 resume reset): while NO active chain exists (the
+      // reset retired a HEALTHY chain; the replacement is still being
+      // built), the retiring chain is the ONLY wet source — it must be fed
+      // (through its own span, bounded) or the emission starves and counts
+      // faults for the whole rebuild window. blendEnd is then unbounded
+      // (the next adoption re-establishes the blend window).
+      const int64_t blendEnd =
+          act != nullptr
+              ? act->base.load(std::memory_order_relaxed) + act->seamX
+              : std::numeric_limits<int64_t>::max();
       for (int s = 0; s < kJobSlots; ++s) {
         Job* job = im.retiring->slots[s].load(std::memory_order_acquire);
-        if (job == nullptr || job->index < 0) continue;
+        if (job == nullptr) continue;
         if (job->dead.load(std::memory_order_acquire)) continue;
+        if (job->index.load(std::memory_order_relaxed) < 0) continue;
         if (job->spanStart + job->wetLen <= emissionFloor) continue;  // wet consumed
         if (job->spanStart >= blendEnd) continue;                     // wet never read
         feedJob(*im.retiring, *job, t, subN, in, job->spanEnd(), historyFloor,
@@ -1122,14 +1343,24 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       } else {
         gain = gainBase;
       }
-      // bypass fade (target from the snapshot or the block event): a linear
-      // 10 ms equal-power ramp (deterministic, exactly 10 ms to converge)
-      const double target = bypassTarget ? 1.0 : 0.0;
+      // bypass fade — FRAME-CORRECT (P1.2): the step target is resolved at
+      // THIS sample's frame (the event's position, not the block start);
+      // multiple toggles inside one block each take effect at their own
+      // frames. The fade itself is the 10 ms EQUAL-POWER ramp (P2.1: spec
+      // §4.1 item 6 — "a 10 ms equal-power fade in/out"; the previous
+      // linear curve was a spec/implementation mismatch, now corrected:
+      // wet gain = cos(pi/2·f), dry gain = sin(pi/2·f), constant total
+      // power for uncorrelated branches, deterministic, exactly 10 ms).
+      const bool bypassNow =
+          stepAt(automation.bypass, automation.bypassCount, subStart + i, bypassCarry);
+      const double target = bypassNow ? 1.0 : 0.0;
       if (im.bypassFade < target) {
         im.bypassFade = std::min(target, im.bypassFade + bypassRate);
       } else if (im.bypassFade > target) {
         im.bypassFade = std::max(target, im.bypassFade - bypassRate);
       }
+      const double bypassWetGain = std::cos(kPi * 0.5 * im.bypassFade);
+      const double bypassDryGain = std::sin(kPi * 0.5 * im.bypassFade);
 
       // dry (latency-compensated)
       double dryv[2] = {0.0, 0.0};
@@ -1139,20 +1370,24 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
 
       // wet (chain lanes + seam blends)
       bool wetOk = false;
-      if (act != nullptr && q >= act->base) {
+      if (act != nullptr && q >= act->base.load(std::memory_order_relaxed)) {
         wetOk = act->readWet(wetv, ch, q);
-        if (wetOk && im.retiring != nullptr && q < act->base + act->seamX) {
+        if (wetOk && im.retiring != nullptr &&
+            q < act->base.load(std::memory_order_relaxed) + act->seamX) {
           double retv[2] = {0.0, 0.0};
           if (im.retiring->readWet(retv, ch, q)) {
-            const double u = kPi * 0.5 * static_cast<double>(q - act->base + 1) /
-                             static_cast<double>(act->seamX);
+            const double u =
+                kPi * 0.5 *
+                static_cast<double>(q - act->base.load(std::memory_order_relaxed) + 1) /
+                static_cast<double>(act->seamX);
             const double fadeIn = std::sin(u), fadeOut = std::cos(u);
             for (int c = 0; c < ch; ++c) {
               wetv[c] = fadeOut * retv[c] + fadeIn * wetv[c];
             }
           }
         }
-      } else if (im.retiring != nullptr && q >= im.retiring->base) {
+      } else if (im.retiring != nullptr &&
+                 q >= im.retiring->base.load(std::memory_order_relaxed)) {
         wetOk = im.retiring->readWet(wetv, ch, q);
       }
       if (!wetOk) {
@@ -1160,8 +1395,9 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
         // latency silence — NOT faults; a missing lane INSIDE the covered
         // range is a real underrun (bounded dry fallback, spec 4.3)
         const bool covered =
-            (act != nullptr && q >= act->base) ||
-            (im.retiring != nullptr && q >= im.retiring->base);
+            (act != nullptr && q >= act->base.load(std::memory_order_relaxed)) ||
+            (im.retiring != nullptr &&
+             q >= im.retiring->base.load(std::memory_order_relaxed));
         if (covered) {
           im.faults++;
         }
@@ -1169,8 +1405,14 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       }
 
       for (int c = 0; c < ch; ++c) {
-        double signal = mixv * wetv[c] + (1.0 - mixv) * dryv[c];
-        signal = signal * (1.0 - im.bypassFade) + dryv[c] * im.bypassFade;
+        const double normal = mixv * wetv[c] + (1.0 - mixv) * dryv[c];
+        // equal-power bypass crossfade (P2.1): the processed branch and the
+        // latency-compensated dry branch cross with cos/sin gains — power
+        // stays constant across the fade for uncorrelated branches (for
+        // perfectly correlated branches — identity pitch with wet == dry —
+        // the sum rises to sqrt(2) mid-fade: the standard, documented
+        // equal-power trade-off, replacing the linear curve's power dip).
+        double signal = normal * bypassWetGain + dryv[c] * bypassDryGain;
         out[c][subStart + i] = signal * gain;
       }
     }
@@ -1180,8 +1422,9 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
     const auto completeChainJobs = [&](const Chain& chain) {
       for (int s = 0; s < kJobSlots; ++s) {
         Job* job = chain.slots[s].load(std::memory_order_acquire);
-        if (job == nullptr || job->index < 0) continue;
+        if (job == nullptr) continue;
         if (job->dead.load(std::memory_order_acquire)) continue;
+        if (job->index.load(std::memory_order_relaxed) < 0) continue;
         if (job->consumed >= job->inputLen && !job->finished) {
           finishJob(*job, historyFloor);
         }
@@ -1215,28 +1458,38 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
                           mixCarry);
   im.lastLevelDb = timelineAt(automation.level, automation.levelCount, blockFrames - 1,
                               blockFrames, levelCarry);
+  im.lastBypass =
+      stepAt(automation.bypass, automation.bypassCount, blockFrames - 1, bypassCarry);
 
   im.streamPos += frames;
   im.streamPosMirror.store(im.streamPos, std::memory_order_release);
   im.exitLiveRatio.store(std::exp2(im.lastPitchSt / 12.0), std::memory_order_relaxed);
+  if (automation.droppedPoints > 0) {
+    im.automationDropped += automation.droppedPoints;
+  }
   if (clampDetected) {
     im.clampEvents++;
     im.requestEpoch.fetch_add(1, std::memory_order_acq_rel);
   }
 
-  // ---- output meters (post gain/bypass) --------------------------------------
+  // ---- output meters (post gain/bypass): per-SAMPLE time-based ballistics
+  // (P2.5) + the dedicated OUTPUT clip state (P2.4).
   for (int c = 0; c < ch; ++c) {
-    double peak = 0.0, sumSq = 0.0;
+    double peak = im.meterOutPeak[c];
+    double meanSq = im.meterOutMeanSq[c];
+    double clip = im.meterOutClip[c];
     for (int32_t i = 0; i < frames; ++i) {
       const double v = out[c][i];
       const double a = std::fabs(v);
-      if (a > peak) peak = a;
-      sumSq += v * v;
+      peak = a > peak ? a : peak * im.meterPeakDecayPerSample;
+      meanSq += (v * v - meanSq) * im.meterRmsAlpha;
+      clip *= im.meterClipDecayPerSample;
+      if (a > 1.0) clip = 1.0;
     }
-    im.meterOutPeak[c] = std::max(peak, im.meterOutPeak[c] * 0.98);
-    im.meterOutRms[c] = std::sqrt(sumSq / static_cast<double>(frames));
-    if (peak > 1.0) im.meterClip[c] = 1.0;
-    im.meterClip[c] *= 0.9995;
+    im.meterOutPeak[c] = peak;
+    im.meterOutMeanSq[c] = meanSq;
+    im.meterOutRms[c] = std::sqrt(std::max(meanSq, 0.0));
+    im.meterOutClip[c] = clip;
   }
 
   // ---- publish meters + status -------------------------------------------------
@@ -1245,28 +1498,30 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   for (int c = 0; c < ch; ++c) {
     m.inPeak[c] = im.meterInPeak[c];
     m.inRms[c] = im.meterInRms[c];
+    m.inClip[c] = im.meterInClip[c];
     m.outPeak[c] = im.meterOutPeak[c];
     m.outRms[c] = im.meterOutRms[c];
-    m.outClip[c] = im.meterClip[c];
+    m.outClip[c] = im.meterOutClip[c];
   }
   meters_.store(m);
 
+  // Status publication (P1.11, Task 24): NUMERIC FIELDS ONLY — no string
+  // formatting, no registry lookups on the audio thread (spec §4.3). The
+  // consumers (editor, tools, tests) derive engine id/name and the
+  // adaptation label from engineIndex + spliceMode through the registry.
   StatusSnapshot st;
   const Chain* actp = im.active.load(std::memory_order_acquire);
   if (actp != nullptr) {
-    std::snprintf(st.engineId, sizeof(st.engineId), "%s", actp->engineId);
-    const char* name = engineNameForIndex(actp->engineIndex);
-    std::snprintf(st.engineName, sizeof(st.engineName), "%s", name != nullptr ? name : "");
-    std::snprintf(st.adaptation, sizeof(st.adaptation), "%s",
-                  actp->spliceMode ? "windowed splice adaptation" : "continuous realtime");
+    st.engineIndex = actp->engineIndex;
+    st.spliceMode = actp->spliceMode;
     st.envelopeMin = actp->envMin;
     st.envelopeMax = actp->envMax;
     st.latencyFrames = im.latencyNow;  // Λ_eff: the TRUE emission latency
     int jobs = 0;
     for (int s = 0; s < kJobSlots; ++s) {
       const Job* job = actp->slots[s].load(std::memory_order_acquire);
-      if (job != nullptr && job->index >= 0 &&
-          !job->dead.load(std::memory_order_acquire)) {
+      if (job != nullptr && !job->dead.load(std::memory_order_acquire) &&
+          job->index.load(std::memory_order_relaxed) >= 0) {
         ++jobs;
       }
     }
@@ -1279,10 +1534,11 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   st.sampleRate = im.fs;
   st.channels = ch;
   st.maxBlock = im.maxBlock;
-  st.reprepares = im.reprepares;
+  st.reprepares = im.reprepares.load(std::memory_order_relaxed);
   st.faults = im.faults;
   st.clampEvents = im.clampEvents;
-  st.bypassActive = bypassTarget;
+  st.automationDropped = im.automationDropped;
+  st.bypassActive = im.lastBypass;
   status_.store(st);
 }
 

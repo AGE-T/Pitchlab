@@ -57,6 +57,14 @@ configuration keys lives in ONE authoritative table: `src/vst/parameters.h`
 (`parameterTable()`) — the processor, the UI and the tests are all generated
 from it.
 
+Integer-domain parameters (VARDELAY crossfade, GRANULAR overlap/jitter) are
+declared DISCRETE (`stepCount` = the last legal integer) with exact
+round-trips; display formatting and string parsing are tag-aware and
+type-safe (`formatParamValue` / `parseParamPlain`): `"on"`/`"off"`,
+`"hann"`/`"triangular"`, the resample-quality names and engine ids parse
+back to their semantic values, and invalid strings are rejected (never
+silently zero).
+
 ## Runtime architecture (summary)
 
 ```
@@ -69,13 +77,45 @@ DAW → VST3 processor (src/vst/processor.cpp, single-component effect)
 ```
 
 Realtime safety: the `process()` path performs no allocation, no locks, no
-I/O; engine instances are built/destroyed only on the preparation thread and
-swapped in at block boundaries through atomics. Engine exceptions are caught
-at the chain boundary → the chain rebuilds and the affected audio falls back
-to latency-compensated dry (counted in the status as faults).
+I/O, and — since the Task 24 defect audit — no sleeping and no string
+formatting either: the startup wait for the first chain lives on the MAIN
+thread (`activate()` / the first parameter publish), the status snapshot is
+numeric-only (strings are derived on the UI side), and the three-thread
+publication protocol (parameter snapshot, meters, status; the chain
+hand-off) is memory-model-clean (atomised seqlock + atomic chain/job
+fields; TSAN-verified, three runs clean).
+
+Automation is sample-accurate in ONE authoritative coordinate system: host
+event offsets are ProcessData-block-relative; the processor converts each
+event exactly once into its chunk's local frame (never clamped across chunk
+boundaries; boundary-aware slicing reconstructs ramps across internal
+chunks). LFO rate/depth, mix, level and bypass automation all reach the
+realtime path — bypass resolves per sample (step semantics, multiple
+toggles per block legal) with the 10 ms equal-power fade the specification
+§4.1 mandates. Automation beyond the per-block capacity (256 points per
+parameter) is consolidated (first 255 + the final event) and COUNTED in the
+status (`automationDropped`) — never silent.
+
+Latency: `getLatencySamples()` tracks the effective emission latency, and
+latency CHANGES are reported to the host through
+`IComponentHandler::restartComponent(kLatencyChanged)` from the main-thread
+entry points (parameter changes, state restore) — the audio thread never
+calls into the host. The in/out meter indicators are independent, with
+per-SAMPLE time-based ballistics (identical values at any block schedule).
+
+Suspend/resume (`setProcessing`) implements the specification's "resume =
+reset + fresh chain": the reset is audio-thread-safe (an atomic flag; the
+retirement/rebuild machinery performs it at the next block), so no
+pre-suspend DSP state survives past the standard seam blend.
 
 Known limitations (the honest list, including the effective-latency
 monotonicity and the splice-adaptation seams) are in the specification §12.
+Additional verified characteristics from the Task 24 audit: the v0.1
+vardelay engine's §6.2.1 wrap startup produces ~E (excursion) frames of
+leading silence for sustained ratios > 1 (the committed
+`vardelay_harmstack_p5` example carries 838 ms — accepted v0.1 behaviour,
+protected engines); the fresh chain after a resume/reset arrives
+asynchronously (~ms — the preparation thread's rebuild).
 
 ## Getting the plug-in (the distributable)
 

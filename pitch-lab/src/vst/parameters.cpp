@@ -1,6 +1,11 @@
 #include "vst/parameters.h"
 
 #include <array>
+#include <cctype>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -29,13 +34,20 @@ constexpr std::array<ParamMeta, 19> kTable{{
      "Varispeed", "%s"},
     {param::kVdExcursion, "vd_excursion", "Excursion", "VD EXCUR", "s", 0.05, 2.0, 0.5, -1,
      "Vardelay", "%.3f"},
-    {param::kVdCrossfade, "vd_crossfade", "Crossfade", "VD XFADE", "frm", 0, 8192, 2048, -1,
+    // Task 24 (P1.7): crossfade/overlap/jitter are INTEGER-domain parameters
+    // (the v0.1 engine contract) — previously declared continuous and
+    // TRUNCATED into the snapshot (a metadata/semantics mismatch: hosts saw
+    // continuous sliders, the engines received floor(plain)). They are now
+    // properly discrete (stepCount = last legal integer) with round-half-up
+    // snapping, so plain -> normalized -> plain round-trips exactly and
+    // host UIs offer stepped controls.
+    {param::kVdCrossfade, "vd_crossfade", "Crossfade", "VD XFADE", "frm", 0, 8192, 2048, 8192,
      "Vardelay", "%d"},
     {param::kGrGrain, "gr_grain", "Grain Length", "GR GRAIN", "s", 0.02, 0.5, 0.1, -1,
      "Granular", "%.3f"},
-    {param::kGrOverlap, "gr_overlap", "Overlap", "GR OVLAP", "x", 4, 16, 4, -1,
+    {param::kGrOverlap, "gr_overlap", "Overlap", "GR OVLAP", "x", 4, 16, 4, 12,
      "Granular", "%d"},
-    {param::kGrJitter, "gr_jitter", "Jitter", "GR JIT", "frm", 0, 256, 0, -1,
+    {param::kGrJitter, "gr_jitter", "Jitter", "GR JIT", "frm", 0, 256, 0, 256,
      "Granular", "%d"},
     {param::kGrWindow, "gr_window", "Window", "GR WNDW", "", 0, 1, 0, 1,
      "Granular", "%s"},
@@ -168,6 +180,196 @@ double plainValue(const ParamSnapshot& snap, uint32_t tag) {
     case param::kBypass: return snap.bypass ? 1.0 : 0.0;
     case param::kOutputLevel: return snap.outputDb;
     default: return 0.0;
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Type-safe display formatting + parsing (Task 24, P1.8/P1.9)
+// ---------------------------------------------------------------------------
+
+namespace {
+
+[[nodiscard]] int clampInt(double v, int lo, int hi) {
+  return v < static_cast<double>(lo) ? lo
+         : v > static_cast<double>(hi) ? hi
+                                       : static_cast<int>(std::llround(v));
+}
+
+[[nodiscard]] bool equalsInsensitive(const char* a, const char* b) {
+  while (*a != '\0' && *b != '\0') {
+    if (std::tolower(static_cast<unsigned char>(*a)) !=
+        std::tolower(static_cast<unsigned char>(*b))) {
+      return false;
+    }
+    ++a;
+    ++b;
+  }
+  return *a == '\0' && *b == '\0';
+}
+
+/// Strict numeric head parse: consumes the whole string as one number.
+[[nodiscard]] bool parseNumber(const char* text, double& out) {
+  if (text == nullptr || *text == '\0') return false;
+  char* end = nullptr;
+  const double v = std::strtod(text, &end);
+  if (end == text) return false;         // no number consumed
+  while (*end != '\0') {                 // trailing junk -> invalid
+    if (!std::isspace(static_cast<unsigned char>(*end))) return false;
+    ++end;
+  }
+  if (!std::isfinite(v)) return false;
+  out = v;
+  return true;
+}
+
+const ParamMeta* findMetaByTag(uint32_t tag) {
+  for (const auto& m : kTable) {
+    if (m.tag == tag) return &m;
+  }
+  return nullptr;
+}
+
+}  // namespace
+
+void formatParamValue(uint32_t tag, double plain, char* buf, std::size_t bufSize) {
+  if (buf == nullptr || bufSize == 0) return;
+  buf[0] = '\0';
+  switch (tag) {
+    case param::kVsAllowAliasing:
+    case param::kBypass:
+      std::snprintf(buf, bufSize, "%s", plain >= 0.5 ? "on" : "off");
+      return;
+    case param::kGrWindow:
+      std::snprintf(buf, bufSize, "%s", plain >= 0.5 ? "triangular" : "hann");
+      return;
+    case param::kVsQuality:
+      std::snprintf(buf, bufSize, "%s",
+                    kVsQualityNames[clampInt(plain, 0, 2)]);
+      return;
+    case param::kEngine:
+    case param::kVdCrossfade:
+    case param::kGrOverlap:
+    case param::kGrJitter:
+    case param::kPvcFft:
+    case param::kPvcHop:
+    case param::kPvpFft:
+    case param::kPvpHop:
+      std::snprintf(buf, bufSize, "%d", static_cast<int>(std::llround(plain)));
+      return;
+    default: {
+      // real-valued parameters: the table's format (every remaining dispFmt
+      // consumes a double — the type mismatch that was P1.8 is structurally
+      // impossible now)
+      const ParamMeta* meta = findMetaByTag(tag);
+      if (meta == nullptr) return;
+      std::snprintf(buf, bufSize, meta->dispFmt, plain);
+      return;
+    }
+  }
+}
+
+bool parseParamPlain(uint32_t tag, const char* text, double& plainOut) {
+  if (text == nullptr) return false;
+  // skip leading whitespace
+  while (*text != '\0' && std::isspace(static_cast<unsigned char>(*text))) ++text;
+  if (*text == '\0') return false;
+
+  double v = 0.0;
+  switch (tag) {
+    case param::kVsAllowAliasing:
+    case param::kBypass:
+    case param::kGrWindow:
+      if (equalsInsensitive(text, "on") || equalsInsensitive(text, "1")) {
+        plainOut = 1.0;
+        return true;
+      }
+      if (equalsInsensitive(text, "off") || equalsInsensitive(text, "0")) {
+        plainOut = 0.0;
+        return true;
+      }
+      if (tag == param::kGrWindow &&
+          (equalsInsensitive(text, "hann") || equalsInsensitive(text, "triangular"))) {
+        plainOut = equalsInsensitive(text, "triangular") ? 1.0 : 0.0;
+        return true;
+      }
+      if (tag == param::kBypass || tag == param::kVsAllowAliasing) {
+        if (equalsInsensitive(text, "true") || equalsInsensitive(text, "false")) {
+          plainOut = equalsInsensitive(text, "true") ? 1.0 : 0.0;
+          return true;
+        }
+      }
+      return false;  // invalid toggle text: rejected, never silently zero
+    case param::kVsQuality:
+      for (int i = 0; i < 3; ++i) {
+        if (equalsInsensitive(text, kVsQualityNames[i])) {
+          plainOut = static_cast<double>(i);
+          return true;
+        }
+      }
+      if (parseNumber(text, v)) {
+        plainOut = v;
+        return true;
+      }
+      return false;
+    case param::kEngine: {
+      // canonical: the registry index; also accept the engine id or display
+      // name (case-insensitive) — identity comes from the registry, never a
+      // second list
+      if (parseNumber(text, v)) {
+        plainOut = v;
+        return true;
+      }
+      const int n = engineCount();
+      for (int i = 0; i < n; ++i) {
+        const char* id = engineIdForIndex(i);
+        const char* name = engineNameForIndex(i);
+        if ((id != nullptr && equalsInsensitive(text, id)) ||
+            (name != nullptr && equalsInsensitive(text, name))) {
+          plainOut = static_cast<double>(i);
+          return true;
+        }
+      }
+      return false;
+    }
+    case param::kPvcFft:
+    case param::kPvpFft: {
+      // canonical: the choice INDEX; also accept the actual FFT size
+      // (1024/2048/4096 — mapped back to the index)
+      if (parseNumber(text, v)) {
+        for (int i = 0; i < 3; ++i) {
+          if (v == static_cast<double>(kFftSizeChoices[i])) {
+            plainOut = static_cast<double>(i);
+            return true;
+          }
+        }
+        plainOut = v;  // an index (validated by normalise's range clamp)
+        return true;
+      }
+      return false;
+    }
+    case param::kPvcHop:
+    case param::kPvpHop: {
+      if (parseNumber(text, v)) {
+        for (int i = 0; i < 4; ++i) {
+          if (v == static_cast<double>(kHopChoices[i])) {
+            plainOut = static_cast<double>(i);
+            return true;
+          }
+        }
+        plainOut = v;  // an index (validated by normalise's range clamp)
+        return true;
+      }
+      return false;
+    }
+    default:
+      // real/integer-valued parameters: strict numeric parse (the caller
+      // strips whitespace-separated unit suffixes)
+      if (parseNumber(text, v)) {
+        plainOut = v;
+        return true;
+      }
+      return false;
   }
 }
 

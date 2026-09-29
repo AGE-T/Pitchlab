@@ -13,8 +13,23 @@
 //
 // Both are header-only, allocation-free on the read/write fast paths, and
 // rely only on <atomic>.
+//
+// DEFECT-FIX NOTE (Task 24, the P0.2 audit finding): the previous
+// implementation copied the payload with plain (non-atomic) assignments
+// between the version fences. That is a DATA RACE under the C++ memory
+// model (TSAN-reproduced): the sequence counter does not legalise
+// concurrent non-atomic read/write access to the payload — a torn word
+// read is undefined behaviour even when the version check later discards
+// it. The payload is now stored as an array of atomic machine words: every
+// access is atomic (no UB, no TSAN races), and the odd/even version
+// protocol (release stores on the writer, acquire loads bracketing the
+// word copies on the reader) still detects and retries torn copies. This
+// is the standard atomised-payload seqlock: same lock-free, allocation-
+// free fast paths, memory-model-clean.
 
 #include <atomic>
+#include <cstdint>
+#include <type_traits>
 
 namespace pitchlab::vst {
 
@@ -23,6 +38,9 @@ namespace pitchlab::vst {
 /// UI thread. A reader retries (bounded) until it observes a stable
 /// even-version copy; writers are rare (parameter changes), so retries are
 /// practically zero.
+///
+/// Payload requirements (static-asserted): trivially copyable, word-aligned
+/// size (a multiple of 8 bytes). All current snapshot types satisfy this.
 template <typename T>
 class SeqLock {
  public:
@@ -32,25 +50,38 @@ class SeqLock {
 
   /// Publish a new payload (writer thread only).
   void store(const T& value) {
+    static_assert(std::is_trivially_copyable_v<T>);
     const uint64_t v = version_.load(std::memory_order_relaxed);
     version_.store(v + 1, std::memory_order_release);  // odd = writing
-    // A relaxed data race on the payload is intended: readers only accept
-    // copies taken under an even, unchanged version (the seqlock protocol).
-    payload_ = value;  // NOLINT(cert-oop54-cpp)
+    const auto* src = reinterpret_cast<const Word*>(&value);
+    for (std::size_t w = 0; w < kWords; ++w) {
+      words_[w].store(src[w], std::memory_order_relaxed);
+    }
     version_.store(v + 2, std::memory_order_release);  // even = stable
   }
 
   /// Read a stable copy (any thread). `spinBound` bounds the retry loop;
-  /// the payload is always small, and writers are rare.
-  [[nodiscard]] T load(int spinBound = 64) const {
+  /// the payload is always small, and writers are rare. On exhaustion the
+  /// (possibly torn but race-free) copy is returned — writer sections are
+  /// nanosecond-scale, so the bound is only reachable if the writer thread
+  /// is preempted mid-store for an pathological interval; a torn snapshot
+  /// is absorbed downstream (the preparation thread's parameter debounce;
+  /// meters/status are cosmetic telemetry).
+  [[nodiscard]] T load(int spinBound = 4096) const {
     T out{};
+    auto* dst = reinterpret_cast<Word*>(&out);
     for (int i = 0;; ++i) {
       const uint64_t before = version_.load(std::memory_order_acquire);
-      if ((before & 1u) != 0u) continue;  // write in flight
-      out = payload_;                     // NOLINT
+      if ((before & 1u) != 0u) {
+        if (i >= spinBound) return out;
+        continue;  // write in flight
+      }
+      for (std::size_t w = 0; w < kWords; ++w) {
+        dst[w] = words_[w].load(std::memory_order_relaxed);
+      }
       const uint64_t after = version_.load(std::memory_order_acquire);
-      if (before == after) return out;    // stable copy
-      if (i >= spinBound) return out;     // degenerate fallback (never hit in practice)
+      if (before == after) return out;  // stable copy
+      if (i >= spinBound) return out;   // degenerate fallback (never hit in practice)
     }
   }
 
@@ -59,8 +90,15 @@ class SeqLock {
   }
 
  private:
+  using Word = uint64_t;
+  static constexpr std::size_t kWords = sizeof(T) / sizeof(Word);
+  static_assert(sizeof(T) % sizeof(Word) == 0,
+                "SeqLock payload size must be a multiple of 8 bytes");
+  static_assert(alignof(T) >= alignof(Word),
+                "SeqLock payload must be word-aligned");
+
   mutable std::atomic<uint64_t> version_{0};
-  T payload_{};
+  std::atomic<Word> words_[kWords]{};
 };
 
 /// Intrusive lock-free retire stack: the audio thread pushes retired nodes

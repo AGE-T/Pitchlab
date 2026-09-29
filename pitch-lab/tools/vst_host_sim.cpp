@@ -139,15 +139,21 @@ struct Host {
     s.maxSamplesPerBlock = maxBlock;
     s.processMode = kRealtime;
     audio->setupProcessing(s);
-    comp->setActive(true);
-    audio->setProcessing(true);
-    // apply the full parameter state (the normal VST path)
+    // apply the full parameter state BEFORE activation — the standard host
+    // order (the same order the processor test harness uses; every real
+    // host finishes its parameter setup before setActive). The tool's
+    // previous parameters-AFTER-activation order depended on the
+    // audio-thread startup wait that the Task 24 P0.1 fix removed (the
+    // first chain would otherwise build from the default snapshot and
+    // correct only through the clamp/re-prepare churn).
     const ParamMeta* table = parameterTable();
     const uint32_t n = parameterCount();
     for (uint32_t i = 0; i < n; ++i) {
       edit->setParamNormalized(table[i].tag,
                                normalise(table[i].tag, plainValue(snap, table[i].tag)));
     }
+    comp->setActive(true);
+    audio->setProcessing(true);
   }
 
   ~Host() {
@@ -333,7 +339,10 @@ int main(int argc, char** argv) {
           auto* iface = static_cast<IPitchLabStatus*>(obj);
           const StatusSnapshot s = iface->getStatus();
           iface->release();
-          std::printf("     engine=%s faults=%llu reprep=%llu\n", s.engineId,
+          // P1.11 (Task 24): the status snapshot is numeric-only — strings
+          // are derived here (tool side) through the registry.
+          const char* engineId = s.engineIndex >= 0 ? engineIdForIndex(s.engineIndex) : "?";
+          std::printf("     engine=%s faults=%llu reprep=%llu\n", engineId,
                       (unsigned long long)s.faults, (unsigned long long)s.reprepares);
           if (s.faults != 0) ++failures;
         }

@@ -24,12 +24,22 @@
 //
 // REALTIME SAFETY (§4.3): the audio path allocates nothing (all buffers are
 // pre-allocated at activation or on the preparation thread), takes no
-// locks, performs no I/O. Engine instances are created/configured/prepared
-// and destroyed ONLY on the preparation thread; the audio thread adopts a
-// finished chain by an atomic pointer swap at a block boundary and retires
-// the old chain through a lock-free retire stack. Engine exceptions are
-// caught at the chain boundary (fallback to latency-compensated dry +
-// counted fault; never a crash).
+// locks, performs no I/O, never sleeps and never formats strings. Engine
+// instances are created/configured/prepared and destroyed ONLY on the
+// preparation thread; the audio thread adopts a finished chain by an atomic
+// pointer swap at a block boundary and retires the old chain through a
+// lock-free retire stack. Engine exceptions are caught at the chain
+// boundary (fallback to latency-compensated dry + counted fault; never a
+// crash).
+//
+// STARTUP (the Task 24 fix for the audio-thread wait): the FIRST chain of
+// an activation is materialised BEFORE the first audio block can run — the
+// main thread waits (bounded, on the main thread where blocking is legal)
+// in activate() when a snapshot is already published, and in
+// setParameterSnapshot() when the activation came first. The audio thread
+// never waits: if the (pathological) bound is exceeded it emits the
+// latency-compensated dry path and the chain adopts mid-stream through the
+// normal machinery.
 //
 // DETERMINISM: identical (input, parameter trajectory, block schedule)
 // yields bit-identical output (tested); this is the realtime guarantee —
@@ -39,7 +49,6 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "core/pitch_engine.h"
@@ -50,25 +59,33 @@ namespace pitchlab::vst {
 
 // ---------------------------------------------------------------------------
 // Public snapshots (read by the processor / UI; written by the adapter)
+//
+// COORDINATE/DOMAIN NOTE (Task 24, P0.11/P1.11): the status snapshot
+// carries only STABLE IDENTIFIERS and numeric fields — no human-readable
+// strings. The audio thread must not format strings (spec §4.3); the
+// consumers (UI / tools) map engineIndex through the registry.
 // ---------------------------------------------------------------------------
 
-/// Per-channel meter values (peak with hold-decay + RMS), published per
-/// block through a seqlock.
+/// Per-channel meter values (peak with time-based hold-decay + RMS),
+/// published per block through a seqlock. Decay is per-SAMPLE (time-based,
+/// block-size independent — the Task 24 fix for per-block decay factors).
 struct MetersSnapshot {
   double inPeak[2] = {0.0, 0.0};
   double inRms[2] = {0.0, 0.0};
   double outPeak[2] = {0.0, 0.0};
   double outRms[2] = {0.0, 0.0};
-  double outClip[2] = {0.0, 0.0};  // clip indicator decay (1 -> recent clip)
+  double inClip[2] = {0.0, 0.0};   // input clip indicator (1 -> recent clip)
+  double outClip[2] = {0.0, 0.0};  // output clip indicator (1 -> recent clip)
   int channels = 2;
 };
 
 /// Runtime status (real values only — no quality score, no fake DSP
-/// indicators; spec §7).
+/// indicators; spec §7). Strings are derived by the CONSUMERS from
+/// engineIndex/spliceMode (registry lookup) — the audio thread stores
+/// numbers only.
 struct StatusSnapshot {
-  char engineId[48] = "";
-  char engineName[64] = "";
-  char adaptation[64] = "";  // e.g. "continuous realtime" / "windowed splice"
+  int engineIndex = -1;    // registry index of the active chain (-1 = none)
+  bool spliceMode = false; // windowed-splice adaptation (varispeed/granular)
   double sampleRate = 0.0;
   int channels = 0;
   int maxBlock = 0;
@@ -79,29 +96,51 @@ struct StatusSnapshot {
   uint64_t reprepares = 0;
   uint64_t faults = 0;
   uint64_t clampEvents = 0;
+  uint64_t automationDropped = 0;  // automation points beyond capacity (never silent)
   bool bypassActive = false;
   bool chainReady = false;
 };
 
 // ---------------------------------------------------------------------------
 // Per-block automation (VST3 IParameterChanges, resolved by the processor)
+//
+// AUTHORITATIVE COORDINATE SYSTEM (Task 24, the P0.4 fix): VST3 host event
+// offsets are ProcessData-block-relative. PitchLabProcessor converts each
+// event EXACTLY ONCE, into the coordinate system of the adapter call that
+// owns it (processor-chunk-local): an event belongs to the chunk containing
+// its offset and is rebased to that chunk's first frame; events are never
+// clamped across chunk boundaries. Inside this adapter, ALL automation
+// offsets are therefore relative to the CURRENT process() call's first
+// frame, and the internal sub-chunk loop stays in the same domain
+// (subStart + i).
+//
+// CAPACITY (Task 24, the P1.3 fix): a documented bounded capacity per
+// parameter per block, with a consolidation rule for overflow (keep the
+// first capacity-1 points + ALWAYS the final point — the block-end value
+// the next block's carry depends on) and a counted, status-published
+// `droppedPoints` diagnostic. Never silent, never an allocation.
 // ---------------------------------------------------------------------------
 
 struct AutomationPoint {
   int32_t frameOffset = 0;
-  double value = 0.0;  // PLAIN value (st / 0..1 / dB)
+  double value = 0.0;  // PLAIN value (st / 0..1 / dB / bool as 0|1)
 };
 
 struct BlockAutomation {
-  static constexpr int kMaxPoints = 32;
+  static constexpr int kMaxPoints = 256;  // bounded, allocation-free capacity
   AutomationPoint pitch[kMaxPoints];
   int pitchCount = 0;
   AutomationPoint mix[kMaxPoints];
   int mixCount = 0;
   AutomationPoint level[kMaxPoints];
   int levelCount = 0;
-  int32_t bypassFrame = -1;  // -1 = no event this block
-  bool bypassValue = false;
+  AutomationPoint lfoRate[kMaxPoints];   // Hz (plain)
+  int lfoRateCount = 0;
+  AutomationPoint lfoDepth[kMaxPoints];  // st (plain)
+  int lfoDepthCount = 0;
+  AutomationPoint bypass[kMaxPoints];    // 0|1 (plain); step semantics
+  int bypassCount = 0;
+  uint32_t droppedPoints = 0;  // points beyond capacity (consolidated, counted)
 };
 
 // ---------------------------------------------------------------------------
@@ -117,11 +156,16 @@ class RealtimeAdapter final {
   RealtimeAdapter& operator=(const RealtimeAdapter&) = delete;
 
   // ---- main-thread setup (audio processing stopped; may allocate) --------
+  //
+  // NOTE: activate() and the FIRST setParameterSnapshot() after it (in
+  // either order) block on the MAIN thread (bounded) until the first chain
+  // is published — the non-blocking-startup architecture (the audio thread
+  // never waits).
 
   /// Allocate rings for the stream format, start the preparation thread and
   /// request the first chain. Idempotent per format (a format change
   /// requires deactivate() first — the processor does this from
-  /// setProcessing(false), the VST3 contract for setup changes).
+  /// setActive(false), the VST3 contract for setup changes).
   void activate(double sampleRate, int channels, int maxBlockFrames);
 
   /// Stop the preparation thread and drop every chain (audio stopped).
@@ -129,12 +173,22 @@ class RealtimeAdapter final {
 
   /// Publish the parameter snapshot (main thread: UI setParameter, state
   /// restore, presets). Chain-affecting changes are picked up by the
-  /// preparation thread and rebuilt with a crossfaded swap.
+  /// preparation thread and rebuilt with a crossfaded swap. If the adapter
+  /// is active and NO chain exists yet, this waits (bounded, main thread)
+  /// for the first chain so the first audio block starts wet-deterministic.
   void setParameterSnapshot(const ParamSnapshot& snapshot);
 
   /// Force a chain rebuild at the next block (used after state restore /
   /// reset so the new parameters apply immediately).
   void requestHardReset();
+
+  /// Suspend/resume support (spec §8: "resume = reset + fresh chain").
+  /// Audio-thread-safe (atomic flag only): the next process() block retires
+  /// the active chain (through the standard crossfade retirement) and
+  /// resets the streaming musical state; the preparation thread builds the
+  /// fresh chain and the normal adoption machinery swaps it in. No DSP
+  /// state from before the suspend survives past the standard seam blend.
+  void requestProcessingReset();
 
   // ---- audio thread -------------------------------------------------------
 

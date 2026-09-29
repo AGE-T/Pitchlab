@@ -191,6 +191,32 @@ void applyNormalised(ParamSnapshot& snap, uint32_t tag, double norm);
 /// The plain value of one tag from the snapshot (for state + status).
 [[nodiscard]] double plainValue(const ParamSnapshot& snap, uint32_t tag);
 
+// ---------------------------------------------------------------------------
+// Type-safe display formatting + parsing (Task 24, P1.8/P1.9)
+//
+// The previous implementation forwarded a DOUBLE through the model table's
+// printf format string: "%d" and even "%s" entries were undefined behaviour
+// (varargs type mismatch — a crash-class defect in every host generic UI that
+// displayed those values). Formatting is now TAG-AWARE (one place); the
+// table's dispFmt is used ONLY for real-valued parameters (every remaining
+// entry consumes a double).
+//
+// Parsing is tag-aware too (the previous std::atof accepted ANY string:
+// "on" silently became 0). Invalid input is REJECTED (false), never silently
+// zero.
+// ---------------------------------------------------------------------------
+
+/// Format a plain value for display (deterministic, type-correct).
+void formatParamValue(uint32_t tag, double plain, char* buf, std::size_t bufSize);
+
+/// Parse a display string back to a plain value. Accepts the canonical
+/// forms produced by formatParamValue (plus common equivalents: engine
+/// id/name, actual FFT/hop sizes, 1/0 for toggles). Whitespace-separated
+/// unit suffixes are the CALLER's responsibility to strip. Returns false
+/// and leaves `plainOut` untouched when the text is not a valid
+/// representation of the parameter's value domain.
+[[nodiscard]] bool parseParamPlain(uint32_t tag, const char* text, double& plainOut);
+
 /// Semitone ratio helper (shared by the adapter tests).
 [[nodiscard]] inline double semitonesToRatio(double st) { return std::exp2(st / 12.0); }
 

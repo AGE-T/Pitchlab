@@ -226,6 +226,14 @@ jobs:
             DISPLAY=:99 build/bin/Release/vst_ui_screenshot build/VST3/Release/PitchLab.vst3 $1 $2 $3 /tmp/ui/$4.ppm 2>&1 | tee -a ui-vst3.log
             python3 /tmp/convert_ui.py /tmp/ui/$4.ppm /tmp/ui/$4.png
           done
+          # Task 24 P0.3 regression: 11 engine switches in ONE live editor
+          # instance while the poll timer runs and audio processes (the
+          # stale-slider use-after-free trigger); the capture proves the
+          # editor survived with a correctly rebuilt panel.
+          DISPLAY=:99 build/bin/Release/vst_ui_screenshot build/VST3/Release/PitchLab.vst3 1 5.0 0.0 /tmp/ui/switch_stress.ppm switch-stress 2>&1 | tee -a ui-vst3.log
+          grep -q "switch-stress: 11 engine switches survived" ui-vst3.log \
+            || { echo "FAIL: the engine-switch stress did not complete"; exit 1; }
+          python3 /tmp/convert_ui.py /tmp/ui/switch_stress.ppm /tmp/ui/switch_stress.png
           kill $XVFB_PID || true
 
       - name: Upload VST3 product evidence
@@ -258,7 +266,7 @@ jobs:
   # and publishes it as the downloadable product artefact
   # PitchLab-VST3-Windows-x64 (PitchLab-VST3-Windows-x64.zip).
   #
-  # The Linux jobs remain the canonical validation surface (CTest 30/30,
+  # The Linux jobs remain the canonical validation surface (the full CTest,
   # the examples byte-determinism check, the Xvfb UI captures) —
   # unchanged. The doctest test-executables are NOT built here: their
   # unguarded GCC-only -ffp-contract=off compile options are a known,

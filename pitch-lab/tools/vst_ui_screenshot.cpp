@@ -201,7 +201,8 @@ int main(int argc, char** argv) {
 
   if (argc < 6) {
     std::fprintf(stderr,
-                 "usage: %s <bundle-path> <engine 0..4> <pitch st> <lfo-depth st> <out-ppm>\n",
+                 "usage: %s <bundle-path> <engine 0..4> <pitch st> <lfo-depth st> "
+                 "<out-ppm> [switch-stress]\n",
                  argv[0]);
     return 1;
   }
@@ -210,6 +211,13 @@ int main(int argc, char** argv) {
   const double pitch = std::atof(argv[3]);
   const double lfoDepth = std::atof(argv[4]);
   const char* outPpm = argv[5];
+  // OPTIONAL Task 24 P0.3 regression mode: after opening the editor, switch
+  // the engine parameter through a long cycle (varispeed -> granular ->
+  // vardelay -> pv-locked -> pv-classic -> back) while the UI timer polls
+  // (33 Hz) and real audio processes — the exact use-after-free trigger of
+  // the stale sliderByTag_ entries. The capture then proves the editor is
+  // still alive and correctly rebuilt.
+  const bool switchStress = argc > 6 && std::strcmp(argv[6], "switch-stress") == 0;
 
   Display* dpy = XOpenDisplay(nullptr);
   if (dpy == nullptr) {
@@ -368,6 +376,52 @@ int main(int argc, char** argv) {
 
   // pump events: exposure -> the initial draw; timers -> the poll updates
   frame.runFor(1200);
+
+  if (switchStress) {
+    // ---- the P0.3 engine-switch stress (Task 24) ---------------------------
+    // Repeated engine switches INSIDE one live editor instance while the
+    // polling timer runs: the previous implementation left stale (freed)
+    // slider pointers in the editor's live-control map (a use-after-free
+    // dereferenced by every poll tick) and accumulated the varispeed
+    // adaptation note on every rebuild. Surviving this stress with a
+    // correct final panel is the regression proof.
+    audio->setProcessing(true);
+    std::vector<float> sIn[2] = {std::vector<float>(1024, 0.25f),
+                                 std::vector<float>(1024, 0.25f)};
+    std::vector<float> sOut[2] = {std::vector<float>(1024, 0.0f),
+                                  std::vector<float>(1024, 0.0f)};
+    const int engineCycle[] = {0, 2, 1, 4, 3, 0, 2, 1, 4, 3, 0};
+    for (int e : engineCycle) {
+      edit->setParamNormalized(param::kEngine,
+                               normalise(param::kEngine, static_cast<double>(e)));
+      // process real audio through the switch (the chain rebuild + the
+      // meters/status stay live)
+      for (int rep = 0; rep < 3; ++rep) {
+        const float* inArr[2] = {sIn[0].data(), sIn[1].data()};
+        float* outArr[2] = {sOut[0].data(), sOut[1].data()};
+        AudioBusBuffers inB{}, outB{};
+        inB.numChannels = 2;
+        inB.channelBuffers32 = const_cast<float**>(inArr);
+        outB.numChannels = 2;
+        outB.channelBuffers32 = outArr;
+        ProcessData data;
+        data.symbolicSampleSize = kSample32;
+        data.numSamples = 1024;
+        data.numInputs = 1;
+        data.numOutputs = 1;
+        data.inputs = &inB;
+        data.outputs = &outB;
+        audio->process(data);
+      }
+      frame.runFor(150);  // timer ticks: poll + sync + rebuild
+    }
+    audio->setProcessing(false);
+    // restore the requested engine for the capture
+    edit->setParamNormalized(param::kEngine,
+                             normalise(param::kEngine, static_cast<double>(engine)));
+    frame.runFor(400);
+    std::printf("switch-stress: 11 engine switches survived\n");
+  }
 
   // ---- capture the window's region from the root (children included) ------
   XWindowAttributes wa{};

@@ -135,3 +135,138 @@ TEST_CASE("chain signature: musical params do not change it") {
   b.grGrainSec = 0.2;
   CHECK(!(a.chainSignature() == b.chainSignature()));
 }
+
+// ---------------------------------------------------------------------------
+// Task 24 defect-audit regressions (P1.7 metadata / P1.8 formatting / P1.9
+// parsing)
+// ---------------------------------------------------------------------------
+
+TEST_CASE("P1.7 regression: integer-domain parameters are discrete (stepCount set)") {
+  // crossfade / overlap / jitter are integer parameters in the v0.1 engine
+  // contract; the VST3 metadata now says so (previously continuous with a
+  // truncating conversion). Every legal integer must round-trip EXACTLY
+  // through plain -> normalized -> plain.
+  struct IntParam {
+    uint32_t tag;
+    double min;
+    double max;
+  };
+  const IntParam intParams[] = {
+      {param::kVdCrossfade, 0, 8192},
+      {param::kGrOverlap, 4, 16},
+      {param::kGrJitter, 0, 256},
+  };
+  for (const IntParam& ip : intParams) {
+    const ParamMeta* m = nullptr;
+    for (uint32_t i = 0; i < parameterCount(); ++i) {
+      if (parameterTable()[i].tag == ip.tag) m = &parameterTable()[i];
+    }
+    REQUIRE(m != nullptr);
+    CAPTURE(m->id);
+    CHECK(m->stepCount == static_cast<int>(ip.max - ip.min));
+    // the full legal integer range round-trips exactly
+    for (double plain = ip.min; plain <= ip.max; ++plain) {
+      const double norm = normalise(ip.tag, plain);
+      const double back = denormalise(ip.tag, norm);
+      if (std::fabs(back - plain) > 1e-9) {
+        CHECK_MESSAGE(false, "integer round-trip mismatch at plain=" << plain);
+      }
+    }
+  }
+}
+
+TEST_CASE("P1.8 regression: type-safe formatting for every parameter") {
+  // formatParamValue must produce a non-empty, parseable representation
+  // for EVERY parameter (the previous snprintf forwarded a double through
+  // "%d"/"%s" entries — undefined behaviour, garbage output).
+  for (uint32_t i = 0; i < parameterCount(); ++i) {
+    const ParamMeta& m = parameterTable()[i];
+    CAPTURE(m.id);
+    const double plain = (m.min + m.max) * 0.5;
+    char buf[48];
+    formatParamValue(m.tag, plain, buf, sizeof(buf));
+    CHECK(buf[0] != '\0');
+    // integer-domain tags format as integers
+    switch (m.tag) {
+      case param::kEngine:
+      case param::kVsQuality:
+      case param::kVdCrossfade:
+      case param::kGrOverlap:
+      case param::kGrJitter:
+      case param::kPvcFft:
+      case param::kPvcHop:
+      case param::kPvpFft:
+      case param::kPvpHop: {
+        double parsed = -1.0;
+        CHECK(parseParamPlain(m.tag, buf, parsed) == true);
+        CHECK(std::fabs(parsed - std::round(parsed)) < 1e-9);  // an integer
+        break;
+      }
+      case param::kVsAllowAliasing:
+      case param::kBypass:
+      case param::kGrWindow: {
+        const std::string form(buf);
+        const bool semantic = form == "on" || form == "off" || form == "hann" ||
+                              form == "triangular";
+        CHECK(semantic);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  // the semantic formatters
+  char buf[48];
+  formatParamValue(param::kVsQuality, 2.0, buf, sizeof(buf));
+  CHECK(std::string(buf) == "reference");
+  formatParamValue(param::kBypass, 1.0, buf, sizeof(buf));
+  CHECK(std::string(buf) == "on");
+  formatParamValue(param::kGrWindow, 0.0, buf, sizeof(buf));
+  CHECK(std::string(buf) == "hann");
+}
+
+TEST_CASE("P1.9 regression: parsing round-trips + rejects invalid input") {
+  // formatParamValue output parses back to the same plain value for every
+  // parameter; invalid input is rejected (the previous std::atof silently
+  // turned "on"/"hann"/garbage into 0).
+  for (uint32_t i = 0; i < parameterCount(); ++i) {
+    const ParamMeta& m = parameterTable()[i];
+    CAPTURE(m.id);
+    // discrete parameters round-trip LEGAL (integer-domain) values exactly;
+    // a non-integer plain on a discrete parameter is not a legal value (the
+    // normalisation snaps it) — the display formats the snapped value
+    double mid = (m.min + m.max) * 0.5;
+    if (m.stepCount > 0) mid = m.min + std::round(mid - m.min);
+    for (const double plain : {mid, m.min, m.max}) {
+      char buf[48];
+      formatParamValue(m.tag, plain, buf, sizeof(buf));
+      double parsed = -999.0;
+      CHECK(parseParamPlain(m.tag, buf, parsed) == true);
+      const double err = std::fabs(parsed - plain);
+      if (m.stepCount > 0) {
+        CHECK(err < 1e-9);
+      } else {
+        const double tol = std::fabs(m.max - m.min) * 0.02 + 1e-9;
+        CHECK(err < tol);
+      }
+    }
+  }
+  // invalid text is rejected for every parameter
+  for (uint32_t i = 0; i < parameterCount(); ++i) {
+    const ParamMeta& m = parameterTable()[i];
+    CAPTURE(m.id);
+    double v = -999.0;
+    CHECK(parseParamPlain(m.tag, "garbage", v) == false);
+    CHECK(parseParamPlain(m.tag, "", v) == false);
+    CHECK(v == -999.0);  // untouched on failure — never silently zero
+  }
+  // the numeric head parse rejects trailing junk but accepts units after a
+  // space only when the caller stripped them (documented contract)
+  double v = -999.0;
+  CHECK(parseParamPlain(param::kPitch, "+7.5", v) == true);
+  CHECK(std::fabs(v - 7.5) < 1e-9);
+  CHECK(parseParamPlain(param::kPitch, "7.5x", v) == false);
+  CHECK(parseParamPlain(param::kPitch, "  ", v) == false);
+  CHECK(parseParamPlain(param::kMix, "0.5", v) == true);
+  CHECK(std::fabs(v - 0.5) < 1e-9);
+}
