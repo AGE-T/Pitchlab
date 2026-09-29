@@ -1,13 +1,13 @@
 # Pitch Lab — CI workflow (implementation-freeze state)
 #
-# WHAT THIS RUNS (honest scope): the T-INF1 infrastructure suite only —
-# configure, build and test the C++20 project on the canonical pinned
-# environment (implementation specification §13.3, build/CI specification
-# §12.2). It does NOT build, test or prove any DSP behaviour: no engine is
-# implemented at freeze and none is faked — the engine-registry smoke test
-# asserts that the production registry is EMPTY (anti-fake-completeness).
-# The suite will grow as real DSP is implemented (CTest discovers tests;
-# this workflow file does not change).
+# WHAT THIS RUNS (honest scope): the T-INF1 infrastructure suite — configure,
+# build and test the C++20 project on the canonical pinned environment
+# (implementation specification §13.3, build/CI specification §12.2) — PLUS
+# (v0.1 closed, product phase complete) the `vst3-product` job: the REAL
+# VST3 plug-in product layer (official SDK + VSTGUI, the realtime adapter,
+# the doctest suites, the official SDK validator, the host-simulation
+# examples and the Xvfb UI screenshot host). CTest discovers tests; the
+# product-phase specification §9/§13 defines the product lane.
 #
 # Canonical environment: research/pitch-lab-build-and-ci-environment.md
 #   - runner: ubuntu-24.04 x64, pinned (never ubuntu-latest: the latest
@@ -69,6 +69,20 @@ jobs:
           tar -xzf /tmp/cmake.tar.gz -C "$HOME/.local"
           echo "$HOME/.local/cmake-3.31.6-linux-x86_64/bin" >> "$GITHUB_PATH"
 
+      # VST3 product layer (PITCHLAB_BUILD_VST3 defaults ON): the plug-in +
+      # VSTGUI editor need the system GUI stack. The v0.1 research targets
+      # do not need it (PITCHLAB_BUILD_VST3=OFF restores that surface), but
+      # the canonical lane builds the full tree.
+      - name: Install VST3/VSTGUI system dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libx11-dev libxcb1-dev libxcb-util-dev libxcb-cursor-dev \
+            libxcb-image0-dev libxcb-keysyms1-dev libxcb-render-util0-dev \
+            libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libcairo2-dev libpango1.0-dev libfontconfig-dev libfreetype-dev
+
       # Build/CI spec §11: the exact canonical configure/build/test commands.
       # shell: bash => -eo pipefail, so tee cannot mask step failures.
       - name: Configure (Ninja, Release)
@@ -101,4 +115,124 @@ jobs:
             build.log
             test.log
             build/test-results.xml
+          if-no-files-found: error
+
+  # -------------------------------------------------------------------------
+  # The VST3 product lane (product-phase specification §9/§13): builds the
+  # REAL plug-in, runs the full CTest suite (v0.1 + the VST suites), the
+  # official Steinberg VST3 SDK validator against the built bundle, the
+  # host-simulation examples with a byte-determinism check against the
+  # committed evidence, and the Xvfb UI screenshot host. Evidence artefacts
+  # uploaded on every run.
+  # -------------------------------------------------------------------------
+  vst3-product:
+    name: VST3 product layer (plug-in + editor + validator + evidence)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout (pinned by commit SHA)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Toolchain report + assertions (anti-drift)
+        shell: bash
+        run: |
+          echo "Runner image: ${ImageVersion:-unknown}"
+          g++ --version | head -1
+          ninja --version
+          [ "$(g++ -dumpfullversion)" = "13.3.0" ] || { echo "FAIL: unexpected GCC version"; exit 1; }
+
+      - name: Install pinned CMake 3.31.6 (sha256-verified)
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.local"
+          curl -fsSL -o /tmp/cmake.tar.gz \
+            https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-linux-x86_64.tar.gz
+          echo "5a1133ff103c71eb5120e2cc3de922733e7d8a26a98ae716397e8676adb367bf  /tmp/cmake.tar.gz" | sha256sum --check
+          tar -xzf /tmp/cmake.tar.gz -C "$HOME/.local"
+          echo "$HOME/.local/cmake-3.31.6-linux-x86_64/bin" >> "$GITHUB_PATH"
+
+      - name: Install VST3/VSTGUI + evidence tooling dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libx11-dev libxcb1-dev libxcb-util-dev libxcb-cursor-dev \
+            libxcb-image0-dev libxcb-keysyms1-dev libxcb-render-util0-dev \
+            libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libcairo2-dev libpango1.0-dev libfontconfig-dev libfreetype-dev \
+            xvfb xauth python3-pil
+
+      - name: Configure (Ninja, Release)
+        shell: bash
+        run: |
+          cmake -S pitch-lab -B build -G Ninja -DCMAKE_BUILD_TYPE=Release 2>&1 | tee configure-vst3.log
+
+      - name: Build (plug-in + tests + validator + evidence tools)
+        shell: bash
+        run: |
+          cmake --build build --parallel 2>&1 | tee build-vst3.log
+
+      - name: "Test (CTest — v0.1 + VST suites, JUnit XML)"
+        shell: bash
+        run: |
+          ctest --test-dir build --output-on-failure --output-junit test-results-vst3.xml 2>&1 | tee test-vst3.log
+
+      - name: Official VST3 SDK validator (the built bundle)
+        shell: bash
+        run: |
+          build/bin/Release/validator build/VST3/Release/PitchLab.vst3 2>&1 | tee validator-vst3.log
+          grep -q "Result: 47 tests passed, 0 tests failed" validator-vst3.log \
+            || { echo "FAIL: validator result changed"; exit 1; }
+
+      - name: "Host-simulation examples — regenerate + byte-determinism check"
+        shell: bash
+        run: |
+          mkdir -p /tmp/ex-regen
+          (cd pitch-lab && ../build/bin/Release/vst_host_sim /tmp/ex-regen assets/corpus) 2>&1 | tee examples-vst3.log
+          fail=0
+          for f in pitch-lab/results/vst3/v0.1/examples/*.wav; do
+            b=$(basename "$f")
+            cmp --silent "$f" "/tmp/ex-regen/$b" || { echo "DIFFERS: $b"; fail=1; }
+          done
+          [ "$fail" = "0" ] || { echo "FAIL: examples not byte-identical to the committed evidence"; exit 1; }
+          echo "All 11 examples byte-identical to the committed evidence."
+
+      - name: UI screenshot host (the real editor under Xvfb)
+        shell: bash
+        run: |
+          cat > /tmp/convert_ui.py << 'EOC'
+          from PIL import Image
+          import sys
+          ppm, png = sys.argv[1], sys.argv[2]
+          data = open(ppm, 'rb').read().split(b'\n', 3)
+          img = Image.frombytes('RGB', (680, 450), data[3])
+          img.save(png)
+          colors = len(img.getcolors(200000))
+          assert colors > 100, 'UI capture is blank (%d colors)' % colors
+          print(png, 'ok:', colors, 'colors')
+          EOC
+          Xvfb :99 -screen 0 800x600x24 -nolisten tcp &
+          XVFB_PID=$!
+          sleep 2
+          mkdir -p /tmp/ui
+          for cfg in "1 5.0 0.0 vardelay_p5" "0 5.0 0.0 varispeed_p5" "4 7.0 0.0 granular_p7" "3 -3.0 0.75 pvlocked_m3_lfo"; do
+            set -- $cfg
+            DISPLAY=:99 build/bin/Release/vst_ui_screenshot build/VST3/Release/PitchLab.vst3 $1 $2 $3 /tmp/ui/$4.ppm 2>&1 | tee -a ui-vst3.log
+            python3 /tmp/convert_ui.py /tmp/ui/$4.ppm /tmp/ui/$4.png
+          done
+          kill $XVFB_PID || true
+
+      - name: Upload VST3 product evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vst3-evidence
+          path: |
+            configure-vst3.log
+            build-vst3.log
+            test-vst3.log
+            build/test-results-vst3.xml
+            validator-vst3.log
+            examples-vst3.log
+            ui-vst3.log
+            /tmp/ui/*.png
           if-no-files-found: error
