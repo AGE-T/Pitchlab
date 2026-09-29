@@ -33,10 +33,16 @@
 #include "public.sdk/source/vst/hosting/module.h"
 
 #include "vst/parameters.h"
+#include "vst/view_interfaces.h"
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
 using namespace pitchlab::vst;
+
+// The view-interface IIDs are defined in the MODULE (processor.cpp); the
+// host tool needs its own definition to queryInterface for the status
+// interface (the SDK pattern: DEF_CLASS_IID in the consuming TU).
+DEF_CLASS_IID(IPitchLabStatus)
 
 namespace {
 
@@ -218,6 +224,12 @@ int main(int argc, char** argv) {
   // the stale sliderByTag_ entries. The capture then proves the editor is
   // still alive and correctly rebuilt.
   const bool switchStress = argc > 6 && std::strcmp(argv[6], "switch-stress") == 0;
+  // OPTIONAL ui-binding mode (the Windows UI parameter-binding incident):
+  // synthetic mouse events through the REAL X11/VSTGUI event path drive the
+  // REAL editor controls while the 33 ms sync timer polls — the exact
+  // revert-loop trigger of the performEdit-without-setParamNormalized
+  // defect. See the check block below.
+  const bool uiBinding = argc > 6 && std::strcmp(argv[6], "ui-binding") == 0;
 
   Display* dpy = XOpenDisplay(nullptr);
   if (dpy == nullptr) {
@@ -350,6 +362,7 @@ int main(int argc, char** argv) {
   // VSTGUI's X11 frame is an XEMBED plug: it maps itself when the embedder
   // sends the EMBEDDED_NOTIFY ClientMessage (or on an _XEMBED_INFO property
   // change). Without the handshake the child stays unmapped (measured).
+  Window plugWin = 0;
   {
     Window rootRet = 0, parentRet = 0;
     Window* children = nullptr;
@@ -357,6 +370,7 @@ int main(int argc, char** argv) {
     if (XQueryTree(dpy, parent, &rootRet, &parentRet, &children, &nChildren) != 0 &&
         nChildren > 0 && children != nullptr) {
       const Window plug = children[0];
+      plugWin = plug;
       const Atom xembedAtom = XInternAtom(dpy, "_XEMBED", False);
       XClientMessageEvent msg{};
       msg.type = ClientMessage;
@@ -421,6 +435,227 @@ int main(int argc, char** argv) {
                              normalise(param::kEngine, static_cast<double>(engine)));
     frame.runFor(400);
     std::printf("switch-stress: 11 engine switches survived\n");
+  }
+
+  if (uiBinding) {
+    int uiBindingFailures = 0;
+    {
+    // ---- the UI parameter-binding checks (the Windows incident) -----------
+    // Synthetic mouse events (XSendEvent to the plug window — delivered to
+    // VSTGUI's XCB connection, the same dispatch a real click takes) drive
+    // the REAL editor controls: PLSlider::valueFromMouse /
+    // PLSegmented::onMouseDown -> the editor's valueChanged ->
+    // setParamNormalized + performEdit -> the controller storage ->
+    // publishSnapshot -> the realtime adapter. The 33 ms syncControlValues
+    // timer runs LIVE during every check (frame.runFor pumps it): with the
+    // old performEdit-without-setParamNormalized defect, the sync loop
+    // wrote the OLD controller value back into the control within one
+    // tick, so EVERY "survives polling" assertion below would fail.
+    //
+    // Layout (the fixed 680x450 editor; frame coords == plug-window coords):
+    //   engine panel (472,54)-(668,286); vardelay sliders local
+    //   (12,y)-(170,y+20) -> frame x in [484,642] (158 wide), excursion
+    //   y=100, crossfade y=130; engine selector (12,70)-(160,240), 5
+    //   segments of 34 px: segment i center (86, 70+34i+17).
+    if (engine != 1) {
+      std::fprintf(stderr, "ui-binding: requires engine 1 (native.vardelay)\n");
+      return 1;
+    }
+    if (plugWin == 0) {
+      std::fprintf(stderr, "ui-binding: plug window not found\n");
+      return 1;
+    }
+    IPitchLabStatus* statusIface = nullptr;
+    if (audio->queryInterface(IPitchLabStatus::iid, (void**)&statusIface) != kResultOk) {
+      std::fprintf(stderr, "ui-binding: IPitchLabStatus query failed\n");
+      return 1;
+    }
+
+    int failures = 0;
+    // VSTGUI CControl stores the value as FLOAT: the control -> controller
+    // round-trip carries float precision (~1e-7 at [0,1]); a REAL revert
+    // (the defect this mode guards against) moves the value completely.
+    constexpr double kUiTol = 1e-6;
+    auto expectNear = [&](const char* what, double got, double want, double tol) {
+      const bool ok = std::fabs(got - want) <= tol;
+      if (!ok) ++failures;
+      std::printf("ui-binding: %-46s %s (got %.6f want %.6f)\n", what,
+                  ok ? "PASS" : "FAIL", got, want);
+    };
+
+    // synthetic event senders (through the tool's Xlib display; the server
+    // delivers to the plug window's selected client = VSTGUI's XCB
+    // connection, whose fd the host run loop pumps)
+    const Window rootWin = RootWindow(dpy, scr);
+    auto sendButton = [&](int type, int x, int y, unsigned long state) {
+      XEvent ev{};
+      ev.xbutton.type = type;
+      ev.xbutton.window = plugWin;
+      ev.xbutton.root = rootWin;
+      ev.xbutton.subwindow = None;
+      ev.xbutton.time = 0;
+      ev.xbutton.x = x;
+      ev.xbutton.y = y;
+      ev.xbutton.x_root = kWinX + x;
+      ev.xbutton.y_root = kWinY + y;
+      ev.xbutton.state = state;
+      ev.xbutton.button = 1;  // left
+      ev.xbutton.same_screen = True;
+      XSendEvent(dpy, plugWin, False, 0xFFFFFF, &ev);
+      XFlush(dpy);
+    };
+    auto sendMotion = [&](int x, int y) {
+      XEvent ev{};
+      ev.xmotion.type = MotionNotify;
+      ev.xmotion.window = plugWin;
+      ev.xmotion.root = rootWin;
+      ev.xmotion.subwindow = None;
+      ev.xmotion.time = 0;
+      ev.xmotion.x = x;
+      ev.xmotion.y = y;
+      ev.xmotion.x_root = kWinX + x;
+      ev.xmotion.y_root = kWinY + y;
+      ev.xmotion.state = 0x100;  // Button1Mask: the drag is "held"
+      ev.xmotion.is_hint = 0;
+      ev.xmotion.same_screen = True;
+      XSendEvent(dpy, plugWin, False, 0xFFFFFF, &ev);
+      XFlush(dpy);
+    };
+    // a drag = press -> move -> release (the exact PLSlider interaction)
+    auto drag = [&](int x0, int x1, int y) {
+      sendButton(ButtonPress, x0, y, 0);
+      frame.runFor(40);
+      sendMotion(x1, y);
+      frame.runFor(40);
+      sendButton(ButtonRelease, x1, y, 0x100);
+      frame.runFor(60);
+    };
+    auto click = [&](int x, int y) { drag(x, x, y); };
+
+    // live audio (the chain must adopt for the status assertions)
+    std::vector<float> bIn[2] = {std::vector<float>(1024, 0.25f),
+                                 std::vector<float>(1024, 0.25f)};
+    std::vector<float> bOut[2] = {std::vector<float>(1024, 0.0f),
+                                  std::vector<float>(1024, 0.0f)};
+    auto processBlocks = [&](int n) {
+      for (int i = 0; i < n; ++i) {
+        const float* inArr[2] = {bIn[0].data(), bIn[1].data()};
+        float* outArr[2] = {bOut[0].data(), bOut[1].data()};
+        AudioBusBuffers inB{}, outB{};
+        inB.numChannels = 2;
+        inB.channelBuffers32 = const_cast<float**>(inArr);
+        outB.numChannels = 2;
+        outB.channelBuffers32 = outArr;
+        ProcessData data;
+        data.symbolicSampleSize = kSample32;
+        data.numSamples = 1024;
+        data.numInputs = 1;
+        data.numOutputs = 1;
+        data.inputs = &inB;
+        data.outputs = &outB;
+        audio->process(data);
+      }
+    };
+
+    audio->setProcessing(true);
+    processBlocks(2);
+    frame.runFor(150);
+
+    // ---- CHECK 1: Vardelay Excursion (a chain-signature parameter) --------
+    const double excU = (610.0 - 484.0) / 158.0;  // the drag's final position
+    const uint64_t reprepBase = statusIface->getStatus().reprepares;
+    drag(484 + 20, 610, 100);
+    expectNear("CHECK1 excursion: controller value", edit->getParamNormalized(param::kVdExcursion),
+               excU, kUiTol);
+    frame.runFor(300);  // ~9 sync ticks: the poll must NOT revert it
+    expectNear("CHECK1 excursion: survives polling",
+               edit->getParamNormalized(param::kVdExcursion), excU, kUiTol);
+    processBlocks(3);
+    frame.runFor(200);
+    // the adapter RECEIVED the change: the chain signature changed -> a
+    // re-prepare happened (CHECK 6: setParamNormalized -> storage ->
+    // publishSnapshot -> adapter, all through the UI path)
+    const bool reprepBump = statusIface->getStatus().reprepares > reprepBase;
+    if (!reprepBump) ++failures;
+    std::printf("ui-binding: %-46s %s (reprepares %llu -> %llu)\n",
+                "CHECK1 excursion: adapter rebuilt the chain", reprepBump ? "PASS" : "FAIL",
+                static_cast<unsigned long long>(reprepBase),
+                static_cast<unsigned long long>(statusIface->getStatus().reprepares));
+    expectNear("CHECK1 excursion: chain ready", statusIface->getStatus().chainReady ? 1.0 : 0.0,
+               1.0, 0.0);
+
+    // ---- CHECK 2: Vardelay Crossfade (integer-domain, discrete metadata) --
+    const double xfU = (600.0 - 484.0) / 158.0;
+    drag(484 + 20, 600, 130);
+    expectNear("CHECK2 crossfade: controller value",
+               edit->getParamNormalized(param::kVdCrossfade), xfU, kUiTol);
+    // the model's integer domain: denormalise snaps to the nearest step
+    const double xfPlain = denormalise(param::kVdCrossfade, xfU);
+    expectNear("CHECK2 crossfade: integer plain value", std::floor(xfPlain + 0.5), xfPlain,
+               kUiTol);
+    frame.runFor(300);
+    expectNear("CHECK2 crossfade: survives polling",
+               edit->getParamNormalized(param::kVdCrossfade), xfU, kUiTol);
+
+    // ---- CHECK 3: ENGINE selector — every engine reachable from the UI ---
+    const int cycle[] = {0, 2, 3, 4, 1};  // varispeed, granular, classic, locked, back
+    for (int e : cycle) {
+      click(86, 70 + 34 * e + 17);
+      expectNear("CHECK3 engine: controller kEngine after click",
+                 edit->getParamNormalized(param::kEngine), e / 4.0, kUiTol);
+      // the chain adopts while audio runs; retry bounded
+      bool adopted = false;
+      for (int attempt = 0; attempt < 10 && !adopted; ++attempt) {
+        processBlocks(2);
+        frame.runFor(120);
+        adopted = (statusIface->getStatus().engineIndex == e);
+      }
+      if (!adopted) ++failures;
+      std::printf("ui-binding: %-46s %s (status engineIndex=%d want %d)\n",
+                  "CHECK3 engine: adapter adopted the engine", adopted ? "PASS" : "FAIL",
+                  statusIface->getStatus().engineIndex, e);
+      frame.runFor(250);  // poll stability after the switch
+      expectNear("CHECK3 engine: selector survives polling",
+                 edit->getParamNormalized(param::kEngine), e / 4.0, kUiTol);
+    }
+
+    // ---- CHECK 4: switching away and back preserves per-engine edits -----
+    // (the cycle above just returned to vardelay: engine 1)
+    expectNear("CHECK4 excursion preserved across switches",
+               edit->getParamNormalized(param::kVdExcursion), excU, kUiTol);
+    expectNear("CHECK4 crossfade preserved across switches",
+               edit->getParamNormalized(param::kVdCrossfade), xfU, kUiTol);
+
+    // ---- CHECK 5: the explicit long-poll stability pass --------------------
+    frame.runFor(600);  // ~18 sync ticks
+    expectNear("CHECK5 final: excursion stable", edit->getParamNormalized(param::kVdExcursion),
+               excU, kUiTol);
+    expectNear("CHECK5 final: crossfade stable", edit->getParamNormalized(param::kVdCrossfade),
+               xfU, kUiTol);
+    expectNear("CHECK5 final: engine stable", edit->getParamNormalized(param::kEngine), 0.25,
+               kUiTol);
+
+    audio->setProcessing(false);
+    statusIface->release();
+
+    if (failures == 0) {
+      std::printf("ui-binding: ALL CHECKS PASS\n");
+    } else {
+      std::printf("ui-binding: %d CHECK(S) FAILED\n", failures);
+    }
+    uiBindingFailures = failures;
+    frame.runFor(200);
+    }
+    if (uiBindingFailures > 0) {
+      // the capture below is skipped: the checks failed — exit non-zero so
+      // CI fails loudly (the per-check FAIL lines above are the evidence)
+      view->removed();
+      view->release();
+      comp->setActive(false);
+      comp->terminate();
+      XCloseDisplay(dpy);
+      return 2;
+    }
   }
 
   // ---- capture the window's region from the root (children included) ------

@@ -65,6 +65,26 @@ type-safe (`formatParamValue` / `parseParamPlain`): `"on"`/`"off"`,
 back to their semantic values, and invalid strings are rejected (never
 silently zero).
 
+**UI parameter binding (the editor's write path).** Every editor control
+interaction updates the parameter through BOTH responsibilities, in the
+VST3-correct order: `setParamNormalized` (the controller's own value — the
+single source of truth, which in this single-component design ALSO
+publishes the snapshot to the realtime adapter and re-reports latency) and
+then `performEdit` (the host notification). `performEdit` alone is NOT a
+substitute: the SDK forwards it to `IComponentHandler` and never touches the
+local value, so the 33 ms editor sync loop (`syncControlValues`) would write
+the OLD controller value back into the control — and because the
+engine-configuration parameters above are non-automatable (`kNoFlags`),
+hosts do not echo their `performEdit` back, which made them impossible to
+change from the UI (the Windows incident: sliders/selector reverted within
+one poll tick). Slider interactions also never depend on the redraw dirty
+flag: `valueFromMouse` always notifies, and the engine selector initialises
+from the authoritative controller value when the editor opens. The
+regression proof is the CI `ui-binding` capture: synthetic mouse events
+through the real X11/VSTGUI dispatch drive the real controls while the sync
+timer polls — every check (controller value, poll stability, engine
+adoption, per-engine preservation) must pass.
+
 ## Runtime architecture (summary)
 
 ```

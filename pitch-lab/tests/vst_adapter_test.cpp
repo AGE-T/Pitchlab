@@ -525,7 +525,21 @@ TEST_CASE("P0.2 regression: concurrent publication stress (race-free snapshots)"
       const MetersSnapshot m = adapter.meters();
       const StatusSnapshot st = adapter.status();
       CHECK(std::isfinite(m.inPeak[0]));
-      CHECK(st.sampleRate == kFs);
+      // The documented SeqLock reader contract: a stable copy has the
+      // published sampleRate; under writer starvation (this stress's own
+      // audio thread stores the status EVERY block, back-to-back) the
+      // bounded retry may exhaust and return the zeroed degenerate snapshot
+      // (seqlock.h: "absorbed downstream — meters/status are cosmetic
+      // telemetry"). A TORN value is impossible with the atomised payload +
+      // version check: any OTHER sampleRate means a real protocol defect.
+      // (This CHECK previously asserted == kFs unconditionally — stricter
+      // than the primitive's documented contract; it flaked under CPU
+      // contention when the zero-sleep reader was preempted mid-retry 4096
+      // times. Not related to any product change: a latent test-side
+      // over-assertion, found during the UI-binding hotfix verification.)
+      const bool statusOk = (st.sampleRate == kFs) ||
+                            (st.sampleRate == 0.0 && !st.chainReady);
+      CHECK(statusOk);
     }
   });
   for (int b = 0; b < 598; ++b) {

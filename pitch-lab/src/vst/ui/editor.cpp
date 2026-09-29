@@ -177,13 +177,33 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   }
 
   void valueChanged(CControl* control) override {
-    // UI change -> the authoritative VST parameter path (performEdit)
+    // UI change -> the authoritative VST parameter path. BOTH
+    // responsibilities, in the VST3-correct order:
+    //   1. setParamNormalized — update the CONTROLLER's own parameter value
+    //      (the single source of truth; this is the single-component
+    //      processor override that ALSO publishes the snapshot to the
+    //      realtime adapter and notifies latency).
+    //   2. performEdit — notify the HOST of the change (the automation
+    //      gesture path). performEdit is NOT a substitute for (1): the SDK
+    //      EditController::performEdit only forwards to IComponentHandler,
+    //      it never touches the local value.
+    // The previous implementation called performEdit WITHOUT
+    // setParamNormalized: the controller value stayed unchanged, so the
+    // 33 ms syncControlValues() loop wrote the OLD value back into the UI
+    // (the "slider cannot be moved" revert loop), and engine-configuration
+    // parameters (engine, excursion, crossfade, grain, FFT, hop — the
+    // kNoFlags, non-automatable set) never reached the host echo path at
+    // all, so they could not be changed from the UI reliably. The musical
+    // parameters (pitch/LFO/mix/level/bypass, kCanAutomate) only appeared
+    // to work because hosts echo automatable performEdits back.
     EditController* ec = getController();
-    if (ec == nullptr) return;
+    if (ec == nullptr || control == nullptr) return;
     const ParamID tag = static_cast<ParamID>(control->getTag());
     const ParamValue norm = control->getValueNormalized();
     ec->beginEdit(tag);
-    ec->performEdit(tag, norm);
+    if (ec->setParamNormalized(tag, norm) == kResultTrue) {
+      ec->performEdit(tag, ec->getParamNormalized(tag));
+    }
     ec->endEdit(tag);
     onUiStateChanged();
   }
@@ -252,6 +272,16 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       labels.emplace_back(id != nullptr ? shortEngineName(id) : "?");
     }
     engineSelector_ = new ui_::PLSegmented(r, this, param::kEngine, labels, true);
+    // The selector must reflect the AUTHORITATIVE controller value the
+    // moment the editor opens. The previous implementation relied on the
+    // CControl default (0 = the first engine): while the actual parameter
+    // was e.g. the default native.vardelay, the selector showed the first
+    // engine selected until the first 33 ms sync tick corrected it — and
+    // a click on the ALREADY-"selected" wrong segment then computed a
+    // "no change" for the sync loop, compounding the revert behaviour.
+    EditController* ec = getController();
+    engineSelector_->setValueNormalized(
+        ec != nullptr ? ec->getParamNormalized(param::kEngine) : 0.0);
     root->addView(engineSelector_);
   }
 

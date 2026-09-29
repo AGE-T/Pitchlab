@@ -224,7 +224,14 @@ class PLSlider : public CControl {
     if (u < 0.0) u = 0.0;
     if (u > 1.0) u = 1.0;
     setValueNormalized(u);
-    if (isDirty()) valueChanged();
+    // A parameter interaction must NOT depend on the redraw dirty flag.
+    // The previous `if (isDirty()) valueChanged()` gate: VSTGUI's
+    // CControl::setValue only calls setDirty() when the value CHANGES, so
+    // whenever the mouse position mapped to the same normalized value the
+    // control already held (exactly the state the sync loop's writeback
+    // leaves behind), valueChanged() was never invoked and the interaction
+    // silently reached no one. User intent is the mouse event itself.
+    valueChanged();
   }
 
   bool nudge(double plainStep) {

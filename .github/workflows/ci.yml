@@ -234,6 +234,18 @@ jobs:
           grep -q "switch-stress: 11 engine switches survived" ui-vst3.log \
             || { echo "FAIL: the engine-switch stress did not complete"; exit 1; }
           python3 /tmp/convert_ui.py /tmp/ui/switch_stress.ppm /tmp/ui/switch_stress.png
+          # UI parameter-binding regression (the Windows incident): synthetic
+          # mouse events through the REAL X11/VSTGUI dispatch drive the real
+          # editor controls while the 33 ms sync timer polls — the exact
+          # revert-loop trigger of the performEdit-without-setParamNormalized
+          # defect. Every check asserts the controller value, poll stability,
+          # engine adoption, and per-engine parameter preservation; the tool
+          # exits non-zero on any failure (the per-check lines are in
+          # ui-vst3.log).
+          DISPLAY=:99 build/bin/Release/vst_ui_screenshot build/VST3/Release/PitchLab.vst3 1 5.0 0.0 /tmp/ui/ui_binding.ppm ui-binding 2>&1 | tee -a ui-vst3.log
+          grep -q "ui-binding: ALL CHECKS PASS" ui-vst3.log \
+            || { echo "FAIL: the UI parameter-binding checks did not pass"; exit 1; }
+          python3 /tmp/convert_ui.py /tmp/ui/ui_binding.ppm /tmp/ui/ui_binding.png
           kill $XVFB_PID || true
 
       - name: Upload VST3 product evidence
