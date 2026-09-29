@@ -227,19 +227,30 @@ function ArtifactTree({ nodes }: { nodes: ArtifactNode[] }) {
     return (
       <div className="px-4 py-10 text-center">
         <FolderTree className="mx-auto size-8 text-zinc-700" />
-        <p className="mt-3 text-sm font-medium text-zinc-300">Még nincs artifact</p>
+        <p className="mt-3 text-sm font-medium text-zinc-300">Nincs artifact</p>
         <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-          A v0.1 implementáció indulásakor ide kerülnek a{' '}
-          <span className="font-mono text-zinc-400">renders/</span>,{' '}
-          <span className="font-mono text-zinc-400">analysis/</span> és{' '}
-          <span className="font-mono text-zinc-400">reports/</span> fájlok — és a
-          Szinkron gombbal felmennek a GitHubra is.
+          A megtartott evidencia a <span className="font-mono text-zinc-400">results/</span>{' '}
+          fában, a generált kimenetek (<span className="font-mono text-zinc-400">renders/</span>,{' '}
+          <span className="font-mono text-zinc-400">analysis/</span>,{' '}
+          <span className="font-mono text-zinc-400">reports/</span>) a{' '}
+          <span className="font-mono text-zinc-400">artifacts/</span> fában jelennek meg — az
+          utóbbi a <span className="font-mono text-zinc-400">pitchlab</span> render futtatása
+          után.
         </p>
       </div>
     )
   }
   return (
     <ul className="space-y-0.5 px-3 py-4 font-mono text-xs">
+      <ArtifactNodes nodes={nodes} />
+    </ul>
+  )
+}
+
+/** Recursive artifact-tree renderer — any depth (results/v0.1/... etc.). */
+function ArtifactNodes({ nodes }: { nodes: ArtifactNode[] }) {
+  return (
+    <>
       {nodes.map((node) => (
         <li key={node.path}>
           {node.type === 'dir' ? (
@@ -250,17 +261,7 @@ function ArtifactTree({ nodes }: { nodes: ArtifactNode[] }) {
                 <span className="font-semibold">{node.name}/</span>
               </summary>
               <ul className="ml-4 space-y-0.5 border-l border-zinc-800 pl-2">
-                {node.children?.map((c) => (
-                  <li
-                    key={c.path}
-                    className="flex items-center justify-between gap-2 rounded px-2 py-1 text-zinc-400 hover:bg-zinc-900"
-                  >
-                    <span className="truncate">{c.name}</span>
-                    <span className="shrink-0 text-zinc-600">
-                      {formatBytes(c.size ?? 0)}
-                    </span>
-                  </li>
-                ))}
+                <ArtifactNodes nodes={node.children ?? []} />
               </ul>
             </details>
           ) : (
@@ -271,7 +272,7 @@ function ArtifactTree({ nodes }: { nodes: ArtifactNode[] }) {
           )}
         </li>
       ))}
-    </ul>
+    </>
   )
 }
 

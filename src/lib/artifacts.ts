@@ -10,12 +10,24 @@ export type ArtifactNode = {
   children?: ArtifactNode[]
 }
 
-// Generated DSP outputs live in the pitch-lab/ C++ project tree
-// (architecture §B.3: pitch-lab/artifacts/ — generated, gitignored,
-// reconstructable). The workbench observes them read-only.
-const ARTIFACTS_ROOT = path.join(process.cwd(), 'pitch-lab', 'artifacts')
+// The workbench observes the pitch-lab/ C++ project tree read-only. TWO
+// output surfaces exist (both documented in the repo READMEs):
+//   * pitch-lab/artifacts/ — GENERATED DSP outputs (architecture §B.3:
+//     gitignored, reconstructable via the pitchlab CLI; present only on a
+//     machine that actually ran the renders — a fresh checkout is empty
+//     BY DESIGN, which previously rendered the panel permanently "0").
+//   * pitch-lab/results/   — the RETAINED project evidence (committed:
+//     results/v0.1 — the closed v0.1 result product; results/vst3 — the
+//     VST3 product-phase evidence: examples, UI captures, validator run).
+// The tree shows both, each as a top-level node; missing roots are
+// omitted (an empty panel now means "no output exists", never "hidden").
+const PITCH_LAB_ROOT = path.join(process.cwd(), 'pitch-lab')
+const ARTIFACT_ROOTS: { dir: string; generated: boolean }[] = [
+  { dir: 'results', generated: false },
+  { dir: 'artifacts', generated: true },
+]
 
-/** Recursively list artifacts/ — .gitkeep keepers are hidden from the tree. */
+/** Recursively list the output roots — .gitkeep keepers are hidden. */
 export function listArtifacts(): { tree: ArtifactNode[]; fileCount: number; totalSize: number } {
   let fileCount = 0
   let totalSize = 0
@@ -55,5 +67,21 @@ export function listArtifacts(): { tree: ArtifactNode[]; fileCount: number; tota
     return nodes
   }
 
-  return { tree: walk(ARTIFACTS_ROOT, ''), fileCount, totalSize }
+  // results/ (retained evidence) first, then artifacts/ (generated) —
+  // retained state outranks regenerable state.
+  const tree: ArtifactNode[] = []
+  for (const root of ARTIFACT_ROOTS) {
+    const abs = path.join(PITCH_LAB_ROOT, root.dir)
+    if (!fs.existsSync(abs)) continue
+    const children = walk(abs, root.dir)
+    if (children.length === 0) continue
+    tree.push({
+      type: 'dir',
+      name: root.dir,
+      path: root.dir,
+      children,
+    })
+  }
+
+  return { tree, fileCount, totalSize }
 }
