@@ -1,0 +1,1865 @@
+# PITCH LAB VST3 — MASTER INCIDENT / DEEP AUDIT / ROOT CAUSE / FIX / REGRESSION
+
+## 0. TASK TYPE
+
+This is an **urgent real-product correctness investigation**.
+
+We now have:
+
+1. a real Windows x64 VST3 bundle,
+2. a real interactive GUI session,
+3. a real runtime failure signature,
+4. a previous source-level defect audit,
+5. a previously green automated test suite that demonstrably did NOT catch the real product failure.
+
+The objective is:
+
+> Find the actual causes of the observed runtime/product failures, fix them at the correct layer, add regression coverage, and leave the VST3 implementation materially more robust.
+
+Do NOT optimise for "keep CI green".
+
+Optimise for:
+
+> "prove why the real product is broken, fix the cause, and make the exact failure reproducible in automated tests."
+
+---
+
+# 1. MANDATORY ENGINEERING GOVERNANCE
+
+Before any work, read and follow:
+
+**`AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0`**
+
+This is mandatory.
+
+Apply:
+
+* Project SoT governs reality.
+* Never silently reconcile conflicts.
+* Distinguish architecture / implementation / configuration / evidence / delivery.
+* Distinguish known / observed / inferred / recommended.
+* Explicit ownership and lifecycle.
+* Durable important state.
+* Agent confidence is not evidence.
+* Audit → report → decision → modify → verify → update state.
+* No ambient dependencies.
+* No scattered project/runtime dependencies.
+* Reproducibility remains important.
+* Protect explicit closed decisions.
+
+If anything conflicts:
+
+1. identify the conflict,
+2. cite the source,
+3. describe observed implementation,
+4. describe consequence,
+5. propose resolution,
+6. classify whether an owner decision is required.
+
+If no deviation:
+
+**FINAL REPORT MUST STATE:**
+
+`NO DEVIATION FROM AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0`
+
+---
+
+# 2. REPOSITORY
+
+Repository:
+
+`AGE-T/Pitchlab`
+
+Branch:
+
+`main`
+
+Known previous product head:
+
+`dad6357d315377166e1336e04d29cdf625d72d74`
+
+Known green VST3 CI run:
+
+`36511382757`
+
+Previous verified results:
+
+* CTest: 30/30 PASS
+* Steinberg VST3 validator: 47/47 PASS
+* real VST3 audio examples
+* real VSTGUI screenshots
+* Linux x64 CI product lane
+
+IMPORTANT:
+
+These results remain useful evidence.
+
+They are NOT proof that the product is correct.
+
+---
+
+# 3. NEW REAL-WORLD WINDOWS EVIDENCE
+
+A real Windows x64 build has now been provided.
+
+Artifact:
+
+`/mnt/data/PitchLab-VST3-Windows-x64.zip`
+
+Use this artifact as the concrete runtime/release evidence for this incident.
+
+Known bundle structure:
+
+```text
+PitchLab-VST3-Windows-x64.zip
+└── PitchLab.vst3
+    └── Contents
+        ├── Resources
+        └── x86_64-win
+            └── PitchLab.vst3
+```
+
+The inner binary is a real Windows PE32+ x86-64 VST3 binary.
+
+Known SHA-256 of the inner VST binary:
+
+`c2c5f6bd576041cd8771b632b8c36e2bdeaad2d859b068fc37c6066ed1df5b7c`
+
+The binary contains references to the real engine components:
+
+```text
+native.varispeed
+native.vardelay
+native.granular
+native.pv.classic
+native.pv.phaselocked
+```
+
+and contains the expected engine classes / parameter strings.
+
+Therefore:
+
+**Do NOT assume the Windows package only contains Varispeed.**
+
+The real engine code is present.
+
+---
+
+# 4. REAL USER-LEVEL FAILURE OBSERVED
+
+A real editor session was opened.
+
+The plugin launches.
+
+The GUI renders.
+
+The engine selector renders.
+
+However:
+
+* only some global controls appear to function,
+* engine-specific controls do not behave correctly,
+* other engines appear effectively unusable,
+* runtime state is severely unhealthy.
+
+Observed example:
+
+```text
+ENGINE: native.vardelay
+
+fs 44100 Hz
+2 ch
+block 256
+latency 2144 fr (48.6 ms)
+
+jobs 1
+re-prepares 3754
+clamps 6861
+faults 248
+
+envelope [0.5000, 0.5297]
+```
+
+Observed GUI behaviour:
+
+### Appears functional
+
+```text
+Pitch
+LFO Rate
+LFO Depth
+```
+
+### Does NOT currently behave as expected
+
+Engine-specific functionality for:
+
+```text
+Varispeed parameters
+Vardelay parameters
+Granular parameters
+PV Classic parameters
+PV Locked parameters
+```
+
+The user observation is essentially:
+
+> the plugin really starts, but almost nothing is usable except engine selection and the global pitch/LFO controls.
+
+Treat this as a confirmed **manual product failure signal**.
+
+---
+
+# 5. CRITICAL INTERPRETATION
+
+Do NOT assume this is only a UI wiring problem.
+
+The runtime counters are extremely abnormal:
+
+```text
+3754 re-prepares
+6861 clamps
+248 faults
+```
+
+with:
+
+```text
+1 live job
+```
+
+at only:
+
+```text
+44.1 kHz
+stereo
+256-frame block
+```
+
+This strongly suggests that the underlying realtime adapter / preparation / parameter / job lifecycle is entering a pathological state.
+
+The investigation therefore MUST trace:
+
+```text
+UI control
+→ EditController
+→ parameter model
+→ PitchLabProcessor
+→ IParameterChanges / snapshot
+→ RealtimeAdapter
+→ preparation thread
+→ Job
+→ engine configuration
+→ engine process()
+→ engine finish()
+→ chain adoption
+→ retirement
+→ output
+→ status / meters
+```
+
+---
+
+# 6. FIRST PRIORITY — EXPLAIN THE THREE COUNTERS
+
+These are now the primary incident indicators:
+
+```text
+faults
+re-prepares
+clamps
+```
+
+Trace every place that increments them.
+
+Build a proper taxonomy.
+
+At minimum distinguish:
+
+```text
+prepare failure
+process failure
+finish failure
+job starvation
+missing wet data
+invalid engine configuration
+parameter/configuration mismatch
+envelope violation
+chain adoption failure
+retiring-chain coverage failure
+unexpected exception
+other
+```
+
+For every count, establish:
+
+```text
+who increments it
+on which thread
+under what condition
+what triggers it
+whether it is expected
+what recovery follows
+whether recovery itself causes another event
+```
+
+---
+
+# 7. VERY IMPORTANT — INVESTIGATE FOR FEEDBACK LOOPS
+
+The numbers:
+
+```text
+reprepare = 3754
+clamp     = 6861
+fault     = 248
+```
+
+may not represent independent failures.
+
+Look for loops such as:
+
+```text
+parameter update
+→ envelope mismatch
+→ clamp
+→ reprepare
+→ preparation fails
+→ old job remains
+→ parameter mismatch still exists
+→ clamp
+→ reprepare
+→ ...
+```
+
+or:
+
+```text
+snapshot update
+→ chain fingerprint changes
+→ reprepare
+→ newly prepared chain differs unexpectedly
+→ reprepare
+```
+
+or:
+
+```text
+job prepare fails
+→ retry
+→ retry
+→ retry
+→ ...
+```
+
+Do not merely count events.
+
+Find the causal chain.
+
+---
+
+# 8. ENGINE-SPECIFIC PARAMETER PATH AUDIT
+
+For every engine, trace every parameter end-to-end.
+
+## VARISPEED
+
+```text
+quality
+allow aliasing
+```
+
+## VARDELAY
+
+```text
+excursion
+crossfade
+```
+
+## GRANULAR
+
+```text
+grain
+overlap
+jitter
+window
+```
+
+## PV-CLASSIC
+
+```text
+FFT
+hop
+```
+
+## PV-LOCKED
+
+```text
+FFT
+hop
+```
+
+And the common parameters:
+
+```text
+pitch
+LFO rate
+LFO depth
+dry/wet
+output level
+bypass
+```
+
+Build an actual matrix:
+
+| Engine | Parameter | UI changes | Controller changes | Processor receives | Adapter receives | Job receives | Engine applies | Audio changes |
+| ------ | --------- | ---------- | ------------------ | ------------------ | ---------------- | ------------ | -------------- | ------------- |
+
+Do not stop at "slider moves".
+
+We care about:
+
+```text
+UI → value → backend → engine → audio
+```
+
+---
+
+# 9. WHY DOES VARISPEED BEHAVE DIFFERENTLY?
+
+The current observation suggests that:
+
+```text
+Pitch
+LFO Rate
+LFO Depth
+```
+
+work much better than engine-specific parameters.
+
+Determine whether the difference is:
+
+A. UI-only
+
+B. Controller-to-processor mapping
+
+C. Parameter snapshot publication
+
+D. Realtime automation conversion
+
+E. Engine parameter preparation
+
+F. Job construction
+
+G. Job process failure
+
+H. Engine-specific runtime contract
+
+I. parameter metadata / discrete semantics
+
+J. combination
+
+Do not guess.
+
+Instrument the path.
+
+---
+
+# 10. USE THE EXACT WINDOWS BUILD AS A REPRODUCTION TARGET
+
+Do NOT assume Linux reproduces every Windows runtime problem.
+
+Where possible:
+
+* inspect the exact package,
+* record version/build metadata,
+* identify the exact source revision that generated it,
+* compare its parameter/engine behaviour against `main`,
+* determine whether the package corresponds to the current source head.
+
+If the package was built from a different commit:
+
+**STOP assuming binary/source identity.**
+
+Record:
+
+```text
+binary hash
+source commit
+build configuration
+compiler/toolchain
+timestamp if available
+```
+
+and classify any mismatch.
+
+Do not silently substitute another build.
+
+---
+
+# 11. P0 — AUDIO CALLBACK MUST NOT SLEEP
+
+Known source finding:
+
+`pitch-lab/src/vst/realtime_adapter.cpp`
+
+contains a path equivalent to:
+
+```cpp
+std::this_thread::sleep_for(std::chrono::microseconds(250));
+```
+
+inside realtime processing startup assistance.
+
+The loop can wait approximately 25 ms.
+
+This violates the project's own realtime requirement.
+
+### Required
+
+Find a design where the audio callback never:
+
+* sleeps,
+* waits,
+* busy-waits,
+* blocks,
+* joins.
+
+The initial chain must be prepared before the audio callback requires it, or the callback must take a genuinely non-blocking fallback path.
+
+No mutex replacement.
+
+No hidden wait.
+
+Add regression / structural protection where practical.
+
+---
+
+# 12. P0 — SEQLOCK IS A C++ DATA-RACE RISK
+
+File:
+
+`pitch-lab/src/vst/seqlock.h`
+
+Current payload is a normal non-atomic object.
+
+The implementation comment explicitly acknowledges:
+
+> "A relaxed data race on the payload is intended"
+
+This is NOT a valid final C++ memory-model justification.
+
+### Required
+
+Audit every SeqLock usage:
+
+* parameter snapshots
+* meter snapshots
+* status snapshots
+* any other payload
+
+Determine a genuinely race-safe design.
+
+Constraints:
+
+* no allocation on audio thread
+* no blocking
+* no mutex on audio path
+* deterministic publication semantics
+* safe readers
+* safe writer(s)
+
+Run race-focused verification where possible.
+
+Do not claim ASAN/UBSAN proves absence of a C++ data race.
+
+---
+
+# 13. P0 — UI STALE POINTER / UAF
+
+File:
+
+`pitch-lab/src/vst/ui/editor.cpp`
+
+Current dynamic engine controls are tracked in:
+
+```cpp
+std::vector<ui_::PLSlider*> engineSliders_;
+std::map<uint32_t, ui_::PLSlider*> sliderByTag_;
+```
+
+`rebuildEnginePanelControls()` removes/frees old sliders from the view hierarchy but leaves old pointers inside:
+
+```text
+sliderByTag_
+```
+
+Then `syncControlValues()` iterates those pointers.
+
+Potential sequence:
+
+```text
+engine switch
+→ old slider removed/freed
+→ stale pointer remains in sliderByTag_
+→ timer runs
+→ stale pointer dereferenced
+```
+
+### Required
+
+Fix ownership.
+
+Live-control collections MUST contain only live controls.
+
+Then stress:
+
+```text
+A → B → C → D → E → A
+```
+
+at least 20 cycles while the timer is active.
+
+Use memory diagnostics.
+
+---
+
+# 14. P1 — AUTOMATION CHUNK COORDINATE BUG
+
+Known source finding:
+
+`processor.cpp`
+
+`collectAutomation()` converts host block-relative sample offsets using `chunkBase`, while internal processing uses chunk-local coordinates.
+
+A host block such as:
+
+```text
+8192 frames
+```
+
+with internal chunks of:
+
+```text
+4096 frames
+```
+
+and event:
+
+```text
+offset 5000
+```
+
+must NOT be applied to chunk 0 at its final frame and then again to chunk 1 at frame 904.
+
+### Required
+
+Define exactly ONE coordinate convention.
+
+Prefer:
+
+```text
+VST3 ProcessData sample offsets = host-block-relative
+```
+
+with exactly one explicit conversion into chunk-local coordinates, OR keep everything block-relative.
+
+Do not mix coordinate domains.
+
+Test events at:
+
+```text
+0
+1
+chunk-1
+chunk
+chunk+1
+2*chunk
+2*chunk+1
+```
+
+---
+
+# 15. P1 — LFO AUTOMATION MUST ACTUALLY WORK
+
+The current parameter model advertises:
+
+```text
+LFO Rate
+LFO Depth
+```
+
+as automatable.
+
+But the runtime automation collection currently appears to handle:
+
+```text
+pitch
+mix
+output level
+bypass
+```
+
+without equivalent LFO automation entries.
+
+Therefore a host automation event can potentially change the declared parameter while the audio path still uses the static snapshot value.
+
+### Required
+
+Verify real `IParameterChanges` processing for:
+
+* LFO rate
+* LFO depth
+
+Then implement correct sample-aware handling if confirmed.
+
+Do not solve this by removing automation capability unless an explicit SoT decision is made.
+
+---
+
+# 16. P1 — BYPASS AUTOMATION FRAME POSITION
+
+Current adapter state contains essentially one:
+
+```text
+bypassFrame
+bypassValue
+```
+
+but the processing path may apply the target before respecting the actual frame.
+
+Test:
+
+```text
+bypass at frame 0
+bypass at frame 1
+bypass in middle of block
+bypass at last frame
+bypass across chunk boundary
+on → off → on in one block
+```
+
+Do not collapse multiple changes into only the final state.
+
+---
+
+# 17. P1 — >32 AUTOMATION POINTS ARE SILENTLY DROPPED
+
+Current:
+
+```cpp
+BlockAutomation::kMaxPoints = 32;
+```
+
+Additional points appear to be ignored.
+
+Determine whether 32 is an explicit documented product limit.
+
+If not:
+
+Fix without audio-thread allocation.
+
+Test:
+
+```text
+2
+8
+32
+33
+64
+```
+
+or an appropriate bounded stress level.
+
+---
+
+# 18. P1 — `setProcessing()` IS A NO-OP
+
+Current implementation effectively returns success without performing processing-state changes.
+
+The product specification requires proper suspend/resume behaviour.
+
+Existing tests mainly exercise:
+
+```text
+setActive(false)
+setActive(true)
+```
+
+which is not equivalent.
+
+### Required
+
+Exercise:
+
+```text
+setProcessing(true)
+process
+setProcessing(false)
+setProcessing(true)
+process
+```
+
+Determine correct lifecycle semantics and implement them.
+
+Verify:
+
+* DSP state reset behaviour
+* chain state
+* jobs
+* resources
+* output recovery
+* no stale processing state
+
+---
+
+# 19. P1 — HOST LATENCY NOTIFICATION
+
+The product spec says latency changes must be reported to the host.
+
+Current runtime updates an internal reported latency value, but there is no obvious host notification path corresponding to:
+
+```text
+restartComponent(kLatencyChanged)
+```
+
+### Required
+
+Audit:
+
+* initial latency
+* engine switch to higher-latency engine
+* engine switch to lower-latency engine
+* state load with different engine
+* reactivation
+* sample-rate change
+
+Do not break the documented Λ_eff monotonic-per-activation model.
+
+If the SoT does not specify the exact notification lifecycle, report the ambiguity explicitly.
+
+---
+
+# 20. P1 — STATE RESTORE + LATENCY
+
+`setState()` restores parameter values and requests reset.
+
+Verify whether restoring an engine with a different latency immediately updates the host-visible latency.
+
+Test:
+
+```text
+save state A
+load state B with different latency
+inspect getLatencySamples()
+before any audio
+```
+
+Fix coherence between:
+
+```text
+restored state
+effective chain
+reported latency
+host notification
+```
+
+---
+
+# 21. P1 — DISCRETE PARAMETER METADATA
+
+Audit every VST3 parameter `stepCount`.
+
+Particular attention:
+
+* engine
+* varispeed quality
+* allow aliasing
+* granular overlap
+* granular window
+* PV FFT
+* PV hop
+* bypass
+* any other discrete/toggle parameter
+
+Verify correct VST3 semantics.
+
+Do not trust existing comments.
+
+Use official Steinberg VST3 documentation if necessary.
+
+Correct metadata and conversion logic together.
+
+---
+
+# 22. P1 — `%d` WITH DOUBLE IN PARAMETER FORMATTER
+
+Known defect:
+
+`ModelParameter::toString()` passes a `double` to a format string containing `%d`.
+
+This is undefined behaviour.
+
+Fix safely.
+
+Exercise every parameter through `toString()`.
+
+---
+
+# 23. P1 — `toString()` / `fromString()` ROUND-TRIP
+
+Current semantic strings include values such as:
+
+```text
+on
+off
+hann
+triangular
+```
+
+while parsing appears to rely on numeric `atof()` semantics.
+
+This makes round-trip incorrect.
+
+Also invalid numeric strings can collapse to zero rather than being rejected.
+
+Fix and test:
+
+```text
+toString
+→ fromString
+→ same semantic value
+```
+
+for all parameters.
+
+Test invalid inputs.
+
+---
+
+# 24. P1 — MALFORMED BUS FALLBACK
+
+Current channel mismatch fallback may iterate output channels while indexing input channels without proving the input has that channel.
+
+Make malformed host input safe.
+
+Required behaviour:
+
+* never read outside input channel array,
+* copy common channels,
+* zero extra output channels,
+* no crash.
+
+---
+
+# 25. P2 — AUDIO-PATH `snprintf`
+
+The realtime adapter currently formats status strings from the audio processing path.
+
+Move human-readable formatting out of the callback.
+
+Audio thread should publish compact data:
+
+```text
+engine ID
+numeric state
+flags/counters
+```
+
+UI thread can format text.
+
+---
+
+# 26. P2 — LINEAR VS EQUAL-POWER BYPASS
+
+The current crossfade formula appears linear:
+
+```cpp
+wet * (1 - fade) + dry * fade
+```
+
+while documentation describes it as equal-power.
+
+Determine which is authoritative.
+
+Do not change it blindly.
+
+If equal-power is required, implement correctly.
+
+Add a level-dip test.
+
+---
+
+# 27. P2 — VARISPEED UI NOTE LIFETIME
+
+`rebuildEnginePanelControls()` creates a Varispeed note every rebuild without obvious lifecycle ownership.
+
+Repeated engine switches may accumulate stale UI objects.
+
+Fix ownership and stress repeated rebuilds.
+
+---
+
+# 28. P2 — FUNCTION-STATIC `lastEngine`
+
+Current UI code contains:
+
+```cpp
+static int lastEngine = -1;
+```
+
+inside per-editor logic.
+
+This is shared across editor instances.
+
+Make it instance-owned.
+
+Test multiple editors where possible.
+
+---
+
+# 29. P2 — INPUT / OUTPUT CLIP METER SEMANTICS
+
+Current code appears to use:
+
+```cpp
+ms.outClip
+```
+
+for the input meter too.
+
+Determine whether this is intended.
+
+If input and output clipping are meant to be distinct, expose distinct state.
+
+Do not silently change semantic meaning.
+
+---
+
+# 30. P2 — BLOCK-SIZE-DEPENDENT METER DECAY
+
+Current meter decay appears block-based.
+
+Therefore effective decay time can vary with host block size.
+
+Determine whether the desired UI behaviour should be time-based.
+
+If fixing, make it time-based and test several block sizes.
+
+---
+
+# 31. P2 — EDITOR RESIZE / SPEC MISMATCH
+
+Product specification says the editor should be:
+
+* resizable
+* DPI-aware
+
+Current editor remains effectively fixed around:
+
+```text
+680 × 450
+```
+
+Treat this as:
+
+**SPECIFICATION/IMPLEMENTATION MISMATCH**
+
+unless further evidence proves otherwise.
+
+Do not silently redesign UI sizing during the main incident unless necessary.
+
+If it needs a product decision, report it as such.
+
+---
+
+# 32. IMPORTANT ADDITIONAL CHECK — PREPARE RETRY STORM
+
+Audit:
+
+```text
+prepareJob()
+prepLoop()
+```
+
+especially exception handling.
+
+If a permanent invalid configuration does:
+
+```text
+prepare
+→ fail
+→ retry
+→ fail
+→ retry
+→ ...
+```
+
+we have an uncontrolled recovery loop.
+
+A permanent configuration defect needs an observable bounded error state.
+
+Do not just increase retry delays.
+
+---
+
+# 33. IMPORTANT ADDITIONAL CHECK — FINISH FAILURE LIFECYCLE
+
+Audit:
+
+```text
+finishJob()
+```
+
+especially when it catches an exception.
+
+Determine:
+
+```text
+finish fails
+→ what happens to Job?
+→ slot reusable?
+→ chain retired?
+→ replacement prepared?
+→ broken job can be reused?
+→ wet output gap?
+→ status fault?
+```
+
+A failed finished job must not remain in an ambiguous reusable state.
+
+---
+
+# 34. REALTIME THREAD OWNERSHIP AUDIT
+
+Explicitly map:
+
+```text
+Audio Thread
+Preparation Thread
+UI Thread
+Host Thread
+```
+
+For all shared data.
+
+For every shared object identify:
+
+```text
+writer
+reader
+lifetime owner
+publication mechanism
+destruction thread
+```
+
+Pay special attention to:
+
+```text
+active chain
+pending chain
+retiring chain
+jobs
+snapshots
+retire stack
+UI controls
+```
+
+---
+
+# 35. REALTIME AUDIO PATH FULL CALL-GRAPH AUDIT
+
+Trace every function reachable from:
+
+```text
+PitchLabProcessor::process()
+```
+
+and:
+
+```text
+RealtimeAdapter::process()
+```
+
+Classify every operation:
+
+```text
+RT-SAFE
+RT-SAFE UNDER DOCUMENTED ASSUMPTION
+NOT RT-SAFE
+UNKNOWN
+```
+
+Look for:
+
+* allocation
+* deallocation
+* vector growth
+* string construction
+* formatting
+* locks
+* waits
+* sleeps
+* file I/O
+* network I/O
+* host callbacks
+* thread operations
+* unexpected exception paths
+* hidden library allocation
+
+Any `UNKNOWN` must be resolved or explicitly documented.
+
+---
+
+# 36. AUTOMATION MATRIX
+
+For ALL declared automatable parameters:
+
+```text
+pitch
+LFO rate
+LFO depth
+mix
+bypass
+output level
+```
+
+test:
+
+### Single point
+
+* frame 0
+* frame 1
+* middle
+* last frame
+
+### Ramps
+
+* up
+* down
+
+### Multiple points
+
+* 2
+* 8
+* 32
+* > 32
+
+### Chunk boundaries
+
+* chunk-1
+* chunk
+* chunk+1
+* 2*chunk
+* 2*chunk+1
+
+### Combined
+
+* pitch + LFO rate
+* pitch + LFO depth
+* pitch + mix
+* pitch + level
+* pitch + bypass
+* LFO + mix
+* simultaneous multi-parameter automation
+
+---
+
+# 37. ENGINE MATRIX
+
+Every engine:
+
+```text
+native.varispeed
+native.vardelay
+native.granular
+native.pv.classic
+native.pv.phaselocked
+```
+
+Test:
+
+```text
+44.1 kHz / stereo / 256
+48 kHz / stereo / 256
+48 kHz / stereo / 4096
+96 kHz / stereo / 512
+```
+
+and:
+
+```text
+Sample32
+Sample64
+```
+
+where supported.
+
+For each engine:
+
+* pitch shift
+* LFO
+* engine-specific parameters
+* bypass
+* mix
+* output level
+* engine switching
+
+---
+
+# 38. ENGINE SWITCH MATRIX
+
+Test all ordered pairs:
+
+```text
+A → B
+```
+
+for all 5 engines.
+
+During real processing.
+
+Also repeat:
+
+```text
+A → B → C → D → E → A
+```
+
+continuously.
+
+Verify:
+
+* no crash
+* no UAF
+* no stale control
+* no invalid parameter state
+* no runtime fault storm
+* no reprepare storm
+* no clamp storm
+* output remains valid
+* expected engine is actually active
+
+---
+
+# 39. SEMANTIC AUDIO TESTING
+
+For stable sine inputs, verify:
+
+```text
+input frequency
+expected ratio
+measured output frequency
+```
+
+Do not only test for:
+
+```text
+non-zero audio
+```
+
+Use the existing v0.1 correctness tolerances where applicable.
+
+Do NOT create a global quality score.
+
+Engine-specific semantic assertions are correct.
+
+---
+
+# 40. PRODUCT SMOKE TEST
+
+Add an executable smoke test as close as practical to real plugin behaviour.
+
+Pseudo-sequence:
+
+```text
+create plugin
+initialize
+connect controller / processor
+setupProcessing
+set bus arrangements
+activate
+setProcessing(true)
+
+for each engine:
+    set engine
+    process many blocks
+    change engine-specific parameters
+    process more
+    verify output
+    verify fault state
+    verify chain readiness
+
+test automation
+test bypass
+test reset
+test engine switches
+
+setProcessing(false)
+setProcessing(true)
+process again
+
+deactivate
+destroy
+```
+
+This test MUST cover the failure mode that the current unit tests missed.
+
+---
+
+# 41. MANUAL WINDOWS SMOKE TEST
+
+Use the provided:
+
+`PitchLab-VST3-Windows-x64.zip`
+
+and record actual manual results.
+
+For each engine:
+
+```text
+Host:
+Windows version:
+Plugin binary SHA:
+Sample rate:
+Block size:
+Channels:
+Sample format:
+Engine:
+Parameters tested:
+Observed output:
+Faults:
+Re-prepares:
+Clamps:
+PASS/FAIL
+```
+
+Do NOT invent results.
+
+---
+
+# 42. GREEN TESTS MUST BE CHALLENGED
+
+The existing:
+
+```text
+30/30 CTest
+47/47 validator
+```
+
+must remain.
+
+But ask:
+
+> What exact property does each test prove?
+
+Do NOT claim that those results prove the plugin is fully correct.
+
+Add tests for the missing product behaviour.
+
+---
+
+# 43. DEFECT CLASSIFICATION
+
+Each finding MUST use exactly one:
+
+```text
+CONFIRMED DEFECT
+
+POTENTIAL DEFECT — REQUIRES ARCHITECTURAL DECISION
+
+SPECIFICATION/IMPLEMENTATION MISMATCH
+
+TEST COVERAGE GAP
+
+FALSE POSITIVE / NOT A DEFECT
+
+KNOWN LIMITATION — ACCEPTED BY SOT
+```
+
+---
+
+# 44. ROOT-CAUSE FORMAT
+
+For every confirmed defect:
+
+```text
+Symptom
+Trigger
+Fault mechanism
+Root cause
+Why existing tests missed it
+Fix
+Regression test
+Verification
+```
+
+Never stop at:
+
+```text
+"parameter is broken"
+```
+
+Get to the actual causal mechanism.
+
+---
+
+# 45. FIXING RULE
+
+Fix the smallest correct layer.
+
+Examples:
+
+```text
+UI lifetime issue
+→ UI ownership
+
+automation coordinate issue
+→ processor/adapter boundary
+
+parameter metadata issue
+→ parameter model
+
+host latency notification
+→ VST3 integration
+
+realtime blocking
+→ adapter lifecycle
+
+data race
+→ snapshot/publication mechanism
+```
+
+Do NOT rewrite the DSP engines.
+
+Do NOT redesign the plugin architecture unless the evidence demonstrates that the existing boundary is fundamentally invalid.
+
+If architectural change is genuinely required:
+
+* stop,
+* document the reason,
+* identify exact impact,
+* surface the decision.
+
+Do not silently redesign.
+
+---
+
+# 46. V0.1 PROTECTION
+
+These are protected facts:
+
+* v0.1 DSP engines are already closed.
+* v0.1 §17.6 is closed.
+* v0.1 must not be reopened.
+* Existing `results/v0.1` remains retained.
+* OD-6 / OD-9 / OD-18 remain open unless independently affected.
+* No new project-wide verification gate.
+
+This incident is:
+
+**VST3 implementation-quality work.**
+
+---
+
+# 47. WINDOWS DELIVERY DISTINCTION
+
+The Windows package now exists and should be analysed.
+
+However:
+
+Do NOT confuse:
+
+```text
+Windows package exists
+```
+
+with:
+
+```text
+Windows build is reproducible and CI-validated
+```
+
+Those are separate facts.
+
+Record the actual evidence.
+
+Do not claim a Windows CI guarantee unless one exists.
+
+---
+
+# 48. DOCUMENTATION / WORKLOG
+
+Update authoritative documentation after fixes.
+
+Potential files:
+
+```text
+research/pitch-lab-vst3-product-phase-specification.md
+pitch-lab/docs/vst3-product.md
+worklog.md
+relevant test documentation
+```
+
+Do not rewrite history.
+
+Document:
+
+* observed manual failure,
+* root causes,
+* fixes,
+* regression tests,
+* remaining findings,
+* false positives,
+* owner decisions if any.
+
+---
+
+# 49. NO NEW PROJECT-WIDE VERIFICATION GATE
+
+Do NOT create:
+
+* a new §17 gate,
+* a replacement for §17.6,
+* another v0.1 gate,
+* a project-wide "final verification gate".
+
+This is explicitly prohibited.
+
+Run whatever implementation-quality CI/testing is necessary.
+
+Do not invent a new governance stage.
+
+---
+
+# 50. REQUIRED FINAL REPORT
+
+## A. Executive summary
+
+Explain what was actually wrong in the live Windows plugin.
+
+## B. Incident evidence
+
+Include:
+
+* Windows package hash
+* build/source identity
+* observed runtime numbers
+* manual behaviour
+
+## C. Defect table
+
+| ID | Severity | Classification | Root cause | Fix | Regression |
+| -- | -------- | -------------- | ---------- | --- | ---------- |
+
+## D. Runtime failure chain
+
+Show:
+
+```text
+trigger
+→ mechanism
+→ failure
+→ visible result
+```
+
+especially for:
+
+```text
+fault
+reprepare
+clamp
+```
+
+## E. Confirmed defects
+
+Use:
+
+```text
+Symptom
+Trigger
+Root cause
+Why tests missed it
+Fix
+Regression
+Verification
+```
+
+## F. False positives
+
+List explicitly.
+
+## G. Test coverage gaps
+
+List explicitly.
+
+## H. Realtime safety audit
+
+Report:
+
+```text
+allocation
+blocking
+sleep
+locks
+I/O
+formatting
+host calls
+exceptions
+unknowns
+```
+
+## I. Concurrency audit
+
+Report actual tools/results:
+
+```text
+ASAN
+UBSAN
+TSAN if available
+stress
+UI lifecycle stress
+```
+
+Never claim a tool was run when it was not.
+
+## J. Regression result
+
+Report:
+
+```text
+CTest total/pass/fail/skip
+VST3 validator
+new smoke tests
+automation tests
+engine matrix
+lifecycle tests
+manual Windows smoke result
+```
+
+## K. Documentation/state changes
+
+Exact files.
+
+## L. Remaining issues
+
+Do not hide anything.
+
+## M. Governance
+
+Explicitly state:
+
+```text
+NO DEVIATION FROM AI_ASSISTED_SOFTWARE_ENGINEERING_OPERATING_PRINCIPLES_v3.0
+```
+
+if true.
+
+---
+
+# 51. DEFINITION OF DONE
+
+This incident is NOT DONE because:
+
+```text
+plugin opens
+```
+
+It is DONE only when evidence supports:
+
+```text
+plugin opens
++
+all five engines can actually be selected
++
+all five engines actually process audio
++
+engine-specific controls reach the correct engine
++
+pitch works
++
+LFO rate works
++
+LFO depth works
++
+dry/wet works
++
+output level works
++
+bypass works
++
+automation works
++
+automation works across internal chunks
++
+no automation points are silently lost
++
+engine switching works during playback
++
+no UI stale-pointer/UAF issue
++
+no known C++ data race
++
+audio callback does not sleep/block
++
+no persistent reprepare storm
++
+no persistent clamp storm
++
+no persistent fault storm
++
+setProcessing lifecycle works
++
+state restore is coherent
++
+latency reporting is coherent
++
+mono/stereo works
++
+Sample32/Sample64 works where supported
++
+regression tests prove the previously observed failures
++
+canonical CI is green
+```
+
+---
+
+# 52. FINAL OPERATING PRINCIPLE
+
+The most important evidence in this incident is not the previous green CI.
+
+It is the fact that:
+
+> **A real Windows VST3 opened successfully but was functionally unusable and immediately reported thousands of reprepares, thousands of clamps and hundreds of faults.**
+
+That means the existing automated surface was insufficient.
+
+Do not defend the old implementation.
+
+Do not hide the failure.
+
+Do not paper over the counters.
+
+Do not disable the broken engines.
+
+Do not silently fall back to Varispeed.
+
+Do not remove UI controls to avoid failures.
+
+Do not weaken the realtime guarantee.
+
+Do not suppress tests.
+
+Find the mechanism.
+
+Fix the mechanism.
+
+Then reproduce the original failure through a regression test and prove it is gone.
+
+**This is an urgent real-product investigation.**
+
+**Audit deeply. Reproduce honestly. Fix minimally. Test specifically. Document everything.**
+
+**NO NEW PROJECT-WIDE VERIFICATION GATE.**
+
+**DO NOT REOPEN V0.1.**
