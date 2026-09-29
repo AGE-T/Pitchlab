@@ -59,6 +59,26 @@ Product: knowledge and tested DSP components — not shippable audio software.
 > remain OPEN. **v0.1 is COMPLETE: no further verification gate exists (§17.6 is the last
 > gate); the roadmap continues at the owner's direction.**
 
+> **PRODUCT PHASE (2026-09-28/29) = the REAL VST3 PLUGIN + UI — complete.** A
+> production VST3 effect ("Pitch Lab", single-component effect, official
+> Steinberg VST3 SDK + VSTGUI vendored under `pitch-lab/external/vst3sdk`,
+> provenance in ORIGIN.toml) built on the UNMODIFIED v0.1 engines through a
+> realtime adapter (`pitch-lab/src/vst/`): the preserving engines as
+> envelope-bounded virtual jobs with crossfaded seams; varispeed AND
+> granular under the windowed-splice adaptation (the recorded §3
+> implementation-time correction — the granular read grid diverges at
+> ratio ≠ 1 exactly as varispeed's output length does); sample-accurate
+> pitch automation; monotonic effective latency (Λ_eff); a real VSTGUI
+> editor (engine selector, pitch, per-engine panels, meters, honest status —
+> `pitch-lab/src/vst/ui/`). Product evidence: `pitch-lab/results/vst3/v0.1/`
+> (11 listening examples through the real VST3 process path, 4 UI
+> screenshots captured by a DAW-style XEMBED host under Xvfb, the official
+> SDK validator run — **47/47**); the adapter/processor/parameter doctest
+> suites incl. every ordered engine-pair mid-stream switch; docs at
+> `pitch-lab/docs/vst3-product.md` + the product-phase specification
+> (`research/pitch-lab-vst3-product-phase-specification.md`). v0.1 remains
+> closed and untouched; OD-6/OD-9/OD-18 remain OPEN.
+
 This repository hosts **two systems with a hard boundary**:
 
 | | Agent / Web Workbench | Pitch Lab DSP research system |

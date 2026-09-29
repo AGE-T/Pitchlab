@@ -77,6 +77,29 @@ report at `results/v0.1/README.md`; evidence §13.8; `pitchlab verify` /
 `report` / `listen-index` stay unimplemented by owner decision — the T-G2
 semantics were executed as the recorded gate checks). v0.1 is COMPLETE:
 §17.6 is the LAST gate; the roadmap continues at the owner's direction.
+
+**PRODUCT PHASE (2026-09-28/29): the REAL VST3 PLUGIN + UI — complete.**
+`src/vst/` adds the product layer on the UNMODIFIED v0.1 engines: the VST3
+single-component processor + module entry (official Steinberg VST3 SDK +
+VSTGUI, vendored under `external/vst3sdk` with ORIGIN.toml provenance), the
+realtime adapter (preserving engines = envelope-bounded virtual jobs with
+crossfaded seams; varispeed + granular = windowed-splice adaptation, the
+recorded §3 correction — the frozen product-phase spec
+`../research/pitch-lab-vst3-product-phase-specification.md` carries the
+boundary analysis + the implementation-time corrections), the ONE
+authoritative parameter model (`src/vst/parameters.h`), and the real
+VSTGUI editor (`src/vst/ui/` — engine selector, pitch/LFO, per-engine
+panels, meters, honest status; the Linux open path performs the XEMBED
+run-loop handshake). Product evidence: `results/vst3/v0.1/` — 11 listening
+examples rendered through the REAL VST3 process path (the factory +
+lifecycle driver `tools/vst_host_sim.cpp`), 4 UI screenshots
+(`tools/vst_ui_screenshot.cpp`, a DAW-style dlopen + XEMBED host under
+Xvfb), the official SDK validator record **47/47**; the doctest suites
+(`tests/vst_*_test.cpp`) cover parameters/state/adapter/processor
+incl. every ordered engine-pair mid-stream switch. Docs:
+`docs/vst3-product.md`. The v0.1 research surface is untouched
+(`PITCHLAB_BUILD_VST3=OFF` restores it exactly).
+
 Measured §7.7 acceptance evidence and OD-18 (resampler
 constants) are recorded in the implementation specification §7.7.1; OD-6
 (length-tolerance ratification) remains open with its §13.4 evidence pack;
