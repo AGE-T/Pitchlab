@@ -23,6 +23,7 @@ DriveResult driveEngine(ProtoEngine& engine,
       return res;
     }
   }
+  engine.analyzeSignal(in);
   try {
     engine.prepare(fs, channels, maxBlockFrames, nIn, ratioCurve);
   } catch (const std::exception& e) {

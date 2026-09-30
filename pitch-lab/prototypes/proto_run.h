@@ -38,6 +38,22 @@ struct CandidateSpec {
   // is part of the candidate's character, not an implementation defect;
   // the evidence lives in the report records).
   double selftestShiftToleranceSt = 0.6;
+  // Minimum frames_out ratio vs n_in asserted by the selftest. Engines
+  // whose mode is DURATION-CHANGING by design (TD-PSOLA pitch mode:
+  // duration = 1/beta over voiced spans) set this below 1.0 — the honest
+  // duration behaviour is a REPORTED metric, not a hidden failure.
+  double selftestMinFramesRatio = 0.9;
+  // F0-tracking selftest tolerance (semitones; 0 = off). For candidates
+  // whose pitch evidence is the PULSE RATE / fundamental (formant-
+  // preserving modes, where the dominant partial legitimately does NOT
+  // shift), this asserts f0TrackerHz vs the input f0 x commanded ratio on
+  // the listed materials ONLY (the mechanism may be material-dependent:
+  // TD-PSOLA's direct re-tiling provably does not shift event-free
+  // periodic material — pure sines — while it shifts pulse-bearing
+  // material exactly). The dominant-partial check is then effectively
+  // disabled (set its tolerance high) and documented.
+  double selftestF0ToleranceSt = 0.0;
+  std::vector<std::string> selftestF0Materials;
 };
 
 /// Full evaluation; writes <out>/<id>/candidate-report.json (+ renders/).

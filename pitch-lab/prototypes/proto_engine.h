@@ -31,6 +31,8 @@
 #include "core/types.h"
 #include "harness/json_writer.h"
 
+#include <vector>
+
 namespace pitchlab::proto {
 
 using ProtoParams = std::map<std::string, pitchlab::ParameterValue>;
@@ -45,6 +47,18 @@ class ProtoEngine {
   virtual ~ProtoEngine() = default;
 
   [[nodiscard]] virtual const char* engineId() const = 0;
+
+  /// Optional OFFLINE ANALYSIS PRE-PASS (research-only contract
+  /// extension, called by the driver between configure() and prepare()
+  /// with the FULL input signal). Engines whose analysis stage is
+  /// whole-signal (TD-PSOLA's pYIN pitch marks) use it; the default is a
+  /// no-op. The realtime-equivalent cost of this stage (a streaming
+  /// tracker with window+hop lookahead) is reported by the RT probe as
+  /// analysis-side evidence — the synthesis stage itself stays strictly
+  /// block-streamed and allocation-audited.
+  virtual void analyzeSignal(const std::vector<std::vector<double>>& input) {
+    (void)input;
+  }
 
   /// Parameter validation (throws ConfigError). Called before prepare().
   virtual void configure(const ProtoParams& params) = 0;

@@ -88,6 +88,7 @@ RecordOutcome evaluateOne(const CandidateSpec& spec, const Material& mat,
   auto runOnce = [&]() {
     std::unique_ptr<ProtoEngine> engine = spec.make();
     engine->configure(params);
+    engine->analyzeSignal(mat.ch);
     DriveResult r = driveEngine(*engine, mat.ch, curve.data(), nIn, mat.fs,
                                 maxBlock);
     json::Value diag = engine->diagnostics();
@@ -277,6 +278,8 @@ int runCandidateSelftest(const CandidateSpec& spec) {
   std::cout << "task28 selftest: " << spec.id << "\n";
   for (const std::string& matId : mats) {
     const Material* mat = findMaterial(matId);
+    const WaveMetrics inMetrics = measureWave(mat->ch, mat->fs);
+    const double m_f0In = inMetrics.f0TrackerHz;
     for (const std::string& trId : trs) {
       const Transform* tr = findTransform(trId);
       RecordOutcome r =
@@ -299,9 +302,11 @@ int runCandidateSelftest(const CandidateSpec& spec) {
         continue;
       }
       const int64_t framesOut = rec.at("frames_out").asInt();
-      if (framesOut < static_cast<int64_t>(0.9 * static_cast<double>(nIn))) {
+      if (framesOut < static_cast<int64_t>(spec.selftestMinFramesRatio *
+                                           static_cast<double>(nIn))) {
         std::cout << "  FAIL " << matId << "/" << trId
-                  << ": frames_out " << framesOut << " < 0.9 x " << nIn
+                  << ": frames_out " << framesOut << " < "
+                  << spec.selftestMinFramesRatio << " x " << nIn
                   << "\n";
         ++failures;
         continue;
@@ -322,6 +327,34 @@ int runCandidateSelftest(const CandidateSpec& spec) {
           continue;
         }
       }
+      // F0-tracking assertion (formant-preserving candidates: the pitch
+      // evidence is the fundamental, not the strongest partial).
+      bool f0Material = false;
+      for (const std::string& fm : spec.selftestF0Materials) {
+        if (fm == matId) f0Material = true;
+      }
+      if (spec.selftestF0ToleranceSt > 0.0 && f0Material && tr->staticRatio &&
+          m_f0In > 0.0) {
+        const double expectedF0 = m_f0In * tr->staticValue;
+        const json::Value& f0v = rec.count("metrics") != 0
+                                     ? rec.at("metrics").asObject().count(
+                                           "f0_tracker_hz") != 0
+                                           ? rec.at("metrics").asObject().at(
+                                                 "f0_tracker_hz")
+                                           : json::Value()
+                                     : json::Value();
+        if (f0v.kind() == json::Value::Kind::Double && f0v.asDouble() > 0.0) {
+          const double errF0 = 12.0 * std::log2(f0v.asDouble() / expectedF0);
+          if (std::abs(errF0) > spec.selftestF0ToleranceSt) {
+            std::cout << "  FAIL " << matId << "/" << trId
+                      << ": f0 error " << errF0 << " st (tracker "
+                      << f0v.asDouble() << " vs expected " << expectedF0
+                      << ") exceeds " << spec.selftestF0ToleranceSt << " st\n";
+            ++failures;
+            continue;
+          }
+        }
+      }
     }
   }
 
@@ -334,6 +367,7 @@ int runCandidateSelftest(const CandidateSpec& spec) {
     const std::vector<double> curve = tr->build(nIn, mat->fs);
     std::unique_ptr<ProtoEngine> engine = spec.make();
     engine->configure(spec.defaultParams);
+    engine->analyzeSignal(mat->ch);
     engine->prepare(mat->fs, mat->channels, 256, nIn, curve.data());
     // drive with block 256, auditing the process/finish path only
     DriveResult res;
@@ -442,6 +476,7 @@ int runCandidateSelftest(const CandidateSpec& spec) {
     const std::vector<double> curve = tr->build(nIn, mat->fs);
     std::unique_ptr<ProtoEngine> engine = spec.make();
     engine->configure(spec.defaultParams);
+    engine->analyzeSignal(mat->ch);
     engine->prepare(mat->fs, mat->channels, 256, nIn, curve.data());
     const ProtoEngine::Latency lat = engine->latency();
     const FrameCount streamEnd = nIn + lat.inputLookahead;
@@ -511,6 +546,7 @@ int runRtProbe(const CandidateSpec& spec, const std::string& outDir) {
 
         std::unique_ptr<ProtoEngine> engine = spec.make();
         engine->configure(spec.defaultParams);
+        engine->analyzeSignal(mat->ch);
         engine->prepare(mat->fs, mat->channels, bs, nIn, curve.data());
         const ProtoEngine::Latency lat = engine->latency();
 

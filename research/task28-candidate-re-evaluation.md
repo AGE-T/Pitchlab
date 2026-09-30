@@ -383,4 +383,184 @@ period-locking from similarity-searching behaviour.
   WSOLA proceeds to product candidacy.)
 
 ---
-*(TD-PSOLA, FD-PSOLA, Transient-aware PV sections follow in the next checkpoints.)*
+
+## 3. PHASE C — TD-PSOLA (`proto.tdpsola`)
+
+### NAME
+proto.tdpsola — pitch-synchronous overlap-add (Moulines & Charpentier 1990), two modes.
+
+### FAMILY
+Pitch-synchronous (the PSOLA family; Praat/audiojs lineage — reference behaviour, clean-room
+here).
+
+### CORE MECHANISM (frozen before coding; TWO design errors found and corrected by
+measurement before any quality conclusion — both are part of the research record)
+* **Analysis (offline pre-pass):** the project's clean-room pYIN tracker gives F0+voicing
+  (window 2048/hop 512 @ 48k); marks every P (voiced) or P_uv (200 Hz default), each refined
+  to the nearest positive-going zero crossing within ±P/4 (minimal epoch alignment).
+* **Synthesis (the corrected MC90 semantics):** grain k = 2·P Hann window centred at the
+  analysis mark nearest a_k; **raw overlap-add with a per-grain level scale s/P** (the mean-
+  restoring classic formulation). Output mark spacing **s = P/β → output pitch = β×F0**.
+  * **mode "pitch" (default):** u = P (cycle-accurate consumption) — the classic MC90/psola.m
+    PITCH MODIFICATION: **formant-preserving, DURATION-CHANGING (÷β̄ over voiced spans)**.
+  * **mode "stretch":** u = s/α (mark reuse/skip = the PSOLA time-scale by α), then the §7
+    resampler by α — the conventional duration-preserving shifter (formants shift).
+  * Unvoiced: s = u = P_uv regardless of β — **the engine is literally a passthrough on
+    material it deems unvoiced** [MEASURED: the drum material's metrics are IDENTICAL across
+    all ten transforms — sharpness −14.9 dB, comb 3.3 dB, rms 1.00 in every record].
+* **Design error #1 (corrected):** the first version tried a duration-preserving direct pitch
+  mode (u = s). With mark reuse the output became **2s-periodic** — measured 444 Hz on BOTH
+  +12 and −12 of a 440 Hz sine — the sub-multiple periodicity of the repeated-mark pattern.
+  Numerically proven (composite simulation): pure cycle re-tiling cannot shift a continuous
+  periodic signal at any u. The published algorithms either change duration (pitch mode) or
+  resample (stretch mode); there is no valid duration-preserving pure-PSOLA mark schedule.
+* **Design error #2 (corrected):** window-product normalisation (borrowed from the OLA
+  engine) **cancels the Hann's neighbour-pulse suppression** at low overlap — dividing by the
+  single Hann restored the full 2P grain content and the downshift rendered unshifted. The
+  classic raw OLA with the s/P per-grain scale keeps the pulse suppression (the mechanism)
+  AND restores the mean level; identity is EXACT by COLA (Hann(2P) at hop P sums to exactly 1).
+
+### TECHNICAL REALITY [MEASURED]
+* **Identity: exactly transparent** (dom 0.00 st, rms 1.00 — the COLA property).
+* **mode "stretch" — a fully working conventional shifter:** harmstack +12 f0 439.8 (0.01 st),
+  dom −0.01 st, rms 1.00; sine ±12 (dbg harness) f0 880.0/219.8 EXACT; duration preserved.
+* **mode "pitch" — the voice-grade transform:** vocal +12: **f0 279.9 = 140×2 EXACT**,
+  −12: **f0 70.0 EXACT**; bass +12 f0 219.6; pluck +12 f0 439.2 — the F0 tracks the command
+  on every pulse-bearing material.
+* **FORMANT PRESERVATION (the distinct capability):** vocal +12 pitch-mode centroid 538 Hz vs
+  input 653 Hz (≈ preserved) vs stretch-mode 1306 Hz (doubled) — and the dominant partial
+  stays at the formant (559.9/700.3 Hz) while the F0 moves ×2/÷2. **No existing Pitch Lab
+  engine preserves the spectral envelope while moving the fundamental** [MEASURED-BASELINE:
+  all five shift the centroid 1:1 with ratio].
+* **Material dependence is REAL and measured:** the pure sine in pitch mode does NOT shift
+  (numerically proven: continuous periodicity cannot be re-tiling-shifted; the output carries
+  sub-harmonic AM — tracker reads 80 Hz garbage); the drum (tracker-unvoiced) passes through
+  untouched. **The engine transforms exactly the material its analysis recognises as
+  voiced-and-pulsed — the strongest material-gating behaviour in the lab.**
+* Deterministic (bit-identical double-runs); 0 allocations in process/finish; block-split
+  invariance bit-identical (128/256/1024).
+
+**VERIFIED:** identity transparency, both modes' pitch behaviour, formant preservation,
+voicing passthrough, determinism, allocation audit, block invariance, duration semantics.
+**INFERRED:** the pulse-event mechanism explanation (the measured f0/centroid/voicing evidence
+is direct; the "pulses re-space, continuous tones cannot" causal story is reasoning).
+**UNPROVEN:** perceptual voice quality vs Praat-class implementations.
+**OPEN:** see below.
+
+### REALTIME FEASIBILITY [MEASURED, local-evidence timing]
+* **Synthesis RTF ≈ 0.001** (0.1% of a core — the cheapest measured engine in the lab; worst
+  block 0.03 ms at bs=1024).
+* **The analysis is the cost driver:** pYIN ≈ 180 ms per signal-second measured (RTF 0.18) —
+  still comfortably realtime on one core, but 180× the synthesis cost. In a streaming design
+  the analysis adds window+hop ≈ 53 ms lookahead @ 48k.
+* Latency: synthesis lookahead 2·P_max+K+128 = 2080 frames (~43 ms) + the analysis lookahead
+  in a streaming design; flush bounded (scaled by 1/min ratio in pitch mode — the first fixed
+  bound was exceeded on −12, measured and fixed).
+
+### DYNAMIC PITCH BEHAVIOUR [MEASURED]
+* β indexed **per output mark** — per-PERIOD control rate: on voice, 2.5–10 ms — the fastest
+  control lane of any candidate (the family's documented claim, now measured: the ramp/reversal
+  records re-lock every mark with 0 faults).
+* Duration follows 1/β̄ over voiced spans (pitch mode): ramp-slow 42413 frames on vocal = the
+  integral of 1/ρ(t) over the voiced track ✓ honest rate-following semantics (like varispeed,
+  unlike the four preserving engines).
+
+### MATERIAL RESPONSE [MEASURED]
+* **Voice-like (vocal):** the home turf — f0 exact, formants preserved, the character the
+  family is famous for.
+* **Bass/pluck (harmonic, decaying):** f0 exact (219.6/439.2) — works beyond pure voice.
+* **Drum (tracker-unvoiced):** complete passthrough — every metric identical across all
+  transforms (see above).
+* **Sine (event-free):** pitch mode does not shift (proven); the output carries sub-harmonic
+  AM and heavy comb (10–12 dB) — the degenerate case, documented not hidden.
+* **Noise/dense:** unvoiced → passthrough in pitch mode (the dense polyphony gets gated by the
+  voicing decision — the classic "destroys polyphony" now measured as a BYPASS, not
+  destruction).
+* Stereo: shared mark schedule (channel-0 analysis), per-channel identical synthesis.
+
+### ARTIFACT SIGNATURE [MEASURED]
+1. **Downshift AM (pitch mode):** vocal −12 am 0.94 vs +12's 0.20 — the Hann-shape survives
+   at s>2P overlap-thin spacings (the documented PSOLA downshift amplitude family, now
+   measured).
+2. **Grain-rate comb on the degenerate sine** (10–12 dB).
+3. **No transient damage on passthrough material** (the drum's onsets survive byte-identically
+   — the voicing gate protects them).
+4. **Sharpness on shifted vocals:** −10.8 dB (≈ the input's own) — the pulse re-spacing keeps
+   attacks coherent on the home-turf material.
+5. rms follows the mode: pitch-mode +12 rms 0.42 (duration-halved steady region + the raw-OLA
+   level family), −12 rms 1.26.
+
+### SOUND-DESIGN CHARACTER (Phase G)
+**COULD THIS SOUND BE USEFUL EVEN IF IT IS NOT HI-FI PITCH SHIFTING? — YES; it is the most
+behaviourally distinctive candidate so far:**
+* **a voice-gated transformer** — material the analysis accepts is transformed with preserved
+  formants; everything else passes through untouched (a deterministic, analysable gate —
+  rhythmic material keeps its attacks while a sung line shifts underneath);
+* **the formant-preserving pitch move** (the "chipmunk-free" character) — a capability NO
+  current engine has;
+* **duration follows 1/β̄** (the varispeed-inverse semantics on the voiced spans);
+* the downshift AM family (−12 am 0.94) is a strong, repeatable "underwater/reverberant"
+  character knob.
+Labels: *voice-locked, formant-true, envelope-following, gated-bypass, resonant-on-downshift*.
+
+### IMPLEMENTATION COMPLEXITY
+Moderate: ~600 lines including the mark machinery, both modes, the window cache and the
+block-streaming state (three real defects found and fixed on the way — see above; the
+mark-schedule semantics is where the subtlety lives).
+
+### CPU / MEMORY CHARACTERISTICS
+Synthesis RTF 0.001; analysis RTF ≈ 0.18 (the pYIN tracker — reused, not reimplemented).
+Memory: O(4·P_max + blocks) sliding windows + the mark list + the window cache (~100 KB at
+defaults). [MEASURED]
+
+### REUSABLE PITCH LAB INFRASTRUCTURE
+The clean-room pYIN tracker (the analysis backbone — direct reuse), §7 resampler (stretch
+mode), the measurement layer. The PSOLA mark/synthesis core is the base for FD-PSOLA (Phase D
+subclasses it through the transformGrain hook).
+
+### ARCHITECTURAL FIT
+The synthesis stage fits the PitchEngine contract 1:1 (allocation-free, block-streamed,
+latency-declared). The analysis pre-pass is the honest research shape; a production engine
+would need the streaming-tracker decision (documented as the realtime cost/latency driver).
+The duration-changing pitch mode would be a new DurationBehaviour (rate-following, like
+varispeed) — expressible in the existing registry capabilities without architectural change.
+
+### LICENSING [VERIFIED-PAPER/TASK-3]
+Moulines & Charpentier 1990 concept unencumbered. No Praat (GPL), no sannawag (MIT but
+Praat-derived), no maxrmorrison (GPL-3) code read or linked — clean-room from the published
+math; the DAFx M-files educational-only, not used.
+
+### CANDIDATE CLASSIFICATION (preliminary)
+**2 — EXPERIMENTAL PRODUCT ENGINE / CREATIVE-CHARACTER ENGINE** (upgraded from the old
+"Benchmark (voice-only)" verdict). The old verdict's premise — voice-only operation is a
+limitation — INVERTS under the sound-design lens: the voicing gate, formant preservation and
+per-period control are behaviours absent from all five production engines, measured and
+deterministic. The stretch mode additionally provides a clean conventional PSOLA shifter
+(f0 exact on tonal material, rms 1.00) as a by-product.
+
+### RECOMMENDED NEXT STEP
+FD-PSOLA (Phase D) on this machinery: the grain-spectral envelope-decoupling hook is already
+in place; the key question is whether the FD variant's formant control adds anything over the
+ALREADY formant-preserving pitch mode (the measured 538-vs-653 centroid drift suggests the
+envelope control is imperfect — FD-PSOLA's raison d'être).
+
+### KNOWN LIMITATIONS
+* The pitch mode is duration-changing (by design, per the published formulation) — the
+  duration-preserving variant is the stretch mode (with formant shift).
+* The mark refinement is minimal (zero-crossing); a true epoch detector (energy/peak-picking)
+  would improve phase alignment on noisy voice — documented future refinement.
+* The pure-sine degenerate case (no shift in pitch mode) is inherent to the mechanism, not a
+  defect; the selftest documents it (the F0 net asserts the vocal only; identity exactness
+  still covers every material).
+* Analysis is offline (the pre-pass contract extension); a streaming tracker is a production
+  decision with a measured ~0.18 RTF + 53 ms lookahead cost.
+
+### OPEN QUESTIONS
+* The 538-vs-653 centroid drift on +12 (formants preserved imperfectly — the window-length
+  trade-off?): would FD-PSOLA's explicit envelope control measure tighter? (Phase D answers
+  this directly.)
+* Does the voicing gate's boundary (the tracker's voicedProbability) create musically useful
+  gating artifacts on mixed material (the dense corpus)? Owner listening decision.
+
+---
+*(FD-PSOLA, Transient-aware PV sections follow in the next checkpoints.)*
