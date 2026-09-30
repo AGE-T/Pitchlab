@@ -146,6 +146,73 @@ leading silence for sustained ratios > 1 (the committed
 protected engines); the fresh chain after a resume/reset arrives
 asynchronously (~ms — the preparation thread's rebuild).
 
+## Realtime audio-path functional validation (the audio-path suite)
+
+Wiring, processing and pitch transformation are three different claims.
+The `vst_audio_path_test` doctest suite (CI-registered; independently
+runnable via `ctest -R vst_audio_path_test`) answers them per engine with a
+deterministic host simulation: fresh processor, parameters before
+activation (the wet-deterministic startup), synthetic material (sustained
+sine / harmonic two-tone / transient bursts / onset probe), a fixed block
+schedule and a latency-covering zero flush, through the REAL
+`IAudioProcessor::process` float32 path, snapshot publication, adapter
+chains, the REAL v0.1 engines, and back out the output bus — measured with
+the v0.1 analysis layer's own primitives (Hann-windowed exact-frequency
+projection + a zero-crossing-median carrier cross-check).
+
+**The measured answer (159 records, machine-readable artifact
+`results/vst3/v0.1/audio-path/audio-path-report.json`, byte-deterministic
+per binary — the CI regenerates and diffs it):**
+
+| engine | wired | actually processing audio | pitch transformation |
+|---|---|---|---|
+| native.varispeed | YES | YES (0 faults, finite, non-silent, non-frozen, frame-exact; block matrix 64..4096 + mixed; rates 44.1..192 kHz; mono/stereo) | YES — identity exact, +12/-12 within 0.07 st (dual estimator) |
+| native.vardelay | YES | YES (same matrices) | YES — identity exact, ±12 within 0.03 st |
+| native.pv.classic | YES | YES (same matrices; FFT/hop latency signatures exact) | YES — exact at identity and ±12 |
+| native.pv.phaselocked | YES | YES (same matrices; frequency EXACT) | YES — exact; output LEVEL is engine-inherent at non-identity ratios (see below) |
+| native.granular | YES | YES (same matrices) | LIMITED — identity and +12 exact; **-12 renders at the envelope edge** (see below) |
+
+Parameter effectiveness is proven through the ENGINE CONFIGURATION, not
+controller state: vardelay crossfade 0/8192 → live-chain latency 96/8288;
+PV FFT x hop (11 valid combos each) → latency = fft+hop+96 exactly; grain
+0.02/0.5 s → latency changes; excursion, quality, jitter and (with an LFO
+drive) overlap/window → measured waveform differences (maxdiff 0.05..1.03);
+varispeed allow_aliasing off/on → the 16 kHz alias-band energy ratio 25.7x
+(the anti-alias pre-filter's stopband, measured). Reset and engine
+switching DURING audio: every destination engine measured while processing
+(its own pitch response post-adoption, engine identity asserted per
+segment), 0 faults, 5-segment cycles for all five engines.
+
+**Two honest, evidence-backed characteristics (recorded, not hidden):**
+
+* **pv.phaselocked output level at non-identity ratios** — the frequency is
+  exact, but the amplitude of a single partial measures 0.12x..0.81x input
+  across 44.1..192 kHz (0.24x at +12 st / 48 kHz). This is IN THE FROZEN
+  v0.1 ENGINE, not the realtime layer: the direct engine (offline contract,
+  constant-ratio 220 Hz sine, no adapter) measures the same 0.086 RMS at
+  ratio 2.0, and the committed v0.1-era example
+  `pv-locked_harmstack_p5_vst3.wav` carries the same characteristic
+  (0.0814 vs ~0.124 for every other engine). The Laroche-Dolson region
+  rotation attenuates single partials; richer material behaves differently.
+  The suite's RMS floor is an ANTI-SILENCE floor (0.05x, -26 dB) by design.
+* **native.granular downshift renders at the envelope edge** — for ratio <
+  1 the granular engine's boundary-indexed curve reads (k·Hg, the OUTPUT
+  grid, clamped into the input-indexed curve) run ahead of the adapter's
+  live-curve-write frontier and see the prepare-time envelope prefill
+  (envMax = live·2^(1/12)) instead of the commanded ratio: a -12 st
+  realtime drive renders its carrier at +0.5 st (measured exactly 116.541
+  Hz vs 110 commanded; the direct engine at the same constant ratio is
+  exact at 109.995 Hz; identity and upshifts are exact because their
+  boundary positions stay behind the frontier). An adapter-side fix (an
+  ahead-write of the live ratio into the not-yet-reached curve region) was
+  implemented and MEASURED to deadlock the engine's window/horizon
+  consumption — the job never completes (fault storm) — and was REVERTED
+  (the fix is riskier than the defect; the granular job lifecycle is ~600
+  frames of window margin from that deadlock even in the shipped code).
+  The deviation is bounded by the design's own ±1 st job envelope and is
+  classified EXPECTED-LIMITATION in the artifact. A proper fix needs a
+  dedicated task with the owner's eyes on it.
+
 ## Getting the plug-in (the distributable)
 
 The Windows x64 product is published by CI on every push as the GitHub

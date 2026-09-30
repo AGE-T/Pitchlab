@@ -221,6 +221,7 @@ endfunction()
 pitchlab_add_vst_suite(vst_parameters_test)
 pitchlab_add_vst_suite(vst_adapter_test)
 pitchlab_add_vst_suite(vst_processor_test)
+pitchlab_add_vst_suite(vst_audio_path_test)
 
 # The host-simulation driver: renders corpus material through the REAL VST3
 # process path (used for the retained audio examples; tools/vst_host_sim.cpp)
