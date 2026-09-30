@@ -1140,3 +1140,19 @@ Work Log:
 Stage Summary:
 - TD-PSOLA: technically real in both modes; the most behaviourally distinctive candidate so far (voice-gated, formant-true, envelope-following). The selftest's identity net (dominant 0.1 st) covers all materials; the F0 net covers the pulse-bearing vocal; the degenerate sine case is documented, not hidden.
 - NEXT ACTION: checkpoint 4 — FD-PSOLA on the same machinery (the transformGrain hook is in place): does the grain-spectral envelope decoupling add measurable control over the already-formant-preserving pitch mode?
+
+---
+Task ID: task-28 (checkpoint 4 of 6)
+Agent: candidate re-evaluation agent (Z.ai Code session, 2026-09-30)
+Task: task-28 checkpoint 4 — Phase D: FD-PSOLA on the TD-PSOLA machinery (the transformGrain hook: the grain-spectral envelope decoupling, psolaF formant-factor semantics). VST-buildable rule maintained.
+
+Work Log:
+- candidate_fdpsola: the TD-PSOLA subclass with the per-voiced-grain transform — forward r2c (pocketfft, prepare-cached plans per distinct grain length), the complex half-spectrum interpolation X'(k') = X(k'/gamma) (linear re/im, zero beyond Nyquist — honest band-limiting), c2r with 1/gLen; unvoiced grains untouched; gamma = 1.0 = the no-op default. All state prepare-built (0 process allocations).
+- MEASURED (134 + 8 sweep records + a dedicated formant-only probe, committed): (1) THE SUPERSET PROPERTY IS EXACT — FD(gamma=1) is BIT-IDENTICAL to TD-PSOLA (identical det-hashes on vocal identity/+12, harmstack +12, drum +12). (2) THE DISTINCT CAPABILITY, measured working: DECOUPLED pitch/formant axes — formant-only shifting at IDENTITY pitch (vocal identity + gamma=2: f0 140.0 EXACT while centroid 653 -> 1316.5, dom 700 -> 1400; gamma=0.5: centroid 269, f0 140.0 exact) — a transformation NO production engine has; combined control (vocal +7 + gamma=2: f0 209.8 exact, centroid 1208.8; bass f0 exact at every gamma). (3) The gamma axis on the +12 mode moves the centroid NON-monotonically (591 -> 443/1062/720 for gamma 0.5/1.5/2.0 — the stretched comb vs the re-spaced marks: line-dominance changes) — the honest composite character. (4) Level follows gamma (rms 0.42-1.26 — the raw-OLA + interpolation energy family). RTF 0.002 (no-op) with the transform cost trivial (~2 FFT(2P) per voiced grain); ASAN/UBSAN clean (selftest + rtprobe).
+- The Phase-D critical question answered with evidence: FD-PSOLA DOES provide a distinct processing character the PV family does not — explicit, decoupled formant control on a pitch-synchronous engine — and it is a STRICT extension of TD-PSOLA (the bit-identity), not a duplicate. The old 'skip' verdict is reversed with measurements.
+- VST PRESERVATION: incremental VST3 build GREEN, validator 47/47, CTest 36/36 (35 + task28_fdpsola_selftest), audio-path artifact BYTE-IDENTICAL.
+- research doc: the full Phase-P FD-PSOLA section (PRELIMINARY CLASSIFICATION: 2 EXPERIMENTAL PRODUCT ENGINE, control-surface lane).
+
+Stage Summary:
+- FD-PSOLA: the control-surface candidate — the only two-axis (pitch x formant) engine in the lab, voice-gated (inherited), bit-identical superset of TD-PSOLA. The natural product shape is one PSOLA engine with the optional gamma (the cross-candidate report will carry this).
+- NEXT ACTION: checkpoint 5 — transient-aware PV (Phase E): the classic-PV pipeline + spectral-flux transient detection + phase reset, compared against native.pv.classic on the transient corpus.

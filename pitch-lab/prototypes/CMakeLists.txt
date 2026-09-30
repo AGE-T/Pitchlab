@@ -28,10 +28,11 @@ add_library(pitchlab_proto28
   candidate_ola.cpp
   candidate_wsola.cpp
   candidate_tdpsola.cpp
+  candidate_fdpsola.cpp
 )
 target_include_directories(pitchlab_proto28 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_compile_features(pitchlab_proto28 PUBLIC cxx_std_20)
-target_link_libraries(pitchlab_proto28 PUBLIC pitchlab_core)
+target_link_libraries(pitchlab_proto28 PUBLIC pitchlab_core pitchlab_pocketfft)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_options(pitchlab_proto28 PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off)
   if(PITCHLAB_WERROR)
@@ -58,3 +59,5 @@ task28_add_executable(task28_ola task28_ola_main.cpp)
 task28_add_executable(task28_wsola task28_wsola_main.cpp)
 
 task28_add_executable(task28_tdpsola task28_tdpsola_main.cpp)
+
+task28_add_executable(task28_fdpsola task28_fdpsola_main.cpp)

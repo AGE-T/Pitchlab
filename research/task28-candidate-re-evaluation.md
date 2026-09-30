@@ -563,4 +563,140 @@ envelope control is imperfect — FD-PSOLA's raison d'être).
   gating artifacts on mixed material (the dense corpus)? Owner listening decision.
 
 ---
-*(FD-PSOLA, Transient-aware PV sections follow in the next checkpoints.)*
+
+## 4. PHASE D — FD-PSOLA (`proto.fdpsola`)
+
+### NAME
+proto.fdpsola — frequency-domain PSOLA: the TD-PSOLA machinery + per-grain spectral envelope
+control (the MC90 FD variant / DAFx psolaF semantics).
+
+### FAMILY
+Pitch-synchronous + frequency-domain hybrid (grain-FFT; the PSOLA FD branch).
+
+### CORE MECHANISM (frozen before coding; built ON the TD-PSOLA prototype through its
+transformGrain hook — marks, modes, raw-OLA synthesis and block streaming inherited unchanged)
+* Per VOICED grain (2P, Hann-windowed): forward r2c FFT (vendored pocketfft, persistent plans
+  cached per distinct grain length at prepare), **spectral interpolation of the complex
+  half-spectrum by the formant ratio γ: X'(k') = X(k'/γ)** (linear in re/im; zero beyond
+  analysis Nyquist), c2r with 1/gLen, written back. The grain's spectrum — harmonic comb AND
+  envelope — stretches by γ (the psolaF formant-factor semantics); the OUTPUT PITCH still
+  comes from the mark re-spacing. Unvoiced grains: not transformed (the passthrough
+  semantics). **γ = 1 (default): the transform is a no-op — FD-PSOLA is BIT-IDENTICAL to
+  TD-PSOLA** [MEASURED: identical det-hashes on vocal identity/+12, harmstack +12, drum +12 —
+  the superset property is exact, not approximate].
+
+### TECHNICAL REALITY [MEASURED]
+* **The pitch and formant axes are DECOUPLED — the distinct capability:**
+  * **formant-only shifting at IDENTITY pitch** (a transformation NO existing engine has —
+    every production engine either moves nothing at identity or couples the envelope to the
+    ratio): vocal identity + γ=2.0: **f0 140.0 EXACT while centroid 653 → 1316.5 (2.02×)**,
+    dom 700 → 1400; γ=0.5: centroid 269 (0.41×), dom 279.9, f0 140.0 exact.
+  * **combined control:** vocal +7 + γ=2: f0 209.8 (exact ×1.5), centroid 1208.8;
+    bass + γ: f0 exact at every γ, centroid 122→240.5 at γ=2.
+  * In the +12 pitch mode, γ sweeps move the centroid measurably (591 → 443/1062/720 for
+    γ=0.5/1.5/2.0) — **non-monotonically** (the stretched comb interacts with the re-spaced
+    marks and the resampler: at γ=1.5 the second comb line dominates, γ=2.0 realigns) — the
+    honest composite behaviour, documented.
+* Identity exact at γ=1 (inherited COLA transparency); deterministic; 0 allocations in
+  process/finish (plans/buffers all prepare-built); block-split invariance bit-identical.
+
+**VERIFIED:** the decoupled control, the γ=1 bit-identity with TD-PSOLA, identity
+transparency, determinism, allocation audit, block invariance.
+**INFERRED:** the comb/envelope interaction explanation for the non-monotonic centroid
+(the measurements are direct; the mechanism story is reasoning).
+**UNPROVEN:** perceptual "naturalness" of the γ-moved formants (linear complex
+interpolation shears phases — the metallic character hypothesis; committed renders for
+owner listening).
+**OPEN:** see below.
+
+### REALTIME FEASIBILITY [MEASURED, local-evidence timing]
+* RTF ≈ 0.002 at γ=1 (no-op path) — the transform adds ~2 FFTs per voiced grain: the measured
+  worst block stays ≤ 0.03 ms at bs=1024; with the transform active the cost remains trivial
+  (2·FFT(2P) per grain at per-mark cadence — ~80 MAC/frame at voice pitch).
+* The analysis (pYIN, RTF ≈ 0.18) is inherited — the same realtime cost driver as TD-PSOLA.
+* Same latency/flush contract as TD-PSOLA.
+
+### DYNAMIC PITCH BEHAVIOUR [MEASURED]
+Identical to TD-PSOLA (per-mark β re-locking — the transform does not touch scheduling);
+γ is a static per-job parameter in this prototype (a per-mark γ curve would be a trivial
+extension of the same hook — noted, not built: the minimal-prototype rule).
+
+### MATERIAL RESPONSE [MEASURED]
+* The formant control works on voice-like and harmonic material (vocal, bass, harmstack).
+* Unvoiced material: passthrough (the γ does not touch drums/noise — consistent gating).
+* The degenerate sine case is inherited (pitch mode does not re-space continuous tones);
+  the γ axis still moves its spectrum (the interpolation applies to any voiced-classified
+  grain).
+
+### ARTIFACT SIGNATURE [MEASURED]
+1. **Level follows γ** (the raw-OLA + interpolation energy family): vocal identity γ=0.5 →
+   rms 0.42, γ=2.0 → rms 1.26; am 0.94 at γ=2 (the envelope-thin overlap family).
+2. **Comb–envelope intermodulation** on the shifted pitch mode (the non-monotonic centroid
+   above) — the stretched comb vs the re-spacing creates line-dominance changes (dom moves
+   439→879→439 across γ=1/1.5/2 at +12).
+3. The interpolation's phase shear (complex-linear) — the metallic character hypothesis,
+   committed for listening.
+
+### SOUND-DESIGN CHARACTER (Phase G)
+**COULD THIS SOUND BE USEFUL EVEN IF IT IS NOT HI-FI PITCH SHIFTING? — YES; it is the
+control-surface candidate:**
+* **the formant-only axis** (identity pitch, moving vocal character — the "gender/size"
+  transform, gated to voiced material by the PSOLA voicing decision);
+* **decoupled pitch+formant** (any β with any γ — a 2-D character space none of the five
+  engines or the other candidates expose);
+* the composite comb intermodulation at extreme γ = a spectral "detune/crystal" family.
+Labels: *formant-free, voice-locked (inherited), two-axis, metallic-sheen*.
+
+### IMPLEMENTATION COMPLEXITY
+Low ON TOP of TD-PSOLA: ~140 lines (the transform + plan cache). The inherited complexity
+(the mark machinery) is the real cost — already built and validated.
+
+### CPU / MEMORY CHARACTERISTICS
+RTF ≈ 0.002–0.01 with the transform active (grain-FFT cadence); memory: TD-PSOLA's + the
+plan cache and three pMax-sized scratch buffers (~50 KB). [MEASURED]
+
+### REUSABLE PITCH LAB INFRASTRUCTURE
+The TD-PSOLA core (the subclass), pocketfft (the vendored FFT — the same plan pattern as the
+frozen PV engines), the window cache.
+
+### ARCHITECTURAL FIT
+Same as TD-PSOLA (the hook preserved the engine shape 1:1). The γ parameter is an
+engine-level parameter in registry terms — no contract change.
+
+### LICENSING [VERIFIED-PAPER/TASK-3]
+The MC90 FD-PSOLA concept and the DAFx psolaF structure are published math (the M-files
+educational-only — not used). pocketfft BSD-3 (the project's existing vendored dependency,
+ORIGIN.toml-pinned). No external code.
+
+### CANDIDATE CLASSIFICATION (preliminary)
+**2 — EXPERIMENTAL PRODUCT ENGINE (control-surface lane)** — the old verdict was SKIP
+("the L-D '99 engine supersedes it"). MEASURED ANSWER to the Phase-D critical question:
+FD-PSOLA DOES provide a distinct processing character the PV family does not: **explicit,
+decoupled formant control on a pitch-synchronous engine** (the PV family's envelope follows
+the ratio or requires envelope-estimation surgery; the L-D-style spectral shift moves the
+whole spectrum). The superset property (γ=1 ≡ TD-PSOLA bit-identically) makes it a strict
+extension, not a duplicate.
+
+### RECOMMENDED NEXT STEP
+Transient-aware PV (Phase E) completes the candidate set; the cross-candidate report then
+faces the FD-PSOLA-vs-TD-PSOLA product question (one engine with γ, or two engines — the
+bit-identity makes "TD + optional γ" the natural single-engine shape).
+
+### KNOWN LIMITATIONS
+* γ is static per job in the prototype (per-mark γ curves are a trivial extension, not
+  built — the minimal-prototype rule).
+* The linear complex interpolation shears grain phases (character, not fidelity — measured
+  as comb intermodulation; the committed renders carry it).
+* The +12-mode γ centroid response is non-monotonic (the comb interaction — documented
+  above; a pure-envelope (magnitude-only) variant would behave differently — noted as a
+  one-line follow-up if product candidacy proceeds).
+
+### OPEN QUESTIONS
+* Does the magnitude-only interpolation (envelope from harmonic peaks, phases preserved)
+  sound cleaner than the complex-linear variant? (One-parameter experiment; the current
+  variant IS the psolaF semantics.)
+* The γ level family (rms 0.42–1.26): normalise per-grain energy? (Honest raw behaviour now;
+  a normalisation would change the AM character.)
+
+---
+*(Transient-aware PV section follows in the next checkpoint.)*
