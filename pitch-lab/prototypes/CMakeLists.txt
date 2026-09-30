@@ -29,6 +29,7 @@ add_library(pitchlab_proto28
   candidate_wsola.cpp
   candidate_tdpsola.cpp
   candidate_fdpsola.cpp
+  candidate_pvtransient.cpp
 )
 target_include_directories(pitchlab_proto28 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_compile_features(pitchlab_proto28 PUBLIC cxx_std_20)
@@ -61,3 +62,5 @@ task28_add_executable(task28_wsola task28_wsola_main.cpp)
 task28_add_executable(task28_tdpsola task28_tdpsola_main.cpp)
 
 task28_add_executable(task28_fdpsola task28_fdpsola_main.cpp)
+
+task28_add_executable(task28_pvtransient task28_pvtransient_main.cpp)

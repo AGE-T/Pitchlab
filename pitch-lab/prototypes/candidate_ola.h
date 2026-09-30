@@ -67,9 +67,23 @@ class OlaPrototype : public ProtoEngine {
   // Per-grain analysis-position adjustment: OLA places every grain at the
   // nominal schedule position (returns 0). WSOLA overrides this with the
   // similarity search. `aNominal` is the nominal analysis centre; the
-  // returned delta shifts the read centre (the schedule re-anchors at the
-  // chosen position, the WSOLA drift semantics).
+  // returned delta shifts the read centre (the nominal advances from the
+  // law — the drift-free WSOLA formulation).
   [[nodiscard]] virtual double grainAnalysisAdjustment(double aNominal);
+
+  // Per-grain CONTENT hook (default: no-op — OLA/WSOLA place the raw
+  // windowed input; the transient-aware PV overrides this to replace the
+  // grain with its phase-modified resynthesis). The grain arrives in
+  // grainScratch_ (planar, grainLen per channel, ALREADY windowed); the
+  // hook may rewrite it in place. Called between extraction and
+  // accumulation — the arithmetic order of the no-op path is identical
+  // to the inline form (bit-identity verified by artifact regeneration).
+  struct GrainContext {
+    double analysisPos = 0.0;  // the grain's analysis centre (input tl)
+    double synthesisPos = 0.0; // the grain's synthesis centre (stretch)
+    int grainLen = 0;          // == windowFrames_
+  };
+  virtual void modifyGrain(const GrainContext& ctx) { (void)ctx; }
 
   // Built-output estimate at absolute stretch position p (the WSOLA
   // comparison target): the normalised accumulator where already final.
@@ -91,6 +105,8 @@ class OlaPrototype : public ProtoEngine {
   std::vector<std::vector<double>> stretch_;  // normalised-in-place (see .cpp)
   std::vector<double> wsum_;         // window sum per stretch position
   std::vector<std::vector<double>> inBuf_;    // sliding input window
+  std::vector<double> grainScratch_;  // planar per-grain extraction (the
+                                       // modifyGrain hook input)
   FrameCount inBase_ = 0;            // absolute index of inBuf_[c][0]
   FrameCount inAvail_ = 0;           // absolute end of delivered input
   int inputBackMargin_ = 0;          // extra history margin below a - N/2
@@ -113,12 +129,14 @@ class OlaPrototype : public ProtoEngine {
   // Input read at an absolute position (0 outside the delivered window) —
   // used by the WSOLA search as well.
   [[nodiscard]] double readInput(int channel, FrameCount pos) const;
+  /// Ratio curve indexed at an input-timeline position (clamped) — used
+  /// by the PV subclass for the analysis-hop normalisation.
+  [[nodiscard]] double ratioAtInput(double pos) const;
 
  private:
   bool placeGrainsUpTo(FrameCount inputAvailableEnd);
   void emitFinalFrames(AudioBlockOut& out, int outCapacity,
                        FrameCount& produced);
-  [[nodiscard]] double ratioAtInput(double pos) const;
   [[nodiscard]] double ratioAtOutput(FrameCount t) const;
   void compactStretch();
   void compactInput();

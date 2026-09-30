@@ -699,4 +699,166 @@ bit-identity makes "TD + optional γ" the natural single-engine shape).
   a normalisation would change the AM character.)
 
 ---
-*(Transient-aware PV section follows in the next checkpoint.)*
+
+## 5. PHASE E — Transient-Aware Phase Vocoder (`proto.pvtransient`)
+
+### NAME
+proto.pvtransient — classic PV (fixed-synthesis-grid formulation) + spectral-flux transient
+detection + phase reset (Röbel 2003 / Rubber Band R2 "crisp" semantics).
+
+### FAMILY
+Spectral (the phase-vocoder family — an evolution of the classic lane, not the L-D
+frequency-domain-shift lane).
+
+### CORE MECHANISM (frozen before coding; built ON the OLA prototype's stretch machinery
+through the modifyGrain content hook — block streaming, window-product normalisation, the
+stretch grid and the §7 resample stage are inherited)
+* Classic PV in the fixed-synthesis-grid form: frames at the fixed synthesis hop Hs = N/overlap
+  (default N=2048, overlap 4 = 75%), analysis hop Ha_n = Hs/ρ_n (the OLA engine's own stretch
+  grid). Per bin and channel:
+  Δφ_k = princarg(φ_a(n) − φ_a(n−1) − 2πk·Ha_n/N); ω̂_k = 2πk/N + Δφ_k/Ha_n;
+  φ_s_k(n) = φ_s_k(n−1) + ω̂_k·Hs. Grain resynthesised with |X_k| and φ_s (persistent
+  pocketfft plan, the frozen PV engines' own pattern). Frame 0: φ_s := φ_a.
+* **Transient detection (deterministic, causal):** flux(n) = Σ_k max(0, |X_k(n)| − |X_k(n−1)|)
+  on channel 0; transient when flux > sensitivity × median(the previous 8 fluxes) (default
+  sensitivity 2.5). **Phase reset at a transient frame:** φ_s_k := φ_a_k over the reset band —
+  reset_mode "full" (all bins, default) | "band" (150 Hz–1 kHz, the Rubber Band "mixed"
+  band-limited reset) | "off" (the classic-equivalence internal baseline).
+* Per-channel phase propagation; the transient decision SHARED (channel 0) — coherent resets,
+  classic per-bin drift elsewhere.
+
+### TECHNICAL REALITY [MEASURED]
+* **The reset WORKS — the Röbel claim, measured on the shared corpus:**
+  * drum +12: onset sharpness **−11.76 dB (full reset) vs −15.11 dB (reset off)** — a
+    **3.35 dB sharpening**; the production native.pv.classic measures −13.24 dB (between the
+    two, consistent with its classic pipeline) [MEASURED-BASELINE].
+  * impulse +12: sharpness **0.00 dB** — the impulse stays an impulse (all energy within
+    ±30 frames) with 2/2 onsets preserved — vs the classic PV's window-scale smear.
+  * **The resets also HALVE the sustained-material comb:** vocal +12 comb 23.0 dB vs
+    native.pv.classic's 46.2 dB — the pulse-train flux triggers periodic re-initialisation
+    that prevents the classic PV's accumulated phase-error combing [MEASURED — a finding
+    beyond the Röbel claim's scope].
+* **The reset trades spectral continuity for transient fidelity:** drum comb 4.2 dB (full)
+  vs 2.6 dB (off) — the documented reset-discontinuity cost, measured.
+* **band mode is the sharpest on drums (−7.61 dB) but with a post-onset dip (tail −2.63 dB)**
+  — the low band keeps continuity while the mids reset: a third, distinct character.
+* Pitch behaviour: vocal +12 dom 1400.1 (−0.001 st EXACT), f0 280.0; sine ±12 dom err
+  −0.04/−0.28 st; identity exact (0.00 st, rms 1.00). Conventional formant behaviour
+  (centroid 1305.8 = ×2 — the classic full-spectrum shift).
+* Deterministic (bit-identical double-runs); 0 allocations in process/finish; block-split
+  invariance bit-identical; 15 resets on the drum material (4 macro-onsets + the noise-burst
+  flux spikes — the detector's honest sensitivity).
+
+**VERIFIED:** the reset's transient sharpening, the impulse preservation, the comb reduction
+on pulse-train material, the reset/comb trade, pitch behaviour, determinism, audits.
+**INFERRED:** the "periodic resets prevent phase-error accumulation" explanation for the
+vocal comb reduction (the measurement is direct; the mechanism story is reasoning).
+**UNPROVEN:** perceptual crispness vs Rubber Band's production detector (the compound
+percussive/HF/silence curve — more sophisticated than this flux median; not built here).
+**OPEN:** see below.
+
+### REALTIME FEASIBILITY [MEASURED, local-evidence timing]
+* RTF ≈ **0.07–0.09** at 48 kHz mono (2 FFTs per frame per channel + the flux pass — the
+  extra forward pass for the shared detection); worst block ≤ 0.52× budget at bs=128 (the
+  reversal curve's ratio transitions), comfortable ≥0.29× elsewhere; 0 allocations.
+* Latency: the classic PV window scale + 8 synthesis hops of flux-median lookahead
+  (declared: base N/2+Hs+2K+64 + 8·Hs = 9280 frames @ defaults ≈ 193 ms — the honest cost of
+  the causal median; a shorter median (4 frames) or a causal percentile would trade
+  detection stability for latency — documented, not silently shortened).
+
+### DYNAMIC PITCH BEHAVIOUR [MEASURED]
+Hop-rate control (per synthesis frame — 10.7 ms at 75%/2048 — the fastest PV-class lane);
+ratio changes re-normalise the analysis hops (the IF estimates use the actual Ha_n); the
+reversal/ramp records render 0-fault with duration preserved. Reset boundaries during ratio
+changes: the phase re-initialisation restarts the propagation mid-glide — the documented
+risk class (the reversal records' worst-case blocks land exactly there, measured 0.52×).
+
+### MATERIAL RESPONSE [MEASURED]
+* **Drum/impulse (transient-rich): the reset's home turf** — the sharpening above.
+* **Vocal (pulse train):** the comb halving (above) + exact pitch — the resets ride the
+  glottal pulses.
+* **Sine/harmstack:** clean classic-PV behaviour (dom err ≤ 0.28 st, am 0.2 — the classic
+  PV's residual AM family).
+* **Noise:** conventional (comb 1.4-class); the flux detector stays quiet on stationary
+  noise (resets 0 on the sine/sine-family materials — the median floor).
+* Stereo: shared reset decisions, per-channel propagation — the resets are coherent, the
+  sustained spans drift per-channel (the classic PV stereo behaviour).
+
+### ARTIFACT SIGNATURE [MEASURED]
+1. **Reset-transient interaction family:** the full reset's 3.35 dB sharpening + 1.6 dB comb
+   cost; the band mode's sharp/dip character (−7.61/−2.63).
+2. **Sensitivity knob (measured):** sens 1.5 → 20 resets (more, smaller resets — sharpness
+   −10.50); default 2.5 → 15; window-4096 → 2 resets (the flux smooths over long windows —
+   the window/reset interaction axis).
+3. The inherited classic-PV residual AM (0.2 on tonal material) and the full-spectrum
+   formant shift.
+
+### SOUND-DESIGN CHARACTER (Phase G)
+**COULD THIS SOUND BE USEFUL EVEN IF IT IS NOT HI-FI PITCH SHIFTING? — YES: it is the
+transient-preservation lane:**
+* **percussive material keeps its attacks under spectral pitch shifts** — the drum/impulse
+  sharpening is the capability the classic PV family famously lacks (and the reason
+  Rubber Band built it);
+* **the band-limited reset is a THIRD character** (low-end continuity + mid reset — a
+  "punch-preserving" variant measured distinct from both full and off);
+* the periodic-reset comb halving on pulse-train material = a cleaner sustained voice lane
+  than the classic PV at the same cost;
+* the sensitivity knob is a genuine detector-rate control (measured reset counts 2–20 on
+  the same material).
+Labels: *transient-true, crisp-on-reset, band-punch, pulse-sweeping*.
+
+### IMPLEMENTATION COMPLEXITY
+Low ON TOP of the OLA machinery: ~280 lines (the PV pass + the detector + the modes). The
+inherited stretch/resample machinery carries the block streaming.
+
+### CPU / MEMORY CHARACTERISTICS
+RTF 0.07–0.09 (2 FFTs/frame/channel + the flux pass); memory: the OLA engine's + per-channel
+spectral state (3×bins doubles) + one plan (~60 KB at defaults). [MEASURED]
+
+### REUSABLE PITCH LAB INFRASTRUCTURE
+The OLA prototype's stretch core (the content hook), pocketfft (the frozen engines' own
+pattern), the §7 resampler. **The Phase-E architecture question answered by construction:
+the transient-aware treatment IS a reusable layer on the existing stretch machinery** (the
+candidate was built as exactly that — a ~280-line content hook, not a standalone engine).
+
+### ARCHITECTURAL FIT
+Fits the existing spectral family's shape: as a standalone engine it would be a sibling of
+pv.classic/pv.phaselocked with two extra parameters (reset_mode, sensitivity); as a LAYER it
+is a content hook on the stretch machinery — the same code demonstrates both. No
+architectural change required (the registry parameter surface would be the owner decision).
+
+### LICENSING [VERIFIED-PAPER/TASK-3]
+Röbel 2003 concept published; Rubber Band GPL — NOT used, not linked (the "mixed" band
+limits 150 Hz–1 kHz are from its published header documentation — parameter values, not
+code). Classic PV equations decades-old published math. pocketfft BSD-3 (vendored).
+
+### CANDIDATE CLASSIFICATION (preliminary)
+**1 — PRODUCT ENGINE CANDATE (the transient-preserving spectral lane)** — the old verdict
+"Prototype" is CONFIRMED and elevated with measurements: the reset demonstrably buys
+transient fidelity (+3.35 dB sharpness, impulse-exact) AND a cleaner sustained lane (comb
+halved) at trivial cost, with a measured parameter surface (mode/sensitivity/window). The
+Phase-E architecture question resolves to **B: a reusable phase-treatment layer** (built as
+exactly that) with an optional standalone-engine packaging.
+
+### RECOMMENDED NEXT STEP
+The cross-candidate report (Phase F–R): consolidate the five candidates' evidence against
+the five production engines, the classification table, and the final research decisions.
+
+### KNOWN LIMITATIONS
+* The flux-median detector is the minimal honest version (Röbel's optimal transient
+  POSITION within the frame is not implemented — the reset lands at the frame centre; the
+  window-4096 sweep shows the interaction).
+* The 8-frame median costs 8·Hs lookahead (~85 ms at defaults) — a production design would
+  tune the detection window (documented trade).
+* The sustained-tone comb reduction is measured on ONE pulse-train material (the vocal) —
+  the mechanism (periodic resets) predicts it generalises to quasi-periodic material;
+  untested beyond the corpus.
+* Per-channel phase propagation drifts inter-channel on sustained spans (the classic PV
+  behaviour — the shared resets only pin the transient moments).
+
+### OPEN QUESTIONS
+* Would Röbel's transient-position optimisation (reset at the intra-frame transient peak)
+  sharpen further? (A within-frame refinement — one more parameter, not built.)
+* Does the phaselocked engine + resets stack (the L-D locking AND the reset)? — the natural
+  follow-up experiment if the spectral lane proceeds (two independent phase treatments on
+  the same grid).

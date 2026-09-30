@@ -117,6 +117,9 @@ void OlaPrototype::prepare(double fs, int channels, int maxBlockFrames,
                     static_cast<std::size_t>(windowFrames_ + inputBackMargin_ +
                                              2 * maxBlock_ + 256),
                     0.0));
+  grainScratch_.assign(
+      static_cast<std::size_t>(channels_) * static_cast<std::size_t>(windowFrames_) + 16,
+      0.0);
   inBase_ = 0;
   inAvail_ = 0;
   stretchBase_ = 0;
@@ -285,20 +288,36 @@ bool OlaPrototype::placeGrainsUpTo(FrameCount inputAvailableEnd) {
     const double a = aNext_ + delta;
     const double s = sNext_;  // (synthesis centre: the exact stretch grid)
 
-    // Add the windowed grain into the accumulators.
+    // Extract the windowed grain into the scratch (per channel), run the
+    // content hook, then accumulate — the no-op hook path is arithmetically
+    // identical to the original inline form (verified by artifact regen).
+    const int n = windowFrames_;
+    for (int c = 0; c < channels_; ++c) {
+      double* g = grainScratch_.data() +
+                  static_cast<std::size_t>(c) * static_cast<std::size_t>(n);
+      for (int i = 0; i < n; ++i) {
+        const double ap = a - half + static_cast<double>(i);
+        g[static_cast<std::size_t>(i)] =
+            window_[static_cast<std::size_t>(i)] *
+            readInput(c, static_cast<FrameCount>(std::floor(ap)));
+      }
+    }
+    modifyGrain(GrainContext{a, s, n});
+
+    // Add the grain into the accumulators.
     compactStretch();
     const double lo = s - half;
-    const int n = windowFrames_;
     for (int i = 0; i < n; ++i) {
       const double sp = lo + static_cast<double>(i);
       const FrameCount rel = static_cast<FrameCount>(sp) - stretchBase_;
       if (rel < 0 || rel >= stretchCapacity_) continue;  // guarded above
-      const double ap = a - half + static_cast<double>(i);
       const double wv = window_[static_cast<std::size_t>(i)];
       if (wv == 0.0) continue;
       for (int c = 0; c < channels_; ++c) {
         stretch_[static_cast<std::size_t>(c)][static_cast<std::size_t>(rel)] +=
-            wv * readInput(c, static_cast<FrameCount>(std::floor(ap)));
+            grainScratch_[static_cast<std::size_t>(c) *
+                              static_cast<std::size_t>(n) +
+                          static_cast<std::size_t>(i)];
       }
       wsum_[static_cast<std::size_t>(rel)] += wv;
     }
