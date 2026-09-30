@@ -100,47 +100,88 @@ struct LaneWindow {
 };
 
 // ---------------------------------------------------------------------------
-// Engine configuration mapping (snapshot -> EngineConfiguration). The ONE
-// mapping between the product parameter model and the v0.1 engine keys.
+// Engine configuration mapping (snapshot -> EngineConfiguration).
+//
+// Task 29: DESCRIPTOR-DRIVEN. The engine's own EngineParamDescriptor table
+// (the registry) is the ONE source of engine-parameter knowledge: keys,
+// typed value kinds, discrete choices, fixed engine-internal values and the
+// cross-parameter engine-domain constraints all come from the declaration.
+// The ONLY thing read here per parameter is the snapshot's plain value (the
+// product model's tag-keyed mapping in parameters.cpp — a tag mapping, not
+// an engine list). No engine-id if-chain exists.
 // ---------------------------------------------------------------------------
 
 EngineConfiguration buildEngineConfig(const ParamSnapshot& snap, const char* engineId) {
   EngineConfiguration cfg;
   cfg.seed = kEngineSeed;
-  const std::string id(engineId);
-  auto addStr = [&cfg](const char* k, const std::string& v) {
-    cfg.parameters.emplace_back(k, ParameterValue{v});
-  };
-  auto addD = [&cfg](const char* k, double v) {
-    cfg.parameters.emplace_back(k, ParameterValue{v});
-  };
-  auto addI = [&cfg](const char* k, int64_t v) {
-    cfg.parameters.emplace_back(k, ParameterValue{v});
-  };
-  auto addB = [&cfg](const char* k, bool v) { cfg.parameters.emplace_back(k, ParameterValue{v}); };
-
-  if (id == "native.varispeed") {
-    addStr("resample_quality",
-           kVsQualityNames[snap.vsQuality < 0 ? 0 : snap.vsQuality > 2 ? 2 : snap.vsQuality]);
-    addB("allow_aliasing", snap.vsAllowAliasing);
-  } else if (id == "native.vardelay") {
-    addD("excursion_seconds", snap.vdExcursionSec);
-    addI("crossfade_frames", snap.vdCrossfadeFrames);
-    addStr("read_kernel", "small-sinc");
-  } else if (id == "native.granular") {
-    addD("grain_seconds", snap.grGrainSec);
-    addI("overlap", snap.grOverlap);
-    addStr("window", snap.grWindowTriangular ? "triangular" : "hann");
-    addI("jitter_frames", snap.grJitterFrames);
-  } else if (id == "native.pv.classic") {
-    addStr("window", "hann");
-    addI("fft_size", snap.pvcFftSize);
-    addI("hop", std::min<int64_t>(snap.pvcHop, snap.pvcFftSize / 2));
-  } else if (id == "native.pv.phaselocked") {
-    addStr("window", "hann");
-    addI("fft_size", snap.pvpFftSize);
-    addI("hop", std::min<int64_t>(snap.pvpHop, snap.pvpFftSize / 2));
-    addStr("locking_mode", "identity");
+  const EngineRegistry& reg = engineRegistry();
+  const EngineDescriptor* desc = reg.findById(engineId);
+  if (desc != nullptr) {
+    auto addParam = [&cfg](const EngineParamDescriptor& p, double plain) {
+      switch (p.kind) {
+        case EngineParamKind::Real:
+          cfg.parameters.emplace_back(p.key, ParameterValue{plain});
+          break;
+        case EngineParamKind::Integer: {
+          int64_t v = static_cast<int64_t>(std::llround(plain));
+          if (p.choiceValues != nullptr && p.choiceCount > 0) {
+            const int idx = plain < 0.0 ? 0
+                            : plain > static_cast<double>(p.choiceCount - 1)
+                                  ? p.choiceCount - 1
+                                  : static_cast<int>(std::llround(plain));
+            v = static_cast<int64_t>(std::llround(p.choiceValues[idx]));
+          }
+          cfg.parameters.emplace_back(p.key, ParameterValue{v});
+          break;
+        }
+        case EngineParamKind::Boolean:
+          cfg.parameters.emplace_back(p.key, ParameterValue{plain >= 0.5});
+          break;
+        case EngineParamKind::Text: {
+          const char* s = "";
+          if (p.choiceNames != nullptr && p.choiceCount > 0) {
+            const int idx = plain < 0.0 ? 0
+                            : plain > static_cast<double>(p.choiceCount - 1)
+                                  ? p.choiceCount - 1
+                                  : static_cast<int>(std::llround(plain));
+            s = p.choiceNames[idx];
+          }
+          cfg.parameters.emplace_back(p.key, ParameterValue{std::string(s)});
+          break;
+        }
+      }
+    };
+    for (const EngineParamDescriptor& p : desc->parameters) {
+      double plain = p.defaultPlain;
+      if (p.exposed) {
+        const uint32_t tag = vstTagForEngineParam(desc->info.id, p.key);
+        if (tag != 0) {
+          plain = plainValue(snap, tag);  // the product model's ONE tag mapping
+        }
+      }
+      addParam(p, plain);
+    }
+    // engine-domain cross-parameter constraints (engine-declared; e.g. the
+    // PV hop <= fft_size/2 domain — the engine contract REJECTS violations,
+    // the product layer clamps; the previous engine-id if-chain encoded this
+    // same clamp, now declared by the engine itself)
+    for (const EngineParamDescriptor& p : desc->parameters) {
+      if (p.constrainKey == nullptr || p.constrainDivisor <= 0) continue;
+      if (p.kind != EngineParamKind::Integer) continue;
+      int64_t* mine = nullptr;
+      const int64_t* base = nullptr;
+      for (auto& kv : cfg.parameters) {
+        if (kv.first == p.key) {
+          if (auto* i = std::get_if<int64_t>(&kv.second)) mine = i;
+        } else if (kv.first == p.constrainKey) {
+          if (const auto* i = std::get_if<int64_t>(&kv.second)) base = i;
+        }
+      }
+      if (mine != nullptr && base != nullptr) {
+        const int64_t limit = *base / p.constrainDivisor;
+        if (*mine > limit) *mine = limit;
+      }
+    }
   }
   std::sort(cfg.parameters.begin(), cfg.parameters.end(),
             [](const auto& a, const auto& b) { return a.first < b.first; });
@@ -298,6 +339,9 @@ struct RealtimeAdapter::Job {
   int64_t spanStart = -1;          // absolute INPUT start
   int64_t inputLen = 0;            // totalInputFrames of this job
   int64_t wetLen = 0;              // emitted wet span length
+  // Task 29: one stall event per job (fully-fed but unfinished past the
+  // grace window — the job-starvation diagnostic)
+  bool stallCounted = false;
 
   LaneWindow lane;
 
@@ -322,6 +366,7 @@ struct RealtimeAdapter::Job {
     consumed = 0;
     wetWritten = 0;
     finished = false;
+    stallCounted = false;
     dead.store(false, std::memory_order_release);
   }
 };
@@ -481,6 +526,21 @@ struct RealtimeAdapter::Impl {
   uint64_t clampEvents = 0;
   uint64_t automationDropped = 0;  // audio-thread-accumulated (P1.3 diagnostics)
   bool blockFaultGuard = false;  // reset per process() block (audio thread)
+  // ---- Task 29: categorized fault diagnostics ------------------------------
+  // Audio-thread fault categories (the aggregate `faults` = their sum —
+  // the HISTORICAL composition, compatibility preserved):
+  uint64_t engineProcessFaults = 0;  // invalid ProcessReport counts
+  uint64_t engineExceptions = 0;     // engine exceptions (process + finish)
+  uint64_t deliveryUnderruns = 0;    // wet lane miss inside the covered range
+  uint64_t dryHistoryMisses = 0;     // job input outside the dry retention
+  // New diagnostic categories (NOT in the aggregate):
+  uint64_t jobStalls = 0;            // scheduled jobs overdue-unfinished
+  uint64_t chainAdoptionFailures = 0;  // forced-deadline adoptions
+  uint64_t chainsAdopted = 0;        // successful adoptions (cadence)
+  uint64_t processCalls = 0;         // process() invocations (cadence)
+  // Preparation-side (prep thread; never block audio):
+  std::atomic<uint64_t> preparationFailures{0};
+  std::atomic<uint64_t> jobsPreparedTotal{0};
   double meterInPeak[2] = {0.0, 0.0};
   double meterInRms[2] = {0.0, 0.0};
   double meterOutPeak[2] = {0.0, 0.0};
@@ -670,11 +730,15 @@ struct RealtimeAdapter::Impl {
         victim->enginePrepared = true;
       }
     } catch (const std::exception&) {
+      // Task 29: counted preparation failure (retry next poll) — never a
+      // silent drop; the counter is the churn signal for the diagnostics.
+      preparationFailures.fetch_add(1, std::memory_order_relaxed);
       return;  // transient invalid configuration: retry on the next poll
     }
     victim->stamp(j, chain.jobSpanStart(j));
     chain.slots[static_cast<int>(j % kJobSlots)].store(victim, std::memory_order_release);
     chain.highestPrepared.store(j, std::memory_order_release);
+    jobsPreparedTotal.fetch_add(1, std::memory_order_relaxed);
   }
 
   void serveJobNeeds(Chain* chain) {
@@ -792,7 +856,11 @@ struct RealtimeAdapter::Impl {
           fresh = nullptr;  // invalid engine configuration (e.g. a transient
                             // parameter combination): retry next poll
         }
-        if (fresh != nullptr) {
+        if (fresh == nullptr) {
+          // Task 29: a chain that could not be built (exception OR invalid
+          // engine index) — counted preparation failure, never silent.
+          preparationFailures.fetch_add(1, std::memory_order_relaxed);
+        } else {
           pending.store(fresh, std::memory_order_release);
           builtRequestEpoch = epoch;
           builtSig = snap.chainSignature();
@@ -874,11 +942,20 @@ struct RealtimeAdapter::Impl {
     // stamp the new chain at the current input frontier
     pend->base.store(t, std::memory_order_release);  // publishes job0's rebase below
     Job* job0 = pend->slots[0].load(std::memory_order_acquire);
-    if (job0 != nullptr && job0->index.load(std::memory_order_relaxed) == 0) {
-      job0->spanStart = t;
-      job0->lane.reset(t);
+    if (job0 == nullptr || job0->index.load(std::memory_order_relaxed) != 0) {
+      // defensive (never observed): a chain without a valid job0 cannot
+      // produce — count it (Task 29 chainAdoptionFailures), retire it (no
+      // leak: the caller already CAS'd it out of pending) and let the normal
+      // rebuild machinery produce the next chain.
+      ++chainAdoptionFailures;
+      RetireStack::push(retireHead, pend);
+      pendingSeenAt = -1;
+      return;
     }
+    job0->spanStart = t;
+    job0->lane.reset(t);
     active.store(pend, std::memory_order_release);
+    ++chainsAdopted;  // Task 29: adoption cadence
     // the emission latency is monotonic (Λ_eff — never starves the retiring
     // chain when the new chain is cheaper; see the Impl field note)
     latencyEff = std::max(latencyEff, pend->latency);
@@ -946,6 +1023,17 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.faults = 0;
   im.clampEvents = 0;
   im.automationDropped = 0;
+  // Task 29: categorized diagnostics reset with the activation
+  im.engineProcessFaults = 0;
+  im.engineExceptions = 0;
+  im.deliveryUnderruns = 0;
+  im.dryHistoryMisses = 0;
+  im.jobStalls = 0;
+  im.chainAdoptionFailures = 0;
+  im.chainsAdopted = 0;
+  im.processCalls = 0;
+  im.preparationFailures.store(0, std::memory_order_relaxed);
+  im.jobsPreparedTotal.store(0, std::memory_order_relaxed);
   im.meterInPeak[0] = im.meterInPeak[1] = 0.0;
   im.meterInRms[0] = im.meterInRms[1] = 0.0;
   im.meterOutPeak[0] = im.meterOutPeak[1] = 0.0;
@@ -1089,6 +1177,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   Impl& im = *impl_;
   const int ch = im.channels;
   if (frames <= 0) return;
+  ++im.processCalls;  // Task 29: process-call cadence (diagnostics)
 
   if (!im.activated) {
     for (int c = 0; c < ch; ++c) {
@@ -1232,6 +1321,9 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
           if (coverageEnd >= need) adopt = true;
           if (t - im.pendingSeenAt > static_cast<int64_t>(kAdoptionForceSeconds * im.fs)) {
             adopt = true;  // bounded deferral (rare boundary case)
+            // Task 29: the deferral outlived the force deadline — the
+            // adoption machinery degraded (diagnostic, not an audio fault)
+            ++im.chainAdoptionFailures;
           }
         }
         if (adopt) {
@@ -1400,6 +1492,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
              q >= im.retiring->base.load(std::memory_order_relaxed));
         if (covered) {
           im.faults++;
+          im.deliveryUnderruns++;  // Task 29: categorized (per-frame, like the aggregate)
         }
         for (int c = 0; c < ch; ++c) wetv[c] = dryv[c];
       }
@@ -1417,7 +1510,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       }
     }
 
-    // ---- 5) job completion + dead detection ----------------------------------
+    // ---- 5) job completion + dead detection + stall detection ----------------
     const int64_t ef = t + subN - im.latencyNow;
     const auto completeChainJobs = [&](const Chain& chain) {
       for (int s = 0; s < kJobSlots; ++s) {
@@ -1427,6 +1520,16 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
         if (job->index.load(std::memory_order_relaxed) < 0) continue;
         if (job->consumed >= job->inputLen && !job->finished) {
           finishJob(*job, historyFloor);
+        }
+        // Task 29: JOB STALL — the job's whole input span has been offered
+        // (t > spanEnd) yet it remains unfinished one full max-block past
+        // that point: the engine is not consuming/producing despite offered
+        // input (starvation/stall — distinct from delivery underruns).
+        // Counted ONCE per job (stamp() resets the flag).
+        if (!job->finished && !job->stallCounted &&
+            t > job->spanEnd() + static_cast<int64_t>(im.maxBlock)) {
+          job->stallCounted = true;
+          ++im.jobStalls;  // Task 29: diagnostic (not in the historical aggregate)
         }
         if (job->finished && ef > job->wetEnd()) {
           job->dead.store(true, std::memory_order_release);
@@ -1526,6 +1629,16 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       }
     }
     st.liveJobs = jobs;
+    // prepared-ahead job count (the prep thread's cursor past the emission
+    // frontier's job index — the "preparing jobs" workload figure)
+    {
+      const int64_t b = actp->base.load(std::memory_order_relaxed);
+      const int64_t frontierJob =
+          actp->advance > 0 ? (im.streamPos - b) / actp->advance : 0;
+      const int64_t ahead =
+          actp->highestPrepared.load(std::memory_order_relaxed) - frontierJob;
+      st.preparingJobs = static_cast<int>(ahead < 0 ? 0 : ahead);
+    }
     st.chainReady = true;
   } else {
     st.chainReady = false;
@@ -1539,6 +1652,17 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   st.clampEvents = im.clampEvents;
   st.automationDropped = im.automationDropped;
   st.bypassActive = im.lastBypass;
+  // Task 29: categorized fault diagnostics (numeric only; the UI formats)
+  st.engineProcessFaults = im.engineProcessFaults;
+  st.engineExceptions = im.engineExceptions;
+  st.deliveryUnderruns = im.deliveryUnderruns;
+  st.dryHistoryMisses = im.dryHistoryMisses;
+  st.jobStalls = im.jobStalls;
+  st.chainAdoptionFailures = im.chainAdoptionFailures;
+  st.preparationFailures = im.preparationFailures.load(std::memory_order_relaxed);
+  st.chainsAdopted = im.chainsAdopted;
+  st.jobsPrepared = im.jobsPreparedTotal.load(std::memory_order_relaxed);
+  st.processCalls = im.processCalls;
   status_.store(st);
 }
 
@@ -1605,6 +1729,7 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
       for (int c = 0; c < ch; ++c) inPtr[c] = im.dry.ch[c].data() + (pos - im.dry.start);
     } else {
       im.faults++;  // prep stall beyond the dry retention: abandon the job
+      im.dryHistoryMisses++;  // Task 29: categorized (dry-history miss)
       job.dead.store(true, std::memory_order_release);
       return;
     }
@@ -1639,13 +1764,21 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
 
     ProcessReport rep{};
     bool failed = false;
+    bool threw = false;
     try {
       rep = job.engine->process(inView, static_cast<int>(chunk), outView,
                                 static_cast<int>(outCap), job.curveView, job.consumed);
     } catch (const std::exception&) {
       // engine fault: NO I/O on the audio thread (§4.3) — the fault counter
       // + the dry fallback + the chain rebuild are the entire handling
+      threw = true;
       failed = true;
+    }
+    if (threw) {
+      ++im.engineExceptions;  // Task 29: categorized (engine exception)
+    } else if (failed || rep.inputFramesConsumed < 0 || rep.outputFramesProduced < 0 ||
+               rep.inputFramesConsumed > chunk || rep.outputFramesProduced > outCap) {
+      ++im.engineProcessFaults;  // Task 29: categorized (invalid process report)
     }
     if (failed || rep.inputFramesConsumed < 0 || rep.outputFramesProduced < 0 ||
         rep.inputFramesConsumed > chunk || rep.outputFramesProduced > outCap) {
@@ -1693,6 +1826,7 @@ void RealtimeAdapter::finishJob(Job& job, int64_t historyFloor) {
     }
   } catch (const std::exception&) {
     im.faults++;
+    im.engineExceptions++;  // Task 29: categorized (engine finish() exception)
   }
 }
 

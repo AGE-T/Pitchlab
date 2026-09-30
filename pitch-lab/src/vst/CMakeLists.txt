@@ -223,6 +223,16 @@ pitchlab_add_vst_suite(vst_adapter_test)
 pitchlab_add_vst_suite(vst_processor_test)
 pitchlab_add_vst_suite(vst_audio_path_test)
 
+# T-VEP* (Task 29): the engine-owned parameter model — descriptor integrity,
+# registry->parameter mapping, the generated table's frozen-surface equality
+# (state compatibility), role split, discrete-choice display, binding
+# resolution, engine-switching persistence.
+pitchlab_add_vst_suite(vst_engine_params_test)
+
+# T-RD* (Task 29): realtime fault diagnostics — the categorized counters'
+# invariants + the 96 kHz granular / PV-phaselocked measurement drives.
+pitchlab_add_vst_suite(vst_realtime_diagnostics_test)
+
 # The host-simulation driver: renders corpus material through the REAL VST3
 # process path (used for the retained audio examples; tools/vst_host_sim.cpp)
 add_executable(vst_host_sim ${CMAKE_SOURCE_DIR}/tools/vst_host_sim.cpp

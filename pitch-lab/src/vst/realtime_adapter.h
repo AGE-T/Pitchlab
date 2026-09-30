@@ -99,6 +99,32 @@ struct StatusSnapshot {
   uint64_t automationDropped = 0;  // automation points beyond capacity (never silent)
   bool bypassActive = false;
   bool chainReady = false;
+
+  // --- Task 29: categorized fault diagnostics --------------------------------
+  //
+  // The aggregate `faults` KEEPS ITS HISTORICAL COMPOSITION (compatibility):
+  // faults == engineProcessFaults + engineExceptions + deliveryUnderruns +
+  // dryHistoryMisses — exactly the classes the pre-Task-29 counter summed.
+  // The NEW categories (jobStalls, chainAdoptionFailures, preparationFailures)
+  // are diagnostics that identify root classes WITHOUT retroactively changing
+  // what `faults` means. NUMERIC ONLY (the audio thread never formats strings
+  // — spec §4.3); the UI/tools format them.
+  //
+  // Audio-path fault categories (sum into `faults`):
+  uint64_t engineProcessFaults = 0;  // invalid ProcessReport (bad counts)
+  uint64_t engineExceptions = 0;     // exceptions thrown by engines
+  uint64_t deliveryUnderruns = 0;    // wet lane miss INSIDE the covered range
+  uint64_t dryHistoryMisses = 0;     // job input fell outside dry retention
+  // New diagnostic categories (NOT in the aggregate — compatibility):
+  uint64_t jobStalls = 0;            // scheduled jobs overdue-unfinished
+  uint64_t chainAdoptionFailures = 0;  // forced-deadline adoptions + drops
+  // Preparation-side (prep thread; never block audio):
+  uint64_t preparationFailures = 0;  // prepare/reset/buildChain failures (retry loop)
+  // Cadence + workload (diagnostics for the 96 kHz investigations):
+  uint64_t chainsAdopted = 0;     // successful chain adoptions
+  uint64_t jobsPrepared = 0;      // total prepared (scheduled) jobs
+  uint64_t processCalls = 0;      // process() invocations
+  int preparingJobs = 0;          // prepared-ahead job count (live snapshot)
 };
 
 // ---------------------------------------------------------------------------

@@ -448,6 +448,10 @@ std::unique_ptr<PitchEngine> makeVardelayEngine() {
   return std::make_unique<VardelayEngine>();
 }
 
+// Engine-owned discrete choices (Task 29): the read kernel the engine's own
+// configure() accepts (§6.2.1) — the product layer's fixed choice.
+const char* const kVardelayKernelChoices[] = {"small-sinc"};
+
 EngineDescriptor vardelayEngineDescriptor() {
   EngineDescriptor d;
   d.info.id = "native.vardelay";
@@ -471,6 +475,66 @@ EngineDescriptor vardelayEngineDescriptor() {
   d.capabilities.determinism = Determinism::Deterministic;
   d.capabilities.supportedSampleRates = {44100u, 48000u, 88200u, 96000u, 176400u, 192000u};
   d.parameterKeys = {"excursion_seconds", "crossfade_frames", "read_kernel"};
+  // Engine-owned parameter descriptors (Task 29): excursion/crossfade are
+  // product-exposed; read_kernel is an engine-internal FIXED value (the
+  // product layer always writes the default kernel — the declaration makes
+  // that fixed nature explicit instead of hiding it in an adapter if-chain).
+  d.parameters = {
+      {
+          .key = "excursion_seconds",
+          .displayName = "Excursion",
+          .kind = EngineParamKind::Real,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.05,
+          .max = 2.0,
+          .defaultPlain = 0.5,  // v0.1 default
+          .unit = "s",
+          .stepCount = -1,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%.3f",
+      },
+      {
+          .key = "crossfade_frames",
+          .displayName = "Crossfade",
+          .kind = EngineParamKind::Integer,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 8192.0,
+          .defaultPlain = 2048.0,  // v0.1 default
+          .unit = "frames",
+          .stepCount = 8192,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%d",
+      },
+      {
+          .key = "read_kernel",
+          .displayName = "Read Kernel",
+          .kind = EngineParamKind::Text,
+          .role = EngineParamRole::Configuration,
+          .exposed = false,  // engine-internal fixed value (not a product control)
+          .min = 0.0,
+          .max = 0.0,
+          .defaultPlain = 0.0,  // choiceNames[0] == "small-sinc"
+          .unit = "",
+          .stepCount = 0,
+          .choiceNames = kVardelayKernelChoices,
+          .choiceValues = nullptr,
+          .choiceCount = 1,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%s",
+      },
+  };
   d.factory = &makeVardelayEngine;
   return d;
 }

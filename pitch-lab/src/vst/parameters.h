@@ -4,7 +4,21 @@
 // (product-phase specification §6).
 //
 // This header is the single definition of VST parameter identity for the
-// Pitch Lab plug-in: tags, types, ranges, defaults, units, groups, titles.
+// Pitch Lab plug-in. Since Task 29 the model is OWNERSHIP-EXPLICIT:
+//
+//   * SHARED REALTIME CONTROLS (kPitch, kLfoRate, kLfoDepth, kMix, kBypass,
+//     kOutputLevel, plus the kEngine selector) are declared ONCE here — the
+//     product's musical surface, shared by every engine. PITCH/LFO are the
+//     shared realtime pitch-curve surface (the adapter resolves the curve per
+//     sample; the selected engine receives it through its capabilities).
+//   * ENGINE-OWNED CONFIGURATION PARAMETERS are GENERATED at runtime from
+//     the engine registry's EngineParamDescriptor tables (engine_registry.h
+//     — the ENGINE declares its own configuration surface; the registry is
+//     the single authoritative engine list). The ONLY VST-side table is the
+//     stable (engineId, key) -> ParamID binding — VST3 parameter IDs are a
+//     VST-layer concept and remain frozen; the engine-parameter MEMBERSHIP
+//     is never duplicated here.
+//
 // The processor's parameter registration, the editor's control binding and
 // the tests are ALL generated from this table — no second list exists.
 //
@@ -21,6 +35,8 @@
 
 #include <cmath>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #include "core/engine_registry.h"
 
@@ -63,7 +79,21 @@ enum Tags : uint32_t {
 
 // ---------------------------------------------------------------------------
 // Metadata (drives registration + UI + tests; the ONE table).
+//
+// The shared realtime rows are the static kSharedTable (parameters.cpp);
+// the engine-configuration rows are GENERATED from the registry's
+// EngineParamDescriptor tables + the stable binding. `role` makes the
+// shared/engine-owned split explicit; `engineId` records the owning engine
+// for engine-configuration rows ("" for shared rows).
 // ---------------------------------------------------------------------------
+
+/// The product-layer role of one parameter (Task 29: the ownership split).
+enum class ParamRole {
+  SharedRealtime,       // the shared musical surface (pitch/LFO/mix/level/
+                         // bypass) + the engine selector — NOT owned by any
+                         // engine
+  EngineConfiguration,  // owned by exactly one engine (registry descriptor)
+};
 
 struct ParamMeta {
   uint32_t tag;
@@ -77,28 +107,61 @@ struct ParamMeta {
   int stepCount;       // -1 = continuous, 0 = toggle, n = n+1 steps
   const char* group;   // UI group
   const char* dispFmt; // printf-style for the value, e.g. "%+.2f"
+  // --- Task 29 extensions (defaults keep aggregate initialisation working) ---
+  ParamRole role = ParamRole::SharedRealtime;
+  bool automatable = true;  // host-automation capability (VST kCanAutomate)
+  const char* engineId = "";  // owning engine (EngineConfiguration rows)
+  // discrete-choice data (engine-declared, registry-derived; nullptr for
+  // continuous/bool parameters)
+  const char* const* choiceNames = nullptr;  // display + engine-facing names
+  const double* choiceValues = nullptr;      // engine-facing values (Int kind)
+  int choiceCount = 0;
 };
 
-/// The full parameter table in registration order. Count via kParamCount.
+/// The full parameter table in registration order (shared rows first, then
+/// engine-owned rows in registry order). Count via parameterCount().
 const ParamMeta* parameterTable();
 uint32_t parameterCount();
 
+/// Find one parameter's meta by tag (nullptr when unknown). The returned
+/// pointer is stable for the process lifetime.
+[[nodiscard]] const ParamMeta* findParamMeta(uint32_t tag);
+
 // ---------------------------------------------------------------------------
-// Discrete-choice mappings (the only value maps that exist).
+// Discrete-choice mappings: ENGINE-OWNED since Task 29. The quality names,
+// FFT sizes, hop sizes and window shapes live in the engine descriptor
+// tables (src/engines/*.cpp) and reach this layer through the generated
+// ParamMeta rows (choiceNames / choiceValues). No second copy exists.
 // ---------------------------------------------------------------------------
 
-inline constexpr int kFftSizeChoices[] = {1024, 2048, 4096};
-inline constexpr int kHopChoices[] = {128, 256, 512, 1024};
-inline constexpr const char* kVsQualityNames[] = {"small", "standard", "reference"};
+// ---------------------------------------------------------------------------
+// Engine-owned parameter enumeration (the UI-facing flow: selected engine ->
+// registry lookup -> engine parameter descriptors -> UI control creation).
+// The registry is the authority; `tag` resolves each descriptor to its
+// stable VST parameter (the controller binding point).
+// ---------------------------------------------------------------------------
 
-inline int fftChoice(int discreteIdx) {
-  return kFftSizeChoices[discreteIdx < 0 ? 0
-                      : discreteIdx > 2 ? 2 : discreteIdx];
-}
-inline int hopChoice(int discreteIdx) {
-  return kHopChoices[discreteIdx < 0 ? 0
-                    : discreteIdx > 3 ? 3 : discreteIdx];
-}
+struct EngineParamView {
+  const EngineParamDescriptor* descriptor = nullptr;  // registry-owned
+  uint32_t tag = 0;                                    // stable VST ParamID
+  const ParamMeta* meta = nullptr;                     // generated model row
+};
+
+/// The exposed engine-owned parameters of one engine, in the engine's own
+/// declared order (empty for an out-of-range index). Stable for the process
+/// lifetime.
+[[nodiscard]] const std::vector<EngineParamView>& engineParamsFor(int engineIndex);
+
+/// The stable VST tag for one engine-owned parameter (0 when the engine
+/// does not declare an exposed parameter with that key — e.g. fixed
+/// engine-internal values).
+[[nodiscard]] uint32_t vstTagForEngineParam(const char* engineId, const char* key);
+
+/// Model integrity check (tests + diagnostics): every exposed engine
+/// parameter has a binding; every binding matches a declared parameter;
+/// the descriptor key set matches parameterKeys; the generated rows are
+/// well-formed. Returns the issue list (EMPTY == the model is coherent).
+[[nodiscard]] std::vector<std::string> validateEngineParameterModel();
 
 // ---------------------------------------------------------------------------
 // Runtime parameter snapshot (the adapter-facing plain values).

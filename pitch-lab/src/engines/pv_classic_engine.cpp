@@ -711,6 +711,14 @@ std::unique_ptr<PitchEngine> makePvClassicEngine() {
   return std::make_unique<PvClassicEngine>();
 }
 
+// Engine-owned discrete choices (Task 29): the FFT/hop domains the engine's
+// own configure() accepts, and the window (hann only, §6.3.1 item 1).
+const char* const kPvFftChoiceNames[] = {"1024", "2048", "4096"};
+const double kPvFftChoiceValues[] = {1024.0, 2048.0, 4096.0};
+const char* const kPvHopChoiceNames[] = {"128", "256", "512", "1024"};
+const double kPvHopChoiceValues[] = {128.0, 256.0, 512.0, 1024.0};
+const char* const kPvWindowChoices[] = {"hann"};
+
 EngineDescriptor pvClassicEngineDescriptor() {
   EngineDescriptor d;
   d.info.id = "native.pv.classic";
@@ -736,6 +744,69 @@ EngineDescriptor pvClassicEngineDescriptor() {
   d.capabilities.determinism = Determinism::Deterministic;
   d.capabilities.supportedSampleRates = {44100u, 48000u, 88200u, 96000u, 176400u, 192000u};
   d.parameterKeys = {"window", "fft_size", "hop"};
+  // Engine-owned parameter descriptors (Task 29): fft/hop are product-exposed
+  // (discrete Int choices — the plain domain is the choice INDEX, choiceValues
+  // holds the engine-facing sizes); window is engine-internal fixed (hann).
+  // hop declares the engine-domain constraint hop <= fft_size/2 (§6.3.1
+  // item 1) — the product layer clamps to it (the engine contract rejects).
+  d.parameters = {
+      {
+          .key = "fft_size",
+          .displayName = "FFT Size",
+          .kind = EngineParamKind::Integer,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 2.0,  // choice-index domain
+          .defaultPlain = 1.0,  // 2048 (v0.1 default)
+          .unit = "",
+          .stepCount = 2,
+          .choiceNames = kPvFftChoiceNames,
+          .choiceValues = kPvFftChoiceValues,
+          .choiceCount = 3,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%d",
+      },
+      {
+          .key = "hop",
+          .displayName = "Hop",
+          .kind = EngineParamKind::Integer,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 3.0,  // choice-index domain
+          .defaultPlain = 2.0,  // 512 (v0.1 default)
+          .unit = "",
+          .stepCount = 3,
+          .choiceNames = kPvHopChoiceNames,
+          .choiceValues = kPvHopChoiceValues,
+          .choiceCount = 4,
+          .automatable = false,
+          .rebuildsChain = true,
+          .constrainKey = "fft_size",
+          .constrainDivisor = 2,  // engine domain: hop <= fft_size/2
+          .dispFmt = "%d",
+      },
+      {
+          .key = "window",
+          .displayName = "Window",
+          .kind = EngineParamKind::Text,
+          .role = EngineParamRole::Configuration,
+          .exposed = false,  // engine-internal fixed value (hann, §6.3.1)
+          .min = 0.0,
+          .max = 0.0,
+          .defaultPlain = 0.0,  // choiceNames[0] == "hann"
+          .unit = "",
+          .stepCount = 0,
+          .choiceNames = kPvWindowChoices,
+          .choiceValues = nullptr,
+          .choiceCount = 1,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%s",
+      },
+  };
   d.factory = &makePvClassicEngine;
   return d;
 }

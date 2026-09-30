@@ -438,6 +438,10 @@ std::unique_ptr<PitchEngine> makeVarispeedEngine() {
   return std::make_unique<VarispeedEngine>();
 }
 
+// Engine-owned discrete choices (Task 29): the resample quality names the
+// engine's own configure() accepts (§6.1.1 item 1) — the ONE declaration.
+const char* const kResampleQualityChoices[] = {"small", "standard", "reference"};
+
 EngineDescriptor varispeedEngineDescriptor() {
   EngineDescriptor d;
   d.info.id = "native.varispeed";
@@ -462,6 +466,48 @@ EngineDescriptor varispeedEngineDescriptor() {
   d.capabilities.determinism = Determinism::Deterministic;
   d.capabilities.supportedSampleRates = {44100u, 48000u, 88200u, 96000u, 176400u, 192000u};
   d.parameterKeys = {"resample_quality", "allow_aliasing"};
+  // Engine-owned parameter descriptors (Task 29 — the ENGINE declares its
+  // configuration surface; the VST model, the adapter mapping and the UI are
+  // generated from this table). The plain domain for Text parameters is the
+  // choice-index domain; choiceNames are the engine-facing strings.
+  d.parameters = {
+      {
+          .key = "resample_quality",
+          .displayName = "Resample Quality",
+          .kind = EngineParamKind::Text,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 2.0,
+          .defaultPlain = 2.0,  // "reference" (v0.1 default)
+          .unit = "",
+          .stepCount = 2,
+          .choiceNames = kResampleQualityChoices,
+          .choiceValues = nullptr,
+          .choiceCount = 3,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%s",
+      },
+      {
+          .key = "allow_aliasing",
+          .displayName = "Allow Aliasing",
+          .kind = EngineParamKind::Boolean,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 1.0,
+          .defaultPlain = 0.0,
+          .unit = "",
+          .stepCount = 1,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%s",
+      },
+  };
   d.factory = &makeVarispeedEngine;
   return d;
 }

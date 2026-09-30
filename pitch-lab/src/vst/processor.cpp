@@ -86,32 +86,16 @@ class ModelParameter final : public Parameter {
     info.stepCount = meta.stepCount < 0 ? 0 : meta.stepCount;  // VST3: 0 = continuous
     info.defaultNormalizedValue = normalise(meta.tag, meta.defaultPlain);
     info.unitId = kRootUnitId;
-    info.flags = ParameterInfo::kCanAutomate;
-    // Engine/chain configuration parameters are NOT host-automatable (spec §6:
-    // the automation surface is the musical subset: pitch, LFO, mix, level,
-    // bypass; engine configuration changes require a re-prepare seam).
-    // No kCanAutomate flag = settable but not automatable (kNoFlags).
-    switch (meta.tag) {
-      case param::kEngine:
-      case param::kVsQuality:
-      case param::kVsAllowAliasing:
-      case param::kVdExcursion:
-      case param::kVdCrossfade:
-      case param::kGrGrain:
-      case param::kGrOverlap:
-      case param::kGrJitter:
-      case param::kGrWindow:
-      case param::kPvcFft:
-      case param::kPvcHop:
-      case param::kPvpFft:
-      case param::kPvpHop:
-        info.flags = ParameterInfo::kNoFlags;  // settable, not automatable
-        break;
-      case param::kBypass:
-        info.flags = ParameterInfo::kCanAutomate | ParameterInfo::kIsBypass;
-        break;
-      default:
-        break;
+    // Automation capability (spec §6: the automation surface is the musical
+    // subset — pitch, LFO, mix, level, bypass). Since Task 29 this comes
+    // from the model's OWN ownership declaration (shared realtime rows are
+    // automatable; engine-configuration rows are settable, not automatable —
+    // a configuration change requires a re-prepare seam). No parameter-tag
+    // list exists here: the model (shared table + registry descriptors) is
+    // the single authority.
+    info.flags = meta.automatable ? ParameterInfo::kCanAutomate : ParameterInfo::kNoFlags;
+    if (meta.tag == param::kBypass) {
+      info.flags |= ParameterInfo::kIsBypass;
     }
     return info;
   }

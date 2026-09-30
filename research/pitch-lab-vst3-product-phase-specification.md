@@ -140,6 +140,21 @@ decision was reopened, the realtime ADAPTATION of the engine changed).
   output (tested, §9); the offline pipeline keeps its own stronger
   guarantee untouched.
 
+**THE ONLINE-MODE QUESTION (Task 29, explicitly documented):** the v0.1
+core engine contract is FINITE-JOB based (prepare/finish over a known
+curve, §4.2/§4.3 of the implementation specification). The VST adapter
+provides a VIRTUALISED realtime path: it decomposes the unbounded stream
+into overlapping finite virtual jobs, materialises bounded job curves,
+crossfades the seams and rebuilds on configuration change. **The core
+engines themselves do NOT support an unbounded online stream** — no
+engine implements an online/streaming API, and no measurement of the
+core contract can be cited as evidence that they do. Any claim of
+"online processing" refers to the ADAPTER's virtualisation (its declared
+determinism/latency/fault properties, tested); the engines remain
+finite-job processors whose whole-curve scans, strict delivery and
+finish-exactly-once semantics are the offline contract the adapter
+bridges. This distinction is a design boundary, not a defect.
+
 ## 4. The realtime adapter (frozen design)
 
 ### 4.1 Preserving engines (vardelay, granular, pv.classic, pv.phaselocked)
@@ -277,13 +292,42 @@ a stuck state; counted in the status snapshot as RT_FAULTS).
 * The SDK tree is vendored verbatim (no patches inside external/; any
   required platform fix lives in the product layer's CMake).
 
-## 6. Parameter model (ONE authoritative layer)
+## 6. Parameter model (ONE authoritative layer, OWNERSHIP-EXPLICIT since Task 29)
 
-`src/vst/parameters.h` is the single definition of VST parameter identity
-(id, tag, type, range, default, unit, title, short title, flags, grouping);
-the processor, the UI and the tests are all generated from it. It maps the
-ENGINE selector onto the v0.1 registry iteration order (identity from the
-registry, never a second list). Exposed parameters (product surface):
+Two layers with ONE direction of derivation:
+
+* **The ENGINE declares its own configuration parameters** —
+  `EngineParamDescriptor` tables on the registry's `EngineDescriptor`
+  (core/engine_registry.h; the same `configure()` key strings, a
+  declaration layer, not a contract change). Key, display name, typed
+  value kind (Real/Integer/Boolean/Text), plain domain, default, unit,
+  discrete choices, automation capability, rebuild-chain requirement and
+  the cross-parameter engine-domain constraints (the PV hop ≤ fft/2)
+  are ALL engine-owned declarations. Engine-internal FIXED values
+  (vardelay's read_kernel, the PV windows, locking_mode) are declared
+  with `exposed = false` — the adapter still writes them, the product
+  surface does not fake a control for them.
+* **The VST model is GENERATED from the registry** (vst/parameters.cpp):
+  the SHARED REALTIME CONTROLS (ENGINE selector, PITCH, LFO RATE, LFO
+  DEPTH, MIX, BYPASS, OUTPUT LEVEL — the product's musical surface, NOT
+  owned by any engine) are the static shared table; the ENGINE-OWNED
+  CONFIGURATION rows are generated at runtime by walking the sealed
+  registry in order and resolving each exposed descriptor through the
+  stable `(engineId, key) -> VST ParamID` binding — the ONE VST-side
+  table, frozen, never renumbered (state compatibility). The processor's
+  parameter registration, the editor's control binding and the tests are
+  all generated from this model; `validateEngineParameterModel()`
+  (tested) enforces registry↔binding↔model coherence, so no second
+  engine-parameter list can drift into existence.
+
+PITCH/LFO are the SHARED REALTIME PITCH-CURVE SURFACE: the adapter
+resolves the curve per sample (host automation + sine LFO); the selected
+engine receives it through its registry-declared dynamic-ratio
+
+capability (all five v0.1 engines declare support). The UI labels the
+surface as shared — it is not an engine-specific parameter.
+
+Exposed parameters (product surface — frozen identity, stable tags):
 
 * ENGINE (discrete, registry order, default native.vardelay — the
   realtime-native engine).
@@ -295,20 +339,27 @@ registry, never a second list). Exposed parameters (product surface):
 * Per-engine panels (UI shows only the selected engine's controls; the
   non-selected engines' parameters hold their values but are not applied
   — declared, not fake):
-  * varispeed: resample quality (small/standard/reference), allow aliasing
-    (bool). [adapter window L is fixed at 0.25 s, documented, no fake
-    control]
-  * vardelay: excursion seconds (0.05–2.0 s, default 0.5 — the v0.1
-    default), crossfade frames (0–8192, default 2048 — the v0.1 default).
-  * granular: grain seconds (0.02–0.5, default 0.1 — v0.1 default),
-    overlap (4–16, default 4 — v0.1 default), jitter frames (0–256,
-    default 0 — v0.1 default), window (hann/triangular).
-  * pv.classic: FFT size (1024/2048/4096, default 2048 — v0.1 default),
-    hop (128/256/512/1024, default 512 — v0.1 default).
-  * pv.phaselocked: FFT size + hop (same defaults). [locking_mode is
+  * varispeed: Resample Quality (small/standard/reference), Allow
+    Aliasing (bool). [adapter window L is fixed at 0.25 s, documented,
+    no fake control]
+  * vardelay: Excursion (0.05–2.0 s, default 0.5 — the v0.1 default),
+    Crossfade (0–8192 frames, default 2048 — the v0.1 default).
+  * granular: Grain Length (0.02–0.5 s, default 0.1 — v0.1 default),
+    Overlap (4–16, default 4 — v0.1 default), Window
+    (hann/triangular), Jitter (0–256 frames, default 0 — v0.1 default).
+  * pv.classic: FFT Size (1024/2048/4096, default 2048 — v0.1 default),
+    Hop (128/256/512/1024, default 512 — v0.1 default).
+  * pv.phaselocked: FFT Size + Hop (same defaults). [locking_mode is
     fixed "identity" — the only supported value; no fake choice]
 * MIX dry/wet (0–1, default 1 wet), BYPASS (VST3 bypass), OUTPUT LEVEL
   (−24..+12 dB, default 0).
+
+The adapter's EngineConfiguration mapping is derived from the SAME
+engine-owned descriptors (no engine-id if-chain; the PV hop ≤ fft/2 clamp
+is the engine-declared constraint). Discrete parameters display their
+engine-declared choice text ("2048", "reference", "hann") — never a bare
+index; parsing accepts the choice text, the actual engine value and the
+index.
 
 Seeds: the granular engine's SeededDeterministic seed is a fixed product
 constant (documented; jitter default 0 makes it inert for defaults).
@@ -319,17 +370,40 @@ A hand-drawn VSTGUI editor (custom `CView`/`CControl` subclasses — not an
 XML template screen): dark zinc panels (zinc-950/zinc-900), emerald accent
 (active engine, meter peaks, primary), amber for the varispeed adaptation
 badge, monospace uppercase micro-labels — the workbench identity (the
-workbench itself is untouched). Fixed logical size 640×420, DPI-scaled.
+workbench itself is untouched). Fixed logical size 680×450, DPI-scaled.
 Sections: ENGINE (segmented selector, 5 entries from the registry), PITCH
-(large semitone control + LFO row), ENGINE panel (per-engine controls),
-OUTPUT (dry/wet, bypass, level), METERS (stereo in/out peak+RMS),
-STATUS (engine display name, adaptation label, fs, block size, latency ms,
-live job state, RT re-prepare count, faults — real values only, NO quality
-score, NO fake DSP indicators). The editor talks to the processor via:
-parameter get/set (the normal VST3 path) and two read-only interfaces
+(large semitone control + the SHARED pitch-curve/LFO row), ENGINE panel
+(per-engine controls — see below), OUTPUT (dry/wet, bypass, level), METERS
+(stereo in/out peak+RMS), STATUS (engine display name, adaptation label,
+fs, block size, latency ms, live job state, re-prepare count, clamps,
+faults + the Task 29 CATEGORIZED fault diagnostics — real values only, NO
+quality score, NO fake DSP indicators). The editor talks to the processor
+via: parameter get/set (the normal VST3 path) and two read-only interfaces
 (`IPitchLabMeters`, `IPitchLabStatus` — atomically published snapshots
 written by the audio thread, polled by a 30 Hz UI timer; the editor NEVER
 touches the audio path directly).
+
+**The ENGINE panel is ENGINE-DRIVEN (Task 29):** the editor holds NO
+engine-parameter membership knowledge and NO engine-index switch. The
+selected engine → registry lookup → the engine's own parameter
+descriptors → control creation (title from the descriptor's display name;
+value = the model's choice text/formatted value + the engine-declared
+unit; the slider binds to the stable VST tag). On engine change: destroy
+only the previous engine's controls, create the new engine's, populate
+from the authoritative controller values. Each row is title + readable
+value on one line, slider below (the 12-pixel value-label defect is
+designed out; not merely widened). The controller remains the single
+authoritative parameter state — the UI never keeps a second store.
+
+**The fault diagnostics (Task 29):** the status snapshot publishes NUMERIC
+COUNTERS ONLY (categorised: engine process faults, engine exceptions,
+delivery underruns, dry-history misses, job stalls, chain adoption
+failures, preparation failures, plus cadence figures — jobs, preparing,
+adoptions, process calls); the audio thread never formats strings; the UI
+formats them. The aggregate `faults` keeps its historical composition
+(engine faults + underruns + dry-misses) for compatibility; the new
+categories identify root classes without retroactively changing what
+`faults` means.
 
 ## 8. Host behaviour requirements (frozen checklist)
 
@@ -436,6 +510,38 @@ Windows CI lane is a future owner decision, not part of this phase.
 * Finite drives (offline bouncing through the process path) may leave
   the last splice window's read reach unfulfilled — the bounded tail
   falls back to dry; realtime streams never end.
+* **Measured 96 kHz findings (Task 29; the instrumented drives live in
+  `results/vst3/task29/diagnostics-measurements.md`):**
+  * **native.granular @ 96 kHz is CPU-bound in the windowed-splice
+    adaptation** (RTF ≈ 1.1 at identity, ≈ 1.33 at −12 st, ≈ 1.75 at
+    grain 0.5 s on the reference machine) while every FAULT class
+    measures ZERO in isolation (engine faults, underruns, dry-misses,
+    stalls, adoption failures, preparation failures) — the stutter's
+    primary cause is the legitimate splice cost itself, not a lane/lifecycle
+    defect. The previously recorded granular downshift limitation
+    (envelope-edge curve materialisation) remains documented and
+    untouched.
+  * **A secondary, measured churn amplifier:** at the ±12 st parameter
+    boundary with LFO, the ±1 st envelope is truncated by the parameter
+    range (envMin floors at ratio 0.5), so every LFO dip below the
+    boundary clamps and requests a rebuild whose re-centred envelope
+    STILL cannot cover the excursion — a futile churn loop (measured:
+    759 clamps / 329 re-prepares / 328 adoptions per 2 s ≈ a seam every
+    6 ms), fault-free but audible as stutter. Bounded-unresolved: the
+    host-side fault counts (e.g. the reported 1021 faults) were not
+    reproduced in isolation; they are consistent with host CPU
+    starvation downstream of the two measured pre-conditions. A next-task
+    candidate (suppress futile re-prepare requests when the envelope is
+    structurally unable to cover the excursion) is recorded in the
+    worklog, NOT implemented here (this task's mandate is the parameter
+    model + diagnostics; the audio-path behaviour is untouched and the
+    byte-identical artifact evidence is preserved).
+  * **native.pv.phaselocked @ 96 kHz is healthy on every measured axis**
+    (faults 0 at 48 AND 96 kHz across blocks 128–1024; RTF 0.026–0.063;
+    one chain, one adoption, no churn) — the reported 96 kHz stutter is
+    NOT reproducible in the adapter path in isolation; its ownership
+    lies outside the plugin's realtime path as measured (host-side load
+    remains the unmeasured residual).
 * OD-6/OD-9/OD-18 remain OPEN owner decisions, untouched.
 
 ## 13. No-verification-gate statement

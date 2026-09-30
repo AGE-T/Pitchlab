@@ -703,6 +703,16 @@ std::unique_ptr<PitchEngine> makePvPhaseLockedEngine() {
   return std::make_unique<PvPhaseLockedEngine>();
 }
 
+// Engine-owned discrete choices (Task 29): the same FFT/hop domains as
+// pv.classic (§6.4.1 item 1), the window (hann) and the locking mode
+// (identity — §6.4.1; engine-internal fixed values for both).
+const char* const kPvpFftChoiceNames[] = {"1024", "2048", "4096"};
+const double kPvpFftChoiceValues[] = {1024.0, 2048.0, 4096.0};
+const char* const kPvpHopChoiceNames[] = {"128", "256", "512", "1024"};
+const double kPvpHopChoiceValues[] = {128.0, 256.0, 512.0, 1024.0};
+const char* const kPvpWindowChoices[] = {"hann"};
+const char* const kPvpLockingChoices[] = {"identity"};
+
 EngineDescriptor pvPhaseLockedEngineDescriptor() {
   EngineDescriptor d;
   d.info.id = "native.pv.phaselocked";
@@ -729,6 +739,87 @@ EngineDescriptor pvPhaseLockedEngineDescriptor() {
   d.capabilities.determinism = Determinism::Deterministic;
   d.capabilities.supportedSampleRates = {44100u, 48000u, 88200u, 96000u, 176400u, 192000u};
   d.parameterKeys = {"window", "fft_size", "hop", "locking_mode"};
+  // Engine-owned parameter descriptors (Task 29): fft/hop are product-exposed
+  // (discrete Int choices — the plain domain is the choice INDEX,
+  // choiceValues holds the engine-facing sizes); window and locking_mode are
+  // engine-internal fixed (hann / identity). hop declares the engine-domain
+  // constraint hop <= fft_size/2 (§6.4.1 item 1).
+  d.parameters = {
+      {
+          .key = "fft_size",
+          .displayName = "FFT Size",
+          .kind = EngineParamKind::Integer,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 2.0,  // choice-index domain
+          .defaultPlain = 1.0,  // 2048 (v0.1 default)
+          .unit = "",
+          .stepCount = 2,
+          .choiceNames = kPvpFftChoiceNames,
+          .choiceValues = kPvpFftChoiceValues,
+          .choiceCount = 3,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%d",
+      },
+      {
+          .key = "hop",
+          .displayName = "Hop",
+          .kind = EngineParamKind::Integer,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 3.0,  // choice-index domain
+          .defaultPlain = 2.0,  // 512 (v0.1 default)
+          .unit = "",
+          .stepCount = 3,
+          .choiceNames = kPvpHopChoiceNames,
+          .choiceValues = kPvpHopChoiceValues,
+          .choiceCount = 4,
+          .automatable = false,
+          .rebuildsChain = true,
+          .constrainKey = "fft_size",
+          .constrainDivisor = 2,  // engine domain: hop <= fft_size/2
+          .dispFmt = "%d",
+      },
+      {
+          .key = "window",
+          .displayName = "Window",
+          .kind = EngineParamKind::Text,
+          .role = EngineParamRole::Configuration,
+          .exposed = false,  // engine-internal fixed value (hann, §6.4.1)
+          .min = 0.0,
+          .max = 0.0,
+          .defaultPlain = 0.0,  // choiceNames[0] == "hann"
+          .unit = "",
+          .stepCount = 0,
+          .choiceNames = kPvpWindowChoices,
+          .choiceValues = nullptr,
+          .choiceCount = 1,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%s",
+      },
+      {
+          .key = "locking_mode",
+          .displayName = "Locking Mode",
+          .kind = EngineParamKind::Text,
+          .role = EngineParamRole::Configuration,
+          .exposed = false,  // engine-internal fixed value (identity, §6.4.1)
+          .min = 0.0,
+          .max = 0.0,
+          .defaultPlain = 0.0,  // choiceNames[0] == "identity"
+          .unit = "",
+          .stepCount = 0,
+          .choiceNames = kPvpLockingChoices,
+          .choiceValues = nullptr,
+          .choiceCount = 1,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%s",
+      },
+  };
   d.factory = &makePvPhaseLockedEngine;
   return d;
 }

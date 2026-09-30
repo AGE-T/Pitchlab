@@ -508,6 +508,10 @@ std::unique_ptr<PitchEngine> makeGranularEngine() {
   return std::make_unique<GranularEngine>();
 }
 
+// Engine-owned discrete choices (Task 29): the window shapes the engine's
+// own configure() accepts (hann | triangular, §6.5.1 item 1).
+const char* const kGranularWindowChoices[] = {"hann", "triangular"};
+
 EngineDescriptor granularEngineDescriptor() {
   EngineDescriptor d;
   d.info.id = "native.granular";
@@ -537,6 +541,83 @@ EngineDescriptor granularEngineDescriptor() {
   d.capabilities.determinism = Determinism::SeededDeterministic;
   d.capabilities.supportedSampleRates = {44100u, 48000u, 88200u, 96000u, 176400u, 192000u};
   d.parameterKeys = {"grain_seconds", "overlap", "window", "jitter_frames"};
+  // Engine-owned parameter descriptors (Task 29): all four grain parameters
+  // are product-exposed (the creative control surface); window is a Text
+  // choice (hann | triangular — the engine's own domain, §6.5.1 item 1).
+  d.parameters = {
+      {
+          .key = "grain_seconds",
+          .displayName = "Grain Length",
+          .kind = EngineParamKind::Real,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.02,
+          .max = 0.5,
+          .defaultPlain = 0.1,  // v0.1 default
+          .unit = "s",
+          .stepCount = -1,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%.3f",
+      },
+      {
+          .key = "overlap",
+          .displayName = "Overlap",
+          .kind = EngineParamKind::Integer,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 4.0,
+          .max = 16.0,
+          .defaultPlain = 4.0,  // v0.1 default
+          .unit = "x",
+          .stepCount = 12,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%d",
+      },
+      {
+          .key = "window",
+          .displayName = "Window",
+          .kind = EngineParamKind::Text,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 1.0,
+          .defaultPlain = 0.0,  // "hann" (v0.1 default)
+          .unit = "",
+          .stepCount = 1,
+          .choiceNames = kGranularWindowChoices,
+          .choiceValues = nullptr,
+          .choiceCount = 2,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%s",
+      },
+      {
+          .key = "jitter_frames",
+          .displayName = "Jitter",
+          .kind = EngineParamKind::Integer,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 256.0,
+          .defaultPlain = 0.0,  // v0.1 default
+          .unit = "frames",
+          .stepCount = 256,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%d",
+      },
+  };
   d.factory = &makeGranularEngine;
   return d;
 }

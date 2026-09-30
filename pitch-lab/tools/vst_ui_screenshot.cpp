@@ -452,11 +452,14 @@ int main(int argc, char** argv) {
     // wrote the OLD controller value back into the control within one
     // tick, so EVERY "survives polling" assertion below would fail.
     //
-    // Layout (the fixed 680x450 editor; frame coords == plug-window coords):
-    //   engine panel (472,54)-(668,286); vardelay sliders local
-    //   (12,y)-(170,y+20) -> frame x in [484,642] (158 wide), excursion
-    //   y=100, crossfade y=130; engine selector (12,70)-(160,240), 5
-    //   segments of 34 px: segment i center (86, 70+34i+17).
+    // Layout (Task 29 registry-driven rows; the fixed 680x450 editor;
+    // frame coords == plug-window coords): engine panel (472,54)-(668,286);
+    // each parameter row = title+value line then slider: sliders local
+    // (12, 51+40i)-(184, 69+40i) -> frame x in [484,656] (172 wide), row i
+    // (0-based) center y = 114+40i. The parameter ORDER is the engine's
+    // declared descriptor order (granular: grain, overlap, window, jitter).
+    // Engine selector (12,70)-(160,240), 5 segments of 34 px: segment i
+    // center (86, 70+34i+17).
     if (engine != 1) {
       std::fprintf(stderr, "ui-binding: requires engine 1 (native.vardelay)\n");
       return 1;
@@ -562,9 +565,9 @@ int main(int argc, char** argv) {
     frame.runFor(150);
 
     // ---- CHECK 1: Vardelay Excursion (a chain-signature parameter) --------
-    const double excU = (610.0 - 484.0) / 158.0;  // the drag's final position
+    const double excU = (610.0 - 484.0) / 172.0;  // the drag's final position
     const uint64_t reprepBase = statusIface->getStatus().reprepares;
-    drag(484 + 20, 610, 100);
+    drag(484 + 20, 610, 114);
     expectNear("CHECK1 excursion: controller value", edit->getParamNormalized(param::kVdExcursion),
                excU, kUiTol);
     frame.runFor(300);  // ~9 sync ticks: the poll must NOT revert it
@@ -585,8 +588,8 @@ int main(int argc, char** argv) {
                1.0, 0.0);
 
     // ---- CHECK 2: Vardelay Crossfade (integer-domain, discrete metadata) --
-    const double xfU = (600.0 - 484.0) / 158.0;
-    drag(484 + 20, 600, 130);
+    const double xfU = (600.0 - 484.0) / 172.0;
+    drag(484 + 20, 600, 154);
     expectNear("CHECK2 crossfade: controller value",
                edit->getParamNormalized(param::kVdCrossfade), xfU, kUiTol);
     // the model's integer domain: denormalise snaps to the nearest step
@@ -599,9 +602,9 @@ int main(int argc, char** argv) {
 
     // ---- shared helpers for the engine phases -------------------------------
     // engine panel slider rows (frame coords): the 1st..4th engine parameter
-    // of the selected engine's panel sits at y = 100 / 130 / 160 / 190
-    // (panel at (472,54), sliders local (12,y)-(170,y+20), y from 36).
-    constexpr int kRow1 = 100, kRow2 = 130, kRow3 = 160, kRow4 = 190;
+    // of the selected engine's panel sits at y = 114 / 154 / 194 / 234
+    // (panel at (472,54); sliders local (12,51+40i)-(184,69+40i), 172 wide).
+    constexpr int kRow1 = 114, kRow2 = 154, kRow3 = 194, kRow4 = 234;
     // click an engine segment and wait (bounded) for the adapter to ADOPT it
     auto selectEngine = [&](int e) {
       click(86, 70 + 34 * e + 17);
@@ -642,8 +645,8 @@ int main(int argc, char** argv) {
     // received it: every engine parameter is in the chain signature) + poll
     // stability. Returns the EXACT normalized value for persistence checks.
     auto driveSlider = [&](const char* name, uint32_t tag, int y, double u) {
-      const int x = 484 + static_cast<int>(u * 158.0 + 0.5);
-      const double uExact = (x - 484) / 158.0;
+      const int x = 484 + static_cast<int>(u * 172.0 + 0.5);
+      const double uExact = (x - 484) / 172.0;
       const uint64_t before = statusIface->getStatus().reprepares;
       drag(484 + 20, x, y);
       char label[96];
@@ -722,12 +725,14 @@ int main(int argc, char** argv) {
     }
 
     // ---- PHASE D: GRANULAR (engine 4) ---------------------------------------
+    // the row order is the ENGINE's declared descriptor order (Task 29):
+    // grain, overlap, WINDOW (row 3), JITTER (row 4).
     if (selectEngine(4)) {
       expectStatusReality(4, true, "D granular");
       grGrainU = driveSlider("D gr grain (continuous)", param::kGrGrain, kRow1, 0.6);
       grOverlapU = driveSlider("D gr overlap (discrete)", param::kGrOverlap, kRow2, 0.7);
-      grJitterU = driveSlider("D gr jitter (discrete)", param::kGrJitter, kRow3, 0.5);
-      grWindowU = driveSlider("D gr window (hann/tri)", param::kGrWindow, kRow4, 0.75);
+      grWindowU = driveSlider("D gr window (hann/tri)", param::kGrWindow, kRow3, 0.75);
+      grJitterU = driveSlider("D gr jitter (discrete)", param::kGrJitter, kRow4, 0.5);
     }
 
     // ---- the adapter's hop constraint probe (pv classic, engine 2) ----------
@@ -740,7 +745,7 @@ int main(int argc, char** argv) {
         const uint64_t before = statusIface->getStatus().reprepares;
         drag(484 + 20, 484, kRow1);          // fft -> index 0 (1024)
         frame.runFor(60);
-        drag(484 + 20, 642, kRow2);          // hop -> index 3 (1024 > fft/2)
+        drag(484 + 20, 656, kRow2);          // hop -> index 3 (1024 > fft/2)
         frame.runFor(300);
         processBlocks(3);
         frame.runFor(200);

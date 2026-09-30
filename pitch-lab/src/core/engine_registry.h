@@ -66,6 +66,80 @@ struct EngineInfo {
   const char* license = "";        // recorded status (re-verify before linking)
 };
 
+// ---------------------------------------------------------------------------
+// Engine-owned parameter descriptors (Task 29).
+//
+// THE ENGINE DECLARES ITS OWN CONFIGURATION SURFACE HERE (registry
+// metadata; the engine's configure() key strings are the SAME keys — this
+// is a declaration layer, not a contract change). Every product-layer
+// consumer (VST parameter registration, the realtime adapter's
+// EngineConfiguration mapping, the editor's engine panel) is GENERATED
+// from these descriptors — no other component holds engine-parameter
+// membership knowledge.
+//
+// Ownership rule (binding):
+//   * The plain domain [min,max] + stepCount is the PRODUCT-FACING value
+//     domain (what a VST normalised parameter encodes). For discrete Int
+//     parameters with choiceValues, the plain domain is the CHOICE-INDEX
+//     domain and choiceValues holds the ENGINE-FACING integers.
+//   * For Text parameters the plain domain is the choice-index domain and
+//     choiceNames holds the ENGINE-FACING strings.
+//   * `exposed == false` marks engine-internal FIXED values (valid keys of
+//     the engine contract that the product layer does not expose); the
+//     adapter still writes them (the descriptor's default), the VST model
+//     and the UI do not see them.
+//   * parameterKeys remains the engine-contract key list (harness-side
+//     allowed-key validation); the descriptor set must match it (asserted
+//     by the product-layer integrity check + tests).
+// ---------------------------------------------------------------------------
+
+/// The typed value space of EngineConfiguration (the v0.1 engine contract).
+enum class EngineParamKind { Real, Integer, Boolean, Text };
+
+/// The product-layer role: engine build-time configuration vs a realtime
+/// musical control on the shared pitch-curve surface. (All v0.1 engine
+/// parameters are Configuration; the shared PITCH/LFO/MIX/LEVEL/BYPASS
+/// surface lives in the product parameter model, not per-engine.)
+enum class EngineParamRole { Configuration, RealtimeCurve };
+
+struct EngineParamDescriptor {
+  // identity
+  const char* key = "";           // engine-facing key (EngineConfiguration)
+  const char* displayName = "";   // product display title, e.g. "Grain Length"
+  EngineParamKind kind = EngineParamKind::Real;
+  EngineParamRole role = EngineParamRole::Configuration;
+  bool exposed = true;            // false: fixed engine-internal value
+
+  // product plain domain
+  double min = 0.0;
+  double max = 1.0;
+  double defaultPlain = 0.0;      // v0.1 default
+  const char* unit = "";          // display unit ("s" / "x" / "frames" / "")
+  int stepCount = -1;             // -1 continuous, 0 toggle, n = n+1 steps
+
+  // discrete choices (Text: the engine string values; Int: the engine
+  // numeric values — see the ownership rule above)
+  const char* const* choiceNames = nullptr;
+  const double* choiceValues = nullptr;
+  int choiceCount = 0;
+
+  // capabilities
+  bool automatable = false;       // host-automation capability (VST kCanAutomate)
+  bool rebuildsChain = true;      // change requires a chain rebuild
+
+  // engine-domain cross-parameter constraint (engine-declared): the ENGINE
+  // value of this parameter must satisfy value <= value(constrainKey) /
+  // constrainDivisor (the PV engines' hop <= fft_size/2 domain, §6.3.1). The
+  // engine contract REJECTS violations (ConfigError); the product layer
+  // CLAMPS to the constraint (the recorded product decision — a rejected
+  // configuration would leave the adapter chainless).
+  const char* constrainKey = nullptr;
+  int constrainDivisor = 0;
+
+  // display
+  const char* dispFmt = "%+.2f";  // printf format for real-valued display
+};
+
 struct Capabilities {
   double minRatio = 0.0;
   double maxRatio = 0.0;
@@ -91,6 +165,9 @@ struct EngineDescriptor {
   Capabilities capabilities;
   bool isReferenceRole = false;                 // harness reference role (§H.2)
   std::vector<const char*> parameterKeys;      // engine-declared parameter names
+  // Engine-owned parameter descriptors (Task 29 — see EngineParamDescriptor).
+  // The key SET must equal parameterKeys (product-layer integrity check).
+  std::vector<EngineParamDescriptor> parameters;
   EngineFactory factory = nullptr;             // REQUIRED non-null (§4.2.1 item 5)
 };
 

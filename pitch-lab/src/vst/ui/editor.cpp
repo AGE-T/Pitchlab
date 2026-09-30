@@ -300,7 +300,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
 
     pitchSlider_ = addSlider(panel, param::kPitch, CRect(12, 36, 265, 56), true);
 
-    auto* lfoLabel = new ui_::MicroLabel(CRect(12, 70, 200, 84), "PITCH CURVE · LFO",
+    auto* lfoLabel = new ui_::MicroLabel(CRect(12, 70, 200, 84), "SHARED PITCH CURVE · LFO",
                                          ui_::Palette::textFaint(), 0);
     panel->addView(lfoLabel);
     lfoRateSlider_ = addSlider(panel, param::kLfoRate, CRect(12, 92, 180, 112), true);
@@ -312,9 +312,11 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
                                          ui_::Palette::text(), 1);
     panel->addView(lfoDepthValue_);
 
+    // SHARED ownership made explicit (Task 29): PITCH/LFO are the shared
+    // realtime pitch-curve surface, NOT engine-specific parameters; every
+    // engine receives the curve through its declared dynamic-ratio support.
     auto* note = new ui_::MicroLabel(CRect(12, 142, 265, 156),
-                                     "the live ratio curve: host automation + LFO, "
-                                     "envelope-clamped",
+                                     "shared realtime curve: automation + LFO → engines",
                                      ui_::Palette::textFaint(), 0);
     panel->addView(note);
   }
@@ -381,7 +383,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     panel->addView(hint);
 
     // status panel
-    const CRect sr(220, 296, kEditorWidth - 12, 396);
+    const CRect sr(220, 296, kEditorWidth - 12, 414);
     auto* statusPanel = new ui_::PanelView(sr);
     root->addView(statusPanel);
 
@@ -401,9 +403,14 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     statusLine4_ = new ui_::MicroLabel(CRect(12, 80, sr.getWidth() - 12, 96), "—",
                                        ui_::Palette::textDim(), 0);
     statusPanel->addView(statusLine4_);
+    // Task 29: the categorized fault-diagnostics line (numeric counters from
+    // the audio path; ALL string formatting happens HERE, on the UI thread)
+    statusLine5_ = new ui_::MicroLabel(CRect(12, 98, sr.getWidth() - 12, 114), "—",
+                                       ui_::Palette::textFaint(), 0);
+    statusPanel->addView(statusLine5_);
 
     auto* footer = new ui_::MicroLabel(
-        CRect(12, 402, kEditorWidth - 12, 418),
+        CRect(12, 420, kEditorWidth - 12, 436),
         "PITCH LAB V0.1 · AGE-T · ENGINES: V0.1 RESEARCH REGISTRY (5) · NO QUALITY SCORE BY DESIGN",
         ui_::Palette::textFaint(), 0);
     root->addView(footer);
@@ -441,7 +448,14 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   }
 
   void rebuildEnginePanelControls() {
-    // remove the previous engine's sliders (values persist in the parameters).
+    // ENGINE-DRIVEN PANEL (Task 29): the selected engine -> registry lookup
+    // -> the engine's OWN parameter descriptors -> control creation. The
+    // editor contains NO engine-index switch and NO engine-parameter
+    // membership knowledge — adding an engine parameter to a descriptor
+    // table makes it appear here (title, unit, domain, choices and all).
+    //
+    // remove the previous engine's controls (values persist in the
+    // parameters — non-selected engine parameter values are never lost).
     // removeView(view) FORGETS the view (withForget defaults true — the
     // VSTGUI contract): an explicit forget() here would double-release
     // (use-after-free; found by opening the real editor under Xvfb).
@@ -463,8 +477,13 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     for (ui_::MicroLabel* l : engineValues_) {
       enginePanel_->removeView(l);  // forgets (see note above)
     }
+    for (ui_::MicroLabel* l : engineTitles_) {
+      enginePanel_->removeView(l);  // Task 29: the per-row title labels
+    }
     engineSliders_.clear();
     engineValues_.clear();
+    engineTitles_.clear();
+    engineParamTags_.clear();
     // P2.2 (Task 24): the varispeed adaptation note is lifecycle-managed —
     // previously a NEW note was created on every rebuild without removing
     // the old one, so repeated engine switches ACCUMULATED overlapping
@@ -473,73 +492,62 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       enginePanel_->removeView(varispeedNote_);
       varispeedNote_ = nullptr;
     }
-    if (getController() == nullptr) return;
+    EditController* ec = getController();
+    if (ec == nullptr) return;
 
-    const ParamSnapshot snap = currentSnapshot();
-    std::vector<uint32_t> tags;
-    switch (snap.engineIndex) {
-      case 0:  // native.varispeed
-        tags = {param::kVsQuality, param::kVsAllowAliasing};
-        panelTitle_->set("VARISPEED", ui_::Palette::amber());
-        break;
-      case 1:  // native.vardelay
-        tags = {param::kVdExcursion, param::kVdCrossfade};
-        panelTitle_->set("VARDELAY", ui_::Palette::textDim());
-        break;
-      // ENGINE-INDEX MAPPING FIX: the cases MUST follow the v0.1 REGISTRY
-      // ORDER (engine_registry.cpp, §14-aligned): 0 varispeed, 1 vardelay,
-      // 2 native.pv.classic, 3 native.pv.phaselocked, 4 native.granular.
-      // The previous implementation assumed the implementation-chronology
-      // order (granular, pv.classic, pv.phaselocked at 2/3/4) — the
-      // SELECTOR LABELS and the AUDIO PATH were always correct
-      // (engineIdForIndex + reg.at), so selecting the segment labelled
-      // PV-CLASSIC ran pv.classic but showed the GRANULAR panel: the
-      // engine-specific controls edited parameters the running engine
-      // ignores (the "engine-specific controls do not behave as expected"
-      // symptom, persisting after the write-through fix).
-      case 2:  // native.pv.classic
-        tags = {param::kPvcFft, param::kPvcHop};
-        panelTitle_->set("PV-CLASSIC", ui_::Palette::textDim());
-        break;
-      case 3:  // native.pv.phaselocked
-        tags = {param::kPvpFft, param::kPvpHop};
-        panelTitle_->set("PV-LOCKED", ui_::Palette::textDim());
-        break;
-      case 4:  // native.granular
-        tags = {param::kGrGrain, param::kGrOverlap, param::kGrJitter, param::kGrWindow};
-        panelTitle_->set("GRANULAR", ui_::Palette::textDim());
-        break;
-      default:
-        break;
+    // selected engine: from the AUTHORITATIVE controller value (never a
+    // local cache — state restore / host automation / UI all converge here)
+    const int engineIndex =
+        static_cast<int>(std::lround(denormalise(param::kEngine, ec->getParamNormalized(param::kEngine))));
+    const char* engineId = engineIdForIndex(engineIndex);
+    if (engineId != nullptr) {
+      panelTitle_->set(shortEngineName(engineId).c_str(), ui_::Palette::textDim());
     }
+
+    // enumerate the engine's declared parameters (registry-driven; empty
+    // for an out-of-range index — no stale controls, no engine knowledge)
+    const std::vector<EngineParamView>& params = engineParamsFor(engineIndex);
+
+    // ---- row redesign (Task 29): the 12-pixel value-label defect is gone.
+    // Each row: TITLE (left, engine-declared displayName) + VALUE (right,
+    // ~80 px readable: choice text / formatted value + unit) on one line,
+    // the slider on the next line — both the parameter title AND the value
+    // are readable.
     CCoord y = 36.0;
-    for (uint32_t tag : tags) {
-      const ParamMeta* meta = findMeta(tag);
-      if (meta == nullptr) continue;
-      bool isDiscrete = meta->stepCount > 0;
-      ui_::PLSlider* slider = nullptr;
-      if (isDiscrete) {
-        slider = addDiscreteSlider(enginePanel_, tag, CRect(12, y, 170, y + 20));
-      } else {
-        slider = addSliderTo(enginePanel_, tag, CRect(12, y, 170, y + 20));
-      }
+    for (const EngineParamView& pv : params) {
+      auto* title = new ui_::MicroLabel(CRect(12, y, 102, y + 13),
+                                        pv.meta->title, ui_::Palette::textFaint(), 0);
+      enginePanel_->addView(title);
+      engineTitles_.push_back(title);
+
+      auto* value = new ui_::MicroLabel(CRect(102, y, 184, y + 13), "",
+                                        ui_::Palette::text(), 0);
+      enginePanel_->addView(value);
+      engineValues_.push_back(value);
+      engineParamTags_.push_back(pv.tag);
+
+      ui_::PLSlider* slider = addSliderTo(enginePanel_, pv.tag, CRect(12, y + 15, 184, y + 33));
       if (slider != nullptr) {
         engineSliders_.push_back(slider);
-        auto* valueLabel = new ui_::MicroLabel(CRect(178, y + 3, 190, y + 17), "",
-                                               ui_::Palette::text(), 1);
-        enginePanel_->addView(valueLabel);
-        engineValues_.push_back(valueLabel);
       }
-      y += 30.0;
+      y += 40.0;
     }
-    if (snap.engineIndex == 0) {
-      varispeedNote_ = new ui_::MicroLabel(
-          CRect(12, 160, 190, 210),
-          "RATE-FOLLOWING ENGINE: WINDOWED SPLICE ADAPTATION (0.2 s WINDOWS, "
-          "15 ms SPLICES) — NOT THE OFFLINE RENDER",
-          ui_::Palette::amber(), 0);
-      enginePanel_->addView(varispeedNote_);
+
+    // the rate-following adaptation note (registry-declared behaviour —
+    // varispeed's DurationBehaviour::RateFollowing; no engine-id switch)
+    if (engineIndex >= 0 && engineIndex < engineCount()) {
+      const EngineRegistry& reg = engineRegistry();
+      if (reg.at(static_cast<std::size_t>(engineIndex)).capabilities.duration ==
+          DurationBehaviour::RateFollowing) {
+        varispeedNote_ = new ui_::MicroLabel(
+            CRect(12, y + 6, 184, y + 66),
+            "RATE-FOLLOWING ENGINE: WINDOWED SPLICE ADAPTATION (0.2 s WINDOWS, "
+            "15 ms SPLICES) — NOT THE OFFLINE RENDER",
+            ui_::Palette::amber(), 0);
+        enginePanel_->addView(varispeedNote_);
+      }
     }
+    updateValueLabels();  // populate the new rows from the authoritative values
   }
 
   ui_::PLSlider* addSliderTo(CViewContainer* parent, uint32_t tag, const CRect& r) {
@@ -550,12 +558,6 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     parent->addView(slider);
     sliderByTag_[tag] = slider;
     return slider;
-  }
-
-  ui_::PLSlider* addDiscreteSlider(CViewContainer* parent, uint32_t tag, const CRect& r) {
-    // discrete engine parameters are also sliders with snapped values (the
-    // model normalises with step rounding)
-    return addSliderTo(parent, tag, r);
   }
 
   [[nodiscard]] ParamSnapshot currentSnapshot() const {
@@ -598,7 +600,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     // P1.11 (Task 24): the status snapshot is numeric-only (the audio thread
     // no longer formats strings — spec §4.3); ALL string derivation happens
     // here, on the UI thread, through the registry.
-    char buf[160];
+    char buf[192];
     const char* engineId = ss.engineIndex >= 0 ? engineIdForIndex(ss.engineIndex) : nullptr;
     std::snprintf(buf, sizeof(buf), "%s",
                   ss.chainReady ? (engineId != nullptr ? engineId : "?") : "building chain…");
@@ -608,14 +610,37 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
                   ss.sampleRate > 0.0 ? ss.latencyFrames / ss.sampleRate * 1000.0 : 0.0);
     statusLine2_->set(buf, ui_::Palette::textFaint());
     std::snprintf(buf, sizeof(buf),
-                  "jobs %d · re-prepares %llu · clamps %llu · faults %llu · auto-drop %llu",
-                  ss.liveJobs, (unsigned long long)ss.reprepares,
-                  (unsigned long long)ss.clampEvents, (unsigned long long)ss.faults,
-                  (unsigned long long)ss.automationDropped);
-    statusLine3_->set(buf, ss.faults > 0 ? ui_::Palette::rose() : ui_::Palette::textFaint());
-    std::snprintf(buf, sizeof(buf), "envelope [%.4f, %.4f] %s", ss.envelopeMin, ss.envelopeMax,
-                  ss.bypassActive ? "· BYPASSED" : "");
-    statusLine4_->set(buf, ui_::Palette::textFaint());
+                  "jobs %d (+%d prep) · adopted %llu · re-prep %llu · clamps %llu",
+                  ss.liveJobs, ss.preparingJobs, (unsigned long long)ss.chainsAdopted,
+                  (unsigned long long)ss.reprepares, (unsigned long long)ss.clampEvents);
+    statusLine3_->set(buf, ui_::Palette::textFaint());
+    std::snprintf(buf, sizeof(buf), "faults %llu · auto-drop %llu",
+                  (unsigned long long)ss.faults, (unsigned long long)ss.automationDropped);
+    statusLine4_->set(buf, ss.faults > 0 ? ui_::Palette::rose() : ui_::Palette::textFaint());
+    // Task 29: the CATEGORIZED breakdown (identifies the root class of a
+    // stutter: engine defect / lane retention / scheduling / preparation).
+    // Displayed when any category is nonzero — always visible when needed,
+    // quiet when healthy.
+    const uint64_t cats = ss.engineProcessFaults + ss.engineExceptions +
+                          ss.deliveryUnderruns + ss.dryHistoryMisses + ss.jobStalls +
+                          ss.chainAdoptionFailures + ss.preparationFailures;
+    if (cats > 0) {
+      std::snprintf(buf, sizeof(buf),
+                    "  underrun %llu · dry-miss %llu · proc %llu · exc %llu · "
+                    "stall %llu · adopt %llu · prep-fail %llu",
+                    (unsigned long long)ss.deliveryUnderruns,
+                    (unsigned long long)ss.dryHistoryMisses,
+                    (unsigned long long)ss.engineProcessFaults,
+                    (unsigned long long)ss.engineExceptions,
+                    (unsigned long long)ss.jobStalls,
+                    (unsigned long long)ss.chainAdoptionFailures,
+                    (unsigned long long)ss.preparationFailures);
+      statusLine5_->set(buf, ui_::Palette::rose());
+    } else {
+      std::snprintf(buf, sizeof(buf), "envelope [%.4f, %.4f] %s", ss.envelopeMin,
+                    ss.envelopeMax, ss.bypassActive ? "· BYPASSED" : "");
+      statusLine5_->set(buf, ui_::Palette::textFaint());
+    }
 
     // header
     const CColor adaptColor = ss.spliceMode ? ui_::Palette::amber() : ui_::Palette::accent();
@@ -674,52 +699,29 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     std::snprintf(buf, sizeof(buf), "%.2f st", snap.lfoDepthSt);
     lfoDepthValue_->set(buf, ui_::Palette::text());
 
-    // engine panel value labels (in slider order)
-    const std::vector<std::string> texts = engineParamTexts(snap);
-    for (std::size_t i = 0; i < engineValues_.size() && i < texts.size(); ++i) {
-      engineValues_[i]->set(texts[i].c_str(), ui_::Palette::text());
+    // engine panel value labels: the model's OWN formatting (the choice
+    // text / formatted value + the engine-declared unit) — the per-engine
+    // text switch is GONE (Task 29); tags are read from the authoritative
+    // controller through the same snapshot path.
+    for (std::size_t i = 0; i < engineValues_.size() && i < engineParamTags_.size(); ++i) {
+      engineValues_[i]->set(engineParamDisplay(engineParamTags_[i], snap).c_str(),
+                            ui_::Palette::text());
     }
   }
 
-  [[nodiscard]] static std::vector<std::string> engineParamTexts(const ParamSnapshot& s) {
+  /// One engine parameter's value display: the model's formatting + the
+  /// engine-declared unit (e.g. "0.100 s", "4 x", "2048", "hann").
+  [[nodiscard]] static std::string engineParamDisplay(uint32_t tag, const ParamSnapshot& snap) {
+    const ParamMeta* meta = findMeta(tag);
+    if (meta == nullptr) return std::string();
     char buf[48];
-    std::vector<std::string> out;
-    switch (s.engineIndex) {
-      case 0:
-        out.push_back(kVsQualityNames[s.vsQuality]);
-        out.push_back(s.vsAllowAliasing ? "on" : "off");
-        break;
-      case 1:
-        std::snprintf(buf, sizeof(buf), "%.2f s", s.vdExcursionSec);
-        out.push_back(buf);
-        std::snprintf(buf, sizeof(buf), "%lld", (long long)s.vdCrossfadeFrames);
-        out.push_back(buf);
-        break;
-      case 2:  // native.pv.classic (registry order — see the panel fix above)
-        std::snprintf(buf, sizeof(buf), "%d", s.pvcFftSize);
-        out.push_back(buf);
-        std::snprintf(buf, sizeof(buf), "%d", s.pvcHop);
-        out.push_back(buf);
-        break;
-      case 3:  // native.pv.phaselocked
-        std::snprintf(buf, sizeof(buf), "%d", s.pvpFftSize);
-        out.push_back(buf);
-        std::snprintf(buf, sizeof(buf), "%d", s.pvpHop);
-        out.push_back(buf);
-        break;
-      case 4:  // native.granular
-        std::snprintf(buf, sizeof(buf), "%.3f s", s.grGrainSec);
-        out.push_back(buf);
-        std::snprintf(buf, sizeof(buf), "%lld", (long long)s.grOverlap);
-        out.push_back(buf);
-        std::snprintf(buf, sizeof(buf), "%lld", (long long)s.grJitterFrames);
-        out.push_back(buf);
-        out.push_back(s.grWindowTriangular ? "tri" : "hann");
-        break;
-      default:
-        break;
+    formatParamValue(tag, plainValue(snap, tag), buf, sizeof(buf));
+    std::string text(buf);
+    if (meta->units != nullptr && meta->units[0] != '\0' && text[0] != '\0') {
+      text += " ";
+      text += meta->units;
     }
-    return out;
+    return text;
   }
 
   void onUiStateChanged() {
@@ -740,6 +742,8 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   // ---- members ------------------------------------------------------------
   std::vector<ui_::PLSlider*> engineSliders_;
   std::vector<ui_::MicroLabel*> engineValues_;
+  std::vector<ui_::MicroLabel*> engineTitles_;  // Task 29: per-row titles
+  std::vector<uint32_t> engineParamTags_;       // Task 29: value-label binding
   std::map<uint32_t, ui_::PLSlider*> sliderByTag_;  // AUTHORITATIVE live-control
                                                     // collection (P0.3: only live
                                                     // controls, ever)
@@ -767,6 +771,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   ui_::MicroLabel* statusLine2_ = nullptr;
   ui_::MicroLabel* statusLine3_ = nullptr;
   ui_::MicroLabel* statusLine4_ = nullptr;
+  ui_::MicroLabel* statusLine5_ = nullptr;  // Task 29: categorized diagnostics
   CViewContainer* enginePanel_ = nullptr;
 };
 
