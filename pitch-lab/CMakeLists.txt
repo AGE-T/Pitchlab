@@ -243,6 +243,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
   endif()
 endif()
 
+# ---------------------------------------------------------------------------
+# Task 28 candidate prototypes (research-only, outside the production
+# registry; clean-room implementations from published algorithm
+# descriptions; see research/task28-candidate-re-evaluation.md and
+# prototypes/CMakeLists.txt for the boundary rules).
+# ---------------------------------------------------------------------------
+add_subdirectory(prototypes)
+
 foreach(t IN ITEMS toolchain_smoke engine_registry_smoke version_smoke)
   add_test(NAME ${t} COMMAND ${t})
 endforeach()
