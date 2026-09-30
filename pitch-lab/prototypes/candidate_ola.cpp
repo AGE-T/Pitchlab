@@ -276,13 +276,16 @@ bool OlaPrototype::placeGrainsUpTo(FrameCount inputAvailableEnd) {
         std::max(0.0, q_ - static_cast<double>(K) - 128.0));
     if (tailEnd - liveLo > stretchCapacity_ - 8) break;
 
-    // WSOLA hook: the analysis-centre adjustment for this grain.
+    // WSOLA hook: the analysis-centre adjustment for this grain (the
+    // tolerance region is centred on the TIME-SCALING LAW's nominal
+    // position; the delta perturbs ONLY this grain — the next nominal
+    // advances from the law, never from the chosen position, so the
+    // content mapping cannot drift beyond +-tolerance by construction).
     const double delta = grainAnalysisAdjustment(aNext_);
     const double a = aNext_ + delta;
-    const double s = sNext_;
+    const double s = sNext_;  // (synthesis centre: the exact stretch grid)
 
     // Add the windowed grain into the accumulators.
-    const double rho = ratioAtInput(a);
     compactStretch();
     const double lo = s - half;
     const int n = windowFrames_;
@@ -302,9 +305,11 @@ bool OlaPrototype::placeGrainsUpTo(FrameCount inputAvailableEnd) {
     ++grainsPlaced_;
     placedAny = true;
 
-    // Advance: synthesis by the FIXED hop; analysis by the stretch hop
-    // (re-anchored at the chosen position for WSOLA drift semantics).
-    aNext_ = a + static_cast<double>(hs_) / rho;
+    // Advance: synthesis by the FIXED hop; the nominal analysis position
+    // by the stretch hop (rho indexed at the nominal; the delta does NOT
+    // re-anchor the schedule — the drift-free WSOLA formulation).
+    const double rhoNom = ratioAtInput(aNext_);
+    aNext_ += static_cast<double>(hs_) / rhoNom;
     sNext_ = s + static_cast<double>(hs_);
 
     // Normalise everything below the new final frontier in place: the

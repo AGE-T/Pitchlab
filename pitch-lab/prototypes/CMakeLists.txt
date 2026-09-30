@@ -26,6 +26,7 @@ add_library(pitchlab_proto28
   proto_baseline.cpp
   proto_run.cpp
   candidate_ola.cpp
+  candidate_wsola.cpp
 )
 target_include_directories(pitchlab_proto28 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_compile_features(pitchlab_proto28 PUBLIC cxx_std_20)
@@ -52,3 +53,5 @@ endfunction()
 
 task28_add_executable(task28_baseline task28_baseline_main.cpp)
 task28_add_executable(task28_ola task28_ola_main.cpp)
+
+task28_add_executable(task28_wsola task28_wsola_main.cpp)

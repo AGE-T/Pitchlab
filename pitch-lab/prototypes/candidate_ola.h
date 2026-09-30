@@ -109,6 +109,11 @@ class OlaPrototype : public ProtoEngine {
   double wsumRippleDb_ = 0.0;
   int64_t maxLiveStretch_ = 0;
 
+ protected:
+  // Input read at an absolute position (0 outside the delivered window) —
+  // used by the WSOLA search as well.
+  [[nodiscard]] double readInput(int channel, FrameCount pos) const;
+
  private:
   bool placeGrainsUpTo(FrameCount inputAvailableEnd);
   void emitFinalFrames(AudioBlockOut& out, int outCapacity,
@@ -117,7 +122,6 @@ class OlaPrototype : public ProtoEngine {
   [[nodiscard]] double ratioAtOutput(FrameCount t) const;
   void compactStretch();
   void compactInput();
-  [[nodiscard]] double readInput(int channel, FrameCount pos) const;
 };
 
 }  // namespace pitchlab::proto
