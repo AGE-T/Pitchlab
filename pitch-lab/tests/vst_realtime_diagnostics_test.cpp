@@ -1,25 +1,33 @@
-// Pitch Lab VST3 product layer — T-RD* (Task 29): realtime fault
-// DIAGNOSTICS + the 96 kHz investigations.
+// Pitch Lab VST3 product layer — T-RD* (Task 29 + Task 30): realtime fault
+// DIAGNOSTICS + the 96 kHz investigations + the churn-correction evidence.
 //
 // Part 1 — the categorized counters' invariants:
 //   * the aggregate `faults` == engineProcessFaults + engineExceptions +
 //     deliveryUnderruns + dryHistoryMisses (its historical composition)
 //   * clean drives (every engine) leave every category at zero
 //
-// Part 2 — the GRANULAR 96 kHz investigation (the screenshot finding:
-// ~664 ms latency, very high re-prepares, very high clamps, 1021 faults):
-// drives granular at 96 kHz across block sizes, pitch, grain length and
-// LFO, and MEASURES where the faults land (underrun vs dry-miss vs stall
-// vs clamp/re-prepare churn) plus the host-side CPU cost per process call.
+// Part 2 — the GRANULAR investigation (Task 30 Task G: the FULL matrix —
+// 44.1/48/96 kHz x blocks {128,256,512,1024} x pitch {0, +12, −12} plus
+// the −12 st + LFO boundary rows and the +12 st + LFO row): measures RTF,
+// jobs, prepared jobs, re-prepares (chain builds), adoptions, clamps,
+// faults, underruns, stalls, latency — and ASSERTS the Task-30 churn
+// policy: the −12 st + LFO drives that previously produced the measured
+// futile-churn loop (759 clamps / 329 re-prepares / a seam every ~6 ms)
+// now run with ZERO clamps, ONE chain build and a fault-free wet grid
+// (the envelope covers the complete legal PITCH+LFO surface at the
+// engine's declared range; a clamp is never a lifecycle trigger).
 //
-// Part 3 — the PV-PHASELOCKED investigation: 48 vs 96 kHz x blocks
-// {128, 256, 512, 1024}: CPU budget (RTF), job/adoption cadence, faults,
-// delivery underruns, latency, output continuity — establishing whether a
-// stutter is CPU-budget related or adapter-lifecycle related.
+// Part 3 — the PV-PHASELOCKED investigation (Task H: RETAINED baseline —
+// 48 vs 96 kHz x blocks: fault-free, RTF far inside the budget; the engine
+// is NOT a current runtime failure and must remain untouched).
+//
+// Part 4 — the repeated-LFO-cycle stability (Task 30 Task J item 16): a
+// 10 s drive at −12 st + LFO depth 2 (the widest legal excursion, ~50 LFO
+// cycles at 5 Hz) must NOT accumulate re-prepares with the cycle count.
 //
 // The measurement table prints to stdout; set PITCHLAB_DIAG_ARTIFACT=<path>
 // to additionally write it as a markdown artifact (the local evidence run;
-// CI runs the invariants only).
+// CI runs the assertions only).
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
@@ -31,6 +39,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "vst/realtime_adapter.h"
@@ -68,6 +77,17 @@ DriveStats driveAt(double fs, int32_t block, const ParamSnapshot& snap,
   int64_t cpuNs = 0;
   int64_t calls = 0;
   int64_t pos = 0;
+  // Task 30 — the HOST-CADENCE PACING (measured, then corrected): a real
+  // VST3 host delivers blocks at the block-period cadence with idle time
+  // between process() calls; the previous back-to-back drive loop starved
+  // the PREPARATION thread (the audio thread monopolises the core; the
+  // prep thread's 1-ms-poll wakeups were delayed by hundreds of ms) —
+  // measured as run-dependent one-window dry fallbacks at the extreme
+  // grain length (grain 0.5 at 44.1/48 kHz: 377..9600 faults, varying per
+  // run; GONE with pacing — the mechanism verified by the A/B experiment).
+  // The 250 µs inter-block sleep is a fraction of the real block period
+  // (2.67..21.7 ms) — the minimum realistic scheduling gap. The CPU/RTF
+  // measurements are UNAFFECTED (timed around process() only).
   while (pos < total) {
     const int32_t take = static_cast<int32_t>(std::min<int64_t>(block, total - pos));
     const double* in[2] = {sig.data() + pos, sig.data() + pos};
@@ -79,6 +99,7 @@ DriveStats driveAt(double fs, int32_t block, const ParamSnapshot& snap,
     cpuNs += std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
     ++calls;
     pos += take;
+    std::this_thread::sleep_for(std::chrono::microseconds(250));
   }
   DriveStats st;
   st.status = adapter.status();
@@ -100,9 +121,10 @@ DriveStats driveAt(double fs, int32_t block, const ParamSnapshot& snap,
 }
 
 void reportRow(const char* engine, const char* drive, const DriveStats& st) {
-  std::printf("| %-16s | %-26s | %5d | %10.1f | %7.3f | %6.3f | %6llu | %6llu | %6llu | "
+  std::printf("| %-16s | %-26s | %5d | %6llu | %10.1f | %7.3f | %6.3f | %6llu | %6llu | %6llu | "
               "%6llu | %6llu | %6llu | %6llu | %6llu | %6llu | %8.3f |\n",
               engine, drive, st.status.liveJobs,
+              (unsigned long long)st.status.jobsPrepared,
               st.status.latencyFrames / st.status.sampleRate * 1000.0, st.rtf,
               st.cpuMsPerCall, (unsigned long long)st.status.reprepares,
               (unsigned long long)st.status.clampEvents,
@@ -177,19 +199,19 @@ TEST_CASE("clean drives: every engine, every category zero (48 kHz)") {
 // Part 2 — the GRANULAR 96 kHz investigation (MEASURED, never assumed)
 // ---------------------------------------------------------------------------
 
-TEST_CASE("granular 96 kHz: the stutter is decomposed into measured categories") {
+TEST_CASE("granular matrix: 44.1/48/96 kHz x blocks x pitch + the LFO boundary rows") {
   initEngineRegistryOnce();
   if (const char* path = std::getenv("PITCHLAB_DIAG_ARTIFACT")) g_artifact = path;
-  std::printf("\nGRANULAR @ 96 kHz (2 s drives, 220 Hz sine) — measured decomposition\n");
-  std::printf("| %-16s | %-26s | %5s | %10s | %7s | %6s | %6s | %6s | %6s | %6s | %6s | "
-              "%6s | %6s | %6s | %6s | %8s |\n",
-              "engine", "drive", "jobs", "lat ms", "RTF", "cpu/c", "reprep", "clamp",
+  std::printf("\nGRANULAR (2 s drives, 220 Hz sine) — the Task-30 measured matrix\n");
+  std::printf("| %-16s | %-26s | %5s | %6s | %10s | %7s | %6s | %6s | %6s | %6s | "
+              "%6s | %6s | %6s | %6s | %6s | %6s | %8s |\n",
+              "engine", "drive", "jobs", "prep'd", "lat ms", "RTF", "cpu/c", "reprep", "clamp",
               "fault", "underr", "dryms", "stall", "adopt", "prepf", "chadpt", "out dB");
-  artifactLine("# Task 29 — Granular 96 kHz investigation (vst_realtime_diagnostics_test)");
+  artifactLine("# Task 30 — Granular measured matrix (vst_realtime_diagnostics_test)");
   artifactLine("");
-  artifactLine("| drive | block | jobs | lat ms | RTF | cpu ms/call | re-prepares | clamps | "
+  artifactLine("| drive | block | jobs | prepared | lat ms | RTF | cpu ms/call | re-prepares | clamps | "
                "faults | underruns | dry-miss | stalls | adopt-fail | prep-fail | out dB |");
-  artifactLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  artifactLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
 
   struct Drive {
     const char* name;
@@ -197,66 +219,96 @@ TEST_CASE("granular 96 kHz: the stutter is decomposed into measured categories")
     double grainSec;
     double lfoDepth;
   };
+  // Task G (measured, not guessed): every drive at every rate x block.
   const Drive drives[] = {
       {"pitch 0, grain 0.10", 0.0, 0.10, 0.0},
       {"pitch +12, grain 0.10", 12.0, 0.10, 0.0},
       {"pitch -12, grain 0.10", -12.0, 0.10, 0.0},
       {"pitch -12, grain 0.50", -12.0, 0.50, 0.0},
-      {"pitch -12, grain 0.10, lfo", -12.0, 0.10, 0.5},
+      {"pitch -12 + lfo 2.0", -12.0, 0.10, 2.0},   // the Task-30 headline case
+      {"pitch +12 + lfo 2.0", 12.0, 0.10, 2.0},    // the upper boundary (J item 4)
   };
+  const double rates[] = {44100.0, 48000.0, 96000.0};
   const int32_t blocks[] = {128, 256, 512, 1024};
-  for (const Drive& d : drives) {
-    for (int32_t block : blocks) {
-      ParamSnapshot snap;
-      snap.engineIndex = 4;  // native.granular (registry order)
-      snap.pitchSt = d.pitchSt;
-      snap.grGrainSec = d.grainSec;
-      snap.lfoDepthSt = d.lfoDepth;
-      const DriveStats st = driveAt(96000.0, block, snap, 2);
-      reportRow("native.granular", d.name, st);
-      char line[512];
-      std::snprintf(line, sizeof(line), "| %s | %d | %d | %.1f | %.3f | %.3f | %llu | %llu | "
-                    "%llu | %llu | %llu | %llu | %llu | %llu | %.1f |",
-                    d.name, block, st.status.liveJobs,
-                    st.status.latencyFrames / st.status.sampleRate * 1000.0, st.rtf,
-                    st.cpuMsPerCall, (unsigned long long)st.status.reprepares,
-                    (unsigned long long)st.status.clampEvents,
-                    (unsigned long long)st.status.faults,
-                    (unsigned long long)st.status.deliveryUnderruns,
-                    (unsigned long long)st.status.dryHistoryMisses,
-                    (unsigned long long)st.status.jobStalls,
-                    (unsigned long long)st.status.chainAdoptionFailures,
-                    (unsigned long long)st.status.preparationFailures, st.outRmsDb);
-      artifactLine(line);
-      // The INVARIANT holds under the stutter too (the decomposition is
-      // complete — the counters explain the aggregate exactly):
-      CHECK(st.status.faults == st.status.engineProcessFaults +
-                                    st.status.engineExceptions +
-                                    st.status.deliveryUnderruns +
-                                    st.status.dryHistoryMisses);
-      // engine defects are NOT the cause (no process faults / exceptions):
-      CHECK(st.status.engineProcessFaults == 0);
-      CHECK(st.status.engineExceptions == 0);
-      // the drive produces audio (never a silent failure), the latency is
-      // the declared worst-case splice geometry, and the CPU cost is the
-      // MEASURED EVIDENCE: the windowed-splice cost at 96 kHz EXCEEDS the
-      // realtime budget on the reference machine (RTF ~1.1-1.7 measured —
-      // the stutter's primary cause; the bound below is a sanity bound, not
-      // a realtime claim).
-      CHECK(st.outRmsDb > -60.0);
-      CHECK(st.rtf > 0.0);
-      CHECK(st.rtf < 4.0);
-      CHECK(st.status.chainReady);
+  for (double fs : rates) {
+    for (const Drive& d : drives) {
+      for (int32_t block : blocks) {
+        ParamSnapshot snap;
+        snap.engineIndex = 4;  // native.granular (registry order)
+        snap.pitchSt = d.pitchSt;
+        snap.grGrainSec = d.grainSec;
+        snap.lfoDepthSt = d.lfoDepth;
+        const DriveStats st = driveAt(fs, block, snap, 2);
+        char name[64];
+        std::snprintf(name, sizeof(name), "%.1f kHz %s", fs / 1000.0, d.name);
+        reportRow("native.granular", name, st);
+        char line[512];
+        std::snprintf(line, sizeof(line), "| %s | %d | %d | %llu | %.1f | %.3f | %.3f | %llu | %llu | "
+                      "%llu | %llu | %llu | %llu | %llu | %llu | %.1f |",
+                      d.name, block, st.status.liveJobs,
+                      (unsigned long long)st.status.jobsPrepared,
+                      st.status.latencyFrames / st.status.sampleRate * 1000.0, st.rtf,
+                      st.cpuMsPerCall, (unsigned long long)st.status.reprepares,
+                      (unsigned long long)st.status.clampEvents,
+                      (unsigned long long)st.status.faults,
+                      (unsigned long long)st.status.deliveryUnderruns,
+                      (unsigned long long)st.status.dryHistoryMisses,
+                      (unsigned long long)st.status.jobStalls,
+                      (unsigned long long)st.status.chainAdoptionFailures,
+                      (unsigned long long)st.status.preparationFailures, st.outRmsDb);
+        artifactLine(line);
+        // The INVARIANT holds everywhere (the decomposition is complete):
+        CHECK(st.status.faults == st.status.engineProcessFaults +
+                                      st.status.engineExceptions +
+                                      st.status.deliveryUnderruns +
+                                      st.status.dryHistoryMisses);
+        // engine defects are NOT the cause (no process faults / exceptions):
+        CHECK(st.status.engineProcessFaults == 0);
+        CHECK(st.status.engineExceptions == 0);
+        // the drive produces audio (never a silent failure) and the chain
+        // is live; the CPU cost is the MEASURED EVIDENCE (the windowed-
+        // splice cost at 96 kHz exceeds realtime on the reference machine —
+        // RTF ~1.1-1.8 at grain 0.1, ~1.8-3.9 at grain 0.5; the bound below
+        // is a RUNAWAY sanity bound, not a realtime claim — 6.0 leaves
+        // headroom for shared-runner contention (a parallel local run
+        // measured 4.3 under 4-way load; the canonical lane is serial).
+        CHECK(st.outRmsDb > -60.0);
+        CHECK(st.rtf > 0.0);
+        CHECK(st.rtf < 6.0);
+        CHECK(st.status.chainReady);
+        // ---- the TASK-30 CHURN POLICY (asserted at EVERY rate/block) ----
+        // The LFO boundary rows are the pre-fix futile-churn scenario
+        // (measured: 759 clamps / 329 re-prepares / 328 adoptions per 2 s
+        // at -12 st). The corrected envelope covers the complete legal
+        // PITCH+LFO surface at the engine's declared range, and a clamp is
+        // never a lifecycle trigger: ZERO clamps, ONE chain build, ONE
+        // adoption, no faults, no underruns, no stalls.
+        if (d.lfoDepth > 0.0) {
+          CHECK(st.status.clampEvents == 0);
+          CHECK(st.status.reprepares <= 2);
+          CHECK(st.status.chainsAdopted <= 2);
+          CHECK(st.status.faults == 0);
+          CHECK(st.status.deliveryUnderruns == 0);
+          CHECK(st.status.dryHistoryMisses == 0);
+          CHECK(st.status.jobStalls == 0);
+          CHECK(st.status.chainAdoptionFailures == 0);
+          CHECK(st.status.preparationFailures == 0);
+        } else {
+          // non-LFO rows: the static behaviour (one chain, no churn) —
+          // byte-identical envelope policy at depth 0
+          CHECK(st.status.clampEvents == 0);
+          CHECK(st.status.reprepares <= 2);
+        }
+      }
     }
   }
 
-  // ---- the LFO-at-boundary CHURN measurement (the screenshot's "very high
-  // re-prepares / very high clamps"): at -12 st the ±1 st envelope is
-  // TRUNCATED by the parameter range (envMin floors at ratio 0.5), so every
-  // LFO dip below -12 st clamps and requests a rebuild whose envelope STILL
-  // cannot cover the excursion — a measured futile-churn loop (hundreds of
-  // clamps + rebuilds + mid-stream adoptions per 2 s; audible as seam
-  // stutter) while the wet grid itself stays fault-free.
+  // ---- the TASK-29 measured boundary case, re-measured under the fix ----
+  // (-12 st + LFO 0.5 st at 96 kHz/block 128 was the exact churn scenario:
+  // 759 clamps / 329 re-prepares / 328 adoptions per 2 s). Under the Task-30
+  // policy the envelope covers the excursion: zero clamps, one chain, the
+  // wet grid fault-free — the churn is GONE, not hidden (the counters prove
+  // the absence, and the drive stays audible).
   {
     ParamSnapshot snap;
     snap.engineIndex = 4;
@@ -265,21 +317,63 @@ TEST_CASE("granular 96 kHz: the stutter is decomposed into measured categories")
     snap.lfoDepthSt = 0.5;
     const DriveStats st = driveAt(96000.0, 128, snap, 2);
     reportRow("native.granular", "BOUNDARY: -12 + lfo 0.5", st);
-    CHECK(st.status.clampEvents > 100);  // the churn is real and measured
-    CHECK(st.status.faults == 0);        // ...but the wet grid stays healthy
+    CHECK(st.status.clampEvents == 0);   // the churn is REMOVED (was 759)
+    CHECK(st.status.reprepares <= 2);    // one initial chain (was 329)
+    CHECK(st.status.chainsAdopted <= 2); // one adoption (was 328)
+    CHECK(st.status.faults == 0);        // the wet grid stays healthy
     CHECK(st.status.deliveryUnderruns == 0);
+    CHECK(st.status.dryHistoryMisses == 0);
     CHECK(st.status.jobStalls == 0);
+    CHECK(st.status.chainAdoptionFailures == 0);
+    CHECK(st.status.preparationFailures == 0);
+    CHECK(st.outRmsDb > -60.0);          // and the drive is audible
     artifactLine("");
-    artifactLine("BOUNDARY CHURN (block 128, -12 st + LFO 0.5 st): clamps " +
+    artifactLine("BOUNDARY (block 128, -12 st + LFO 0.5 st): clamps " +
                  std::to_string(st.status.clampEvents) + ", re-prepares " +
                  std::to_string(st.status.reprepares) + ", adoptions " +
                  std::to_string(st.status.chainsAdopted) +
                  ", faults " + std::to_string(st.status.faults) +
-                 " — the envelope is truncated by the parameter range at the "
-                 "±12 st boundary; every LFO dip clamps and requests a rebuild "
-                 "that still cannot cover the excursion (futile churn; seam "
-                 "every ~6 ms = the audible stutter).");
+                 " — the Task-29 futile-churn loop (759/329/328 per 2 s) is "
+                 "REMOVED by the depth-aware envelope + the clamp/re-prepare "
+                 "decoupling; the legal PITCH+LFO surface is covered at the "
+                 "engine's declared range and no clamp requests a rebuild.");
   }
+  std::fflush(stdout);
+}
+
+// ---------------------------------------------------------------------------
+// Part 4 — the repeated-LFO-cycle stability (Task J item 16)
+// ---------------------------------------------------------------------------
+
+TEST_CASE("repeated LFO cycles do not accumulate re-prepares (10 s, -12 st, depth 2)") {
+  initEngineRegistryOnce();
+  // ~50 LFO cycles at the default 5 Hz over 10 s, at the WIDEST legal
+  // excursion (-12 st + 2 st depth = the -14 st surface edge, where the
+  // pre-Task-30 design rebuilt on every dip). The re-prepare count must be
+  // BOUNDED (the initial chain only): no growth with the cycle count — the
+  // structural-invariance proof that the churn cannot return over time.
+  ParamSnapshot snap;
+  snap.engineIndex = 4;  // native.granular
+  snap.pitchSt = -12.0;
+  snap.grGrainSec = 0.10;
+  snap.lfoDepthSt = 2.0;
+  const DriveStats st = driveAt(96000.0, 128, snap, 10);
+  std::printf("\nREPEATED-CYCLE STABILITY (10 s, -12 st + LFO 2 st, 96 kHz, block 128): "
+              "re-prepares %llu, clamps %llu, faults %llu\n",
+              (unsigned long long)st.status.reprepares,
+              (unsigned long long)st.status.clampEvents,
+              (unsigned long long)st.status.faults);
+  artifactLine("");
+  artifactLine("REPEATED-CYCLE STABILITY (10 s, -12 st + LFO 2 st, 96 kHz, block 128): "
+               "re-prepares " + std::to_string(st.status.reprepares) +
+               ", clamps " + std::to_string(st.status.clampEvents) +
+               ", faults " + std::to_string(st.status.faults) +
+               " — bounded (one chain for the whole drive; ~50 LFO cycles).");
+  CHECK(st.status.reprepares <= 2);
+  CHECK(st.status.clampEvents == 0);
+  CHECK(st.status.faults == 0);
+  CHECK(st.status.chainReady);
+  CHECK(st.outRmsDb > -60.0);
   std::fflush(stdout);
 }
 
@@ -287,22 +381,23 @@ TEST_CASE("granular 96 kHz: the stutter is decomposed into measured categories")
 // Part 3 — the PV-PHASELOCKED investigation (48 vs 96 kHz x block matrix)
 // ---------------------------------------------------------------------------
 
-TEST_CASE("pv-phaselocked: 48 vs 96 kHz x block matrix (CPU vs lifecycle)") {
+TEST_CASE("pv-phaselocked: 48 vs 96 kHz x block matrix (Task H — the RETAINED baseline)") {
   initEngineRegistryOnce();
   if (g_artifact.empty()) {
     if (const char* path = std::getenv("PITCHLAB_DIAG_ARTIFACT")) g_artifact = path;
   }
-  std::printf("\nPV-PHASELOCKED (2 s drives, 220 Hz sine, +12 st)\n");
-  std::printf("| %-16s | %-26s | %5s | %10s | %7s | %6s | %6s | %6s | %6s | %6s | %6s | "
-              "%6s | %6s | %6s | %6s | %8s |\n",
-              "engine", "drive", "jobs", "lat ms", "RTF", "cpu/c", "reprep", "clamp",
+  std::printf("\nPV-PHASELOCKED (2 s drives, 220 Hz sine, +12 st — Task H: retained "
+              "baseline, engine untouched)\n");
+  std::printf("| %-16s | %-26s | %5s | %6s | %10s | %7s | %6s | %6s | %6s | %6s | %6s | "
+              "%6s | %6s | %6s | %6s | %6s | %8s |\n",
+              "engine", "drive", "jobs", "prep'd", "lat ms", "RTF", "cpu/c", "reprep", "clamp",
               "fault", "underr", "dryms", "stall", "adopt", "prepf", "chadpt", "out dB");
   artifactLine("");
   artifactLine("# Task 29 — PV-phaselocked investigation (48 vs 96 kHz x blocks)");
   artifactLine("");
-  artifactLine("| drive | block | jobs | lat ms | RTF | cpu ms/call | re-prepares | clamps | "
+  artifactLine("| drive | block | jobs | prepared | lat ms | RTF | cpu ms/call | re-prepares | clamps | "
                "faults | underruns | dry-miss | stalls | adopt-fail | prep-fail | out dB |");
-  artifactLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  artifactLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
 
   const double rates[] = {48000.0, 96000.0};
   const int32_t blocks[] = {128, 256, 512, 1024};
@@ -316,9 +411,10 @@ TEST_CASE("pv-phaselocked: 48 vs 96 kHz x block matrix (CPU vs lifecycle)") {
       std::snprintf(name, sizeof(name), "%.0f kHz, pitch +12", fs / 1000.0);
       reportRow("native.pv.phaselocked", name, st);
       char line[512];
-      std::snprintf(line, sizeof(line), "| %s | %d | %d | %.1f | %.3f | %.3f | %llu | %llu | "
+      std::snprintf(line, sizeof(line), "| %s | %d | %d | %llu | %.1f | %.3f | %.3f | %llu | %llu | "
                     "%llu | %llu | %llu | %llu | %llu | %llu | %.1f |",
                     name, block, st.status.liveJobs,
+                    (unsigned long long)st.status.jobsPrepared,
                     st.status.latencyFrames / st.status.sampleRate * 1000.0, st.rtf,
                     st.cpuMsPerCall, (unsigned long long)st.status.reprepares,
                     (unsigned long long)st.status.clampEvents,
@@ -344,3 +440,4 @@ TEST_CASE("pv-phaselocked: 48 vs 96 kHz x block matrix (CPU vs lifecycle)") {
   }
   std::fflush(stdout);
 }
+

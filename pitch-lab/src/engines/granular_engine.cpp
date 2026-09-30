@@ -215,10 +215,36 @@ class GranularEngine final : public PitchEngine {
     }
 
     // Input windows (§6.5.1 item 9 sizing).
+    //
+    // TASK 30 CAPACITY CORRECTION (measured, never silent — the v0.1 cycle
+    // pattern): the window must hold the STORE-WORTHY TAIL
+    // [retentionFloor, horizon) through the END of the input span — i.e. it
+    // must cover the FROZEN-PRODUCTION demand horizon − floor. When the
+    // process-mode output range is exhausted (outN_ = N_in, which for a
+    // downshifted curve happens at consumed ≈ r_max·N_in — the read grid is
+    // prefill-scheduled, the same mechanism as the recorded realtime
+    // envelope-edge limitation), the retention floor FREEZES at
+    // ≈ r_max·N_in − margins while the store-worthy region still extends to
+    // the horizon ≈ r_max·(N_in + 2G + the horizon loop's PHASE OVERSHOOT)
+    // + margins. The horizon simulation loop steps k·Hg while k·Hg < N_in+G,
+    // so its accumulator overshoots N_in+G by up to Hg−1 input frames — the
+    // pre-Task-30 capacity formula (maxBlock + spread + 2K + 256) MISSED
+    // that overshoot term (≤ r_max·Hg): at 48 kHz/block 128/grain 0.1 the
+    // demand measured 5787 vs capacity 5486 (the window filled at exactly
+    // floor+capacity = the permanent consumption stall → the job never
+    // finishes → the slot never frees → the preparation stall → the
+    // delivery-underrun cascade; the Task-29 matrix ran 96 kHz only — a
+    // lucky (N_in+G) mod Hg phase where the demand 10304 fit the capacity
+    // 10571). The +ceil(r_max·Hg) + 192 term covers the overshoot and the
+    // floor-margin slack; audio-path behaviour is UNCHANGED (an allocation
+    // bound only — the reads, the OLA and the output sequence are
+    // per-frame deterministic and identical).
     const int64_t spread =
         static_cast<int64_t>(std::ceil(rMax * static_cast<double>(2 * G_))) + 2 * jitterFrames_;
+    const int64_t phaseOvershoot =
+        static_cast<int64_t>(std::ceil(rMax * static_cast<double>(Hg_))) + 192;
     const int64_t windowCapacity =
-        static_cast<int64_t>(ctx.maxBlockFrames) + spread + 2 * k_ + 256;
+        static_cast<int64_t>(ctx.maxBlockFrames) + spread + 2 * k_ + 256 + phaseOvershoot;
     windows_.resize(static_cast<std::size_t>(ctx.channels));
     for (ChannelCount c = 0; c < ctx.channels; ++c) {
       windows_[static_cast<std::size_t>(c)].allocate(windowCapacity, 0);

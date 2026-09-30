@@ -22,6 +22,19 @@ namespace {
 
 constexpr double kEnvelopeSemitones = 1.0;          // ±1 st job envelope (§4.1 item 2)
 constexpr int64_t kSegmentSeconds = 10;            // N_seg (§4.1 item 1)
+// Task 30: the LFO depth parameter's declared maximum (parameters.h kLfoDepth
+// — 0..2 st). The legal EFFECTIVE pitch surface = PITCH(±12 st) + LFO(±depth)
+// = ±14 st at the extreme; the envelope/geometry policy is sized from it.
+constexpr double kLfoDepthParamMax = 2.0;
+// Task 30: relative slack at the runtime curve clamp. The exact LFO dip at the
+// envelope edge (depth == margin) computes envMin and the curve minimum from
+// DIFFERENT roundings of the same 2^(-14/12) value (a division here, an exp2
+// there) — they can differ by 1 ULP, and a phase-accumulation wobble adds a
+// few more. The 1e-9 relative slack absorbs the numerical noise so a legal
+// at-the-boundary excursion is not counted (or truncated) as a clamp. Every
+// engine-side bound built from the prefill carries +16/+2K/+256 margins —
+// 1e-9 relative is orders of magnitude inside them.
+constexpr double kClampSlack = 1e-9;
 constexpr double kVarispeedWindowSeconds = 0.2;    // O (§4.2)
 constexpr double kVarispeedCrossfadeSeconds = 0.015;  // X splice (§4.2)
 constexpr double kBypassFadeSeconds = 0.010;       // (§4.1 item 6)
@@ -205,6 +218,11 @@ void prefillCurve(std::vector<double>& curve, double envMin, double envMax,
 
 /// Per-engine chain geometry (X, Λ; §4.1 item 5 / §4.2).
 ///
+/// Task 30: `lfoDepthSt` sizes the splice worst case together with the
+/// envelope (see worstEnvFor): at depth ≤ 1 st the constant is EXACTLY the
+/// pre-Task-30 value (bit-identical geometry for every existing
+/// audio-path case); at depth 2 st it widens to the ±14 st legal surface.
+///
 /// IMPLEMENTATION-TIME CORRECTION (recorded, never silent — the v0.1 cycle
 /// pattern): the frozen product-phase spec §3 classified native.granular as
 /// a preserving engine adaptable under §4.1. Measured diagnostics with a
@@ -227,7 +245,19 @@ struct Geometry {
   bool spliceMode = false;  // windowed-splice adaptation (§4.2)
 };
 
-Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc, double fs) {
+/// The splice-mode worst-case read-rate coverage: the widest curve value the
+/// legal parameter surface can produce at the CURRENT LFO depth (Task 30,
+/// depth-aware). At depth ≤ 1 st this is bit-identical to the frozen
+/// pre-Task-30 constant kPitchParamMaxRatio·2^(1/12) ≈ 2.119 — every existing
+/// artifact case (depth 0 / 0.5) keeps its exact geometry; at the depth
+/// maximum it widens to 2.0·2^(2/12) ≈ 2.245 (the +14 st surface).
+[[nodiscard]] inline double worstEnvFor(double lfoDepthSt) {
+  const double marginSt = std::max(kEnvelopeSemitones, lfoDepthSt);
+  return kPitchParamMaxRatio * std::exp2(marginSt / 12.0);
+}
+
+Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
+                        double fs, double lfoDepthSt) {
   const std::string id(desc.info.id);
   Geometry g;
   if (id == "native.vardelay") {
@@ -245,7 +275,7 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc, 
     const int64_t grain = std::max<int64_t>(4, std::llround(snap.grGrainSec * fs));
     const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
     const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
-    const double worstEnv = kPitchParamMaxRatio * std::exp2(kEnvelopeSemitones / 12.0);
+    const double worstEnv = worstEnvFor(lfoDepthSt);
     g.spliceMode = true;
     g.seamX = x;
     g.wetLen = windowO;
@@ -268,7 +298,7 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc, 
   } else {  // native.varispeed — windowed splice (§4.2)
     const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
     const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
-    const double worstEnv = kPitchParamMaxRatio * std::exp2(kEnvelopeSemitones / 12.0);
+    const double worstEnv = worstEnvFor(lfoDepthSt);
     g.spliceMode = true;
     g.seamX = x;
     g.wetLen = windowO;
@@ -291,8 +321,14 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc, 
 /// higher Λ_eff retains more history than its own geometry implies (the
 /// lane holds [emission floor, production frontier], whose length is
 /// bounded by Λ_eff, not by the chain's Λ).
+///
+/// Task 30: the splice term now covers the ABSOLUTE worst over the whole
+/// parameter space — the +14 st effective surface (PITCH +12 + LFO depth 2,
+/// 2.0·2^(2/12) ≈ 2.245) — because a depth-grown chain CAN legally reach
+/// it. This constant sizes BUFFERS ONLY (dry retention, job lanes); the
+/// per-chain declared latency is chainGeometry's own (depth-aware, exact).
 [[nodiscard]] int64_t worstCaseLatencyFrames(double fs) {
-  const double worstEnv = kPitchParamMaxRatio * std::exp2(kEnvelopeSemitones / 12.0);
+  const double worstEnv = kPitchParamMaxRatio * std::exp2(kLfoDepthParamMax / 12.0);
   const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
   const int64_t splice =
       std::ceil((worstEnv - 1.0) * static_cast<double>(windowO)) + kKernelMargin + kLatencySafety;
@@ -306,14 +342,50 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc, 
                    maxFft + maxHop + kKernelMargin + kLatencySafety});     // pv engines
 }
 
-/// Envelope: live ±1 st (geometric), clamped to the parameter range and the
-/// engine's declared ratio range (§4.1 item 2).
-void envelopeFor(const EngineDescriptor& desc, double liveRatio, double& envMin, double& envMax) {
-  const double margin = std::exp2(kEnvelopeSemitones / 12.0);
-  envMin = clampd(liveRatio / margin,
-                  std::max<double>(desc.capabilities.minRatio, kPitchParamMinRatio), 1e9);
-  envMax = clampd(liveRatio * margin, 0.0,
-                  std::min<double>(desc.capabilities.maxRatio, kPitchParamMaxRatio));
+/// Envelope (§4.1 item 2, the Task 30 policy — derived, not intuited):
+///
+///   margin      = 2^(max(1 st, live LFO depth)/12)
+///   paramFloor  = kPitchParamMinRatio · 2^(−depth/12)
+///   paramCeil   = kPitchParamMaxRatio · 2^(+depth/12)
+///   envMin      = max( max(liveRatio/margin, paramFloor), engineMin )
+///   envMax      = min( min(liveRatio·margin, paramCeil),  engineMax )
+///
+/// The three-term derivation:
+///   1. The live window ±margin covers the LFO excursion around the live
+///      pitch AND the ±1 st automation margin — a STATIC PITCH+LFO setting
+///      never clamps (the spec §4.1 item 2 “static settings: no clamping
+///      occurs at all” clause, restored — the pre-Task-30 ±1 st constant
+///      violated it for every depth > 1 st, the measured churn root).
+///   2. The parameter-domain bounds RELAX by the LFO excursion: the legal
+///      EFFECTIVE curve domain is [paramMin−depth, paramMax+depth] (the
+///      pre-Task-30 envelope clamp to the raw PITCH parameter range
+///      truncated envMin at the ±12 st boundary — the LFO dip below it
+///      clamped every cycle and every clamp requested a rebuild whose
+///      re-centred envelope was STILL truncated: the measured FUTILE
+///      CHURN, 759 clamps/329 re-prepares per 2 s, a seam every ~6 ms).
+///   3. The ENGINE's declared ratio range is the hard clamp: the engine
+///      never receives a ratio outside [minRatio, maxRatio] (Task 30
+///      success condition; a rebuild cannot move an engine's declared
+///      range, so the clamp there is the honest boundary, not a lifecycle
+///      event).
+///
+/// At lfoDepth ≤ 1 st every term degenerates EXACTLY to the pre-Task-30
+/// formula (bit-identical envelope — the audio-path artifact's cases all
+/// sit at depth 0/0.5 and stay byte-identical); the behaviour changes only
+/// where the fix is intended (depth > 1 st, or |pitch| near 12 with the
+/// LFO extending past the boundary).
+void envelopeFor(const EngineDescriptor& desc, double liveRatio, double lfoDepthSt,
+                  double& envMin, double& envMax) {
+  const double depth = clampd(lfoDepthSt, 0.0, kLfoDepthParamMax);
+  const double marginSt = std::max(kEnvelopeSemitones, depth);
+  const double margin = std::exp2(marginSt / 12.0);
+  const double excursion = std::exp2(depth / 12.0);  // the LFO's ratio excursion
+  const double paramFloor = kPitchParamMinRatio / excursion;
+  const double paramCeil = kPitchParamMaxRatio * excursion;
+  envMin = std::max(std::max(liveRatio / margin, paramFloor),
+                    desc.capabilities.minRatio);
+  envMax = std::min(std::min(liveRatio * margin, paramCeil),
+                    desc.capabilities.maxRatio);
   if (envMax < envMin) envMax = envMin;
 }
 
@@ -385,6 +457,13 @@ struct RealtimeAdapter::Chain final : RetireStack::Node {
   int channels = 2;
 
   double envMin = 1.0, envMax = 1.0;
+  // Task 30: the margin (st) the envelope was sized for — max(1 st, the
+  // build-time LFO depth). The preparation thread compares the LIVE depth
+  // against it: a depth growth beyond the margin is an ENVELOPE-CAPABILITY
+  // exit (the same lifecycle class as the pitch envelope exit — ONE rebuild
+  // re-sizes the envelope and the splice geometry; a depth shrink keeps the
+  // wider envelope until the next legitimate rebuild — no churn either way).
+  double envMarginSt = 1.0;
 
   int64_t advance = 0;
   int64_t jobInputLen = 0;
@@ -475,6 +554,10 @@ struct RealtimeAdapter::Impl {
                                             // chain at ratio 1 — far from the
                                             // published pitch — forcing a clamp +
                                             // churn cascade; measured)
+  // Task 30: the audio thread's LIVE LFO depth (the depth timeline's block-end
+  // carry — automation-aware, like lastPitchSt). −1.0 = NO AUDIO YET (the
+  // depth domain is [0, 2] st, so 0.0 would be ambiguous with “depth 0”).
+  std::atomic<double> exitLiveDepth{-1.0};
   // Effective emission latency (Λ_eff, audio thread): the MAXIMUM of every
   // adopted chain's Λ within this activation. A chain replacement that would
   // LOWER the latency (an engine switch into a cheaper engine) must not move
@@ -613,7 +696,8 @@ struct RealtimeAdapter::Impl {
     }
   }
 
-  [[nodiscard]] Chain* buildChain(const ParamSnapshot& snap, double liveRatio) {
+  [[nodiscard]] Chain* buildChain(const ParamSnapshot& snap, double liveRatio,
+                                  double liveDepthSt) {
     const EngineRegistry& reg = engineRegistry();
     if (snap.engineIndex < 0 || snap.engineIndex >= static_cast<int>(reg.size())) {
       return nullptr;
@@ -626,9 +710,16 @@ struct RealtimeAdapter::Impl {
     std::snprintf(chain->engineId, sizeof(chain->engineId), "%s", desc.info.id);
     chain->fs = fs;
     chain->channels = channels;
-    envelopeFor(desc, liveRatio, chain->envMin, chain->envMax);
+    envelopeFor(desc, liveRatio, liveDepthSt, chain->envMin, chain->envMax);
+    chain->envMarginSt = std::max(kEnvelopeSemitones,
+                                  clampd(liveDepthSt, 0.0, kLfoDepthParamMax));
 
-    const Geometry geo = chainGeometry(snap, desc, fs);
+    // the geometry's depth coverage: the snapshot depth AND the live depth
+    // (an envelope-capability rebuild carries the freshest automated depth —
+    // the chain must cover the curve it will actually serve)
+    const double geometryDepth =
+        std::max(snap.lfoDepthSt, clampd(liveDepthSt, 0.0, kLfoDepthParamMax));
+    const Geometry geo = chainGeometry(snap, desc, fs, geometryDepth);
     chain->spliceMode = geo.spliceMode;
     chain->seamX = geo.seamX;
     chain->latency = geo.latency;
@@ -784,6 +875,10 @@ struct RealtimeAdapter::Impl {
 
       bool build = false;
       double liveRatio = snap.liveRatio();
+      // Task 30: the LFO depth the new chain's envelope must cover — the
+      // snapshot value (UI/preset/state) and the audio thread's LIVE depth
+      // (automation — the timeline's block-end carry), whichever is larger.
+      double liveDepth = snap.lfoDepthSt;
       if (!settled) {
         build = false;  // the parameter set is still being written
       } else if (!paramsPublished.load(std::memory_order_acquire)) {
@@ -800,6 +895,8 @@ struct RealtimeAdapter::Impl {
             // live ratio for the envelope re-centre
             const double exitRatio = exitLiveRatio.load(std::memory_order_acquire);
             if (exitRatio > 0.0 && std::isfinite(exitRatio)) liveRatio = exitRatio;
+            const double exitDepth = exitLiveDepth.load(std::memory_order_acquire);
+            if (exitDepth >= 0.0) liveDepth = std::max(liveDepth, exitDepth);
           }
         } else {
           // envelope exit against the ACTIVE chain (freshest audio-thread
@@ -809,6 +906,23 @@ struct RealtimeAdapter::Impl {
           if (r < act->envMin || r > act->envMax) {
             build = true;
             liveRatio = r;
+          }
+          // Task 30 — the ENVELOPE-CAPABILITY exit: the live LFO depth grew
+          // beyond the chain's margin. The curve's legal excursion around
+          // the pitch (±depth) would exceed the prepared envelope, so ONE
+          // rebuild re-sizes the envelope (+ the splice geometry). This is
+          // the depth's ONLY lifecycle trigger: a depth SHRINK keeps the
+          // wider envelope (harmless coverage), and depth movement WITHIN
+          // the margin never rebuilds — the pre-Task-30 design rebuilt on
+          // every clamped BLOCK instead (the measured churn root).
+          {
+            double d = snap.lfoDepthSt;
+            const double exitDepth = exitLiveDepth.load(std::memory_order_acquire);
+            if (exitDepth >= 0.0) d = std::max(d, exitDepth);
+            if (d > act->envMarginSt) {
+              build = true;
+              liveDepth = d;
+            }
           }
         }
       }
@@ -835,8 +949,11 @@ struct RealtimeAdapter::Impl {
               const EngineDescriptor& desc =
                   reg.at(static_cast<std::size_t>(snap.engineIndex));
               double envMin = 1.0, envMax = 1.0;
-              envelopeFor(desc, liveRatio, envMin, envMax);
-              identical = (envMin == liveCheck->envMin && envMax == liveCheck->envMax);
+              envelopeFor(desc, liveRatio, liveDepth, envMin, envMax);
+              identical = (envMin == liveCheck->envMin && envMax == liveCheck->envMax &&
+                           liveCheck->envMarginSt >=
+                               std::max(kEnvelopeSemitones,
+                                        clampd(liveDepth, 0.0, kLfoDepthParamMax)));
             } else {
               identical = false;
             }
@@ -851,7 +968,7 @@ struct RealtimeAdapter::Impl {
       if (build) {
         Chain* fresh = nullptr;
         try {
-          fresh = buildChain(snap, liveRatio);
+          fresh = buildChain(snap, liveRatio, liveDepth);
         } catch (const std::exception&) {
           fresh = nullptr;  // invalid engine configuration (e.g. a transient
                             // parameter combination): retry next poll
@@ -1005,6 +1122,7 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.streamPos = 0;
   im.streamPosMirror.store(0, std::memory_order_release);
   im.exitLiveRatio.store(0.0, std::memory_order_release);  // no audio yet
+  im.exitLiveDepth.store(-1.0, std::memory_order_release);  // no audio yet (sentinel)
   im.latencyNow = 0;
   im.latencyEff = 0;
   im.lfoPhase = 0.0;
@@ -1567,12 +1685,37 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   im.streamPos += frames;
   im.streamPosMirror.store(im.streamPos, std::memory_order_release);
   im.exitLiveRatio.store(std::exp2(im.lastPitchSt / 12.0), std::memory_order_relaxed);
+  // Task 30: publish the live LFO depth (the depth timeline's block-end value
+  // — automation-aware) for the preparation thread's envelope-capability
+  // check. Relaxed is sufficient (telemetry cadence, same as exitLiveRatio).
+  im.exitLiveDepth.store(
+      timelineAt(automation.lfoDepth, automation.lfoDepthCount, blockFrames - 1,
+                 blockFrames, snap.lfoDepthSt),
+      std::memory_order_relaxed);
   if (automation.droppedPoints > 0) {
     im.automationDropped += automation.droppedPoints;
   }
+  // Task 30 — THE CLAMP/REPREPARE DECOUPLING (the churn root cause, removed):
+  // a clamp is a COUNTED BOUNDARY EVENT, never a lifecycle trigger. The
+  // pre-Task-30 design bumped requestEpoch on every clamped block, so a
+  // legal PITCH+LFO combination near the parameter boundary clamped EVERY
+  // LFO cycle, requested a rebuild whose re-centred envelope was STILL
+  // truncated, and repeated — the measured futile churn (759 clamps /
+  // 329 re-prepares / a seam every ~6 ms). Every legitimate rebuild trigger
+  // has its OWN precise check in the preparation loop, none of which churn:
+  //   * engine/configuration change → the chain signature comparison;
+  //   * pitch automation envelope exit → the exitLiveRatio vs active
+  //     envelope check (the re-centre semantics, unchanged);
+  //   * LFO depth growth beyond the chain margin → the envelope-capability
+  //     exit (ONE rebuild per depth growth — added by Task 30);
+  //   * hard reset / resume / format change → their own epoch bumps.
+  // The clamp that REMAINS possible is the honest engine-limit boundary
+  // (an engine whose declared ratio range is narrower than the legal
+  // surface — native.vardelay at the ±14 st extremes): a rebuild cannot
+  // move a declared engine capability, so counting it (and clipping the
+  // curve at the engine's limit) is the correct, non-churning behaviour.
   if (clampDetected) {
     im.clampEvents++;
-    im.requestEpoch.fetch_add(1, std::memory_order_acq_rel);
   }
 
   // ---- output meters (post gain/bypass): per-SAMPLE time-based ballistics
@@ -1673,7 +1816,11 @@ int64_t expectedLatencyFrames(const ParamSnapshot& snapshot, double sampleRate) 
     return 0;
   }
   const EngineDescriptor& desc = reg.at(static_cast<std::size_t>(snapshot.engineIndex));
-  return chainGeometry(snapshot, desc, sampleRate).latency;
+  // Task 30: the depth-aware geometry — the synchronous expectation follows
+  // the SNAPSHOT depth (the main-thread parameter value); a chain built for a
+  // LIVE automated depth beyond it reports its own (larger) latency through
+  // the normal per-chain setLatencySamples event (spec §4.1 item 5).
+  return chainGeometry(snapshot, desc, sampleRate, snapshot.lfoDepthSt).latency;
 }
 
 // ---------------------------------------------------------------------------
@@ -1687,19 +1834,34 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
   const int ch = im.channels;
 
   // ---- 1) curve write for the not-yet-fed frames of this sub-block ----------
+  // Task 30: the clamp comparison carries a 1e-9 RELATIVE slack (kClampSlack)
+  // — a legal curve sitting exactly AT the envelope edge (the LFO's depth ==
+  // the envelope margin: the dip computes envMin and the curve minimum from
+  // different roundings of the same 2^(-14/12)) must not count or truncate as
+  // a clamp. Values genuinely beyond the envelope still clip to it (the
+  // engine never receives a ratio outside the envelope it was prepared for)
+  // and count — the honest boundary event (see the decoupling note at the
+  // clamp counter).
   {
+    const double envMinSlack = chain.envMin * (1.0 - kClampSlack);
+    const double envMaxSlack = chain.envMax * (1.0 + kClampSlack);
     const int64_t from = std::max<int64_t>(t, job.spanStart + job.consumed);
     const int64_t to = std::min<int64_t>(t + subN, feedLimit);
     for (int64_t pos = from; pos < to; ++pos) {
       const int32_t local = static_cast<int32_t>(pos - t);
       if (local < 0 || local >= subN) continue;
       double v = im.curveScratch[static_cast<std::size_t>(local)];
-      if (v < chain.envMin) {
+      if (v < envMinSlack) {
         v = chain.envMin;
         clampDetected = true;
-      } else if (v > chain.envMax) {
+      } else if (v > envMaxSlack) {
         v = chain.envMax;
         clampDetected = true;
+      } else if (v < chain.envMin) {
+        v = chain.envMin;  // inside the slack: clip to the envelope WITHOUT
+                           // counting (numerical noise at a legal boundary)
+      } else if (v > chain.envMax) {
+        v = chain.envMax;  // ditto
       }
       job.curve[static_cast<std::size_t>(pos - job.spanStart)] = v;
     }

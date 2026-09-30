@@ -175,25 +175,43 @@ honour the full contract).
    adaptation (absent in offline renders; at identity the two branches
    render identical content for the overlap-honouring engines, so the
    seam is numerically transparent there).
-2. **Envelope + clamp (the scan-safety rule).** At prepare of job k the
-   adapter establishes the pitch envelope
-   `env = [r_live·2^(−1/12), r_live·2^(+1/12)]` (±1 st around the live
-   ratio) and pre-fills the job's dense curve array with the envelope
-   extremes (varispeed-style engines: alternating env-min/env-max; sum- and
-   horizon-type scans: env-max throughout) so EVERY prepare-time scan
-   bounds the worst case the job will ever see. The runtime curve value is
-   `clamp(automation(t) · lfo(t), env)`. Consequences, all documented and
-   bounded:
+2. **Envelope + clamp (the scan-safety rule; THE TASK-30 ENVELOPE RULE).**
+   At prepare of job k the adapter establishes the pitch envelope
+   `env = ±2^(max(1 st, live LFO depth)/12)` around the live ratio,
+   intersected with the LEGAL EFFECTIVE-curve domain
+   `[paramMin·2^(−depth/12), paramMax·2^(+depth/12)]` (the parameter
+   bounds relaxed by the LFO excursion — the effective curve is
+   PITCH+LFO, whose legal domain is ±14 st at the depth maximum) and
+   clamped to the ENGINE's declared ratio range `[minRatio, maxRatio]`
+   (the hard validity limit — an engine never receives a ratio outside
+   its declared capability). At LFO depth ≤ 1 st every term degenerates
+   EXACTLY to the pre-Task-30 ±1 st formula (bit-identical envelope for
+   every pre-existing audio-path case). The adapter pre-fills the job's
+   dense curve array with the envelope extremes (varispeed-style engines:
+   alternating env-min/env-max; sum- and horizon-type scans: env-max
+   throughout) so EVERY prepare-time scan bounds the worst case the job
+   will ever see. The runtime curve value is `clamp(automation(t) ·
+   lfo(t), env)` — a clamp is a COUNTED BOUNDARY EVENT, never a
+   re-prepare trigger (item 4). Consequences, all documented and bounded:
    * sizing (windows, budgets, accumulators, horizons) is correct for any
      automation within the envelope — no exception paths, ever;
    * the pv.classic AA cutoff is the envelope max (≈ +1 st above live):
      at identity the cutoff is `0.95/2^(1/12) ≈ 0.897·Nyquist` (≈19.8 kHz
      at 44.1 kHz — full band to the ear); at the extremes it is ≈5% more
      conservative than the offline engine's exact-curve cutoff;
-   * automation that exits the envelope TRIGGERS a re-prepare (item 4)
-     rather than being silently clamped forever: the clamp only bridges
-     the few milliseconds until the replacement job is live. Static
-     settings: no clamping occurs at all.
+   * a STATIC PITCH+LFO setting never clamps (the pre-Task-30 ±1 st
+     constant violated this for every depth > 1 st — the measured futile
+     churn: 759 clamps / 329 re-prepares per 2 s at −12 st + LFO, a seam
+     every ~6 ms; Task 30 removed the root, not the counters);
+   * the REMAINING clamp is the honest engine-limit boundary: an engine
+     whose declared ratio range is narrower than the legal surface
+     (native.vardelay [0.5, 2.0] vs the ±14 st surface) clips the
+     effective curve at its declared floor/ceiling — accepted-but-clipped
+     (the Task-30 LFO boundary decision), counted, never a rebuild (a
+     re-prepare cannot move a declared engine capability);
+   * automation that exits the envelope is bridged by the clamp for the
+     few milliseconds until the re-centred replacement chain is live
+     (item 4) — the clamp only ever bridges, it never decides.
 3. **Live curve.** The job's dense curve array is owned by the adapter and
    is written per input frame as frames arrive (automation sampled at
    frame granularity with per-block ramps taken from the VST3
@@ -207,9 +225,14 @@ honour the full contract).
    plain `std::jthread` + a lock-free hand-off: the new chain is published
    by an atomic pointer swap at a block boundary; retired instances are
    freed by the preparation thread after a two-block grace epoch).
-   Re-prepare triggers: envelope exit, engine selection change, engine
-   parameter change, sample-rate change, block-size growth beyond the
-   prepared max, reset/flush request, job-length cap (N_seg). The audio
+   Re-prepare triggers (the Task-30 policy — a re-prepare fires ONLY on a
+   genuine dependency change; a runtime clamp is NEVER among them):
+   pitch-automation envelope exit (the re-centre), LFO-depth growth beyond
+   the chain's envelope margin (the capability re-size — ONE rebuild per
+   growth, never per block; a depth shrink keeps the wider envelope),
+   engine selection change, engine parameter change, sample-rate change,
+   block-size growth beyond the prepared max, reset/flush request,
+   job-length cap (N_seg). The audio
    thread caps `outCapacity` so an engine's production never runs ahead
    of the curve the adapter has already materialised (the ratio stepping
    always consumes real automation samples).
@@ -336,6 +359,43 @@ Exposed parameters (product surface — frozen identity, stable tags):
 * LFO RATE (0.1–8 Hz, default 5), LFO DEPTH (0–2 st, default 0 = off) —
   the runtime pitch-curve control appropriate to the realtime model
   (curve = automation + sine LFO, envelope-clamped).
+
+**THE GLOBAL LFO ROLE (Task 30 audit, decided):** the LFO is RETAINED as
+PRODUCT FUNCTIONALITY — a creative vibrato-style modulation control on
+the shared pitch-curve surface — AND, de facto, the realtime stress
+instrument of the test suites (the only cyclic curve source the product
+has; used as the measurement drive in the audio-path and diagnostics
+suites). It is NOT an engine-specific parameter and never was post-Task-29:
+the UI positions it under "SHARED PITCH CURVE · LFO" on the pitch panel,
+the engines receive the resolved curve through their declared
+dynamic-ratio capability. Evidence for the retention: the specification
+declares it on the product surface (automatable), every v0.1 engine
+declares PerSample/FixedBlock dynamic-ratio support, and removing it
+would break the shared-surface architecture to hide a lifecycle bug that
+is now fixed at its root.
+
+**THE LFO BOUNDARY SEMANTICS (Task 30, decided):** a PITCH+LFO
+combination is ACCEPTED — the UI does not constrain LFO depth against
+the pitch (the shared surface is engine-agnostic; the adapter alone owns
+the engine-range interaction, so no UI component may invent per-engine
+ranges). The legal effective-curve domain is ±14 st (PITCH ±12 + LFO
+±2). Each engine's coverage of that domain, from its DECLARED
+capabilities (the registry — the single authority):
+
+| engine | declared range | ±14 st coverage |
+|---|---|---|
+| native.varispeed | [0.0625, 16.0] | full |
+| native.vardelay | [0.5, 2.0] | clips beyond ±12 st (the LFO excursion past the parameter boundary) |
+| native.pv.classic | [0.25, 4.0] | full |
+| native.pv.phaselocked | [0.25, 4.0] | full |
+| native.granular | [0.125, 8.0] | full |
+
+Where the engine covers the domain, the chain envelope covers it too (no
+clamping, no rebuild — a static setting renders the true curve). Where
+it does not (native.vardelay at the extremes), the effective curve is
+CLIPPED at the engine's declared limit — accepted-but-clipped, counted in
+the clamp-events diagnostic, no rebuild (a rebuild cannot move a
+declared capability). The engine NEVER receives an invalid ratio.
 * Per-engine panels (UI shows only the selected engine's controls; the
   non-selected engines' parameters hold their values but are not applied
   — declared, not fake):

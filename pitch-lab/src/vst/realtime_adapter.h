@@ -10,11 +10,22 @@
 //  * PRESERVING engines (vardelay, granular, pv.classic, pv.phaselocked)
 //    run as a sequence of virtual jobs (§4.1): long segments (N_seg),
 //    overlapping by the engine's own transition length X, crossfaded at
-//    the seams; a ±1 st pitch envelope per job makes every prepare-time
+//    the seams; a pitch envelope per job makes every prepare-time
 //    whole-curve scan (s_max / r_max / p_end / horizon) a correct bound
-//    for any automation inside the envelope (the curve is clamped to it);
-//    automation leaving the envelope triggers a re-prepare (a new chain,
-//    crossfaded in — never silent clamping).
+//    for any automation inside the envelope (the curve is clamped to it).
+//    THE ENVELOPE RULE (Task 30): ±max(1 st, live LFO depth) around the
+//    live ratio, the parameter-domain bounds relaxed by the LFO excursion,
+//    and the ENGINE's declared ratio range as the hard clamp — a static
+//    PITCH+LFO setting never clamps (spec §4.1 item 2). Lifecycle: a
+//    re-prepare fires ONLY on a genuine dependency change — engine/
+//    configuration change (the chain signature), pitch automation leaving
+//    the envelope (the re-centre), the LFO depth growing beyond the
+//    chain's envelope margin (the capability re-size; ONE rebuild, never
+//    per block), or reset/format events. A runtime clamp is a COUNTED
+//    boundary event (an engine's declared limit or a transient exit
+//    bridge), never a re-prepare trigger — the pre-Task-30 clamp→epoch
+//    coupling was the measured rebuild-churn root cause (759 clamps /
+//    329 re-prepares per 2 s at −12 st + LFO) and is removed.
 //  * native.varispeed is RateFollowing (§3): its output/input frame counts
 //    diverge, which cannot be sustained in fixed-block realtime. It runs
 //    under the WINDOWED-SPLICE adaptation (§4.2): real varispeed jobs over
