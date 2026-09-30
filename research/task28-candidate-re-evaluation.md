@@ -1,7 +1,8 @@
 # Task 28 — Pitch Engine Candidate Re-Evaluation
 ## OLA / WSOLA / TD-PSOLA / FD-PSOLA / Transient-Aware Phase Vocoder
 
-**Status:** IN PROGRESS (checkpoint 1 of 6: framework + OLA complete)
+**Status:** COMPLETE (all five candidates implemented, measured and classified; final commit
+at task-28 closure)
 **Date started:** 2026-09-30
 **Governing process:** AI Assisted Software Engineering Operating Principles v3.0
 **Question being asked (the task's core decision principle):** *not* "which algorithm is the best
@@ -856,9 +857,168 @@ the five production engines, the classification table, and the final research de
 * Per-channel phase propagation drifts inter-channel on sustained spans (the classic PV
   behaviour — the shared resets only pin the transient moments).
 
-### OPEN QUESTIONS
-* Would Röbel's transient-position optimisation (reset at the intra-frame transient peak)
-  sharpen further? (A within-frame refinement — one more parameter, not built.)
-* Does the phaselocked engine + resets stack (the L-D locking AND the reset)? — the natural
-  follow-up experiment if the spectral lane proceeds (two independent phase treatments on
-  the same grid).
+---
+
+## 6. CROSS-CANDIDATE COMPARISON (Phase H consolidated)
+
+No ranking. No aggregate score. The measured differentiation matrix (the shared corpus, the
+shared measurement layer, default configurations; drum/vocal +12; RTF at bs=256):
+
+| engine | drum sharp (dB) | drum tail | drum comb | vocal dom | vocal f0 | vocal centroid | vocal comb | RTF | worst-vs-budget |
+|---|---|---|---|---|---|---|---|---|---|
+| native.varispeed | −9.24 | +2.5 | 2.9 | 1400.1 | 280.0 | 1305.8 | 55.8 | — | — |
+| native.vardelay | −10.07 | +3.8 | 2.4 | 1399.8 | 280.0 | 1305.8 | 41.0 | — | — |
+| native.pv.classic | −13.24 | +3.6 | 3.1 | 1400.1 | 280.0 | 1305.7 | 46.2 | — | — |
+| native.pv.phaselocked | −11.82 | +1.8 | 8.5 | 1400.1 | 280.0 | 1282.8 | 50.5 | — | — |
+| native.granular | −9.89 | +3.6 | 3.3 | 1400.1 | 280.0 | 1305.8 | 42.5 | — | — |
+| proto.ola | −9.35 | **−0.7** | **12.4** | 1356.2 | 112.3* | 1269.1 | 38.7 | 0.063 | 0.50× |
+| proto.wsola | −8.84 | **−0.8** | 4.5 | 1399.6 | 279.9 | 1305.5 | 52.0 | 0.229 | 0.87× |
+| proto.tdpsola | −14.90† | +9.8† | 3.3† | **559.9** | 279.9 | **538.2** | **20.2** | 0.001 | 0.00× |
+| proto.fdpsola (γ=1) | (≡ tdpsola, bit-identical; γ axis: centroid 653→1316 at identity pitch, f0 140.0 exact) | | | | | | | 0.002 | 0.00× |
+| proto.pvtransient | −11.76 | +3.6 | 4.2 | 1400.1 | 280.0 | 1305.8 | **23.0** | 0.086 | 0.26× |
+
+\* OLA's flutter biases the tracker on shifted tonal material (the dominant/ZC estimators
+disagree — the artifact IS the pitch instability). † tdpsola's drum row is the INPUT's own
+values (the voicing gate passes drums through untouched).
+
+**Transient sharpness ranking (drum +12, all ten engines):** pvtransient[band] −7.61 >
+WSOLA −8.84 > varispeed −9.24 > OLA −9.35 > granular −9.89 > vardelay −10.07 >
+pvtransient[full] −11.76 > phaselocked −11.82 > pv.classic −13.24 > tdpsola(passthrough)
+−14.90 — **the band-reset PV and WSOLA are the sharpest transient reproducers in the lab;
+the PSOLA family protects transients by not touching them.**
+
+**Duration semantics (vocal +12/−12):** OLA/WSOLA/pvtransient/vardelay/pv.classic ≈ 1.0
+(preserving); tdpsola/fdpsola pitch mode 0.52/2.05 (rate-following — like varispeed's
+0.50/2.00, but with formants preserved).
+
+### Unique capability map (what each candidate adds that NO production engine has)
+* **OLA:** the deliberate comb/flutter artifact family (comb 12–39 dB vs engines' 2.4–8.5;
+  directional FM/AM; transient cut) — a controllable "broken" character.
+* **WSOLA:** content-adaptive scheduling (δ statistics — behaviour that reads the material);
+  the sharpest transients of any TRANSFORMING engine; the directional cut/echo envelope.
+* **TD-PSOLA:** formant-preserving pitch modification + the voicing gate (a material-gated
+  transformer: voice-like material shifts with preserved formants, everything else passes
+  through byte-identically).
+* **FD-PSOLA:** the decoupled pitch/formant axes (formant-only shifting at identity pitch —
+  f0 140.0 exact with centroid ×2; the two-axis control surface).
+* **Transient-PV:** transient preservation inside the spectral family (+3.35 dB sharpness,
+  impulse-exact) + the sustained-lane comb halving (23.0 vs pv.classic's 46.2 dB).
+
+### Overlap honesty
+* WSOLA's clean lane overlaps varispeed/vardelay/pv.classic's quality envelope on tonal
+  material (all dom- or f0-exact; the differentiators are the transients and the
+  content-adaptivity, not the sustained-tone quality).
+* OLA's identity is transparent like everything else; its shifted behaviour is strictly
+  "worse" as quality and strictly DIFFERENT as character.
+* pvtransient's sustained behaviour IS the classic PV's (by construction — the same pipeline
+  plus resets); the difference is exactly the reset family.
+* tdpsola's stretch mode is a clean conventional shifter (f0 exact, rms 1.00) — overlapping
+  the conventional lane; the pitch mode is the distinct part.
+
+---
+
+## 7. FINAL CLASSIFICATION (Phase N) AND THE PHASE-R DECISIONS
+
+| Candidate | Primary classification | Old verdict | The measured reason |
+|---|---|---|---|
+| **OLA** | **3 — CREATIVE/CHARACTER ENGINE** + **4 — REFERENCE** | Benchmark baseline only | The artifact family is real, deterministic, parameter-controllable and outside every production engine's measured range; the worst-case-quality reference role is kept |
+| **WSOLA** | **1 — PRODUCT ENGINE CANDIDATE** | Optional slow/static mode | Clean-shift lane with content-adaptive scheduling, the sharpest transforming transients, directional cut/echo — confirmed and strengthened |
+| **TD-PSOLA** | **2 — EXPERIMENTAL PRODUCT ENGINE** | Benchmark (voice-only) | The voicing gate + formant-preserving pitch modification are measured behaviour classes absent from the registry; "voice-only" INVERTS into the gate character |
+| **FD-PSOLA** | **2 — EXPERIMENTAL PRODUCT ENGINE** (control surface) | Skip | The decoupled pitch/formant axes (formant-only at identity) — a distinct capability, and a bit-identical strict superset of TD-PSOLA |
+| **Transient-PV** | **1 — PRODUCT ENGINE CANDIDATE** | Prototype | The reset demonstrably buys transient fidelity AND a cleaner sustained lane at trivial cost; built AS a reusable layer (the Phase-E architecture answer) |
+
+**EXCLUDE was not used for any candidate: no hard blocker exists.** All five are technically
+real, reproducible, deterministic, allocation-free, block-invariant, realtime-capable (RTF
+0.001–0.23) and dynamically controllable. The old quality-first verdicts (benchmark-only /
+optional / skip) are all overturned or elevated by the sound-design-lens measurements.
+
+### Phase R — the final research decisions (per candidate, the 12 questions)
+
+**OLA — KEEP (as reference + creative character).** Real: yes. Understood: yes (two design
+iterations; the flutter mechanism numerically proven). Implementation/realtime/dynamic:
+trivial/yes/hop-rate. Distinct transformation: yes (comb family). Distinct character: yes
+(flutter, cut). Absent behaviour: yes (no engine has a controllable comb/flutter family).
+Native prototype: DONE (this task). External reference: not needed. Worth preserving: yes.
+Hard blocker: none.
+
+**WSOLA — KEEP (product candidacy).** Real: yes. Understood: yes (one reproduced defect —
+the silence-drift class — root-caused and fixed). Implementation/realtime/dynamic: low/yes
+(RTF 0.23)/hop-rate. Distinct transformation: the clean lane overlaps; the content-adaptive
+scheduling is distinct. Distinct character: yes (cut/echo directional envelope; the δ
+statistics). Absent behaviour: yes (material-adaptive grain placement). Native prototype:
+DONE. External reference: SoundTouch as a BENCHMARK only (LGPL — never link). Worth
+preserving: yes. Hard blocker: none. OPEN QUESTION carried: NCC-vs-SSE metric (one
+parameter).
+
+**TD-PSOLA — KEEP (experimental product / creative).** Real: yes — after correcting two
+genuine design errors (the duration-preserving direct-pitch schedule proven invalid; the
+window-product normalisation killing the mechanism — both documented with reproduction).
+Understood: now deeply (the mechanism's material dependence is proven, not assumed).
+Implementation/realtime/dynamic: moderate/yes (synthesis RTF 0.001; the analysis RTF 0.18 is
+the pYIN tracker)/per-period (the fastest lane). Distinct: yes (formant-preserving +
+voicing gate). Absent behaviour: yes. Native prototype: DONE (both modes). External
+reference: Praat-class as BENCHMARK only (GPL — never link). Worth preserving: yes. Hard
+blocker: none. DEFERRED sub-items: streaming tracker (measured cost 0.18 RTF + 53 ms);
+true epoch detection.
+
+**FD-PSOLA — KEEP (experimental product, control surface).** Real: yes. Understood: yes
+(the decoupling measured; the comb/envelope intermodulation documented). Implementation/
+realtime/dynamic: low-on-top/yes/per-mark β (γ static in the prototype). Distinct: yes —
+THE formant-only axis. Absent behaviour: yes (nothing in the registry or the other
+candidates decouples the axes). Native prototype: DONE. External reference: not needed.
+Worth preserving: yes — as the γ extension of the PSOLA engine (the bit-identical superset
+makes one engine with optional γ the natural shape). Hard blocker: none.
+
+**Transient-PV — KEEP (product candidacy; the strongest case).** Real: yes. Understood: yes
+(the reset's trade measured; the bonus comb-halving on pulse-train material). Implementation/
+realtime/dynamic: low-on-top/yes (RTF 0.07–0.09)/hop-rate. Distinct: yes (transient
+preservation inside the spectral family — the measured capability gap of the existing
+pv.classic/pv.phaselocked). Absent behaviour: yes. Native prototype: DONE — AS the reusable
+layer (the Phase-E architecture answer: a ~280-line phase treatment on the stretch
+machinery, with optional standalone packaging). External reference: Rubber Band as
+BENCHMARK only (GPL — never link; its "mixed" band limits are published parameter values).
+Worth preserving: yes. Hard blocker: none.
+
+### Recommended next task (derived from this task's evidence)
+1. **The transient-aware phase treatment as a product decision**: the measured +3.35 dB
+   transient sharpening and the vocal comb halving (23.0 vs 46.2 dB) close the spectral
+   family's known weakness at trivial cost — the natural first product integration (the
+   layer already fits the stretch machinery; the registry/parameter surface is the owner
+   decision).
+2. **The PSOLA family as the experimental engine set**: one engine, two modes, optional γ
+   (the bit-identical superset shape) — the voice-gated formant-true character is a
+   behaviour class the registry lacks entirely.
+3. **WSOLA** as the quality/static-shift product candidate with the content-adaptive
+   character (the NCC-metric experiment first if proceeding).
+4. **OLA** stays the benchmark reference; its creative-character candidacy is an
+   owner-listening decision (the renders are committed).
+
+---
+
+## 8. EVIDENCE INDEX (Phase Q summary)
+
+* All [MEASURED] numbers: the committed JSON artifacts under
+  `pitch-lab/results/research/task28-candidates/` (5 candidate reports ≈ 700 records, 5 RT
+  probes, the 240-record existing-engine baseline) — deterministic, regenerable with the
+  same binary (the rtprobe timing fields are local evidence, marked).
+* [MEASURED-BASELINE]: the frozen production engines driven read-only through their real
+  contract (default configurations) on the same corpus/metrics.
+* [VERIFIED-PAPER]: the algorithm descriptions (Moulines-Charpentier 1990, Verhelst-Roelands
+  1993, Röbel 2003, the classic-PV lineage) — primary sources read in Tasks 3/4 (the doppler
+  report's citations).
+* [INFERENCE]: the mechanism stories (the OLA time-warp, the PSOLA pulse re-spacing, the
+  reset/comb-halving mechanism) — reasoning over direct measurements, tagged as such.
+* Defect evidence: five prototype/design defects found, reproduced, root-caused and fixed
+  DURING the work (the WSOLA silence-drift; the TD-PSOLA mark-runaway corruption; the
+  TD-PSOLA duration-preserving schedule (proven invalid); the TD-PSOLA normalisation error;
+  the PSOLA flush bound) — all documented in the per-candidate sections and the worklog.
+* Verification: per-candidate selftests in CTest (identity exactness, duration, finiteness,
+  determinism, allocation audit, block-split invariance); ASAN/UBSAN clean on every
+  candidate's selftest + rtprobe; the full VST3 build + validator 47/47 + CTest green at
+  every checkpoint; the task-27 audio-path artifact byte-identical throughout.
+
+**Licensing summary (Phase M):** all five candidates are clean-room own implementations from
+published algorithm descriptions; no external DSP code is imported, read-for-derivation or
+linked. Reference/benchmark-only external implementations (SoundTouch LGPL, Rubber Band
+GPL, Praat GPL) are explicitly NOT linked and never will be in the product; pocketfft (BSD-3)
+and doctest (MIT) are the project's existing vendored dependencies.
