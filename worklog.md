@@ -1266,3 +1266,16 @@ Stage Summary:
 - The architecture is untouched where Task 29/30 froze it: engine-owned parameters, the registry, the clamp/re-prepare decoupling, the LFO role, the UI (the editor not rebuilt — the new diagnostic is status-surface only, no UI change), the offline/VST distinction, the engines' DSP.
 - FINAL STATE: build GREEN (PITCHLAB_BUILD_VST3=ON; the bundle build/VST3/Release/PitchLab.vst3, module SHA-256 7401384e5a41e556a9bd9430a2820dc4d167a64fb520ca8bac670ee96819d136); validator 47/47; CTest 40/40; sanitizers clean; the artifact byte-identical; the real VST path and the real UI path green; pushed to GitHub with CI verified green (see the delivery section of the final report).
 - REMAINING (recorded, not hidden): the re-coverage repeat itself (the Λ_eff policy's inherent cost — a semantic redesign is out of scope); the 96 kHz granular splice RTF (the known Task-30 CPU cause, unchanged); the unreachable defensive history-tail fallback (documented); the previously recorded granular realtime downshift limitation + the pv.phaselocked amplitude characteristic (intact); the host-side 1021-fault reproduction (bounded-unresolved).
+
+---
+Task ID: task-31-ci-verification
+Agent: Delivery verification agent (Z.ai Code session, 2026-10-01)
+Task: Verify the Task-31 GitHub Actions delivery for commit 6d75218.
+
+Work Log:
+- The push 8ea9ef0..6d75218 (main -> main) delivered the task-31 implementation commit.
+- GitHub Actions run 36873633762 for head 6d75218: ALL THREE JOBS SUCCESS — T-INF1 infrastructure; the vst3-product lane (the REAL VST3 build + the SDK validator + CTest 40/40 + the audio-path artifact byte-determinism regeneration check + the Xvfb UI lane); the Windows x64 delivery lane (the downloadable PitchLab-VST3-Windows-x64 artefact 913736 B, id 11167448704, published for the final source state).
+- Remote HEAD verified: origin/main == 6d75218; the local working tree clean.
+
+Stage Summary:
+- Task 31 CLOSED with the final state on GitHub: the seam fix + the full matrix + the spec/worklog/results documentation, CI GREEN on the exact final commit.
