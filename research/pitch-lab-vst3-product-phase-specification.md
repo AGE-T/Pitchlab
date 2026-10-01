@@ -166,7 +166,11 @@ jobs destroy without finish — a declared realtime path; complete jobs
 honour the full contract).
 
 1. **Job geometry.** Job k covers the absolute input interval
-   `[A_k, A_k + N_seg)` with `N_seg = 30 s · fs` (long: seams are rare;
+   `[A_k, A_k + N_seg)` with `N_seg = 10 s · fs` **(recorded correction, task-33 SoT pass
+   2026-10-01: this text previously said 30 s — a documentation drift; the implemented
+   constant is `kSegmentSeconds = 10` (`realtime_adapter.cpp:24`) and always was, matching
+   `docs/vst3-product.md`; the discovery-report §1.10 drift item is closed here. The
+   geometry itself is unchanged.)** (long: seams are rare;
    automation is NOT quantised to jobs — see item 3). Consecutive jobs
    OVERLAP by `X` frames (per-engine: vardelay W, granular G, PV N) — the
    same absolute input is fed to both instances during the overlap
@@ -464,6 +468,53 @@ index.
 Seeds: the granular engine's SeededDeterministic seed is a fixed product
 constant (documented; jitter default 0 makes it inert for defaults).
 
+**THE TASK-33 FROZEN-SURFACE AMENDMENT (recorded 2026-10-01, BEFORE coding
+— the deliberate parameter-model changes for `native.timepitch`, each
+following the Task-32 single-deliberate-change precedent):**
+
+1. **ENGINE row domain: five → six** — the shared table's `kEngine` row
+   gains `max` 5, `stepCount` 5 (indices 0..5; default stays 1 =
+   vardelay). The ONE deliberate frozen-surface change of this task;
+   recorded here + in the frozen-surface test comment. Old states load
+   unchanged (engineIndex values 0–4 stable; `native.timepitch` does not
+   exist in old states; new states are forward only).
+2. **Six new VST tags (frozen, never renumbered):** free IDs 22–27 —
+   `kTpMode` (22), `kTpWindow` (23), `kTpOverlap` (24), `kTpShape` (25),
+   `kTpTolerance` (26), `kTpFormant` (27) — plus six `kEngineParamBindings`
+   rows (`(native.timepitch, mode)`, …) and six `ParamSnapshot` /
+   `ChainSignature` POD fields (`mode` and every rebuild-triggering
+   parameter are signature members; γ is a signature constant, not a
+   curve, in v1). `validateEngineParameterModel()` stays green
+   (uniqueness); IDs 28–29 and 5–9 remain free.
+3. **parameterCount 19 → 25** (frozen test expectation); per-engine
+   visible tag/key sets + hidden counts extended; normalisation
+   round-trips for the new rows.
+4. **`chainGeometry` + `expectedLatencyFrames`:** a new `native.timepitch`
+   branch with the per-mode geometry (spec §6.6.1 item 17: wetLen =
+   jobInputLen = 10 s; seamX = N (Fixed/Adaptive) or 2·pMax
+   (Pitch-Synced/Pitch + Formant); spliceMode = false) and the per-mode
+   declared latency (§6.6.1 item 10; the tracker term Λ_tr first-class,
+   ≈122 ms total @48k Pitch-Synced); `worstCaseLatencyFrames` extended
+   with the new engine's worst Λ over the FULL parameter surface
+   (window 16384, tolerance 8192, tracker at 192 kHz) — sizes
+   dryRetention + laneCapacity.
+5. **Per-mode parameter visibility (the net-new minimal mechanism):**
+   `EngineParamDescriptor` gains optional descriptor-level visibility
+   data (`visibleWhenKey`/`visibleWhenValues`; NULL = always visible);
+   the editor filters `engineParamsFor(engineIndex)` by evaluating the
+   guard against the authoritative `mode` value — descriptor-driven, the
+   UI stays dumb, no engine list is reintroduced. The VST parameter
+   COUNT does not change with the selected mode (hidden-by-condition
+   params remain registered — UI-invisible, not deregistered): no tag
+   churn, no state-compat hazard, no parameter-count flicker on mode
+   change. Per-mode visibility map (spec §6.6.1 item 18): window/
+   overlap/shape ⇒ {fixed, adaptive}; tolerance_frames ⇒ {adaptive};
+   formant_ratio ⇒ {pitch_formant}; `puv_hz` ⇒ never (hidden).
+6. **State compatibility statement:** states saved by older builds load
+   with identical behaviour for the five existing engines; new states
+   are forward only. The frozen-surface equality test is updated in the
+   SAME commit as the implementation (never before).
+
 ## 7. UI (VSTGUI editor)
 
 A hand-drawn VSTGUI editor (custom `CView`/`CControl` subclasses — not an
@@ -472,7 +523,10 @@ XML template screen): dark zinc panels (zinc-950/zinc-900), emerald accent
 badge, monospace uppercase micro-labels — the workbench identity (the
 workbench itself is untouched). Fixed logical size 680×486 (Task 32: the
 editor grew from 680×450 to hold the realtime-status lines), DPI-scaled.
-Sections: ENGINE (segmented selector, 5 entries from the registry), PITCH
+Sections: ENGINE (segmented selector, 5 entries from the registry — the
+recorded task-33 target state is 6 entries with the panel filtered by the
+§6 per-mode visibility mechanism; the selector grows with the
+implementation commit, never before), PITCH
 (large semitone control + the SHARED pitch-curve/LFO row), ENGINE panel
 (per-engine controls — see below), OUTPUT (dry/wet, bypass, level), METERS
 (stereo in/out peak+RMS), STATUS (engine display name, adaptation label,

@@ -429,6 +429,19 @@ The example explains semantics only; it does not freeze any implementation (inte
 - Forcing RateFollowing engines into a duration-preserving contract (pad/truncate varispeed output to the input length) — rejected: it falsifies the reference model and hides the defining behaviour of the family (§O.18).
 - Freezing the exact rate-following C++ signatures at design time — rejected: this document defines semantics; signatures are implementation detail within them (§O.20).
 
+#### D.4.6 Task-33 amendment (recorded 2026-10-01, BEFORE coding — mode-scoped DurationBehaviour for `native.timepitch`; OQ-1)
+
+The two D.4 behaviours — `Preserving` and `RateFollowing` — and their semantics are preserved **VERBATIM**; no new duration model is introduced. What changes: `Capabilities.duration` becomes **mode-scoped** for the unified time-pitch engine (`native.timepitch`, implementation specification §6.6): the engine resolves its DurationBehaviour per CONFIGURATION (the same per-config resolution the VST adapter already performs via `chainGeometry`):
+
+| Mode (user-facing) | Algorithm | DurationBehaviour |
+|---|---|---|
+| Fixed | OLA | Preserving |
+| Adaptive | WSOLA | Preserving |
+| Pitch-Synced | TD-PSOLA | RateFollowing |
+| Pitch + Formant | FD-PSOLA | RateFollowing |
+
+The Pitch-Synced RateFollowing semantics are the behaviour ACTUALLY IMPLEMENTED AND VALIDATED by the TD-PSOLA prototype: the MC90 pitch schedule — voiced spans change duration by 1/β, unvoiced spans unchanged (effective consumption recurrence `r_eff(t) = β(t)` on voiced spans, `1` on unvoiced). The consequence for the expectation derivation (the executable form is implementation specification §4.3.4, which carries the dated task-33 amendment): the expected-length input extends from "the input-indexed curve" to "the input-indexed curve **plus the engine's deterministic mark/voicing schedule**" — the schedule is a deterministic function of (input, configuration), part of the exact engine recurrence the replay machinery replays bit-identically, so the replay argument is unchanged. The prototype's alternative "stretch" schedule (duration-preserving, formants shift) is deliberately NOT exposed in the product mode surface; reintroduction would be a recorded surface extension.
+
 ### D.5 Rejected capability fields (and why)
 
 - `supportsExtremeRatio` — derivable from `minRatio/maxRatio`; redundant.
@@ -475,6 +488,8 @@ Initial registry contents (mapping §7 tiers → UsageClass; **phase column = im
 | `ext.rubberband` | C | ExternalBenchmark | post-v0.1 | Rubber Band — GPL-2.0+ ⇒ **subprocess adapter only** |
 | `ext.soundtouch` | C | ExternalBenchmark | post-v0.1 | SoundTouch — LGPL-2.1 ⇒ **subprocess adapter only** |
 | *(future)* `future.hnm`, `future.world`, ... | — | Future / Rejected | future | per research report §B.6 (not built unless re-scoped) |
+
+**Task-33 supersession amendment (recorded 2026-10-01, BEFORE coding — never a silent rename):** the post-v0.1 phase-table rows `native.wsola`, `native.tdpsola` and `native.fdpsola` are **SUPERSEDED by the single production id `native.timepitch`** (implementation specification §6.6/§6.6.1): the owner accepted ONE unified engine (OQ-5) whose user-facing modes Fixed / Adaptive / Pitch-Synced / Pitch + Formant map internally onto OLA / WSOLA / TD-PSOLA / FD-PSOLA. The table rows above are retained as history; no engine with those ids will be registered. `native.pv.transient` is UNAFFECTED — it stays a separate post-v0.1 research path, explicitly OUT OF SCOPE for task 33 (owner decision OQ-7; the WORLD and Signalsmith external references likewise remain external research items).
 
 ### D.7 What the contract deliberately does NOT contain
 

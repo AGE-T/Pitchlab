@@ -7,6 +7,27 @@ engines the v0.1 research pipeline uses (`native.varispeed`,
 `native.granular` — the sealed v0.1 engine registry, in that order).
 There is no second engine implementation, no stub, no fake quality score.
 
+> **Recorded ahead of implementation (task 33 SoT, 2026-10-01):** the owner
+> accepted the sixth production engine `native.timepitch` ("TIMEPITCH" in
+> the selector) — ONE engine with four user-facing modes: **Fixed** (OLA),
+> **Adaptive** (WSOLA), **Pitch-Synced** (TD-PSOLA), **Pitch + Formant**
+> (FD-PSOLA). The authoritative specification is
+> `research/pitch-lab-v0.1-implementation-specification.md` §6.6/§6.6.1
+> (the frozen constants, measured before coding). Product-surface
+> implications, all recorded in the product-phase specification §6/§7:
+> the ENGINE selector grows 5 → 6 entries; six new engine-configuration
+> parameters (Mode, Window, Overlap, Shape, Tolerance, Formant) appear in
+> the TIMEPITCH panel, filtered per mode (the VST parameter count stays
+> constant across modes — hidden-by-condition parameters remain
+> registered); duration semantics are mode-scoped (Fixed/Adaptive preserve
+> duration; Pitch-Synced/Pitch + Formant follow the MC90 pitch schedule —
+> voiced spans change duration by 1/β, unvoiced spans unchanged); the
+> Pitch-Synced modes declare ≈122 ms input latency @48 kHz (the
+> first-class streaming-pYIN tracker term included — never hidden, shown
+> in the STATUS panel per the existing mechanism). Nothing in this
+> document's engine descriptions changes until the implementation commit;
+> the registry stays at five engines until then.
+
 * Product-phase specification: `research/pitch-lab-vst3-product-phase-specification.md`
   (architecture, the realtime adaptation boundary, the parameter model, the
   recorded implementation-time corrections).
