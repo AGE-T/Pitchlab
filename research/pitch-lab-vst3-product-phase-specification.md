@@ -258,6 +258,34 @@ honour the full contract).
    until the host reactivates the plug-in; the status reports the true
    Λ_eff. Splice-mode engines declare fixed worst-case latencies over the
    FULL parameter range (stability over optimality — see §12).
+
+   TASK-31 SEAM-COVERAGE RULE (the retention made real, measured then
+   fixed — `results/vst3/task31/seam-coverage-measurements.md`): a Λ_eff
+   GROWTH moves the emission read position BACKWARD by ΔΛ at adoption —
+   "re-covering already-emitted frames". The re-covered range is served by
+   the retiring chain (the new chain starts at its own base). Two
+   mechanisms make that coverage complete:
+   * **the RETAINED WET HISTORY** (a per-chain lane): at each job death the
+     produced wet is copied before the preparation thread can recycle the
+     job (raw region by memcpy, the final seamX frames through the same
+     blend readWet uses — both lanes alive at that moment), and the
+     retiring emission read falls back to it when readWet misses (served
+     frames counted in the `seamRecoveries` cadence diagnostic, never
+     silent, NOT a fault). The retention horizon is the same worst-case
+     constant the lanes are sized for — this is the retention this very
+     item declared; the pre-Task-31 implementation sized the lanes but the
+     job recycling destroyed the data (the measured 13558/14406-frame
+     dry-fallback bursts on the extreme granular grain jump 0.1 s → 0.5 s,
+     ΔΛ 19200).
+   * **the retiring grid continuation**: the retiring chain's job
+     scheduling continues while the chain lives (bounded by the last wet
+     position the emission reads from it) — the retiring chain remains the
+     sole wet source below the new chain's base, so its grid must not
+     freeze at adoption (the measured 15680-frame ungenerated span on the
+     REVERSE jump, a latency decrease).
+   The re-coverage replay is bit-identical to the previously-emitted wet
+   (tested at every block size 128..2048 and rate 44.1/48/96 — the repeat
+   is the Λ_eff policy's declared cost, rendered as wet, never dry).
 6. **Output ring.** Engine output lands in a pre-allocated output ring;
    the host block is emitted from the ring at the declared latency; the
    dry path is taken from the input ring (delay-matched by the same
@@ -554,9 +582,13 @@ Windows CI lane is a future owner decision, not part of this phase.
 * The effective emission latency is the activation's maximum (§4.1 item 5,
   the Λ_eff correction): engine switches never lower the latency
   mid-stream; reactivate (toggle processing) to return to the engine's own
-  latency. An engine switch into a HIGHER-latency engine re-covers the
-  last Δ frames (the inherent, in-any-plugin cost of a mid-stream latency
-  increase — crossfade-blended, bounded by Δ).
+  latency. An engine switch into a HIGHER-latency engine — or any
+  same-engine configuration change that grows Λ (the granular grain
+  length) — re-covers the last Δ frames (the inherent, in-any-plugin cost
+  of a mid-stream latency increase; Task 31: the re-coverage is served
+  from the retained wet history as a bit-identical replay, then
+  crossfade-blended at the seam — never a dry burst; see §4.1 item 5's
+  Task-31 seam-coverage rule).
 * pv.classic AA cutoff carries the +1 st envelope margin (§4.1 item 2).
 * Automation that exits the ±1 st envelope re-prepares the chain (a
   crossfade seam during fast pitch sweeps — masked by the sweep itself).

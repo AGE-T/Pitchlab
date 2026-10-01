@@ -1000,10 +1000,14 @@ TEST_CASE("T-J9: a true engine-configuration change still re-prepares") {
   // A bounded seam-scale transient (<= 64 frames of dry fallback at the
   // re-coverage boundary) is the pre-Task-30 mid-stream switch behaviour
   // for same-engine latency growth (measured 6 frames at the 0.1 -> 0.2
-  // grain jump; the EXTREME 0.1 -> 0.5 jump's 14406-frame burst is a
-  // pre-existing retiring-coverage limitation, recorded in the Task-30
-  // worklog as out-of-scope — NOT a Task-30 regression, verified identical
-  // on the pre-change adapter).
+  // grain jump). THE EXTREME 0.1 -> 0.5 jump's 14406-frame retiring-
+  // coverage burst — recorded as the remaining out-of-scope limitation at
+  // Task 30 — was FIXED by Task 31 (the retained wet history + the
+  // retiring grid continuation): the burst is now SERVED from the
+  // retained history, bit-identical to the previously-emitted wet. The
+  // full matrix (extreme/moderate/reverse, blocks 128..2048, rates
+  // 44.1/48/96, paced/back-to-back, the replay bit-identity, the
+  // cross-engine switch) lives in vst_seam_test (T-S1..T-S10).
   CHECK(st.faults <= 64);
   CHECK(st.deliveryUnderruns == st.faults);  // underrun-class only (no stalls/dry-misses)
   CHECK(st.chainReady);

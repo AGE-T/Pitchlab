@@ -233,6 +233,13 @@ pitchlab_add_vst_suite(vst_engine_params_test)
 # invariants + the 96 kHz granular / PV-phaselocked measurement drives.
 pitchlab_add_vst_suite(vst_realtime_diagnostics_test)
 
+# T-S* (Task 31): the retiring-chain seam coverage suite — the extreme
+# same-engine latency jump (granular grain 0.1 -> 0.5, ΔΛ 19200) fault-free
+# with the re-coverage served from the retained wet history + the
+# replay bit-identity + the block/rate/pacing/LFO matrices + the
+# cross-engine switch control.
+pitchlab_add_vst_suite(vst_seam_test)
+
 # The host-simulation driver: renders corpus material through the REAL VST3
 # process path (used for the retained audio examples; tools/vst_host_sim.cpp)
 add_executable(vst_host_sim ${CMAKE_SOURCE_DIR}/tools/vst_host_sim.cpp

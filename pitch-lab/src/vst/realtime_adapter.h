@@ -136,6 +136,17 @@ struct StatusSnapshot {
   uint64_t jobsPrepared = 0;      // total prepared (scheduled) jobs
   uint64_t processCalls = 0;      // process() invocations
   int preparingJobs = 0;          // prepared-ahead job count (live snapshot)
+  // Task 31 — the seam-coverage diagnostic (a CADENCE figure like
+  // chainsAdopted, NOT a fault — the aggregate `faults` composition is
+  // unchanged): frames served from the RETAINED WET HISTORY (the
+  // retiring-chain re-coverage source; see the Chain::history note in
+  // realtime_adapter.cpp). A nonzero count during a latency-increasing
+  // chain replacement is the retention working as specified (spec §4.1
+  // item 5: the lanes retain the parameter-range worst-case history "so a
+  // mid-stream Λ_eff growth never outruns the retained wet/dry"); the
+  // pre-Task-31 adapter counted these frames as delivery underruns +
+  // dry-fallback bursts because job recycling had destroyed the data.
+  uint64_t seamRecoveries = 0;  // frames served by the retained wet history
 };
 
 // ---------------------------------------------------------------------------

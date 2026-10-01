@@ -420,6 +420,10 @@ struct RealtimeAdapter::Job {
   int64_t consumed = 0;
   int64_t wetWritten = 0;
   bool finished = false;
+  bool everFed = false;  // Task 31: any input actually offered to this job (the
+                         // stall detector's precondition — a job deliberately
+                         // never fed (the retiring grid past the blend end)
+                         // is a documented no-op, not a stall)
   bool enginePrepared = false;  // prepare() done (prep thread; reset() only
                                  // valid on prepared engines — the v0.1 §5 contract)
   std::atomic<bool> dead{false};
@@ -438,6 +442,7 @@ struct RealtimeAdapter::Job {
     consumed = 0;
     wetWritten = 0;
     finished = false;
+    everFed = false;
     stallCounted = false;
     dead.store(false, std::memory_order_release);
   }
@@ -482,6 +487,44 @@ struct RealtimeAdapter::Chain final : RetireStack::Node {
   std::atomic<Job*> slots[kJobSlots]{};
   std::vector<std::unique_ptr<Job>> ownedJobs;
   std::atomic<int64_t> highestPrepared{-1};  // prep thread's scheduling cursor
+
+  // Task 31 — THE RETAINED WET HISTORY (the retiring-chain re-coverage
+  // source; the seam-coverage invariant made real):
+  //
+  // THE INVARIANT (derived from the measured defect + spec §4.1 item 5):
+  // a chain replacement whose latency GROWS (Λ_eff monotonic policy) moves
+  // the emission read position BACKWARD by ΔΛ = Λnew − Λold at adoption —
+  // "re-covering already-emitted frames" (the frozen spec's own words). The
+  // re-covered range [t_a − Λnew, t_a) is served by the RETIRING chain
+  // (the active chain starts at its own base = t_a). The retiring chain's
+  // ALIVE jobs cover only [oldest-alive spanStart, production frontier) —
+  // the region below was produced by jobs that are DEAD, and the job
+  // slots are recycled ~2 windows later (the prep thread re-stamps a dead
+  // job for job k+kJobSlots, wiping its lane): the pre-Task-31 readWet
+  // then failed on the index check and the emission fell back to DRY for
+  // the whole uncovered span — the measured 13558/14406-frame bursts
+  // (region exactly [t_a − Λnew, s_oldest_alive + seamX)).
+  //
+  // The fix is the retention the spec §4.1 item 5 already DECLARES ("the
+  // job lanes ... retain (and are sized for) the parameter-range
+  // worst-case history so a mid-stream Λ_eff growth never outruns the
+  // retained wet/dry"): at each job DEATH (before the recycling can wipe
+  // the lane) the produced wet beyond the current history top is copied
+  // here — the raw region by memcpy, the final seamX frames through the
+  // SAME blend readWet uses (the dying job faded out, the successor faded
+  // in; both lanes are alive at that moment). The retained content is
+  // bit-identical to what readWet returns while the lanes live. The
+  // emission's retiring path falls back to this lane when readWet misses
+  // (counted in seamRecoveries, NOT as faults — the mechanism working).
+  //
+  // Bounds: the retention horizon is the SAME worst-case constant the
+  // lanes/dry lane are sized from (dropBefore(t − retention)); every
+  // Λ_eff growth satisfies Λnew ≤ worstCaseLatencyFrames ≤ retention, so
+  // a re-read position q = t − Λnow is always ≥ the compaction floor.
+  // The capacity follows the lane formula. Audio-thread-only access
+  // (written at deaths, read by the retiring emission); allocated at
+  // chain build (prep thread).
+  LaneWindow history;
 
   ~Chain() override = default;
 
@@ -576,6 +619,34 @@ struct RealtimeAdapter::Impl {
   Chain* retiring = nullptr;  // audio-thread-only
   int64_t retiringLastNeeded = -1;
   std::atomic<RetireStack::Node*> retireHead{nullptr};
+  // Task 31 (the reverse-direction fix): the retiring chain published to the
+  // PREPARATION thread so its job scheduling CONTINUES while the chain
+  // lives. Root cause (measured): after an adoption the retiring chain
+  // remains the SOLE wet source for q < act->base (the new chain starts at
+  // its own base), but serveJobNeeds served only active+pending — the
+  // retiring grid FROZE at its last scheduled job, and on a latency
+  // DECREASE (Λnew < Λold — the reverse grain jump 0.5 -> 0.1) the
+  // emission reads q upward toward actBase through a span the frozen grid
+  // never generated (measured 15680 frames = [s_{j+1}, actBase)). The
+  // forward (latency-growth) case never saw this: its re-coverage reads
+  // sit BELOW the frozen grid, where the retained history now serves.
+  //
+  // PUBLICATION ORDER (UAF-free by construction): the audio thread stores
+  // nullptr BEFORE pushing the chain to the retire stack; the stack is
+  // freed ONLY on the preparation thread itself (freeRetired at the loop
+  // top), so a load that raced ahead of the clear serves a chain that is
+  // still allocated, and the free happens strictly after that serve on
+  // the same thread. The concurrent slot/dead-flag protocol is the same
+  // one the active chain already runs under.
+  std::atomic<Chain*> retiringPub{nullptr};
+  // Task 31: the retiring chain's scheduling bound — the last absolute wet
+  // position the emission reads from the retiring chain (act->base + seamX,
+  // published at adoption as retiringLastNeeded). The prep thread schedules
+  // the retiring grid only for spanStart < limit: the jobs whose wet lies
+  // entirely past the blend end are never fed (a no-op preparation), so
+  // bounding avoids both the wasted engine work and the false stall counts.
+  // 0 = no retiring chain.
+  std::atomic<int64_t> retiringServeLimit{0};
 
   // audio-thread streaming state
   int64_t streamPos = 0;
@@ -621,6 +692,9 @@ struct RealtimeAdapter::Impl {
   uint64_t chainAdoptionFailures = 0;  // forced-deadline adoptions
   uint64_t chainsAdopted = 0;        // successful adoptions (cadence)
   uint64_t processCalls = 0;         // process() invocations (cadence)
+  uint64_t seamRecoveries = 0;       // Task 31: frames served by the retained
+                                     // wet history (the re-coverage source;
+                                     // a cadence diagnostic, NOT a fault)
   // Preparation-side (prep thread; never block audio):
   std::atomic<uint64_t> preparationFailures{0};
   std::atomic<uint64_t> jobsPreparedTotal{0};
@@ -685,6 +759,8 @@ struct RealtimeAdapter::Impl {
     delete a;
     delete retiring;
     retiring = nullptr;
+    retiringPub.store(nullptr, std::memory_order_release);  // hygiene (prep thread joined above)
+    retiringServeLimit.store(0, std::memory_order_release);
   }
 
   void freeRetired() {
@@ -693,6 +769,101 @@ struct RealtimeAdapter::Impl {
       RetireStack::Node* next = node->next;
       delete node;
       node = next;
+    }
+  }
+
+  // ---- Task 31: the retained-wet-history copy (audio thread) ---------------
+  //
+  // Runs at the moment a job is about to be marked dead (completeChainJobs):
+  // the ONLY moment BOTH the dying job's lane (its full produced wet, frozen
+  // — finished jobs produce nothing more) AND its successor's lane (the seam
+  // tail, produced by the structural pipeline margin: job k's input span
+  // ends at s_k + jobInputLen, while job k+1's first seamX outputs need only
+  // input s_k + advance + seamX·envMax + grain < s_k + jobInputLen) are
+  // alive — a moment later the recycling wipes the dying lane and the blend
+  // is unreconstructable. The copy is EXACTLY what readWet returns for the
+  // same q while the lanes live: raw lane content for the r >= seamX region,
+  // the identical sin/cos equal-power blend for the seam tail.
+  void retainJobWet(Chain& chain, Job& job, int64_t t) {
+    LaneWindow& hist = chain.history;
+    // the retention horizon: the SAME worst-case constant the lanes and the
+    // dry lane are sized from (activate(): dryRetention) — every re-coverage
+    // read q = t − Λnow satisfies Λnow ≤ Λworst ≤ retention, so q is always
+    // at or above the compaction floor (the re-read never outruns the
+    // retained region).
+    const int64_t floor = t - dryRetention;
+    hist.dropBefore(floor);
+    const int64_t to = job.lane.start + job.lane.count;  // the produced top (<= wetEnd)
+    int64_t from = std::max<int64_t>(job.lane.start, floor);
+    if (hist.count > 0) {
+      const int64_t top = hist.start + hist.count;
+      if (to <= top) return;  // already retained by an earlier death
+      from = std::max(from, top);
+      if (from > top) {
+        // stale gap (the long-window cadence: deaths one wetLen apart leave
+        // the whole earlier retention below the horizon): restart the
+        // retained region at `from` — the skipped span [top, from) is below
+        // the retention horizon and provably unreachable by any re-coverage
+        // read (the re-read bottom t − Λworst ≥ the floor ≥ from).
+        hist.reset(from);
+      }
+    } else {
+      hist.reset(from);
+    }
+    if (to <= from) return;
+    // capacity guard (defensive — the content math bounds the history at
+    // retention − Λold, well inside the lane-formula capacity; if it ever
+    // failed, skipping the append leaves an honest miss, never corruption)
+    if (to - from > hist.freeSpace()) return;
+
+    // 1) the raw region [from, min(to, succStart)): readWet's r >= seamX
+    //    region of the dying job — a plain memcpy of the lane content.
+    const int64_t succStart = job.spanStart + chain.advance;
+    const int64_t rawEnd = std::min<int64_t>(to, succStart);
+    if (rawEnd > from) {
+      const std::size_t n = static_cast<std::size_t>(rawEnd - from);
+      for (int c = 0; c < chain.channels; ++c) {
+        std::memcpy(hist.ch[static_cast<std::size_t>(c)].data() + static_cast<std::size_t>(hist.count),
+                    job.lane.ch[static_cast<std::size_t>(c)].data() +
+                        static_cast<std::size_t>(from - job.lane.start),
+                    n * sizeof(double));
+      }
+      hist.count += rawEnd - from;
+    }
+
+    // 2) the seam tail [max(from, succStart), to): readWet blends the dying
+    //    job (fadeOut) with the successor (fadeIn) there — the exact
+    //    readWet formula, so the retained tail is bit-identical to the
+    //    live blend. If the successor's lane does not cover q (defensive:
+    //    structurally impossible for the splice engines — the pipeline
+    //    margin above — and unreachable for the long-window engines whose
+    //    tail reads precede any recycle), the dying job's own value is
+    //    retained (a bounded <= seamX character difference, documented).
+    const int64_t tailFrom = std::max<int64_t>(from, succStart);
+    if (to <= tailFrom) return;
+    const int64_t k = job.index.load(std::memory_order_relaxed);
+    Job* succ = (k >= 0) ? chain.slots[static_cast<std::size_t>((k + 1) % kJobSlots)]
+                               .load(std::memory_order_acquire)
+                         : nullptr;
+    const bool succValid =
+        succ != nullptr && !succ->dead.load(std::memory_order_acquire) &&
+        succ->index.load(std::memory_order_relaxed) == k + 1;
+    for (int64_t q = tailFrom; q < to; ++q) {
+      const int64_t r = q - succStart;  // the successor's local offset (r < seamX)
+      const double u = kPi * 0.5 * static_cast<double>(r + 1) /
+                       static_cast<double>(chain.seamX);
+      const double fadeIn = std::sin(u);   // the successor
+      const double fadeOut = std::cos(u);  // the dying job
+      for (int c = 0; c < chain.channels; ++c) {
+        const double mine = job.lane.at(c, q);
+        double v = mine;
+        if (succValid && q >= succ->lane.start && q < succ->lane.start + succ->lane.count) {
+          v = fadeOut * mine + fadeIn * succ->lane.at(c, q);
+        }
+        hist.ch[static_cast<std::size_t>(c)]
+             [static_cast<std::size_t>(hist.count)] = v;
+      }
+      ++hist.count;
     }
   }
 
@@ -754,6 +925,10 @@ struct RealtimeAdapter::Impl {
       job->spanStart = -1;
       chain->ownedJobs.push_back(std::move(job));
     }
+
+    // Task 31: the retained wet history (the Chain::history note) — same
+    // capacity formula as the job lanes (prep-thread allocation).
+    chain->history.allocate(channels, chain->laneCapacity);
 
     // Prepare job 0 (the chain's first job) so adoption can start feeding
     // immediately. Its engine is prepared on THIS thread (allocation is
@@ -832,7 +1007,7 @@ struct RealtimeAdapter::Impl {
     jobsPreparedTotal.fetch_add(1, std::memory_order_relaxed);
   }
 
-  void serveJobNeeds(Chain* chain) {
+  void serveJobNeeds(Chain* chain, int64_t serveLimit) {
     if (chain == nullptr || chain->base.load(std::memory_order_acquire) < 0) {
       return;
     }
@@ -843,6 +1018,7 @@ struct RealtimeAdapter::Impl {
     while (guard++ < 8) {
       const int64_t spanStart = chain->jobSpanStart(j);
       if (spanStart > frontier + lead) break;
+      if (spanStart >= serveLimit) break;  // Task 31: the retiring bound (see the field note)
       prepareJob(*chain, j);
       if (chain->highestPrepared.load(std::memory_order_relaxed) < j) break;  // slot busy
       ++j;
@@ -988,8 +1164,19 @@ struct RealtimeAdapter::Impl {
         }
       }
 
-      serveJobNeeds(active.load(std::memory_order_acquire));
-      serveJobNeeds(pending.load(std::memory_order_acquire));
+      serveJobNeeds(active.load(std::memory_order_acquire),
+                    std::numeric_limits<int64_t>::max());
+      serveJobNeeds(pending.load(std::memory_order_acquire),
+                    std::numeric_limits<int64_t>::max());
+      // Task 31 (the reverse-direction fix): the retiring chain's grid must
+      // keep advancing while the chain lives (it is the sole wet source for
+      // q < act->base). Bounded by retiringServeLimit (the last wet position
+      // the emission reads from it): the scheduling is self-limiting beyond
+      // that — the victims free only as the emission passes their wet.
+      if (Chain* ret = retiringPub.load(std::memory_order_acquire)) {
+        const int64_t limit = retiringServeLimit.load(std::memory_order_acquire);
+        serveJobNeeds(ret, limit);
+      }
 
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
@@ -1004,9 +1191,12 @@ struct RealtimeAdapter::Impl {
     Chain* act = active.load(std::memory_order_acquire);
     if (act == nullptr) return;
     if (retiring != nullptr) {
+      retiringPub.store(nullptr, std::memory_order_release);  // clear BEFORE the push (UAF order)
       RetireStack::push(retireHead, retiring);
     }
     retiring = act;
+    retiringPub.store(act, std::memory_order_release);
+    retiringServeLimit.store(streamPos, std::memory_order_release);  // the fault path: nothing further is useful
     active.store(nullptr, std::memory_order_release);
     retiringLastNeeded = streamPos;  // not needed anymore; retire next block
     requestEpoch.fetch_add(1, std::memory_order_acq_rel);
@@ -1049,10 +1239,12 @@ struct RealtimeAdapter::Impl {
     Chain* act = active.load(std::memory_order_acquire);
     if (act != nullptr) {
       if (retiring != nullptr) {
+        retiringPub.store(nullptr, std::memory_order_release);  // clear BEFORE the push
         RetireStack::push(retireHead, retiring);
         retiring = nullptr;
       }
       retiring = act;
+      retiringPub.store(act, std::memory_order_release);
       active.store(nullptr, std::memory_order_release);
     }
 
@@ -1078,6 +1270,9 @@ struct RealtimeAdapter::Impl {
     latencyEff = std::max(latencyEff, pend->latency);
     latencyNow = latencyEff;
     retiringLastNeeded = t + pend->seamX;
+    // Task 31: the retiring grid's scheduling bound (the last wet position
+    // the emission reads from the retiring chain — the blend end)
+    retiringServeLimit.store(retiringLastNeeded, std::memory_order_release);
     pendingSeenAt = -1;
   }
 };
@@ -1150,6 +1345,7 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.chainAdoptionFailures = 0;
   im.chainsAdopted = 0;
   im.processCalls = 0;
+  im.seamRecoveries = 0;  // Task 31: the retained-wet-history serve counter
   im.preparationFailures.store(0, std::memory_order_relaxed);
   im.jobsPreparedTotal.store(0, std::memory_order_relaxed);
   im.meterInPeak[0] = im.meterInPeak[1] = 0.0;
@@ -1165,6 +1361,8 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.builtRequestEpoch = 0;  // force first build
   im.everPublished = false;  // fresh debounce state (fresh activation)
   im.lastSeenSig = ParamSnapshot::ChainSignature{};
+  im.retiringPub.store(nullptr, std::memory_order_release);  // fresh publication
+  im.retiringServeLimit.store(0, std::memory_order_release);
   im.requestEpoch.fetch_add(1, std::memory_order_acq_rel);
   im.startPrepThread();
 
@@ -1599,6 +1797,25 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       } else if (im.retiring != nullptr &&
                  q >= im.retiring->base.load(std::memory_order_relaxed)) {
         wetOk = im.retiring->readWet(wetv, ch, q);
+        if (!wetOk) {
+          // Task 31 — THE RETAINED WET HISTORY (the re-coverage source):
+          // readWet misses here only when the job that produced q has been
+          // recycled (the index check) or its lane compacted past q — the
+          // region BELOW the retiring chain's alive coverage, exactly the
+          // span a latency-INCREASING adoption re-covers (the emission
+          // floor moved backward by ΔΛ; spec §4.1 item 5's declared
+          // retention). The history lane holds that region bit-identical
+          // to what was emitted under the retiring chain's own latency —
+          // serve it (counted, never silent; NOT a fault: the mechanism
+          // working). Positions below the history are genuine misses and
+          // keep the honest underrun path below.
+          const LaneWindow& hist = im.retiring->history;
+          if (q >= hist.start && q < hist.start + hist.count) {
+            for (int c = 0; c < ch; ++c) wetv[c] = hist.at(c, q);
+            wetOk = true;
+            ++im.seamRecoveries;
+          }
+        }
       }
       if (!wetOk) {
         // positions before the chain's start are the standard startup
@@ -1630,7 +1847,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
 
     // ---- 5) job completion + dead detection + stall detection ----------------
     const int64_t ef = t + subN - im.latencyNow;
-    const auto completeChainJobs = [&](const Chain& chain) {
+    const auto completeChainJobs = [&](Chain& chain) {
       for (int s = 0; s < kJobSlots; ++s) {
         Job* job = chain.slots[s].load(std::memory_order_acquire);
         if (job == nullptr) continue;
@@ -1639,22 +1856,29 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
         if (job->consumed >= job->inputLen && !job->finished) {
           finishJob(*job, historyFloor);
         }
-        // Task 29: JOB STALL — the job's whole input span has been offered
+        // Task 29: JOB STALL — a FED job's whole input span has been offered
         // (t > spanEnd) yet it remains unfinished one full max-block past
         // that point: the engine is not consuming/producing despite offered
         // input (starvation/stall — distinct from delivery underruns).
-        // Counted ONCE per job (stamp() resets the flag).
-        if (!job->finished && !job->stallCounted &&
+        // Counted ONCE per job (stamp() resets the flag). Task 31: the
+        // everFed guard — jobs deliberately never fed (the retiring grid
+        // past the blend end, a documented no-op) are not stalls.
+        if (job->everFed && !job->finished && !job->stallCounted &&
             t > job->spanEnd() + static_cast<int64_t>(im.maxBlock)) {
           job->stallCounted = true;
           ++im.jobStalls;  // Task 29: diagnostic (not in the historical aggregate)
         }
         if (job->finished && ef > job->wetEnd()) {
+          // Task 31: retain the dying job's produced wet into the chain's
+          // history lane BEFORE the dead flag lets the preparation thread
+          // recycle the slot (and wipe the lane) — the last moment the
+          // data + the successor blend are both reconstructable.
+          im.retainJobWet(chain, *job, t);
           job->dead.store(true, std::memory_order_release);
         }
       }
     };
-    if (const Chain* actEnd = im.active.load(std::memory_order_acquire)) {
+    if (Chain* actEnd = im.active.load(std::memory_order_acquire)) {
       completeChainJobs(*actEnd);
     }
     // the retiring chain's jobs complete too: their flush covers the blend
@@ -1665,6 +1889,8 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
 
     // ---- 6) retiring chain retirement -----------------------------------------
     if (im.retiring != nullptr && ef > im.retiringLastNeeded) {
+      im.retiringPub.store(nullptr, std::memory_order_release);  // clear BEFORE the push (UAF order)
+      im.retiringServeLimit.store(0, std::memory_order_release);
       RetireStack::push(im.retireHead, im.retiring);
       im.retiring = nullptr;
     }
@@ -1806,6 +2032,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   st.chainsAdopted = im.chainsAdopted;
   st.jobsPrepared = im.jobsPreparedTotal.load(std::memory_order_relaxed);
   st.processCalls = im.processCalls;
+  st.seamRecoveries = im.seamRecoveries;  // Task 31: the retention at work
   status_.store(st);
 }
 
@@ -1832,6 +2059,7 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
                               bool& clampDetected) {
   Impl& im = *impl_;
   const int ch = im.channels;
+  job.everFed = true;  // Task 31: the stall detector's precondition
 
   // ---- 1) curve write for the not-yet-fed frames of this sub-block ----------
   // Task 30: the clamp comparison carries a 1e-9 RELATIVE slack (kClampSlack)

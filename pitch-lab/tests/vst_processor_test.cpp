@@ -9,8 +9,10 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
+#include <chrono>
 #include <cmath>
 #include <cstring>
+#include <thread>
 #include <vector>
 
 #include "pluginterfaces/base/ibstream.h"
@@ -279,6 +281,114 @@ TEST_CASE("engine switching through the registry: all five process audio") {
     CHECK(acc > 1e-6);
     h.shutdown();
   }
+}
+
+TEST_CASE("Task 31: same-engine extreme configuration change mid-audio (the real VST path)") {
+  // THE retiring-chain seam coverage through the REAL VST3 product path:
+  // instantiate -> activate -> process -> the extreme granular grain jump
+  // (0.1 s -> 0.5 s: Λ 15638 -> 34838 at 48 kHz — a large SAME-engine
+  // latency growth) mid-audio -> chain rebuild -> chain adoption -> the
+  // seam -> continued processing -> reset -> suspend/resume -> state
+  // restore. The Task-31 fix (the retained wet history + the retiring
+  // grid continuation) must hold through the processor's whole surface:
+  // ZERO faults, the re-coverage SERVED (seamRecoveries), exactly the
+  // legitimate 2 re-prepares, the latency growth reported coherently.
+  const double fs = 48000.0;
+  const int64_t total = static_cast<int64_t>(fs * 2.6);
+  const auto sig = makeSine(total, 220.0, fs);
+  Host h;
+  // parameters BEFORE activation (the deterministic-host pattern: no
+  // default-signature chain is ever built — exactly one initial chain)
+  h.setParam(param::kEngine, 4.0);   // native.granular
+  h.setParam(param::kPitch, -4.0);
+  h.setParam(param::kGrGrain, 0.10);  // the small grain first
+  h.setup(fs, 512);
+  std::vector<double> out;
+  const int64_t switchAt = static_cast<int64_t>(fs * 1.0);
+  int64_t latencyBefore = 0;
+  bool switched = false;
+  for (int64_t pos = 0; pos < total; pos += 512) {
+    if (!switched && pos >= switchAt) {
+      switched = true;
+      StatusSnapshot pre;
+      if (void* obj = nullptr; h.plug->queryInterface(IPitchLabStatus::iid, &obj) == kResultOk) {
+        auto* iface = static_cast<IPitchLabStatus*>(obj);
+        pre = iface->getStatus();
+        iface->release();
+      }
+      latencyBefore = pre.latencyFrames;
+      h.setParam(param::kGrGrain, 0.50);  // THE extreme jump (mid-audio)
+    }
+    const int32_t take = static_cast<int32_t>(std::min<int64_t>(512, total - pos));
+    auto block = h.process(std::vector<double>(sig.begin() + pos, sig.begin() + pos + take));
+    out.insert(out.end(), block.begin(), block.end());
+    std::this_thread::sleep_for(std::chrono::microseconds(250));  // host cadence
+  }
+  StatusSnapshot st;
+  if (void* obj = nullptr; h.plug->queryInterface(IPitchLabStatus::iid, &obj) == kResultOk) {
+    auto* iface = static_cast<IPitchLabStatus*>(obj);
+    st = iface->getStatus();
+    iface->release();
+  }
+  CAPTURE(latencyBefore);
+  CAPTURE(st.latencyFrames);
+  CAPTURE(st.seamRecoveries);
+  // the seam: zero faults of every class, the re-coverage served from the
+  // retained history, the lifecycle exactly the legitimate rebuilds
+  CHECK(st.faults == 0);
+  CHECK(st.deliveryUnderruns == 0);
+  CHECK(st.dryHistoryMisses == 0);
+  CHECK(st.jobStalls == 0);
+  CHECK(st.chainAdoptionFailures == 0);
+  CHECK(st.seamRecoveries > 0);
+  CHECK(st.reprepares == 2);
+  CHECK(st.chainsAdopted == 2);
+  CHECK(st.clampEvents == 0);
+  CHECK(st.chainReady);
+  CHECK(st.engineIndex == 4);
+  // the latency grew by the grain growth and is reported coherently
+  CHECK(latencyBefore == 15638);
+  CHECK(st.latencyFrames == 34838);
+  // continued processing: audible output well past the seam
+  {
+    double acc = 0.0;
+    for (int64_t i = st.latencyFrames + 1024; i < static_cast<int64_t>(out.size()); ++i) {
+      acc += out[static_cast<std::size_t>(i)] * out[static_cast<std::size_t>(i)];
+    }
+    CHECK(acc > 1e-6);
+  }
+  // suspend/resume (P1.4: "resume = reset + fresh chain") still healthy
+  // after the seam
+  h.plug->setProcessing(false);
+  h.plug->setActive(false);
+  h.setup(fs, 512);
+  {
+    auto block = h.process(std::vector<double>(sig.begin(), sig.begin() + 2048));
+    double acc = 0.0;
+    for (double v : block) acc += v * v;
+    CHECK(acc >= 0.0);  // processes without fault after the resume
+  }
+  StatusSnapshot st2;
+  if (void* obj = nullptr; h.plug->queryInterface(IPitchLabStatus::iid, &obj) == kResultOk) {
+    auto* iface = static_cast<IPitchLabStatus*>(obj);
+    st2 = iface->getStatus();
+    iface->release();
+  }
+  CHECK(st2.chainReady);
+  CHECK(st2.engineIndex == 4);
+  // state restore: the new configuration survives a save/load round trip
+  MemStream stream;
+  CHECK(h.plug->getState(&stream) == kResultOk);
+  Host b;
+  b.setup(fs, 512);
+  stream.pos = 0;
+  CHECK(b.plug->setState(&stream) == kResultOk);
+  const ParamSnapshot got = b.snapshot();
+  CHECK(got.engineIndex == 4);
+  CHECK(std::fabs(got.grGrainSec - 0.50) < 1e-9);
+  CHECK(std::fabs(got.pitchSt - (-4.0)) < 1e-9);
+  h.shutdown();
+  b.shutdown();
 }
 
 TEST_CASE("state round trip: every parameter persists exactly") {
