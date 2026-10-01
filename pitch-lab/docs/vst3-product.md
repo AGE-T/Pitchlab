@@ -52,7 +52,7 @@ deterministic for a fixed parameter trajectory, input and block schedule.
 ## Parameters
 
 Musical surface (host-automatable): **PITCH** (±12 st), **LFO RATE**
-(0.1–8 Hz), **LFO DEPTH** (0–2 st, 0 = off), **MIX** (dry/wet),
+(0.00–8.00 Hz, **0 Hz = LFO OFF** — see below), **LFO DEPTH** (0–2 st, 0 = off), **MIX** (dry/wet),
 **OUTPUT LEVEL** (−24..+12 dB), **BYPASS**.
 
 Engine configuration (settable, not automatable — changing them re-prepares
@@ -93,6 +93,82 @@ regression proof is the CI `ui-binding` capture: synthetic mouse events
 through the real X11/VSTGUI dispatch drive the real controls while the sync
 timer polls — every check (controller value, poll stability, engine
 adoption, per-engine preservation) must pass.
+
+**LFO RATE — the OFF state (0 Hz).** The rate's product-facing domain is
+0.00–8.00 Hz and **0 Hz disables the LFO**: the sine contribution is gated
+(regardless of the depth setting — rate 0 with a nonzero depth renders
+exactly the unmodulated curve, verified bit-identical in the adapter
+suite), and the LFO phase is parked deterministically at the zero crossing.
+Semantics:
+
+* **0 → nonzero**: the modulation starts from sin(0) = 0 and grows
+  continuously — no curve step at the transition, at any re-enable point.
+* **nonzero → 0**: the honest hard-off (the contribution stops at the next
+  frame — the same class of step as a depth-to-0 move; landing the OFF on
+  an LFO zero crossing is continuous, verified in the adapter suite).
+* Determinism is preserved: an identical parameter trajectory renders
+  bit-identically; the OFF state never divides, never produces NaN/Inf,
+  and never touches the chain lifecycle (the rate is not in the chain
+  signature, not in the envelope geometry, not in any re-prepare exit —
+  toggling OFF/ON mid-stream keeps the single chain; tested).
+* The normalised mapping is exact at the boundary (`normalise(0 Hz) == 0`,
+  `denormalise(0) == 0.0`), so an OFF state round-trips through save/load
+  bit-exactly; the host-facing value string is `"0.00"` and the EDITOR's
+  LFO RATE label shows **`OFF`** (amber) — the same semantic, no
+  contradiction. Parsing accepts `"off"` as the 0 Hz alias.
+* Pre-Task-32 saved states restore with a benign ≤ 0.1 Hz rate shift (the
+  old domain minimum was 0.1 Hz; the domain extension is the one
+  deliberate frozen-surface change, documented in the engine-params
+  suite's frozen table).
+* The envelope/latency policy stays **depth-driven** by design (Task 30):
+  a chain built while the LFO is OFF already covers the excursion for the
+  moment it is re-enabled — no re-prepare is needed or requested.
+
+**The realtime capability status (Task 32).** The editor's status panel
+opens with a **REALTIME STATUS** line — the honest, configuration-aware
+indication of whether the CURRENT configuration (engine + sample rate +
+block size + engine parameters + adaptation mode) is supported
+sustainably by the realtime path. Four levels, three evidence bases:
+
+* **REALTIME OK · MEASURED RTF x.xx** — the audio thread's own measurement
+  (steady-clock time inside the engines' `process`/`finish` work vs the
+  audio timeline it covers, since the current chain's adoption) shows the
+  work comfortably inside capacity (≤ 0.75 RTF: at least 25 % headroom).
+* **REALTIME LIMITED** — measured RTF in (0.75, 1.0] (no meaningful
+  headroom), OR fault-degraded (a healthy ratio with recorded delivery
+  faults), OR a **benchmark prior** from committed measured evidence used
+  only before the runtime window suffices (~0.1 s after a chain
+  adoption).
+* **!! REALTIME NOT SUSTAINABLE · MEASURED RTF x.xx** — measured RTF above
+  1.0 (the engine work alone exceeds the timeline) or fault-evidenced
+  failure at the boundary. The warning detail states the semantics
+  exactly: *current configuration exceeds measured realtime capacity — use
+  offline render*.
+* **REALTIME STATUS UNKNOWN** — no reliable classification yet (no active
+  chain, or an insufficient measurement window and no prior): the honest
+  no-claim state, never a guessed OK.
+
+The central distinction (kept explicit in code, `src/vst/realtime_status.h`):
+**ENGINE CAPABILITY ≠ CURRENT MEASURED SUSTAINABILITY**. All five engines
+support the realtime adapter architecture; a specific configuration may
+still exceed the measured capacity. The status is therefore never a
+blanket engine-wide verdict — the encoded benchmark prior is exactly one
+row: `native.granular` at ≥ 88.2 kHz → LIMITED, citing the Task-30 matrix
+(`results/vst3/task30/realtime-envelope-policy-measurements.md`: 96 kHz
+granular RTF 0.58 at +12 st through 1.89 at −12 st/grain 0.5 s — the
+boundary-spanning, configuration-dependent family), and a runtime
+measurement ALWAYS supersedes it (granular at 96 kHz measuring 0.5
+classifies OK; measuring 1.5 classifies NOT SUSTAINABLE — one engine,
+opposite verdicts by configuration). The fault-escalation rule: the
+aggregate audio-path fault counter is delivery evidence — it raises the
+level by exactly one (OK→LIMITED→NOT SUSTAINABLE), never two. The
+measurement window is ≥ 8192 frames and ≥ 2 process blocks; the
+accumulators reset at every chain adoption (the classification describes
+the CURRENT configuration, never a blend of retired chains). Ownership
+follows the standing architecture: the audio thread publishes NUMBERS
+only (`StatusSnapshot::engineCpuNanos` / `rtFrames`); all string
+formatting — labels and warnings — happens in `src/vst/realtime_status.cpp`
+on the UI/consumer side (spec §4.3).
 
 ## Runtime architecture (summary)
 

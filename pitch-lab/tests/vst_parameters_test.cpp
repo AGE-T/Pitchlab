@@ -270,3 +270,81 @@ TEST_CASE("P1.9 regression: parsing round-trips + rejects invalid input") {
   CHECK(parseParamPlain(param::kMix, "0.5", v) == true);
   CHECK(std::fabs(v - 0.5) < 1e-9);
 }
+
+// ---------------------------------------------------------------------------
+// Task 32 — the LFO rate domain: 0.00 .. 8.00 Hz with 0 Hz = OFF
+// ---------------------------------------------------------------------------
+
+TEST_CASE("Task 32: the LFO rate domain is 0.0..8.0 Hz (0 = the OFF state)") {
+  const ParamMeta* m = findParamMeta(param::kLfoRate);
+  REQUIRE(m != nullptr);
+  CHECK(m->min == 0.0);   // the slider's left end IS 0.00 Hz (no implied 0.10 floor)
+  CHECK(m->max == 8.0);
+  CHECK(m->defaultPlain == 5.0);   // the product default is unchanged
+  CHECK(m->automatable);           // host-automation capability unchanged
+  // the normalised mapping is EXACT at the OFF boundary: a saved/restored
+  // OFF state round-trips bit-exactly (state stores normalised values)
+  CHECK(normalise(param::kLfoRate, 0.0) == 0.0);
+  CHECK(denormalise(param::kLfoRate, 0.0) == 0.0);
+  CHECK(denormalise(param::kLfoRate, 1.0) == 8.0);
+  // mid-domain spot check: 5 Hz at the (new) linear mapping
+  CHECK(normalise(param::kLfoRate, 5.0) == doctest::Approx(0.625).epsilon(1e-12));
+  CHECK(denormalise(param::kLfoRate, 0.625) == doctest::Approx(5.0).epsilon(1e-12));
+  // the round trip over the whole domain (incl. the OFF boundary)
+  for (int s = 0; s <= 20; ++s) {
+    const double u = static_cast<double>(s) / 20.0;
+    const double plain = denormalise(param::kLfoRate, u);
+    const double back = normalise(param::kLfoRate, plain);
+    CHECK(std::fabs(back - u) < 1e-12);
+  }
+  // applyNormalised carries the OFF state into the snapshot exactly
+  ParamSnapshot snap;
+  applyNormalised(snap, param::kLfoRate, 0.0);
+  CHECK(snap.lfoRateHz == 0.0);
+  // the depth is the complementary gate (0 st also disables); the rate
+  // domain change does not touch it
+  const ParamMeta* d = findParamMeta(param::kLfoDepth);
+  CHECK(d->min == 0.0);
+  CHECK(d->max == 2.0);
+  CHECK(d->defaultPlain == 0.0);
+}
+
+TEST_CASE("Task 32: the LFO rate formats/parses the OFF state") {
+  char buf[48];
+  // the host-facing VALUE REPRESENTATION stays numeric ("0.00" — Part F:
+  // 0.00 Hz is the value representation; "OFF" is the editor's label)
+  formatParamValue(param::kLfoRate, 0.0, buf, sizeof(buf));
+  CHECK(std::strcmp(buf, "0.00") == 0);
+  double v = -999.0;
+  CHECK(parseParamPlain(param::kLfoRate, buf, v) == true);
+  CHECK(v == 0.0);
+  // the semantic alias: "off" parses to the 0 Hz boundary (case-insensitive)
+  CHECK(parseParamPlain(param::kLfoRate, "off", v) == true);
+  CHECK(v == 0.0);
+  CHECK(parseParamPlain(param::kLfoRate, "OFF", v) == true);
+  CHECK(v == 0.0);
+  // "on" is deliberately NOT accepted (a rate has no single "on" value)
+  CHECK(parseParamPlain(param::kLfoRate, "on", v) == false);
+  CHECK(v == 0.0);  // untouched on failure
+  // a normal active value still round-trips
+  formatParamValue(param::kLfoRate, 5.0, buf, sizeof(buf));
+  CHECK(std::strcmp(buf, "5.00") == 0);
+  CHECK(parseParamPlain(param::kLfoRate, "5.00", v) == true);
+  CHECK(v == 5.0);
+  // below-domain normalised values clamp to the OFF boundary (never invalid)
+  CHECK(denormalise(param::kLfoRate, -0.5) == 0.0);
+}
+
+TEST_CASE("Task 32: the LFO rate stays OUT of the chain signature (no rebuild on OFF)") {
+  // The rate is a live curve control: toggling it must never rebuild the
+  // engine chain (the chain signature covers engine identity + engine
+  // configuration only). Locked at the MODEL level.
+  const ParamSnapshot a;
+  ParamSnapshot b = a;
+  b.lfoRateHz = 0.0;
+  CHECK(a.chainSignature() == b.chainSignature());
+  b.lfoRateHz = 8.0;
+  CHECK(a.chainSignature() == b.chainSignature());
+  b.lfoDepthSt = 2.0;
+  CHECK(a.chainSignature() == b.chainSignature());  // depth is live too (Task 30)
+}

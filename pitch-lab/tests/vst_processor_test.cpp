@@ -1178,3 +1178,106 @@ TEST_CASE("audit §11: the full format matrix — mono/stereo × 32/64-bit × al
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Task 32 — the LFO rate's OFF state through the REAL VST3 paths
+// ---------------------------------------------------------------------------
+
+TEST_CASE("Task 32: state round trip persists the LFO rate OFF exactly (0 Hz)") {
+  // The state stream stores NORMALISED values: normalise(0 Hz) == 0.0
+  // exactly (the domain's new minimum), so an OFF-state preset round-trips
+  // bit-exactly and processing with it is the unmodulated path.
+  Host a;
+  a.setup(48000.0, 1024);
+  a.setParam(param::kLfoRate, 0.0);   // OFF
+  a.setParam(param::kLfoDepth, 1.5);  // nonzero depth — OFF must dominate
+  a.setParam(param::kPitch, -6.0);
+  CHECK(a.plug->getParamNormalized(param::kLfoRate) == 0.0);  // exact at the boundary
+  MemStream stream;
+  CHECK(a.plug->getState(&stream) == kResultOk);
+
+  Host b;  // a fresh instance
+  b.setup(48000.0, 1024);
+  stream.pos = 0;
+  CHECK(b.plug->setState(&stream) == kResultOk);
+  const ParamSnapshot got = b.snapshot();
+  CHECK(got.lfoRateHz == 0.0);          // the OFF state persisted EXACTLY
+  CHECK(std::fabs(got.lfoDepthSt - 1.5) < 1e-9);
+  CHECK(std::fabs(got.pitchSt - (-6.0)) < 1e-9);
+
+  // process with the restored OFF state: fault-free, the realtime
+  // capability measurement accumulates, the classification is measured
+  const int64_t total = 48000;  // 1 s — past the measurement window
+  const auto sig = makeSine(total, 220.0, 48000.0);
+  std::vector<double> out;
+  for (int64_t pos = 0; pos < total; pos += 1024) {
+    const auto block = std::vector<double>(sig.begin() + static_cast<long>(pos),
+                                           sig.begin() + static_cast<long>(std::min<int64_t>(pos + 1024, total)));
+    out = b.process(block);
+  }
+  void* obj = nullptr;
+  REQUIRE(b.plug->queryInterface(IPitchLabStatus::iid, &obj) == kResultOk);
+  auto* st = static_cast<IPitchLabStatus*>(obj);
+  const StatusSnapshot ss = st->getStatus();
+  CHECK(ss.faults == 0);
+  CHECK(ss.chainReady);
+  CHECK(ss.rtFrames >= 8192);
+  CHECK(ss.engineCpuNanos > 0);
+  st->release();
+  a.shutdown();
+  b.shutdown();
+}
+
+TEST_CASE("Task 32: LFO rate host automation to 0 Hz mid-block is frame-exact (the OFF event)") {
+  // A host event on the rate parameter reaching exactly 0 Hz: the per-frame
+  // timeline resolves rate 0 from the event's frame; the curve stops
+  // modulating there (the hard-off), deterministic, fault-free. The blocks
+  // BEFORE the event are bit-identical to the un-automated drive; the
+  // blocks after differ (the modulation stopped). Each drive runs through
+  // a FRESH processor instance (an adapter's streaming state carries over
+  // between drives — two sequential drives on one instance are not
+  // frame-comparable, by design).
+  const int64_t total = 4 * 4096;
+  const auto sig = makeSine(total, 220.0, 48000.0);
+  auto drive = [&](bool withEvent) {
+    Host h;
+    h.setup(48000.0, 4096);
+    h.setParam(param::kLfoRate, 5.0);
+    h.setParam(param::kLfoDepth, 1.0);
+    h.setParam(param::kPitch, -6.0);
+    std::vector<std::vector<double>> outs;
+    for (int64_t pos = 0, blk = 0; pos < total; pos += 4096, ++blk) {
+      HostChanges changes;
+      if (withEvent && blk == 1) {
+        int32 idx = 0;
+        IParamValueQueue* q = changes.addParameterData(param::kLfoRate, idx);
+        int32 dummy = 0;
+        q->addPoint(2048, 0.0, dummy);  // 0 Hz == normalised 0.0 exactly
+      }
+      const auto block = std::vector<double>(sig.begin() + static_cast<long>(pos),
+                                             sig.begin() + static_cast<long>(pos + 4096));
+      outs.push_back(h.process(block, &changes));
+    }
+    void* obj = nullptr;
+    REQUIRE(h.plug->queryInterface(IPitchLabStatus::iid, &obj) == kResultOk);
+    auto* st = static_cast<IPitchLabStatus*>(obj);
+    CHECK(st->getStatus().faults == 0);
+    st->release();
+    h.shutdown();
+    return outs;
+  };
+  const auto ref = drive(false);  // rate 5 throughout
+  const auto off = drive(true);   // automated to 0 inside block 1
+  // block 0 (before the event): BIT-IDENTICAL
+  CHECK(ref[0] == off[0]);
+  // block 3 (fully past the event): the modulation is gone — differs
+  double diff = 0.0;
+  for (std::size_t i = 0; i < ref[3].size(); ++i) {
+    diff += std::fabs(ref[3][static_cast<std::size_t>(i)] - off[3][static_cast<std::size_t>(i)]);
+  }
+  CHECK(diff > 1.0);
+  // determinism: the same event sequence renders bit-identically
+  const auto off2 = drive(true);
+  CHECK(off2[1] == off[1]);
+  CHECK(off2[3] == off[3]);
+}

@@ -43,6 +43,7 @@
 #include <vector>
 
 #include "vst/realtime_adapter.h"
+#include "vst/realtime_status.h"
 
 using namespace pitchlab::vst;
 
@@ -441,3 +442,43 @@ TEST_CASE("pv-phaselocked: 48 vs 96 kHz x block matrix (Task H — the RETAINED 
   std::fflush(stdout);
 }
 
+
+// ---------------------------------------------------------------------------
+// Task 32 — the realtime-capability MEASUREMENT fields on the real drives
+// ---------------------------------------------------------------------------
+
+TEST_CASE("Task 32: the measurement fields accumulate and classify (pv-phaselocked, both rates)") {
+  initEngineRegistryOnce();
+  // The adapter's own measurement (engineCpuNanos / rtFrames since the
+  // current chain's adoption) must accumulate over a clean single-chain
+  // drive and classify through the pure classifier — the same figures the
+  // editor's status line renders. The LEVEL is machine-dependent (timing);
+  // the BASIS and the window mechanics are not.
+  for (double fs : {48000.0, 96000.0}) {
+    for (int32_t block : {128, 1024}) {
+      ParamSnapshot snap;
+      snap.engineIndex = 3;  // native.pv.phaselocked
+      snap.pitchSt = 12.0;
+      CAPTURE(fs);
+      CAPTURE(block);
+      const DriveStats st = driveAt(fs, block, snap, 1);
+      REQUIRE(st.status.faults == 0);
+      REQUIRE(st.status.chainReady);
+      // the window covers the whole single-chain drive
+      CHECK(st.status.rtFrames == st.frames);
+      CHECK(st.status.engineCpuNanos > 0);
+      const RtClassification rt = classifyRealtimeStatus(st.status);
+      CHECK(rt.basis == RtBasis::Measured);
+      CHECK(rt.windowFrames == st.status.rtFrames);
+      CHECK(rt.measuredRtf > 0.0);
+      // pv-phaselocked measures far inside capacity at both rates (the
+      // task-29/30 evidence: RTF 0.012-0.063) — a healthy classification
+      CHECK(rt.level == RtLevel::Ok);
+      // the adapter-measured RTF is the same quantity the harness measured
+      // host-side (steady-clock engine cost vs timeline): same order
+      const double harnessRtf = st.rtf;
+      CHECK(rt.measuredRtf < 10.0 * harnessRtf + 0.01);
+      CHECK(harnessRtf < 10.0 * rt.measuredRtf + 0.01);
+    }
+  }
+}

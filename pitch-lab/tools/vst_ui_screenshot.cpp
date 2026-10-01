@@ -33,6 +33,7 @@
 #include "public.sdk/source/vst/hosting/module.h"
 
 #include "vst/parameters.h"
+#include "vst/realtime_status.h"
 #include "vst/view_interfaces.h"
 
 using namespace Steinberg;
@@ -47,7 +48,7 @@ DEF_CLASS_IID(IPitchLabStatus)
 namespace {
 
 constexpr int kWinW = 680;
-constexpr int kWinH = 450;
+constexpr int kWinH = 486;  // Task 32: the editor grew 450 -> 486 (realtime-status lines)
 constexpr int kWinX = 40;
 constexpr int kWinY = 40;
 constexpr double kFs = 48000.0;
@@ -208,7 +209,7 @@ int main(int argc, char** argv) {
   if (argc < 6) {
     std::fprintf(stderr,
                  "usage: %s <bundle-path> <engine 0..4> <pitch st> <lfo-depth st> "
-                 "<out-ppm> [switch-stress]\n",
+                 "<out-ppm> [switch-stress|ui-binding] [lfo-rate-hz]\n",
                  argv[0]);
     return 1;
   }
@@ -217,6 +218,10 @@ int main(int argc, char** argv) {
   const double pitch = std::atof(argv[3]);
   const double lfoDepth = std::atof(argv[4]);
   const char* outPpm = argv[5];
+  // OPTIONAL Task 32 argument: the LFO rate (default 5.0 — the product
+  // default; 0.0 drives the real OFF state through the whole product path:
+  // the parameter model, the adapter curve loop and the editor's OFF label)
+  const double lfoRate = argc > 7 ? std::atof(argv[7]) : 5.0;
   // OPTIONAL Task 24 P0.3 regression mode: after opening the editor, switch
   // the engine parameter through a long cycle (varispeed -> granular ->
   // vardelay -> pv-locked -> pv-classic -> back) while the UI timer polls
@@ -300,6 +305,7 @@ int main(int argc, char** argv) {
   snap.engineIndex = engine;
   snap.pitchSt = pitch;
   snap.lfoDepthSt = lfoDepth;
+  snap.lfoRateHz = lfoRate;  // Task 32: the optional rate drive (0.0 = OFF)
   for (uint32_t i = 0; i < count; ++i) {
     const double plain = plainValue(snap, table[i].tag);
     edit->setParamNormalized(table[i].tag, normalise(table[i].tag, plain));
@@ -341,6 +347,24 @@ int main(int argc, char** argv) {
       data.inputs = &inB;
       data.outputs = &outB;
       audio->process(data);
+    }
+    // Task 32: print the REALTIME-CAPABILITY STATUS for the driven
+    // configuration (the classifier over the processor's numeric status —
+    // the same classification the editor renders). Grep-able CI evidence
+    // that the measured path classifies (and that the measurement
+    // accumulated: window + engine CPU figures included).
+    {
+      IPitchLabStatus* st = nullptr;
+      if (audio->queryInterface(IPitchLabStatus::iid, (void**)&st) == kResultOk) {
+        const StatusSnapshot ss = st->getStatus();
+        const RtClassification rt = classifyRealtimeStatus(ss);
+        char line[96];
+        formatRealtimeStatusLine(rt, line, sizeof(line));
+        std::printf("realtime status: %s (%s basis, window %lld fr, engine-cpu %llu ns)\n",
+                    line, rtBasisName(rt.basis), (long long)ss.rtFrames,
+                    (unsigned long long)ss.engineCpuNanos);
+        st->release();
+      }
     }
   }
   audio->setProcessing(false);

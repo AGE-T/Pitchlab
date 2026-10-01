@@ -111,6 +111,7 @@ set(pitchlab_vst3_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/parameters.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/processor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/realtime_adapter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/realtime_status.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor.cpp
   # the single-component base class implementation (the SDK ships it as a
   # sample-side source; the "again_simple" pattern)
@@ -192,6 +193,7 @@ set(pitchlab_vst_headless_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/parameters.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/processor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/realtime_adapter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/realtime_status.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor.cpp
   ${SDK_ROOT}/public.sdk/source/vst/vstsinglecomponenteffect.cpp
   ${SDK_ROOT}/public.sdk/source/main/moduleinit.cpp
@@ -240,6 +242,13 @@ pitchlab_add_vst_suite(vst_realtime_diagnostics_test)
 # cross-engine switch control.
 pitchlab_add_vst_suite(vst_seam_test)
 
+# T-RT* (Task 32): the realtime-capability status suite — the classifier's
+# levels/bases/thresholds/fault-escalation/benchmark-prior rules as pure
+# unit fixtures + the label texts (incl. the required warning wording) +
+# integration drives proving the adapter's measurement accumulates, follows
+# chain switches, and classifies real engines correctly.
+pitchlab_add_vst_suite(vst_realtime_status_test)
+
 # The host-simulation driver: renders corpus material through the REAL VST3
 # process path (used for the retained audio examples; tools/vst_host_sim.cpp)
 add_executable(vst_host_sim ${CMAKE_SOURCE_DIR}/tools/vst_host_sim.cpp
@@ -263,6 +272,7 @@ if(LINUX AND PITCHLAB_BUILD_VST3)
   # pattern the SDK's own validator uses)
   add_executable(vst_ui_screenshot ${CMAKE_SOURCE_DIR}/tools/vst_ui_screenshot.cpp
     ${CMAKE_SOURCE_DIR}/src/vst/parameters.cpp
+    ${CMAKE_SOURCE_DIR}/src/vst/realtime_status.cpp
     ${SDK_ROOT}/public.sdk/source/vst/hosting/module_linux.cpp)
   target_link_libraries(vst_ui_screenshot PRIVATE
     pitchlab_core sdk sdk_common sdk_hosting base pluginterfaces X11::X11

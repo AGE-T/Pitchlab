@@ -52,7 +52,9 @@ enum Tags : uint32_t {
   // --- engine + pitch (product surface) -----------------------------------
   kEngine = 1,       // discrete: engine registry index
   kPitch = 2,        // -12.0 .. +12.0 semitones
-  kLfoRate = 3,      // 0.1 .. 8 Hz (sine LFO on the ratio, st domain)
+  kLfoRate = 3,      // 0.0 .. 8 Hz — 0 Hz = LFO OFF (Task 32: the sine LFO
+                     // contributes nothing and its phase is parked at the
+                     // zero crossing; the normalised mapping is exact at 0)
   kLfoDepth = 4,     // 0 .. 2 semitones (0 = LFO off)
   // --- per-engine panels (values persist; applied only to the selected
   //     engine — declared, not fake: the UI shows only the selected

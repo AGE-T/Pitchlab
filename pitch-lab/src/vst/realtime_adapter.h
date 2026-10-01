@@ -147,6 +147,25 @@ struct StatusSnapshot {
   // pre-Task-31 adapter counted these frames as delivery underruns +
   // dry-fallback bursts because job recycling had destroyed the data.
   uint64_t seamRecoveries = 0;  // frames served by the retained wet history
+  // --- Task 32: the realtime-capability MEASUREMENT (numeric only) ----------
+  //
+  // The honest sustainability signal for the CURRENT configuration: the
+  // audio thread's own measured engine-process cost vs the audio timeline
+  // it covers. The heavy engine work (PitchEngine::process) runs ON the
+  // audio thread (feedJob/finishJob); steady_clock nanoseconds spent
+  // inside it are accumulated here — exactly the quantity the Task-29/30
+  // measurement drives measured host-side (the "RTF" columns). The window
+  // is the CURRENT ACTIVE CHAIN's lifetime: both figures reset at chain
+  // adoption (and at hard/resume reset — a fresh chain re-measures), so
+  // the measurement always describes the CURRENT engine configuration,
+  // never a blend of retired chains. NUMERIC ONLY as ever (spec §4.3): the
+  // CLASSIFICATION (OK / LIMITED / NOT SUSTAINABLE / UNKNOWN) is derived
+  // by consumers from these figures — see vst/realtime_status.h; the
+  // audio thread never formats strings.
+  uint64_t engineCpuNanos = 0;  // steady-clock ns inside engine->process()
+                                // (feedJob + finishJob), since adoption
+  int64_t rtFrames = 0;         // input frames processed since the current
+                                // chain's adoption (the measurement window)
 };
 
 // ---------------------------------------------------------------------------

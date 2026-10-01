@@ -695,6 +695,15 @@ struct RealtimeAdapter::Impl {
   uint64_t seamRecoveries = 0;       // Task 31: frames served by the retained
                                      // wet history (the re-coverage source;
                                      // a cadence diagnostic, NOT a fault)
+  // Task 32: the realtime-capability measurement (audio-thread-only
+  // accumulators; see StatusSnapshot's field note). engineCpuNanos counts
+  // steady-clock nanoseconds spent inside engine->process() (feedJob +
+  // finishJob); rtFrames counts the input frames of the CURRENT chain's
+  // measurement window. Both reset at chain ADOPTION (the window follows
+  // the active chain — the current configuration, never a blend) and at
+  // the hard/resume resets (a fresh chain re-measures from zero).
+  uint64_t engineCpuNanos = 0;
+  int64_t rtFrames = 0;
   // Preparation-side (prep thread; never block audio):
   std::atomic<uint64_t> preparationFailures{0};
   std::atomic<uint64_t> jobsPreparedTotal{0};
@@ -1265,6 +1274,11 @@ struct RealtimeAdapter::Impl {
     job0->lane.reset(t);
     active.store(pend, std::memory_order_release);
     ++chainsAdopted;  // Task 29: adoption cadence
+    // Task 32: the measurement window follows the ACTIVE chain — the new
+    // chain's configuration is what the next classification describes (a
+    // switch away from an expensive chain must not inherit its history).
+    engineCpuNanos = 0;
+    rtFrames = 0;
     // the emission latency is monotonic (Λ_eff — never starves the retiring
     // chain when the new chain is cheaper; see the Impl field note)
     latencyEff = std::max(latencyEff, pend->latency);
@@ -1346,6 +1360,10 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.chainsAdopted = 0;
   im.processCalls = 0;
   im.seamRecoveries = 0;  // Task 31: the retained-wet-history serve counter
+  // Task 32: the measurement accumulators (fresh activation — the first
+  // chain's window starts empty; see the Impl field note)
+  im.engineCpuNanos = 0;
+  im.rtFrames = 0;
   im.preparationFailures.store(0, std::memory_order_relaxed);
   im.jobsPreparedTotal.store(0, std::memory_order_relaxed);
   im.meterInPeak[0] = im.meterInPeak[1] = 0.0;
@@ -1566,6 +1584,10 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
     im.everHadBypassAutomation = false;
     im.lfoPhase = 0.0;
     im.bypassFade = 0.0;  // ramps toward the current target from a fresh state
+    // Task 32: the fresh chain after a resume re-measures from zero (the
+    // pre-suspend window described the retired chain)
+    im.engineCpuNanos = 0;
+    im.rtFrames = 0;
   }
 
   // ---- pitch base resolution (the deterministic VST3-correct model) --------
@@ -1662,6 +1684,29 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       // LFO with sample-aware rate/depth (P1.1): automation events are
       // resolved at frame granularity; the phase integrates the automated
       // rate (deterministic; identical events => identical curve).
+      //
+      // Task 32 — THE OFF STATE (rate == 0.0, the parameter domain's new
+      // minimum): the LFO is DISABLED. Semantics (documented, spec §6):
+      //   * no sine contribution regardless of depth (the curve is the
+      //     automation curve alone — identical to depth 0);
+      //   * the phase is PARKED at 0.0 — it neither advances (the increment
+      //     is rate/fs == 0) nor holds a stale mid-cycle value: re-enabling
+      //     the rate starts the modulation from the LFO's zero crossing
+      //     (sin(0) == 0), so the 0 -> nonzero transition introduces NO
+      //     curve step (the contribution grows continuously from zero).
+      //     The nonzero -> 0 transition is the honest hard-off step (the
+      //     contribution stops at the next frame — the same class as a
+      //     depth-to-0 move; no fade is invented here);
+      //   * deterministic: an identical parameter trajectory produces an
+      //     identical curve (parking is a pure function of the per-frame
+      //     rate, never of wall-clock history);
+      //   * rate 0 never divides (the increment is skipped, not 1/rate),
+      //     never produces NaN/Inf, and never touches the chain lifecycle:
+      //     the rate is not in the chain signature, not in any envelope
+      //     exit and not in the depth-growth capability exit — the
+      //     envelope/geometry stay DEPTH-sized by design (a chain built
+      //     while OFF already covers the excursion for the moment the rate
+      //     is re-enabled; no re-prepare is needed or requested).
       const double lfoDepth = timelineAt(automation.lfoDepth, automation.lfoDepthCount,
                                          frame, blockFrames, snap.lfoDepthSt);
       const double lfoRate = timelineAt(automation.lfoRate, automation.lfoRateCount,
@@ -1670,8 +1715,12 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
         st += lfoDepth * std::sin(2.0 * kPi * im.lfoPhase);
       }
       im.curveScratch[static_cast<std::size_t>(i)] = std::exp2(st / 12.0);
-      im.lfoPhase += lfoRate / im.fs;
-      if (im.lfoPhase >= 1.0) im.lfoPhase -= std::floor(im.lfoPhase);
+      if (lfoRate > 0.0) {
+        im.lfoPhase += lfoRate / im.fs;
+        if (im.lfoPhase >= 1.0) im.lfoPhase -= std::floor(im.lfoPhase);
+      } else {
+        im.lfoPhase = 0.0;  // OFF: parked at the zero-crossing phase
+      }
     }
 
     // ---- 3) feed the live jobs (curve writes + engine process) --------------
@@ -1910,6 +1959,10 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
 
   im.streamPos += frames;
   im.streamPosMirror.store(im.streamPos, std::memory_order_release);
+  // Task 32: the measurement window's frame count (the timeline denominator
+  // of the realtime-capability measurement; reset at chain adoption — see
+  // the Impl field note)
+  im.rtFrames += frames;
   im.exitLiveRatio.store(std::exp2(im.lastPitchSt / 12.0), std::memory_order_relaxed);
   // Task 30: publish the live LFO depth (the depth timeline's block-end value
   // — automation-aware) for the preparation thread's envelope-capability
@@ -2033,6 +2086,10 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   st.jobsPrepared = im.jobsPreparedTotal.load(std::memory_order_relaxed);
   st.processCalls = im.processCalls;
   st.seamRecoveries = im.seamRecoveries;  // Task 31: the retention at work
+  // Task 32: the realtime-capability measurement (numeric only; the UI-side
+  // classifier — vst/realtime_status.h — derives the level from these)
+  st.engineCpuNanos = im.engineCpuNanos;
+  st.rtFrames = im.rtFrames;
   status_.store(st);
 }
 
@@ -2155,6 +2212,13 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
     ProcessReport rep{};
     bool failed = false;
     bool threw = false;
+    // Task 32: the realtime-capability measurement — steady-clock
+    // nanoseconds spent inside the ENGINE'S OWN process() (the audio
+    // thread's dominant cost; exactly what the Task-29/30 drives measured
+    // host-side as "cpu ms/call"). steady_clock::now() is a vDSO
+    // clock_gettime: no allocation, no lock, no syscall on this platform —
+    // audio-thread-safe. NUMERIC ONLY (never formatted here).
+    const auto rtT0 = std::chrono::steady_clock::now();
     try {
       rep = job.engine->process(inView, static_cast<int>(chunk), outView,
                                 static_cast<int>(outCap), job.curveView, job.consumed);
@@ -2164,6 +2228,10 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
       threw = true;
       failed = true;
     }
+    im.engineCpuNanos += static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - rtT0)
+            .count());
     if (threw) {
       ++im.engineExceptions;  // Task 29: categorized (engine exception)
     } else if (failed || rep.inputFramesConsumed < 0 || rep.outputFramesProduced < 0 ||
@@ -2205,6 +2273,9 @@ void RealtimeAdapter::finishJob(Job& job, int64_t historyFloor) {
   outView.channels = outPtr;
   outView.channelCount = ch;
   outView.frameCapacity = free;
+  // Task 32: the flush is engine work on the audio thread like process()
+  // (the same measurement counter — see feedJob's note)
+  const auto rtT0 = std::chrono::steady_clock::now();
   try {
     const ProcessReport rep = job.engine->finish(outView, static_cast<int>(free));
     const int64_t append =
@@ -2218,6 +2289,10 @@ void RealtimeAdapter::finishJob(Job& job, int64_t historyFloor) {
     im.faults++;
     im.engineExceptions++;  // Task 29: categorized (engine finish() exception)
   }
+  im.engineCpuNanos += static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::steady_clock::now() - rtT0)
+          .count());
 }
 
 }  // namespace pitchlab::vst

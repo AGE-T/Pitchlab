@@ -384,9 +384,21 @@ Exposed parameters (product surface — frozen identity, stable tags):
   realtime-native engine).
 * PITCH (−12.0..+12.0 st, default 0, display st with cents) — the
   automation surface; `ratio = 2^(st/12)` per frame.
-* LFO RATE (0.1–8 Hz, default 5), LFO DEPTH (0–2 st, default 0 = off) —
-  the runtime pitch-curve control appropriate to the realtime model
-  (curve = automation + sine LFO, envelope-clamped).
+* LFO RATE (0.0–8 Hz, default 5; **0 Hz = LFO OFF**, Task 32), LFO DEPTH
+  (0–2 st, default 0 = off) — the runtime pitch-curve control appropriate
+  to the realtime model (curve = automation + sine LFO,
+  envelope-clamped). The OFF semantics: rate 0 gates the sine
+  contribution regardless of depth (bit-identical to depth 0, tested) and
+  parks the LFO phase at the zero crossing (0 → nonzero is continuous at
+  any point — the modulation grows from sin(0); nonzero → 0 is the honest
+  hard-off, continuous at a zero crossing); the rate never enters the
+  chain signature, the envelope geometry or any re-prepare exit (no
+  lifecycle event, no churn), the normalised mapping is exact at 0 (an
+  OFF state save/loads bit-exactly; the editor label shows OFF while the
+  host-facing value string stays "0.00"), and the normalised state of
+  pre-Task-32 sessions shifts the rate by ≤ 0.1 Hz on restore (the domain
+  extension is the one deliberate frozen-surface change, recorded in the
+  engine-params suite).
 
 **THE GLOBAL LFO ROLE (Task 30 audit, decided):** the LFO is RETAINED as
 PRODUCT FUNCTIONALITY — a creative vibrato-style modulation control on
@@ -458,7 +470,8 @@ A hand-drawn VSTGUI editor (custom `CView`/`CControl` subclasses — not an
 XML template screen): dark zinc panels (zinc-950/zinc-900), emerald accent
 (active engine, meter peaks, primary), amber for the varispeed adaptation
 badge, monospace uppercase micro-labels — the workbench identity (the
-workbench itself is untouched). Fixed logical size 680×450, DPI-scaled.
+workbench itself is untouched). Fixed logical size 680×486 (Task 32: the
+editor grew from 680×450 to hold the realtime-status lines), DPI-scaled.
 Sections: ENGINE (segmented selector, 5 entries from the registry), PITCH
 (large semitone control + the SHARED pitch-curve/LFO row), ENGINE panel
 (per-engine controls — see below), OUTPUT (dry/wet, bypass, level), METERS
@@ -470,6 +483,25 @@ via: parameter get/set (the normal VST3 path) and two read-only interfaces
 (`IPitchLabMeters`, `IPitchLabStatus` — atomically published snapshots
 written by the audio thread, polled by a 30 Hz UI timer; the editor NEVER
 touches the audio path directly).
+
+**THE REALTIME-CAPABILITY STATUS (Task 32):** the status panel's FIRST
+line is the classification of the CURRENT configuration's realtime
+sustainability — REALTIME OK / REALTIME LIMITED / !! REALTIME NOT
+SUSTAINABLE / REALTIME STATUS UNKNOWN — with a warning detail line for
+the non-healthy states ("current configuration exceeds measured realtime
+capacity — use offline render"). The classification's evidence model
+(kept distinct from ENGINE CAPABILITY, which all five engines have):
+a MEASURED basis (the audio thread's own steady-clock measurement of the
+engines' process/finish cost vs the audio timeline since the current
+chain's adoption — the numeric StatusSnapshot fields engineCpuNanos/
+rtFrames; thresholds RTF ≤ 0.75 = OK, ≤ 1.0 = LIMITED, > 1.0 = NOT
+SUSTAINABLE; the aggregate fault counter escalates one level, never
+two), a BENCHMARK prior basis (encoded measured evidence, used ONLY
+before the runtime window suffices: exactly one row — native.granular at
+≥ 88.2 kHz → LIMITED, citing the Task-30 96 kHz matrix 0.58–1.89
+by-configuration spread; a measurement ALWAYS supersedes it), and the
+honest UNKNOWN. All string derivation stays on the UI side
+(`src/vst/realtime_status.{h,cpp}` — the audio thread stays numeric-only).
 
 **The ENGINE panel is ENGINE-DRIVEN (Task 29):** the editor holds NO
 engine-parameter membership knowledge and NO engine-index switch. The
@@ -610,7 +642,14 @@ Windows CI lane is a future owner decision, not part of this phase.
     measures ZERO in isolation (engine faults, underruns, dry-misses,
     stalls, adoption failures, preparation failures) — the stutter's
     primary cause is the legitimate splice cost itself, not a lane/lifecycle
-    defect. The previously recorded granular downshift limitation
+    defect. Task 32: this is no longer silent — the editor's
+    realtime-capability status classifies the CURRENT configuration from
+    the audio thread's own measurement (the boundary-spanning family gets
+    a benchmark prior LIMITED within ~0.1 s of adoption, then the measured
+    verdict: the −12 st/grain-0.5 configurations surface the NOT
+    SUSTAINABLE warning "use offline render"; the +12 st configurations
+    measure ~0.6 and classify OK — per configuration, never a blanket
+    engine verdict). The previously recorded granular downshift limitation
     (envelope-edge curve materialisation) remains documented and
     untouched.
   * **A secondary, measured churn amplifier:** at the ±12 st parameter

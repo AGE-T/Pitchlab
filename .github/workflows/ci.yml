@@ -236,7 +236,7 @@ jobs:
           import sys
           ppm, png = sys.argv[1], sys.argv[2]
           data = open(ppm, 'rb').read().split(b'\n', 3)
-          img = Image.frombytes('RGB', (680, 450), data[3])
+          img = Image.frombytes('RGB', (680, 486), data[3])
           img.save(png)
           colors = len(img.getcolors(200000))
           assert colors > 100, 'UI capture is blank (%d colors)' % colors
@@ -251,6 +251,14 @@ jobs:
             DISPLAY=:99 build/bin/Release/vst_ui_screenshot build/VST3/Release/PitchLab.vst3 $1 $2 $3 /tmp/ui/$4.ppm 2>&1 | tee -a ui-vst3.log
             python3 /tmp/convert_ui.py /tmp/ui/$4.ppm /tmp/ui/$4.png
           done
+          # Task 32: every driven configuration prints its REALTIME-CAPABILITY
+          # STATUS (the same classification the editor renders, derived from
+          # the processor's numeric status); the 48 kHz drives must classify
+          # MEASURED (the runtime measurement accumulated through the real
+          # process path) — grep the measured basis, not a fixed level (the
+          # level depends on the runner's CPU, the basis does not).
+          grep -c "realtime status: .*(measured basis" ui-vst3.log | grep -qv '^0$' \
+            || { echo "FAIL: no measured realtime-status classification in the UI lane"; exit 1; }
           # Task 24 P0.3 regression: 11 engine switches in ONE live editor
           # instance while the poll timer runs and audio processes (the
           # stale-slider use-after-free trigger); the capture proves the

@@ -8,6 +8,7 @@
 #include "public.sdk/source/vst/vstguieditor.h"
 #include "vst/ui/views.h"
 #include "vst/view_interfaces.h"
+#include "vst/realtime_status.h"
 
 #include "vstgui/lib/cframe.h"
 #include "vstgui/lib/cvstguitimer.h"
@@ -126,7 +127,7 @@ class HostRunLoop final : public VSTGUI::X11::IRunLoop,
 
 // Logical editor size (DPI-scaled by VSTGUI's zoom support)
 constexpr CCoord kEditorWidth = 680;
-constexpr CCoord kEditorHeight = 450;
+constexpr CCoord kEditorHeight = 486;  // Task 32: 450 -> 486 (the realtime-status lines)
 constexpr int kUiPollMs = 33;  // ~30 Hz meters/status polling
 
 // ---------------------------------------------------------------------------
@@ -382,8 +383,9 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
                                      ui_::Palette::textFaint(), 0);
     panel->addView(hint);
 
-    // status panel
-    const CRect sr(220, 296, kEditorWidth - 12, 414);
+    // status panel (Task 32: the panel grew with the editor — 450 -> 486 —
+    // to hold the realtime-capability status line + the warning detail)
+    const CRect sr(220, 296, kEditorWidth - 12, 452);
     auto* statusPanel = new ui_::PanelView(sr);
     root->addView(statusPanel);
 
@@ -391,26 +393,46 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
                                         ui_::Palette::textFaint(), 0);
     statusPanel->addView(stLabel);
 
-    statusLine1_ = new ui_::MicroLabel(CRect(12, 26, sr.getWidth() - 12, 42), "—",
+    // Task 32: THE REALTIME-CAPABILITY STATUS LINE — the classification of
+    // the CURRENT configuration (engine + rate + block + parameters), the
+    // most prominent status the panel shows: the user is explicitly warned
+    // when the configuration is not sustainably realtime, WITHOUT having
+    // to inspect the raw fault counters below. The line is the classified
+    // label (realtime_status.h — the classification runs HERE, on the UI
+    // thread, from the numeric snapshot; the audio thread stays
+    // numeric-only, spec §4.3).
+    rtStatus_ = new ui_::MicroLabel(CRect(12, 26, sr.getWidth() - 12, 42),
+                                    "REALTIME STATUS UNKNOWN · MEASURING",
+                                    ui_::Palette::textFaint(), 0);
+    statusPanel->addView(rtStatus_);
+    // Task 32: the WARNING DETAIL line — the human-readable consequence
+    // text ("exceeds measured realtime capacity — use offline render" and
+    // the limited-state cautions). Empty (invisible) when healthy: the
+    // envelope line owns the slot's neighbour below.
+    rtDetail_ = new ui_::MicroLabel(CRect(12, 116, sr.getWidth() - 12, 132), "",
+                                    ui_::Palette::rose(), 0);
+    statusPanel->addView(rtDetail_);
+
+    statusLine1_ = new ui_::MicroLabel(CRect(12, 44, sr.getWidth() - 12, 60), "—",
                                        ui_::Palette::textDim(), 0);
     statusPanel->addView(statusLine1_);
-    statusLine2_ = new ui_::MicroLabel(CRect(12, 44, sr.getWidth() - 12, 60), "—",
+    statusLine2_ = new ui_::MicroLabel(CRect(12, 62, sr.getWidth() - 12, 78), "—",
                                        ui_::Palette::textDim(), 0);
     statusPanel->addView(statusLine2_);
-    statusLine3_ = new ui_::MicroLabel(CRect(12, 62, sr.getWidth() - 12, 78), "—",
+    statusLine3_ = new ui_::MicroLabel(CRect(12, 80, sr.getWidth() - 12, 96), "—",
                                        ui_::Palette::textDim(), 0);
     statusPanel->addView(statusLine3_);
-    statusLine4_ = new ui_::MicroLabel(CRect(12, 80, sr.getWidth() - 12, 96), "—",
+    statusLine4_ = new ui_::MicroLabel(CRect(12, 98, sr.getWidth() - 12, 114), "—",
                                        ui_::Palette::textDim(), 0);
     statusPanel->addView(statusLine4_);
     // Task 29: the categorized fault-diagnostics line (numeric counters from
     // the audio path; ALL string formatting happens HERE, on the UI thread)
-    statusLine5_ = new ui_::MicroLabel(CRect(12, 98, sr.getWidth() - 12, 114), "—",
+    statusLine5_ = new ui_::MicroLabel(CRect(12, 134, sr.getWidth() - 12, 150), "—",
                                        ui_::Palette::textFaint(), 0);
     statusPanel->addView(statusLine5_);
 
     auto* footer = new ui_::MicroLabel(
-        CRect(12, 420, kEditorWidth - 12, 436),
+        CRect(12, 458, kEditorWidth - 12, 474),
         "PITCH LAB V0.1 · AGE-T · ENGINES: V0.1 RESEARCH REGISTRY (5) · NO QUALITY SCORE BY DESIGN",
         ui_::Palette::textFaint(), 0);
     root->addView(footer);
@@ -601,6 +623,29 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     // no longer formats strings — spec §4.3); ALL string derivation happens
     // here, on the UI thread, through the registry.
     char buf[192];
+    // Task 32: THE REALTIME-CAPABILITY CLASSIFICATION — derived HERE from
+    // the numeric snapshot (the audio thread publishes numbers only; the
+    // labels + the warning text come from realtime_status.h's formatters).
+    // The level colours follow the product palette: OK = emerald accent,
+    // LIMITED = amber, NOT SUSTAINABLE = rose, UNKNOWN = faint.
+    if (rtStatus_ != nullptr && rtDetail_ != nullptr) {
+      const RtClassification rt = classifyRealtimeStatus(ss);
+      formatRealtimeStatusLine(rt, buf, sizeof(buf));
+      CColor rtColor = ui_::Palette::textFaint();
+      switch (rt.level) {
+        case RtLevel::Ok: rtColor = ui_::Palette::accent(); break;
+        case RtLevel::Limited: rtColor = ui_::Palette::amber(); break;
+        case RtLevel::NotSustainable: rtColor = ui_::Palette::rose(); break;
+        case RtLevel::Unknown: rtColor = ui_::Palette::textFaint(); break;
+      }
+      rtStatus_->set(buf, rtColor);
+      // the warning detail line: empty when healthy (the slot stays quiet)
+      char dbuf[192];
+      formatRealtimeDetailLine(rt, dbuf, sizeof(dbuf));
+      const CColor dColor =
+          rt.level == RtLevel::NotSustainable ? ui_::Palette::rose() : ui_::Palette::amber();
+      rtDetail_->set(dbuf, dColor);
+    }
     const char* engineId = ss.engineIndex >= 0 ? engineIdForIndex(ss.engineIndex) : nullptr;
     std::snprintf(buf, sizeof(buf), "%s",
                   ss.chainReady ? (engineId != nullptr ? engineId : "?") : "building chain…");
@@ -694,8 +739,17 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     char buf[48];
     std::snprintf(buf, sizeof(buf), "%+.2f st", snap.pitchSt);
     pitchValue_->set(buf, ui_::Palette::accent());
-    std::snprintf(buf, sizeof(buf), "%.2f Hz", snap.lfoRateHz);
-    lfoRateValue_->set(buf, ui_::Palette::text());
+    // Task 32: 0 Hz is the LFO's real OFF state — the label shows "OFF"
+    // (the value representation stays "0.00 Hz": hosts format through
+    // formatParamValue; both displays are the same semantic, no
+    // contradiction). Amber makes the deliberately-disabled state legible
+    // at a glance next to the active default.
+    if (snap.lfoRateHz == 0.0) {
+      lfoRateValue_->set("OFF", ui_::Palette::amber());
+    } else {
+      std::snprintf(buf, sizeof(buf), "%.2f Hz", snap.lfoRateHz);
+      lfoRateValue_->set(buf, ui_::Palette::text());
+    }
     std::snprintf(buf, sizeof(buf), "%.2f st", snap.lfoDepthSt);
     lfoDepthValue_->set(buf, ui_::Palette::text());
 
@@ -771,7 +825,10 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   ui_::MicroLabel* statusLine2_ = nullptr;
   ui_::MicroLabel* statusLine3_ = nullptr;
   ui_::MicroLabel* statusLine4_ = nullptr;
-  ui_::MicroLabel* statusLine5_ = nullptr;  // Task 29: categorized diagnostics
+  ui_::MicroLabel* statusLine5_ = nullptr;
+  // Task 32: the realtime-capability status (classification + warning)
+  ui_::MicroLabel* rtStatus_ = nullptr;
+  ui_::MicroLabel* rtDetail_ = nullptr;
   CViewContainer* enginePanel_ = nullptr;
 };
 

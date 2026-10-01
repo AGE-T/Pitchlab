@@ -1088,3 +1088,259 @@ TEST_CASE("T-J: LFO depth automation re-sizes the envelope exactly once (the cap
   CHECK(r.status.envelopeMin <= 0.8909 + 1e-9);
   CHECK(r.status.envelopeMax >= 1.1224);
 }
+
+// ---------------------------------------------------------------------------
+// Task 32 — the LFO OFF state (rate 0 Hz): semantics + transitions
+//
+// The product-facing rate domain is 0.0..8.0 Hz; rate == 0 disables the
+// LFO: no sine contribution regardless of depth, and the phase is PARKED
+// deterministically at the zero crossing (spec §6) — so the 0 -> nonzero
+// transition starts the modulation from sin(0) == 0 (no curve step), and
+// the nonzero -> 0 transition is the honest hard-off (bounded by choosing
+// the transition at a zero-crossing frame, it too is continuous).
+// ---------------------------------------------------------------------------
+
+TEST_CASE("Task 32: rate 0 with nonzero depth — bit-identical to depth 0 (OFF means OFF)") {
+  initEngineRegistryOnce();
+  // VarDelay's chain geometry is depth-INDEPENDENT (crossfade-based) and
+  // its engine never reads the pre-filled envelope ahead of the live-write
+  // frontier (production is paced BEHIND the consumption by the crossfade
+  // lead) — the only depth-dependent quantities (the envelope clamp
+  // bounds) never engage for a curve sitting deep inside both envelopes.
+  // The -8 st curve (0.6300) sits inside the depth-0 envelope
+  // [0.5946, 0.6675] and the depth-2 envelope [0.5612, 0.7072]: no
+  // clamping in either drive, identical curve -> BIT-IDENTICAL output.
+  const int64_t total = static_cast<int64_t>(kFs * 0.9);
+  const std::vector<int32_t> blocks = {1024, 256, 777};
+  const auto sig = makeSine(total, 220.0);
+  ParamSnapshot off;  // rate 0 + depth 2 (the required case: OFF with nonzero depth)
+  off.engineIndex = 1;
+  off.pitchSt = -8.0;
+  off.lfoRateHz = 0.0;
+  off.lfoDepthSt = 2.0;
+  ParamSnapshot dep0;  // rate 0 + depth 0 — the canonical disabled LFO
+  dep0.engineIndex = 1;
+  dep0.pitchSt = -8.0;
+  dep0.lfoRateHz = 0.0;
+  dep0.lfoDepthSt = 0.0;
+  const DriveResult a = driveAdapter(off, total, blocks, sig);
+  const DriveResult b = driveAdapter(dep0, total, blocks, sig);
+  REQUIRE(a.status.faults == 0);
+  REQUIRE(b.status.faults == 0);
+  CHECK(a.status.latencyFrames == b.status.latencyFrames);
+  CHECK(a.status.reprepares == b.status.reprepares);  // the rate/depth never churn the chain
+  CHECK(a.out[0] == b.out[0]);  // BIT-IDENTICAL — no modulation at all
+  CHECK(a.out[1] == b.out[1]);
+  // finite everywhere (no NaN/Inf through the OFF path)
+  for (int64_t i = 0; i < total; ++i) {
+    REQUIRE(std::isfinite(a.out[0][static_cast<std::size_t>(i)]));
+  }
+}
+
+TEST_CASE("Task 32: depth 0 disables the LFO at ANY rate (bit-identical output)") {
+  initEngineRegistryOnce();
+  // rate 5 with depth 0 vs rate 0 with depth 0: the contribution term is
+  // depth-gated; the advancing phase is invisible in the output. Locks the
+  // "depth 0 = off" semantics independent of the rate (the required case
+  // matrix: rate > 0 with depth = 0).
+  const int64_t total = static_cast<int64_t>(kFs * 0.7);
+  const std::vector<int32_t> blocks = {512, 1024};
+  const auto sig = makeSine(total, 220.0);
+  ParamSnapshot on;  // rate 5, depth 0
+  on.engineIndex = 1;
+  on.pitchSt = -8.0;
+  on.lfoRateHz = 5.0;
+  on.lfoDepthSt = 0.0;
+  ParamSnapshot off;
+  off.engineIndex = 1;
+  off.pitchSt = -8.0;
+  off.lfoRateHz = 0.0;
+  off.lfoDepthSt = 0.0;
+  const DriveResult a = driveAdapter(on, total, blocks, sig);
+  const DriveResult b = driveAdapter(off, total, blocks, sig);
+  REQUIRE(a.status.faults == 0);
+  CHECK(a.out[0] == b.out[0]);  // the phase advancing at depth 0 changes nothing
+  CHECK(a.out[1] == b.out[1]);
+}
+
+TEST_CASE("Task 32: OFF -> on transition — the parked phase starts at the zero crossing") {
+  initEngineRegistryOnce();
+  // Single-block drives (the P1.2 pattern: one process call owns the whole
+  // timeline, so per-frame automation is frame-exact):
+  //   B: rate 0 for the whole drive (the OFF control)
+  //   C: rate 0, automated to 5 Hz at frame F (an arbitrary mid-cycle point
+  //      — parking makes the onset continuous at ANY F, not only at cycle
+  //      boundaries)
+  // Pre-F: C's rate is 0 with the phase parked at 0 — the curve equals B's
+  // exactly -> BIT-IDENTICAL prefix. Post-F: the modulation grows from
+  // zero; the first millisecond's deviation from B is tiny compared with
+  // the established modulation a quarter-period (50 ms) later.
+  const int64_t total = static_cast<int64_t>(kFs * 1.2);
+  const int64_t F = static_cast<int64_t>(kFs * 0.6);  // 28800, arbitrary mid-drive
+  const auto sig = makeSine(total, 220.0);
+  const std::vector<int32_t> oneBlock{static_cast<int32_t>(total)};
+  ParamSnapshot snap;  // vardelay, pitch -8, depth 1 (a live LFO when on)
+  snap.engineIndex = 1;
+  snap.pitchSt = -8.0;
+  snap.lfoDepthSt = 1.0;
+  snap.lfoRateHz = 0.0;  // OFF (also C's frame-0 carry: no automation for B)
+
+  const DriveResult b = driveAdapter(snap, total, oneBlock, sig);
+
+  BlockAutomation onAtF;
+  onAtF.lfoRate[0] = {0, 0.0};
+  onAtF.lfoRate[1] = {F, 0.0};
+  onAtF.lfoRate[2] = {F + 1, 5.0};  // on from frame F+1 (a near-step ramp)
+  onAtF.lfoRateCount = 3;
+  const DriveResult c = driveAdapter(snap, total, oneBlock, sig, 220.0, &onAtF);
+  // determinism of the transition drive
+  const DriveResult c2 = driveAdapter(snap, total, oneBlock, sig, 220.0, &onAtF);
+  REQUIRE(c.status.faults == 0);
+  REQUIRE(b.status.faults == 0);
+  CHECK(c.out[0] == c2.out[0]);
+  CHECK(c.status.reprepares == b.status.reprepares);  // the rate never rebuilds
+
+  // pre-F prefix: BIT-IDENTICAL (the phase was parked at 0 — the curve is
+  // B's curve; the 4096-frame margin excludes the engine's crossfade
+  // lookahead reaching past F)
+  const int64_t preEnd = F - 4096;
+  REQUIRE(preEnd > 0);
+  CHECK(std::memcmp(c.out[0].data(), b.out[0].data(),
+                    static_cast<std::size_t>(preEnd) * sizeof(double)) == 0);
+
+  // post-F: the modulation is present (differs from the OFF control)
+  double post = 0.0;
+  for (int64_t p = F + 4096; p < total; ++p) {
+    post += std::fabs(c.out[0][static_cast<std::size_t>(p)] -
+                      b.out[0][static_cast<std::size_t>(p)]);
+  }
+  CHECK(post > 100.0);  // a 1 st modulation over ~0.5 s decorrelates the render
+
+  // the smooth onset: at the transition the contribution is sin(0) = 0 and
+  // grows — the first millisecond's deviation from B is far below the
+  // established modulation at the quarter period (50 ms in)
+  const int64_t lat = c.status.latencyFrames;
+  double d1 = 0.0;  // the first ~1 ms of modulated output (post latency)
+  for (int64_t p = F + 1 + lat; p < F + 49 + lat; ++p) {
+    d1 += std::fabs(c.out[0][static_cast<std::size_t>(p)] -
+                    b.out[0][static_cast<std::size_t>(p)]);
+  }
+  double d2 = 0.0;  // the quarter-period window (the modulation at full swing)
+  for (int64_t p = F + 2400 + lat; p < F + 2448 + lat; ++p) {
+    d2 += std::fabs(c.out[0][static_cast<std::size_t>(p)] -
+                    b.out[0][static_cast<std::size_t>(p)]);
+  }
+  MESSAGE("onset d1=" << d1 << " quarter-period d2=" << d2);
+  CHECK(d1 < d2);      // the modulation GREW from the zero crossing
+  CHECK(d1 < 0.5);     // and started essentially at zero (no curve step)
+}
+
+TEST_CASE("Task 32: on -> OFF transition — modulation stops, continuous at a zero crossing") {
+  initEngineRegistryOnce();
+  // A: rate 5 for the whole drive. D: rate 5, automated to 0 at frame F.
+  // F = 28800 = 3 full 5 Hz cycles (5*28800/48000 == 3.0 exactly): the
+  // contribution at the OFF frame is sin(2*pi*3) == 0 — the hard-off lands
+  // ON a zero crossing, so the transition is continuous (the same holds at
+  // any zero-crossing; a mid-cycle OFF is the honest bounded step, the
+  // depth-to-0 class). Pre-F: BIT-IDENTICAL to A (the OFF never leaked
+  // backward). Post-F: the modulation is gone (differs from A).
+  const int64_t total = static_cast<int64_t>(kFs * 1.2);
+  const int64_t F = 28800;  // 3 full cycles at 5 Hz (zero crossing)
+  CHECK(std::fabs(5.0 * static_cast<double>(F) / kFs - 3.0) < 1e-12);
+  const auto sig = makeSine(total, 220.0);
+  const std::vector<int32_t> oneBlock{static_cast<int32_t>(total)};
+  ParamSnapshot snap;  // vardelay, pitch -8, depth 1
+  snap.engineIndex = 1;
+  snap.pitchSt = -8.0;
+  snap.lfoDepthSt = 1.0;
+  snap.lfoRateHz = 5.0;
+
+  const DriveResult a = driveAdapter(snap, total, oneBlock, sig);
+
+  BlockAutomation offAtF;
+  offAtF.lfoRate[0] = {0, 5.0};
+  offAtF.lfoRate[1] = {F, 5.0};
+  offAtF.lfoRate[2] = {F + 1, 0.0};  // OFF from frame F+1
+  offAtF.lfoRateCount = 3;
+  const DriveResult d = driveAdapter(snap, total, oneBlock, sig, 220.0, &offAtF);
+  const DriveResult d2 = driveAdapter(snap, total, oneBlock, sig, 220.0, &offAtF);
+  REQUIRE(a.status.faults == 0);
+  REQUIRE(d.status.faults == 0);
+  CHECK(d.out[0] == d2.out[0]);                       // deterministic
+  CHECK(d.status.reprepares == a.status.reprepares);  // no lifecycle event
+
+  // pre-F prefix: BIT-IDENTICAL to the always-on control
+  const int64_t preEnd = F - 4096;
+  CHECK(std::memcmp(d.out[0].data(), a.out[0].data(),
+                    static_cast<std::size_t>(preEnd) * sizeof(double)) == 0);
+
+  // post-F: A still modulates, D does not — the renders diverge
+  double post = 0.0;
+  for (int64_t p = F + 8192; p < total; ++p) {
+    post += std::fabs(d.out[0][static_cast<std::size_t>(p)] -
+                      a.out[0][static_cast<std::size_t>(p)]);
+  }
+  CHECK(post > 100.0);
+
+  // continuity at the OFF landing (the transition reaches the output one
+  // latency later: out[p] reflects curve[p - latency]): no sample step
+  // beyond the signal's own slope — the parked-phase/hard-off semantics
+  // introduce NO discontinuity at a zero-crossing OFF.
+  const int64_t lat = d.status.latencyFrames;
+  double maxStep = 0.0;
+  for (int64_t p = F + 1 + lat - 500; p < F + 1 + lat + 500; ++p) {
+    if (p < 1 || p >= total) continue;
+    const double step = std::fabs(d.out[0][static_cast<std::size_t>(p)] -
+                                  d.out[0][static_cast<std::size_t>(p - 1)]);
+    maxStep = std::max(maxStep, step);
+  }
+  MESSAGE("max sample step at the OFF landing: " << maxStep);
+  CHECK(maxStep < 0.2);  // the 220 Hz signal's own slope is ~0.015
+}
+
+TEST_CASE("Task 32: the snapshot path (UI slider) OFF/ON mid-stream — frame-aligned, no churn") {
+  initEngineRegistryOnce();
+  // The UI path: setParameterNormalized -> publishSnapshot between process
+  // calls (the parameter's CURRENT value is the curve base — P0.4). The
+  // switch lands exactly at the call boundary: frame-exact by construction.
+  // The rate is NOT in the chain signature — the chain never rebuilds.
+  RealtimeAdapter adapter;
+  const int64_t F = static_cast<int64_t>(kFs * 0.5);
+  const int64_t total = F + static_cast<int64_t>(kFs * 0.5);
+  const std::vector<int32_t> blocks = {1024};
+  adapter.activate(kFs, 2, 1024);
+  ParamSnapshot snap;  // vardelay, pitch -8, depth 1, rate 5 (on)
+  snap.engineIndex = 1;
+  snap.pitchSt = -8.0;
+  snap.lfoDepthSt = 1.0;
+  snap.lfoRateHz = 5.0;
+  adapter.setParameterSnapshot(snap);
+  adapter.requestHardReset();
+
+  const auto sig = makeSine(total, 220.0);
+  std::vector<double> out(static_cast<std::size_t>(total), 0.0);
+  double* o[2] = {out.data(), out.data()};
+  int64_t pos = 0;
+  auto drive = [&](int64_t until) {
+    while (pos < until) {
+      const int32_t take = static_cast<int32_t>(std::min<int64_t>(1024, until - pos));
+      const double* in[2] = {sig.data() + pos, sig.data() + pos};
+      BlockAutomation none;
+      adapter.process(in, o, take, none);
+      pos += take;
+    }
+  };
+  drive(F);
+  const uint64_t repreparesBefore = adapter.status().reprepares;
+  ParamSnapshot off = snap;
+  off.lfoRateHz = 0.0;  // the slider to 0 Hz
+  adapter.setParameterSnapshot(off);
+  drive(total);
+  // ... and back on (the parked phase resumes from the zero crossing)
+  adapter.setParameterSnapshot(snap);
+  const StatusSnapshot st = adapter.status();
+  CHECK(st.faults == 0);
+  CHECK(st.reprepares == repreparesBefore);  // ONE chain through the whole toggle
+  CHECK(st.rtFrames == total);               // the measurement window spans it
+  adapter.deactivate();
+}

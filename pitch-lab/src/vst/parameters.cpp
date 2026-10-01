@@ -33,7 +33,12 @@ constexpr std::array<ParamMeta, 7> kSharedTable{{
      "Engine", "%d", ParamRole::SharedRealtime, /*automatable=*/false},
     {param::kPitch, "pitch", "Pitch", "PITCH", "st", -12.0, 12.0, 0.0, -1,
      "Pitch", "%+.2f", ParamRole::SharedRealtime, true},
-    {param::kLfoRate, "lfo_rate", "LFO Rate", "LFO RATE", "Hz", 0.1, 8.0, 5.0, -1,
+    // Task 32: the product-facing rate domain is 0.0..8.0 Hz — 0 Hz is the
+    // real OFF state (the LFO contributes nothing and its phase is parked
+    // deterministically at the zero crossing; see the adapter's curve loop).
+    // The normalised mapping is exact at the boundary: normalise(0) == 0,
+    // denormalise(0) == 0.0 (a saved/restored OFF state round-trips exactly).
+    {param::kLfoRate, "lfo_rate", "LFO Rate", "LFO RATE", "Hz", 0.0, 8.0, 5.0, -1,
      "Pitch", "%.2f", ParamRole::SharedRealtime, true},
     {param::kLfoDepth, "lfo_depth", "LFO Depth", "LFO DEPTH", "st", 0.0, 2.0, 0.0, -1,
      "Pitch", "%.2f", ParamRole::SharedRealtime, true},
@@ -532,6 +537,14 @@ bool parseParamPlain(uint32_t tag, const char* text, double& plainOut) {
       return false;  // invalid toggle text: rejected, never silently zero
     default:
       break;
+  }
+
+  // Task 32: the LFO rate's canonical OFF text ("0.00" parses as a number
+  // below; "off" is the semantic alias of the 0 Hz boundary). "on" is
+  // deliberately NOT accepted — a rate has no single "on" value.
+  if (tag == param::kLfoRate && equalsInsensitive(text, "off")) {
+    plainOut = 0.0;
+    return true;
   }
 
   // discrete-choice parameters (engine-declared): accept the choice text,

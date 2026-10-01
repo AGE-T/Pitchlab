@@ -43,7 +43,14 @@ struct FrozenRow {
 const FrozenRow kFrozenSurface[] = {
     {param::kEngine, 0, 4, 1, 4},
     {param::kPitch, -12.0, 12.0, 0.0, -1},
-    {param::kLfoRate, 0.1, 8.0, 5.0, -1},
+    // Task 32: the ONE deliberate frozen-surface change since Task 29 —
+    // the LFO rate's domain minimum moved 0.1 -> 0.0 Hz (the real OFF
+    // state; the task's product mandate). The normalised mapping is exact
+    // at 0 (normalise(0) == 0, denormalise(0) == 0.0): an OFF state
+    // round-trips bit-exactly. Pre-Task-32 saved states restore with a
+    // benign <= 0.1 Hz shift (documented in the product doc's parameter
+    // section); every other row is untouched.
+    {param::kLfoRate, 0.0, 8.0, 5.0, -1},
     {param::kLfoDepth, 0.0, 2.0, 0.0, -1},
     {param::kVsQuality, 0, 2, 2, 2},
     {param::kVsAllowAliasing, 0, 1, 0, 1},
