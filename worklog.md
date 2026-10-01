@@ -1301,3 +1301,21 @@ Stage Summary:
 - THE PRODUCT ANSWER (Parts B-F): the honest realtime-capability status — the audio thread measures the engines' own cost numerically (engineCpuNanos/rtFrames, per current chain) and the UI side classifies: measured RTF thresholds (0.75/1.0), the one-level fault escalation, exactly ONE benchmark prior (granular@>=88.2kHz -> LIMITED, evidence-cited, always superseded by the measurement — the no-blanket-rule case is a named test), UNKNOWN where there is no evidence. The warning is prominent, color-coded and states the required semantics ("current configuration exceeds measured realtime capacity — use offline render"); the granular@96k family now warns in the real product path (verified end-to-end, measured rtf 2.70 locally) while the +12st configurations of the SAME engine classify OK — the honest per-configuration verdict the task demanded.
 - REGRESSIONS: CTest 41/41; the audio-path artifact + examples BYTE-IDENTICAL (the rate>0 path is bit-neutral); the Task-30 clamp/reprepare policy, the Task-31 retiring-chain retention and reverse-direction scheduling, all five engines, the registry-driven UI — all intact (the ui-binding 20/20 matrix + the seam suite unchanged and green).
 - The 96 kHz granular splice OPTIMISATION was deliberately NOT attempted (the scope rule); the warning makes its evidence user-visible, the optimisation remains a separate recorded follow-up.
+
+---
+Task ID: task-32 (CI delivery closure)
+Agent: VST3 product-hardening agent (Z.ai Code session, 2026-10-01)
+Task: Verify GitHub Actions on the exact pushed task-32 commit and record the delivery.
+
+Work Log:
+- Pushed the task-32 implementation commit cc5f7dc (24 files, +1837/−42: the parameter domain, the adapter OFF semantics + the numeric measurement, the realtime_status module, the editor status lines + OFF label, the CI workflow's 680x486 capture + the measured-basis grep, the five extended suites + the new suite, the refreshed UI evidence, the docs + the spec + this worklog) to origin/main (d809cc0..cc5f7dc).
+- Watched the CI run through the API: run 36924104626 @ cc5f7dc7 — ALL THREE JOBS GREEN:
+  * T-INF1 infrastructure — success.
+  * vst3-product lane — success: the real VST3 build from the pushed state (PITCHLAB_BUILD_VST3=ON), the official SDK validator "47 tests passed, 0 tests failed", CTest "100% tests passed, 0 tests failed out of 41", the audio-path artifact byte-determinism check (the committed 159-record artifact regenerated identically — the step fails on any git diff), the retained examples byte-identical, and the REAL X11/VSTGUI UI lane: the four 680x486 panel captures, the Task-32 measured-basis grep (8 matches: every driven configuration printed its realtime-status classification — e.g. "REALTIME OK · MEASURED RTF 0.05/0.39/0.46/0.03" with the window + engine-cpu evidence), switch-stress 11 survived, ui-binding ALL CHECKS PASS.
+  * Windows x64 delivery lane — success: the downloadable artefact PitchLab-VST3-Windows-x64 (915582 B, artifact id 11193635975) built from the SAME sources by the §11-documented VS2022/MSVC path.
+- Evidence artefacts uploaded: vst3-evidence (id 11194123561, 273056 B — logs + the UI PNGs + the audio-path report), ci-evidence (id 11193224526).
+- Run URL: https://github.com/AGE-T/Pitchlab/actions/runs/36924104626
+
+Stage Summary:
+- THE TASK-32 DELIVERY RECORD: implementation commit cc5f7dc (the single commit — code + tests + docs + worklog); the VST3 artifact built from that exact state (local module SHA-256 cd8d97a10d7e1fd78346437fe14d3801c496a2510b9d452d93b72cb82ce1cf94; CI rebuilds it from the same source on the canonical runner); validator 47/47; CTest 41/41 (CI + local); sanitizers ASAN+UBSAN+LSAN clean on seven suites (local — the canonical lane has no sanitizer job by design, the standing pattern); the X11/VSTGUI UI lane GREEN locally AND in CI (with the new realtime-status evidence line); the Windows artefact published; the audio-path artifact + the examples byte-identical through the whole chain.
+- Task 32 is CLOSED with the final state on GitHub. The worklog's CURRENT STATE (the task-32 terminal state) is now live in the pushed repository.
