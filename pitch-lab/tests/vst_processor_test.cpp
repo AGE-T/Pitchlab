@@ -286,7 +286,8 @@ TEST_CASE("engine switching through the registry: all five process audio") {
 TEST_CASE("Task 31: same-engine extreme configuration change mid-audio (the real VST path)") {
   // THE retiring-chain seam coverage through the REAL VST3 product path:
   // instantiate -> activate -> process -> the extreme granular grain jump
-  // (0.1 s -> 0.5 s: Λ 15638 -> 34838 at 48 kHz — a large SAME-engine
+  // (0.1 s -> 0.5 s: at 48 kHz the envelope-scoped splice Λ is 4896 ->
+  //  24096 — the Task-33 continuation Phase-5 geometry; a large SAME-engine
   // latency growth) mid-audio -> chain rebuild -> chain adoption -> the
   // seam -> continued processing -> reset -> suspend/resume -> state
   // restore. The Task-31 fix (the retained wet history + the retiring
@@ -347,8 +348,8 @@ TEST_CASE("Task 31: same-engine extreme configuration change mid-audio (the real
   CHECK(st.chainReady);
   CHECK(st.engineIndex == 4);
   // the latency grew by the grain growth and is reported coherently
-  CHECK(latencyBefore == 15638);
-  CHECK(st.latencyFrames == 34838);
+  CHECK(latencyBefore == 4896);
+  CHECK(st.latencyFrames == 24096);
   // continued processing: audible output well past the seam
   {
     double acc = 0.0;

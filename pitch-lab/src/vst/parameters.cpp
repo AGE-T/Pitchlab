@@ -35,7 +35,17 @@ constexpr std::array<ParamMeta, 7> kSharedTable{{
     // the default stays native.vardelay (index 1) — no state-compat change.
     {param::kEngine, "engine", "Engine", "ENGINE", "", 0, 5, 1, 5,
      "Engine", "%d", ParamRole::SharedRealtime, /*automatable=*/false},
-    {param::kPitch, "pitch", "Pitch", "PITCH", "st", -12.0, 12.0, 0.0, -1,
+    // Task-33 continuation (Phase 5): the pitch control widens -12..+12 ->
+    // -48..+48 — the broadest range the SHARED control surface needs (the
+    // task's floor; granular's declared capability is exactly +-48). The
+    // per-engine support is CAPABILITY-DERIVED (the selected engine's
+    // minRatio/maxRatio, displayed by the editor) and the existing explicit
+    // saturation applies beyond it: the runtime curve clamps to the chain's
+    // envelope (the engine's declared ratio range is the hard clamp, Task
+    // 30) and every clamp is COUNTED (clampEvents) — never a silent clamp.
+    // The normalised mapping is exact at the boundaries (saved states
+    // round-trip; old +-12 states load unchanged — forward-compatible).
+    {param::kPitch, "pitch", "Pitch", "PITCH", "st", -48.0, 48.0, 0.0, -1,
      "Pitch", "%+.2f", ParamRole::SharedRealtime, true},
     // Task 32: the product-facing rate domain is 0.0..8.0 Hz — 0 Hz is the
     // real OFF state (the LFO contributes nothing and its phase is parked
@@ -169,6 +179,7 @@ const std::vector<ParamMeta>& modelTable() {
         m.automatable = p.automatable;
         m.engineId = d.info.id;
         m.choiceNames = p.choiceNames;
+        m.choiceDisplayNames = p.choiceDisplayNames;
         m.choiceValues = p.choiceValues;
         m.choiceCount = p.choiceCount;
         t.push_back(m);
@@ -531,11 +542,16 @@ void formatParamValue(uint32_t tag, double plain, char* buf, std::size_t bufSize
     default:
       break;
   }
-  // discrete-choice parameters (engine-declared names): the choice text
+  // discrete-choice parameters (engine-declared names): the choice text —
+  // the USER-FACING label when the descriptor declares one (the Task-33
+  // continuation's mode naming), the engine-facing identifier otherwise
   const ParamMeta* meta = findParamMeta(tag);
   if (meta != nullptr && isChoiceParam(*meta)) {
     const int idx = clampInt(plain, 0, meta->choiceCount - 1);
-    std::snprintf(buf, bufSize, "%s", meta->choiceNames[idx]);
+    const char* const* names = meta->choiceDisplayNames != nullptr
+                                   ? meta->choiceDisplayNames
+                                   : meta->choiceNames;
+    std::snprintf(buf, bufSize, "%s", names[idx]);
     return;
   }
   // integer-domain parameters without choices: plain integers
@@ -593,10 +609,18 @@ bool parseParamPlain(uint32_t tag, const char* text, double& plainOut) {
     return true;
   }
 
-  // discrete-choice parameters (engine-declared): accept the choice text,
-  // the actual engine value (choiceValues, e.g. 2048) and the index
+  // discrete-choice parameters (engine-declared): accept the choice text —
+  // BOTH the user-facing display label (the Task-33 continuation's mode
+  // naming; "Pitch Synced") and the internal identifier ("pitch_synced") —
+  // plus the actual engine value (choiceValues, e.g. 2048) and the index
   const ParamMeta* meta = findParamMeta(tag);
   if (meta != nullptr && meta->choiceCount > 0 && meta->choiceNames != nullptr) {
+    for (int i = 0; meta->choiceDisplayNames != nullptr && i < meta->choiceCount; ++i) {
+      if (equalsInsensitive(text, meta->choiceDisplayNames[i])) {
+        plainOut = static_cast<double>(i);
+        return true;
+      }
+    }
     for (int i = 0; i < meta->choiceCount; ++i) {
       if (equalsInsensitive(text, meta->choiceNames[i])) {
         plainOut = static_cast<double>(i);

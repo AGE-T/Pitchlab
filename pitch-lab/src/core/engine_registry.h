@@ -127,6 +127,13 @@ struct EngineParamDescriptor {
   // discrete choices (Text: the engine string values; Int: the engine
   // numeric values — see the ownership rule above)
   const char* const* choiceNames = nullptr;
+  // Task-33 continuation (the owner's mode-naming requirement): the
+  // USER-FACING choice labels — displayed by the product UI (the value
+  // labels, the segmented selectors, the status text). nullptr ⇒ the UI
+  // falls back to choiceNames. The ENGINE-FACING values stay choiceNames /
+  // choiceValues verbatim (buildEngineConfig never reads the display
+  // array) — internal identifiers are untouched.
+  const char* const* choiceDisplayNames = nullptr;
   const double* choiceValues = nullptr;
   int choiceCount = 0;
 

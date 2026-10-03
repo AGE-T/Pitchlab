@@ -310,10 +310,15 @@ TEST_CASE("varispeed mode: windowed splice status + worst-case latency") {
   const DriveResult r = driveAdapter(snap, static_cast<int64_t>(kFs * 0.7), {2048});
   CHECK(r.status.spliceMode);  // windowed splice adaptation (numeric status)
   CHECK(r.status.faults == 0);
-  // fixed worst-case latency: (2·2^(1/12) − 1)·0.2 s + margins, at 48 kHz
-  const double worstEnv = 2.0 * std::exp2(1.0 / 12.0);
+  // Task-33 continuation (Phase 5): the splice latency is ENVELOPE-SCOPED —
+  // the chain's own envMax at pitch 0 = min(1·2^(1/12), 16) = 2^(1/12), so
+  // the declared lead is (2^(1/12) − 1)·0.2 s + margins at 48 kHz (the old
+  // whole-parameter-domain worst 2·2^(1/12) declared the +12 st input lead
+  // at EVERY pitch — with the widened ±48 st control that constant would
+  // have declared the +48 st lead, a ~3 s latency, everywhere).
+  const double envMax = std::exp2(1.0 / 12.0);
   const int64_t expect = static_cast<int64_t>(
-      std::ceil((worstEnv - 1.0) * 0.2 * kFs)) + 32 + 64;
+      std::ceil((envMax - 1.0) * 0.2 * kFs)) + 32 + 64;
   CHECK(r.status.latencyFrames == expect);
 }
 

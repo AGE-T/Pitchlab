@@ -490,18 +490,28 @@ TEST_CASE("T-RT3: the measurement window FOLLOWS the active chain (engine switch
   adapter.deactivate();
 }
 
-TEST_CASE("T-RT3: granular @ 96 kHz / -12 st classifies NOT SUSTAINABLE (the real warning)") {
+TEST_CASE("T-RT3: granular @ 96 kHz / -12 st / grain 0.5 classifies NOT SUSTAINABLE (the real warning)") {
   initEngineRegistryOnce();
   // The task-30 evidence family: the windowed-splice granular cost at the
-  // double rate with a downshift measured RTF 1.35-1.89 (reference machine
-  // AND the canonical CI runner, results/vst3/task30). The product status
-  // the user sees for this configuration is the measured NOT SUSTAINABLE
-  // warning — the honest per-configuration verdict (the +12 st rows
-  // measure ~0.58 and classify OK: no blanket rule is encoded).
+  // double rate measured RTF > 1 (reference machine AND the canonical CI
+  // runner, results/vst3/task30). Task-33 continuation (Phase 5) NOTE: the
+  // splice geometry's worst read-rate became ENVELOPE-SCOPED (the chain's
+  // own envMax — the +-48 st control made the whole-mode worst declare an
+  // absurd latency), so the old grain-0.1 row's RTF dropped BELOW 1: its
+  // job input windows were sized by the whole-mode 2.245x worst while the
+  // downshift truly reads 0.53x — the old "unsustainable" measurement was
+  // dominated by that oversizing waste, and the honest per-configuration
+  // measurement is now SUSTAINABLE (the classification is measured, never
+  // pinned). The genuinely CPU-bound family member is the LONG GRAIN at
+  // the downshift (grain 0.5 s @96 kHz / -12 st: measured RTF 1.35-2.8
+  // across machines — the survey evidence in this continuation's worklog);
+  // the product status the user sees for that configuration is the
+  // measured NOT SUSTAINABLE warning — the honest per-configuration
+  // verdict (no blanket rule is encoded).
   ParamSnapshot snap;
   snap.engineIndex = 4;  // native.granular
   snap.pitchSt = -12.0;
-  snap.grGrainSec = 0.1;
+  snap.grGrainSec = 0.5;
   const StatusSnapshot st = pacedDrive(snap, 96000.0, 128, 1.5);
   REQUIRE(st.chainReady);
   REQUIRE(st.faults == 0);  // the task-29/30 finding: fault-free but CPU-bound
@@ -509,7 +519,7 @@ TEST_CASE("T-RT3: granular @ 96 kHz / -12 st classifies NOT SUSTAINABLE (the rea
   CHECK(c.basis == RtBasis::Measured);
   CHECK(c.level == RtLevel::NotSustainable);
   CHECK(c.measuredRtf > kRtfSustainableMax);
-  MESSAGE("granular@96k/-12st measured rtf " << c.measuredRtf);
+  MESSAGE("granular@96k/-12st/grain0.5 measured rtf " << c.measuredRtf);
   // the warning the editor renders for this state (the exact texts)
   char line[160];
   formatRealtimeStatusLine(c, line, sizeof(line));

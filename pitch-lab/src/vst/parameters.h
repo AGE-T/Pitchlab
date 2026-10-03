@@ -51,7 +51,9 @@ namespace param {
 enum Tags : uint32_t {
   // --- engine + pitch (product surface) -----------------------------------
   kEngine = 1,       // discrete: engine registry index
-  kPitch = 2,        // -12.0 .. +12.0 semitones
+  kPitch = 2,        // -48.0 .. +48.0 semitones (the Task-33 continuation
+                     // Phase-5 widening; per-engine support is capability-derived
+                     // and displayed — see the ParamMeta row + the editor)
   kLfoRate = 3,      // 0.0 .. 8 Hz — 0 Hz = LFO OFF (Task 32: the sine LFO
                      // contributes nothing and its phase is parked at the
                      // zero crossing; the normalised mapping is exact at 0)
@@ -127,6 +129,10 @@ struct ParamMeta {
   // discrete-choice data (engine-declared, registry-derived; nullptr for
   // continuous/bool parameters)
   const char* const* choiceNames = nullptr;  // display + engine-facing names
+  // Task-33 continuation: the user-facing labels (the descriptor's
+  // choiceDisplayNames; nullptr ⇒ display == choiceNames). The engine-facing
+  // mapping NEVER reads this array.
+  const char* const* choiceDisplayNames = nullptr;
   const double* choiceValues = nullptr;      // engine-facing values (Int kind)
   int choiceCount = 0;
 };

@@ -301,6 +301,18 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
 
     pitchSlider_ = addSlider(panel, param::kPitch, CRect(12, 36, 265, 56), true);
 
+    // Task-33 continuation (Phase 5): the SELECTED ENGINE's actual pitch
+    // support, capability-derived (the descriptor's minRatio/maxRatio) —
+    // never a hardcoded per-engine switch; updated by updateValueLabels()
+    // on every engine (and Time Pitch mode) change. Values beyond the
+    // engine's support take the EXISTING explicit saturation (the chain's
+    // envelope clamp, counted clampEvents) — the display reports the
+    // support honestly instead of pretending the full control range is
+    // native.
+    pitchSupported_ = new ui_::MicroLabel(CRect(12, 57, 265, 69), "—",
+                                          ui_::Palette::textDim(), 0);
+    panel->addView(pitchSupported_);
+
     auto* lfoLabel = new ui_::MicroLabel(CRect(12, 70, 200, 84), "SHARED PITCH CURVE · LFO",
                                          ui_::Palette::textFaint(), 0);
     panel->addView(lfoLabel);
@@ -431,11 +443,20 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
                                        ui_::Palette::textFaint(), 0);
     statusPanel->addView(statusLine5_);
 
-    auto* footer = new ui_::MicroLabel(
-        CRect(12, 458, kEditorWidth - 12, 474),
-        "PITCH LAB V0.1 · AGE-T · ENGINES: V0.1 RESEARCH REGISTRY (5) · NO QUALITY SCORE BY DESIGN",
-        ui_::Palette::textFaint(), 0);
-    root->addView(footer);
+    // Task-33 continuation (Phase 7): the engine count is DERIVED from the
+    // authoritative registry (engineCount() — the registry IS the single
+    // count source; the stale hardcoded "(5)" text preceded the sixth
+    // engine and contradicted the selector).
+    {
+      char footerBuf[128];
+      std::snprintf(footerBuf, sizeof(footerBuf),
+                    "PITCH LAB V0.1 · AGE-T · ENGINES: PRODUCTION REGISTRY (%d) · "
+                    "NO QUALITY SCORE BY DESIGN",
+                    engineCount());
+      auto* footer = new ui_::MicroLabel(CRect(12, 458, kEditorWidth - 12, 474),
+                                         footerBuf, ui_::Palette::textFaint(), 0);
+      root->addView(footer);
+    }
   }
 
   // ---- helpers ---------------------------------------------------------------
@@ -580,15 +601,25 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       y += 40.0;
     }
 
-    // the rate-following adaptation note (registry-declared behaviour —
-    // varispeed's DurationBehaviour::RateFollowing; no engine-id switch)
+    // the rate-following adaptation note — the ADAPTATION is registry/
+    // descriptor + mode derived, never an engine-id switch: varispeed
+    // declares DurationBehaviour::RateFollowing engine-wide; the Time Pitch
+    // Pitch-Synced modes are mode-scoped rate-followers under the SAME
+    // windowed-splice adaptation (the Task-33 continuation correction —
+    // the mode comes from the descriptor-driven guard value, already read
+    // by this rebuild path).
     if (engineIndex >= 0 && engineIndex < engineCount()) {
       const EngineRegistry& reg = engineRegistry();
-      if (reg.at(static_cast<std::size_t>(engineIndex)).capabilities.duration ==
-          DurationBehaviour::RateFollowing) {
+      const EngineDescriptor& d = reg.at(static_cast<std::size_t>(engineIndex));
+      bool spliceNote = d.capabilities.duration == DurationBehaviour::RateFollowing;
+      if (d.info.id != nullptr && std::string(d.info.id) == "native.timepitch" &&
+          snapTpModeForPanel() >= 2) {
+        spliceNote = true;  // the Pitch-Synced / Pitch + Formant modes
+      }
+      if (spliceNote) {
         varispeedNote_ = new ui_::MicroLabel(
             CRect(12, y + 6, 184, y + 66),
-            "RATE-FOLLOWING ENGINE: WINDOWED SPLICE ADAPTATION (0.2 s WINDOWS, "
+            "RATE-FOLLOWING: WINDOWED SPLICE ADAPTATION (SHORT WET WINDOWS, "
             "15 ms SPLICES) — NOT THE OFFLINE RENDER",
             ui_::Palette::amber(), 0);
         enginePanel_->addView(varispeedNote_);
@@ -619,6 +650,14 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
         }
       }
     }
+  }
+
+  /// The current Time Pitch mode choice (the descriptor-driven guard reads
+  /// the same authoritative controller value; -1 when unavailable).
+  [[nodiscard]] double snapTpModeForPanel() const {
+    EditController* ec = const_cast<PitchLabEditor*>(this)->getController();
+    if (ec == nullptr) return -1.0;
+    return denormalise(param::kTpMode, ec->getParamNormalized(param::kTpMode));
   }
 
   ui_::PLSlider* addSliderTo(CViewContainer* parent, uint32_t tag, const CRect& r) {
@@ -798,6 +837,17 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     char buf[48];
     std::snprintf(buf, sizeof(buf), "%+.2f st", snap.pitchSt);
     pitchValue_->set(buf, ui_::Palette::accent());
+    // Phase 5: the capability-derived support line (the selected engine's
+    // declared ratio range in semitones). Recomputed on every tick; the
+    // cached-string guard keeps the label quiet when nothing changed.
+    if (pitchSupported_ != nullptr) {
+      char supBuf[64];
+      supportedRangeText(snap, supBuf, sizeof(supBuf));
+      if (lastSupported_ != supBuf) {
+        lastSupported_ = supBuf;
+        pitchSupported_->set(supBuf, ui_::Palette::textDim());
+      }
+    }
     // Task 32: 0 Hz is the LFO's real OFF state — the label shows "OFF"
     // (the value representation stays "0.00 Hz": hosts format through
     // formatParamValue; both displays are the same semantic, no
@@ -820,6 +870,25 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       engineValues_[i]->set(engineParamDisplay(engineParamTags_[i], snap).c_str(),
                             ui_::Palette::text());
     }
+  }
+
+  /// Phase 5: the selected engine's pitch support, capability-derived from
+  /// the registry descriptor (minRatio/maxRatio -> semitones). The Time
+  /// Pitch capability is engine-scoped (all four modes share the declared
+  /// 0.25..4.0 range — the sheet's ratio axis), so the mode participates in
+  /// the cache key only through future mode-scoped capability splits.
+  [[nodiscard]] static void supportedRangeText(const ParamSnapshot& snap, char* buf,
+                                               std::size_t bufSize) {
+    const int idx = snap.engineIndex;
+    const EngineRegistry& reg = engineRegistry();
+    if (idx < 0 || idx >= static_cast<int>(reg.size())) {
+      std::snprintf(buf, bufSize, "supported: —");
+      return;
+    }
+    const auto& cap = reg.at(static_cast<std::size_t>(idx)).capabilities;
+    const double lo = cap.minRatio > 0.0 ? 12.0 * std::log2(cap.minRatio) : 0.0;
+    const double hi = cap.maxRatio > 0.0 ? 12.0 * std::log2(cap.maxRatio) : 0.0;
+    std::snprintf(buf, bufSize, "supported: %+.0f ... %+.0f st", lo, hi);
   }
 
   /// One engine parameter's value display: the model's formatting + the
@@ -882,6 +951,8 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   ui_::MicroLabel* latency_ = nullptr;
   ui_::MicroLabel* panelTitle_ = nullptr;
   ui_::MicroLabel* pitchValue_ = nullptr;
+  ui_::MicroLabel* pitchSupported_ = nullptr;
+  std::string lastSupported_;
   ui_::MicroLabel* lfoRateValue_ = nullptr;
   ui_::MicroLabel* lfoDepthValue_ = nullptr;
   ui_::MicroLabel* statusLine1_ = nullptr;

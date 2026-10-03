@@ -49,8 +49,18 @@ constexpr uint64_t kEngineSeed = 0x50697463684C6162ULL;  // "PitchLab" (fixed pr
                                                           // the default jitter = 0)
 constexpr int64_t kPrepLeadExtra = 4096;            // job-preparation lead (frames beyond
                                                     // 2·maxBlock) — covers prep latency
-constexpr double kPitchParamMinRatio = 0.5;         // ±12 st parameter range
-constexpr double kPitchParamMaxRatio = 2.0;
+// Task-33 continuation (Phase 5): the pitch control widens -12..+12 st to
+// -48..+48 st (the task's floor; varispeed's wider 0.0625..16 capability
+// stays engine-internal). The per-chain ENVELOPE (envelopeFor) clamps the
+// runtime curve to the engine's declared ratio range with the existing
+// explicit saturation (counted clampEvents — never a silent clamp), so
+// these constants only define the legal parameter domain the envelope's
+// parameter-bound term relaxes by the LFO excursion.
+constexpr double kPitchParamMinRatio = 0.0625;      // -48 st parameter range
+constexpr double kPitchParamMaxRatio = 16.0;        // +48 st parameter range
+constexpr double kRegistryMaxRatio = 16.0;          // the registry's widest
+                                                    // declared maxRatio
+                                                    // (native.varispeed)
 constexpr double kAdoptionForceSeconds = 0.050;     // deferred-adoption deadline (§4.1 item 4)
 constexpr int kParamSettleMs = 2;                    // parameter-batch debounce (see prepLoop)
 constexpr int kFirstChainWaitMs = 2000;              // bounded MAIN-thread wait for the first
@@ -248,21 +258,17 @@ struct Geometry {
   bool rateFollowing = false;  // the D.4 duration-changing wet (task-33 Pitch-Synced modes)
 };
 
-/// The splice-mode worst-case read-rate coverage: the widest curve value the
-/// legal parameter surface can produce at the CURRENT LFO depth (Task 30,
-/// depth-aware). At depth ≤ 1 st this is bit-identical to the frozen
-/// pre-Task-30 constant kPitchParamMaxRatio·2^(1/12) ≈ 2.119 — every existing
-/// artifact case (depth 0 / 0.5) keeps its exact geometry; at the depth
-/// maximum it widens to 2.0·2^(2/12) ≈ 2.245 (the +14 st surface).
-[[nodiscard]] inline double worstEnvFor(double lfoDepthSt) {
-  const double marginSt = std::max(kEnvelopeSemitones, lfoDepthSt);
-  return kPitchParamMaxRatio * std::exp2(marginSt / 12.0);
-}
-
 /// Forward declaration: the §4.1 item-2 envelope derivation (defined
 /// below); chainGeometry's Pitch-Synced splice branch scopes the windowed-
 /// splice input lead to the chain's own envelope (the exact bound the
 /// runtime curve is clamped to).
+void envelopeFor(const EngineDescriptor& desc, double liveRatio, double lfoDepthSt,
+                 double& envMin, double& envMax);
+
+/// Forward declaration: the §4.1 item-2 envelope derivation (defined
+/// below); chainGeometry's splice branches scope the windowed-splice input
+/// lead to the chain's own envelope (the exact bound the runtime curve is
+/// clamped to).
 void envelopeFor(const EngineDescriptor& desc, double liveRatio, double lfoDepthSt,
                  double& envMin, double& envMax);
 
@@ -285,7 +291,14 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     const int64_t grain = std::max<int64_t>(4, std::llround(snap.grGrainSec * fs));
     const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
     const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
-    const double worstEnv = worstEnvFor(lfoDepthSt);
+    // Phase 5: the worst read-rate is ENVELOPE-SCOPED (the chain's own
+    // envMax — the exact bound the runtime curve clamps to); the widened
+    // ±48 st control made the whole-parameter-domain worst declare an
+    // absurd latency at every pitch. A pitch move beyond the built
+    // envelope is the EXISTING envelope exit (one rebuild re-scopes).
+    double envMin = 1.0, envMax = 1.0;
+    envelopeFor(desc, snap.liveRatio(), lfoDepthSt, envMin, envMax);
+    const double worstEnv = std::max(1.0, envMax);
     g.spliceMode = true;
     g.seamX = x;
     g.wetLen = windowO;
@@ -413,16 +426,20 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
       g.latency = n + 2 * kResamplerK + 256;
     }
   } else {  // native.varispeed — windowed splice (§4.2)
+    // Phase 5 (the same correction class as the granular branch): the
+    // worst read-rate = the chain's own envMax; the whole-mode constant
+    // would have declared the +48 st input lead (a ~3 s latency) at EVERY
+    // pitch under the widened control.
     const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
     const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
-    const double worstEnv = worstEnvFor(lfoDepthSt);
+    double envMin = 1.0, envMax = 1.0;
+    envelopeFor(desc, snap.liveRatio(), lfoDepthSt, envMin, envMax);
+    const double worstEnv = std::max(1.0, envMax);
     g.spliceMode = true;
     g.seamX = x;
     g.wetLen = windowO;
     g.jobInputLen = std::ceil(static_cast<double>(windowO) * worstEnv) + kKernelMargin +
                     kLatencySafety;
-    // Fixed worst-case latency for the whole varispeed mode (stability over
-    // optimality — documented limitation):
     g.latency =
         std::ceil((worstEnv - 1.0) * static_cast<double>(windowO)) + kKernelMargin + kLatencySafety;
   }
@@ -445,7 +462,13 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
 /// it. This constant sizes BUFFERS ONLY (dry retention, job lanes); the
 /// per-chain declared latency is chainGeometry's own (depth-aware, exact).
 [[nodiscard]] int64_t worstCaseLatencyFrames(double fs) {
-  const double worstEnv = kPitchParamMaxRatio * std::exp2(kLfoDepthParamMax / 12.0);
+  // The envelope's engine-max term clamps the reachable curve at the
+  // registry's widest declared maxRatio — the parameter-domain worst above
+  // it is unreachable for every engine (the sizing bound = the varispeed
+  // capability ceiling).
+  const double worstEnv = std::min(kPitchParamMaxRatio *
+                                       std::exp2(kLfoDepthParamMax / 12.0),
+                                   kRegistryMaxRatio);
   const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
   const int64_t splice =
       std::ceil((worstEnv - 1.0) * static_cast<double>(windowO)) + kKernelMargin + kLatencySafety;
@@ -526,7 +549,7 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
 /// sit at depth 0/0.5 and stay byte-identical); the behaviour changes only
 /// where the fix is intended (depth > 1 st, or |pitch| near 12 with the
 /// LFO extending past the boundary).
-void envelopeFor(const EngineDescriptor& desc, double liveRatio, double lfoDepthSt,
+void envelopeFor(const EngineDescriptor& desc, double liveRatioRaw, double lfoDepthSt,
                   double& envMin, double& envMax) {
   const double depth = clampd(lfoDepthSt, 0.0, kLfoDepthParamMax);
   const double marginSt = std::max(kEnvelopeSemitones, depth);
@@ -534,6 +557,20 @@ void envelopeFor(const EngineDescriptor& desc, double liveRatio, double lfoDepth
   const double excursion = std::exp2(depth / 12.0);  // the LFO's ratio excursion
   const double paramFloor = kPitchParamMinRatio / excursion;
   const double paramCeil = kPitchParamMaxRatio * excursion;
+  // Task-33 continuation (Phase 5, the recorded correction): the widened
+  // -48..+48 st control makes live ratios beyond a narrower engine's
+  // declared range ROUTINE (e.g. +48 st = ratio 16 against Time Pitch's
+  // 0.25..4.0). The previous derivation took the live-ratio window at face
+  // value: envMin = liveRatio/margin EXCEEDED the engine's maxRatio, the
+  // envMax < envMin repair collapsed the envelope to that out-of-capability
+  // ratio, and the engine received ratios ABOVE its declared max (measured:
+  // Time Pitch fed ratio 15.11 at the +48 st control). THE CORRECTION: the
+  // live ratio enters CLAMPED INTO THE ENGINE'S DECLARED RANGE — the pitch
+  // beyond the capability saturates AT the capability (the honest, counted
+  // saturation), and the envelope stays inside [minRatio, maxRatio] by
+  // construction.
+  const double liveRatio =
+      clampd(liveRatioRaw, desc.capabilities.minRatio, desc.capabilities.maxRatio);
   envMin = std::max(std::max(liveRatio / margin, paramFloor),
                     desc.capabilities.minRatio);
   envMax = std::min(std::min(liveRatio * margin, paramCeil),
@@ -1240,9 +1277,27 @@ struct RealtimeAdapter::Impl {
           }
         } else {
           // envelope exit against the ACTIVE chain (freshest audio-thread
-          // ratio first, snapshot as fallback)
+          // ratio first, snapshot as fallback). Task-33 continuation (Phase
+          // 5): the comparison uses the live ratio CLAMPED INTO THE
+          // ENGINE'S DECLARED RANGE — with the widened -48..+48 st control
+          // the raw live ratio routinely sits beyond a narrower engine's
+          // maxRatio, the (correctly capability-clamped) envelope never
+          // covers it, and the raw comparison rebuilt the SAME chain every
+          // block: the measured futile-churn loop (163 re-prepares in a 6 s
+          // drive — the Task-30 churn class). The pitch beyond the
+          // capability saturates AT the capability (the counted clamp
+          // events); the saturated value is what the envelope must cover.
           double r = exitLiveRatio.load(std::memory_order_acquire);
           if (!(r > 0.0) || !std::isfinite(r)) r = snap.liveRatio();
+          {
+            const EngineRegistry& regExit = engineRegistry();
+            const int exitIdx = act->engineIndex;
+            if (exitIdx >= 0 && exitIdx < static_cast<int>(regExit.size())) {
+              const auto& cap =
+                  regExit.at(static_cast<std::size_t>(exitIdx)).capabilities;
+              r = clampd(r, cap.minRatio, cap.maxRatio);
+            }
+          }
           if (r < act->envMin || r > act->envMax) {
             build = true;
             liveRatio = r;
@@ -2064,7 +2119,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
 
     // ---- 5) job completion + dead detection + stall detection ----------------
     const int64_t ef = t + subN - im.latencyNow;
-    const auto completeChainJobs = [&](Chain& chain) {
+    const auto completeChainJobs = [&](Chain& chain, bool isActiveChain) {
       for (int s = 0; s < kJobSlots; ++s) {
         Job* job = chain.slots[s].load(std::memory_order_acquire);
         if (job == nullptr) continue;
@@ -2093,7 +2148,14 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
         // cell-full guard: a job that produced its whole wet cell is not a
         // stall (the unconsumed span tail is the envelope's worst-case
         // slack, see above).
-        if (job->everFed && !job->finished && !job->stallCounted &&
+        // Task-33 continuation: the stall DEADLINE is an ACTIVE-chain
+        // criterion — a RETIRING chain's feeding is blend-end-bounded by
+        // design (the jobs past the blend end are the documented no-op) and
+        // a fed retiring job can legitimately remain unfinished past spanEnd
+        // until its chain's retirement deadline frees it; the stall detector
+        // applies to the chain that must keep producing: the ACTIVE one.
+        if (isActiveChain && job->everFed && !job->finished &&
+            !job->stallCounted &&
             t > job->spanEnd() + static_cast<int64_t>(im.maxBlock)) {
           job->stallCounted = true;
           ++im.jobStalls;  // Task 29: diagnostic (not in the historical aggregate)
@@ -2109,12 +2171,12 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       }
     };
     if (Chain* actEnd = im.active.load(std::memory_order_acquire)) {
-      completeChainJobs(*actEnd);
+      completeChainJobs(*actEnd, /*isActiveChain=*/true);
     }
     // the retiring chain's jobs complete too: their flush covers the blend
     // tail (without it, the last wet frames of a replaced chain never land)
     if (im.retiring != nullptr) {
-      completeChainJobs(*im.retiring);
+      completeChainJobs(*im.retiring, /*isActiveChain=*/false);
     }
 
     // ---- 6) retiring chain retirement -----------------------------------------

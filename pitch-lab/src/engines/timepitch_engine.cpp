@@ -1549,6 +1549,14 @@ namespace {
 const char* const kTimePitchModeChoices[] = {"fixed", "adaptive", "pitch_synced",
                                              "pitch_formant"};
 
+// Task-33 continuation (the owner's Phase-6 naming requirement): the
+// USER-FACING mode labels — exactly the four names the product UI shows.
+// The ENGINE-FACING identifiers stay kTimePitchModeChoices verbatim (the
+// engine's configure() validates against them; buildEngineConfig never
+// reads this array) — internal IDs unchanged, stable, never renumbered.
+const char* const kTimePitchModeDisplayNames[] = {
+    "Fixed", "Adaptive", "Pitch Synced", "Pitch + Formant"};
+
 // Window shapes (§6.6 table, verbatim from candidate_ola.h).
 const char* const kTimePitchShapeChoices[] = {"hann", "hamming", "bartlett", "rect"};
 
@@ -1628,6 +1636,7 @@ EngineDescriptor timePitchEngineDescriptor() {
           .unit = "",
           .stepCount = 3,
           .choiceNames = kTimePitchModeChoices,
+          .choiceDisplayNames = kTimePitchModeDisplayNames,
           .choiceValues = nullptr,
           .choiceCount = 4,
           .automatable = false,

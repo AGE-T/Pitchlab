@@ -3,7 +3,10 @@
 //
 // THE DEFECT THIS SUITE PINS (root-caused by measurement, Task 31): a
 // same-engine chain replacement whose latency GROWS (native.granular grain
-// 0.1 s -> 0.5 s: Λ 15638 -> 34838 at 48 kHz) moves the emission read
+// 0.1 s -> 0.5 s: at 48 kHz the splice geometry's ENVELOPE-SCOPED latency
+// (the Task-33 continuation Phase 5: the worst read-rate = the chain's own
+// envMax; the whole-mode pitch-worst term is gone) is Λ 4896 -> 24096 —
+// ΔΛ = 19200 = the grain growth exactly (the envelope term cancels)
 // position BACKWARD by ΔΛ = 19200 frames at adoption — the frozen Λ_eff
 // re-coverage policy (spec §4.1 item 5). The retiring chain's jobs covering
 // the re-read region are dead and RECYCLED (the prep thread re-stamps a
@@ -171,7 +174,7 @@ SeamDriveResult driveSeam(double fs, const std::vector<int32_t>& blockSchedule,
 }
 
 /// The extreme-jump mutation: native.granular grain 0.1 s -> 0.5 s
-/// (Λ 15638 -> 34838 at 48 kHz; ΔΛ = 19200 = the grain growth exactly).
+/// (Λ 4896 -> 24096 at 48 kHz; ΔΛ = 19200 = the grain growth exactly).
 void mutateGrainExtreme(ParamSnapshot& s) { s.grGrainSec = 0.50; }
 void mutateGrainModerate(ParamSnapshot& s) { s.grGrainSec = 0.20; }
 void mutateGrainReverse(ParamSnapshot& s) { s.grGrainSec = 0.10; }
@@ -236,8 +239,11 @@ TEST_CASE("T-S1: granular grain 0.1 -> 0.5 (ΔΛ 19200): no underruns, the re-co
   CHECK(r.status.chainsAdopted == 2);
   CHECK(r.status.clampEvents == 0);
   // the latency reported is the new chain's own (the Λ_eff growth)
-  CHECK(r.latOld == 15638);
-  CHECK(r.latNew == 34838);
+  // the envelope-scoped splice latency (the Phase-5 correction): the
+  // pitch term scales with the chain's own envMax (0.841 at -4 st), the
+  // grain term is the growth
+  CHECK(r.latOld == 4800 + 96);
+  CHECK(r.latNew == 24000 + 96);
   // THE REPLAY: the re-coverage window is a BIT-IDENTICAL repeat of the
   // previously-emitted wet (the retained content == what readWet returned
   // while the lanes were live; the repeat itself is the frozen Λ_eff
@@ -292,7 +298,7 @@ TEST_CASE("T-S3: granular grain 0.5 -> 0.1 (reverse: latency DECREASE): no re-co
   // emission timeline is unchanged, the new (cheaper) chain adopts under
   // the old latency — the retiring wet keeps covering q < act->base; there
   // is NO re-coverage and the history must not be consulted
-  CHECK(r.latNew == 34838);  // the activation's max (the old chain's Λ)
+  CHECK(r.latNew == 24096);  // the activation's max (the old chain's Λ)
   CHECK(r.status.faults == 0);
   CHECK(r.status.deliveryUnderruns == 0);
   CHECK(r.status.seamRecoveries == 0);
@@ -437,8 +443,9 @@ TEST_CASE("T-S8: the extreme jump twice — the invariant set deterministic, the
     REQUIRE(r.replayTotal > 0);
     CHECK(r.replayMatch == r.replayTotal);
     // the counters are integers — the deterministic lifecycle figures
-    CHECK(r.latOld == 15638);
-    CHECK(r.latNew == 34838);
+    // (the envelope-scoped splice latencies, the Phase-5 correction)
+    CHECK(r.latOld == 4896);
+    CHECK(r.latNew == 24096);
   }
 }
 
@@ -480,16 +487,22 @@ TEST_CASE("T-S9: extreme jump at −12 st + LFO depth 2 — the Task-30 clamp po
 
 TEST_CASE("T-S10: varispeed -> granular (cross-engine ΔΛ ≈ 4800): re-coverage fault-free") {
   initEngineRegistryOnce();
+  // Task-33 continuation (Phase 5): the envelope-scoped splice latencies —
+  // varispeed at -4 st: Λ 96 (the down-read needs no future input); the
+  // granular grain-0.1 chain: Λ 4896 (the grain term). ΔΛ = 4800 = the
+  // grain growth exactly (the comment's invariant is unchanged).
   ParamSnapshot snap;
-  snap.engineIndex = 0;  // native.varispeed (Λ 10838 at 48 kHz, depth 0)
+  snap.engineIndex = 0;  // native.varispeed
   snap.pitchSt = -4.0;
   const SeamDriveResult r = driveSeam(48000.0, {512}, snap,
                                       [](ParamSnapshot& s) { s.engineIndex = 4; }, 1.0, 1.6, true);
   CAPTURE(r.latOld);
   CAPTURE(r.latNew);
   CAPTURE(r.status.seamRecoveries);
-  CHECK(r.latOld == 10838);   // varispeed: ceil(1.119·9600)+96
-  CHECK(r.latNew == 15638);   // granular grain 0.1
+  CHECK(r.latOld == 96);      // varispeed at -4 st, the envelope-scoped lead:
+                              // the down-read (0.794x) never outruns realtime,
+                              // only the kernel/safety margin remains
+  CHECK(r.latNew == 4896);    // granular grain 0.1 (the grain term + margin)
   CHECK(r.status.faults == 0);
   CHECK(r.status.deliveryUnderruns == 0);
   CHECK(r.status.reprepares == 2);

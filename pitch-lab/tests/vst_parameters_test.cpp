@@ -86,10 +86,20 @@ TEST_CASE("normalisation: round trips within tolerance for continuous params") {
 }
 
 TEST_CASE("normalisation: clamping outside [0,1]") {
-  CHECK(denormalise(param::kPitch, -0.5) == -12.0);
-  CHECK(denormalise(param::kPitch, 1.5) == 12.0);
+  // Task-33 continuation (Phase 5): the pitch control domain widened
+  // -12..+12 -> -48..+48 st (capability-respecting; the per-engine support
+  // is displayed and the chain envelope clamps with counted events).
+  CHECK(denormalise(param::kPitch, -0.5) == doctest::Approx(-48.0));
+  CHECK(denormalise(param::kPitch, 1.5) == doctest::Approx(48.0));
+  CHECK(denormalise(param::kPitch, 0.5) == doctest::Approx(0.0));
+  CHECK(denormalise(param::kPitch, 0.625) == doctest::Approx(12.0));
+  CHECK(denormalise(param::kPitch, 0.25) == doctest::Approx(-24.0));
   CHECK(normalise(param::kPitch, -100.0) == 0.0);
   CHECK(normalise(param::kPitch, +100.0) == 1.0);
+  // the old domain's boundaries map inside the new one (state compat: an
+  // old +-12 state loads unchanged): (-12-(-48))/96 = 0.375
+  CHECK(normalise(param::kPitch, -12.0) == doctest::Approx(0.375));
+  CHECK(normalise(param::kPitch, +12.0) == doctest::Approx(0.625));
 }
 
 TEST_CASE("applyNormalised: the snapshot fields follow the model") {

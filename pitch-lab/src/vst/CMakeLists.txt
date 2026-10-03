@@ -253,6 +253,7 @@ pitchlab_add_vst_suite(vst_realtime_status_test)
 # VST3 host observations — Fixed crackle, Pitch+Formant dry/wet alternation,
 # the underrun counts — reproduced through the REAL adapter path).
 pitchlab_add_vst_suite(timepitch_host_probe)
+pitchlab_add_vst_suite(rtf_probe)
 
 # The host-simulation driver: renders corpus material through the REAL VST3
 # process path (used for the retained audio examples; tools/vst_host_sim.cpp)

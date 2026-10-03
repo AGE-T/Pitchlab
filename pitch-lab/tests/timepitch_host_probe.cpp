@@ -54,6 +54,7 @@ struct DriveConfig {
   double fs = 48000.0;
   int32_t block = 512;
   int64_t seconds = 12;
+  int engineIndex = 5;  // native.timepitch (registry order)
   double pitchSt = 0.0;
   int tpMode = 0;  // 0 fixed, 1 adaptive, 2 pitch_synced, 3 pitch_formant
   int64_t windowFrames = 2048;
@@ -66,7 +67,7 @@ struct DriveConfig {
 
 ParamSnapshot snapshotFor(const DriveConfig& c) {
   ParamSnapshot snap;
-  snap.engineIndex = 5;  // native.timepitch (registry order)
+  snap.engineIndex = c.engineIndex;
   snap.pitchSt = c.pitchSt;
   snap.tpMode = c.tpMode;
   snap.tpWindowFrames = c.windowFrames;
@@ -541,4 +542,61 @@ TEST_CASE("TP-PS-RESET: reset()-reuse produces identical job output") {
   const auto c = run("run3 (after reset)");
   CHECK(a == b);
   CHECK(b == c);
+}
+
+
+// ---------------------------------------------------------------------------
+// TP-PITCH-RANGE (Phase 5): the widened -48..+48 st control domain vs the
+// per-engine capability. Time Pitch declares 0.25..4.0 (= -24..+24 st) for
+// ALL four modes: values inside the support shift natively; values beyond
+// it take the EXISTING explicit saturation (the chain envelope clamps the
+// curve to the engine's declared range; every clamp is COUNTED — never a
+// silent clamp, never a fake fault). Granular declares 0.125..8.0
+// (= -48..+48 st): the full widened control is native support there.
+// ---------------------------------------------------------------------------
+TEST_CASE("TP-PITCH-RANGE: widened control vs capability-derived support") {
+  if (const char* p = std::getenv("PITCHLAB_TP_PROBE_ARTIFACT")) g_artifact = p;
+  artifactLine("\n## TP-PITCH-RANGE\n");
+  printHeader();
+
+  struct RangeRow {
+    int engineIndex;
+    int tpMode;
+    double pitchSt;
+    bool expectClamps;
+    const char* what;
+  };
+  // The declared capability ranges (the descriptors; 12*log2(ratio)):
+  //   varispeed 0.0625..16.0 = -48..+48 st | granular 0.125..8.0 = -36..+36 st
+  //   pv pair / Time Pitch 0.25..4.0 = -24..+24 st | vardelay 0.5..2.0 = -12..+12 st
+  const RangeRow rows[] = {
+      {5, 0, 48.0, true, "Fixed +48 (beyond +24 support: counted saturation, no faults)"},
+      {5, 0, 24.0, false, "Fixed +24 (at the support edge: native)"},
+      {5, 0, -48.0, true, "Fixed -48 (beyond support: counted saturation)"},
+      {5, 3, 48.0, true, "Pitch+Formant +48 (beyond support: counted saturation)"},
+      {5, 3, 12.0, false, "Pitch+Formant +12 (inside support)"},
+      {0, 0, 48.0, false, "Varispeed +48 (declared -48..+48: native full-range)"},
+      {0, 0, -48.0, false, "Varispeed -48 (declared native)"},
+      {4, 0, 36.0, false, "Granular +36 (declared edge: native)"},
+      {4, 0, 48.0, true, "Granular +48 (beyond +36 support: counted saturation)"},
+  };
+  for (const auto& row : rows) {
+    DriveConfig c;
+    c.engineIndex = row.engineIndex;
+    c.tpMode = row.tpMode;
+    c.pitchSt = row.pitchSt;
+    c.seconds = 6;
+    DriveReport r = drive(c);
+    const bool clamps = r.status.clampEvents > 0;
+    std::printf("| eng%d %-13s | %5.0f | %s | clamps=%llu faults=%llu underruns=%llu env=[%.4f,%.4f] rprep=%llu | %s |\n",
+                row.engineIndex, modeName(c.tpMode), c.pitchSt, row.what,
+                (unsigned long long)r.status.clampEvents,
+                (unsigned long long)r.status.faults,
+                (unsigned long long)r.status.deliveryUnderruns,
+                r.status.envelopeMin, r.status.envelopeMax,
+                (unsigned long long)r.status.reprepares,
+                clamps == row.expectClamps ? "OK" : "MISMATCH");
+    CHECK_MESSAGE(r.status.faults == 0, row.what);
+    CHECK_MESSAGE(clamps == row.expectClamps, row.what);
+  }
 }

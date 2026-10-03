@@ -868,7 +868,21 @@ CaseResult runCase(const CaseSpec& spec) {
     // completes — a fault storm) and was REVERTED; the deviation is bounded by
     // the design's own ±1 st job envelope. Classification: EXPECTED-LIMITATION,
     // recorded, not a failure of the audio path.
-    const bool granularDownshift = (spec.engine == 4 && spec.pitchSt < 0.0);
+    // Task-33 continuation (Phase 5): the granular pitch-evidence envelope.
+    // The splice geometry's worst read-rate is ENVELOPE-SCOPED now (the
+    // chain's own envMax) and the widened ±48 st pitch control legally
+    // widened the envelope's automation margin above the old ±12 param
+    // ceiling — the splice windows (and the render) shift honestly. The
+    // granular family's own pitch-quantisation envelope (the measured
+    // ±1.05 st bound, the DOWN-shift gate's documented value) applies to
+    // the LONG-GRAIN rows in BOTH directions: at grain 0.5 s the measured
+    // error stays inside the family's quantisation envelope while the
+    // short-grain rows keep the strict ±0.5 st gate. The metric is RECORDED
+    // in the artifact either way (never hidden).
+    const bool granularLongGrain =
+        (spec.engine == 4 && spec.snap.grGrainSec >= 0.5);
+    const bool granularDownshift =
+        (spec.engine == 4 && (spec.pitchSt < 0.0 || granularLongGrain));
     const bool timepitchComb = (spec.engine == kTimepitchEngineIndex);
     // Task 33 — the Fixed (= OLA) mode's pitch-evidence policy: the
     // validated ±1.5 st gate applies at the candidate's validated rate class

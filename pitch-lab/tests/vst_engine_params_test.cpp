@@ -45,7 +45,10 @@ const FrozenRow kFrozenSurface[] = {
     // 0..5 (the 6th production engine; selector index 5). The default stays
     // native.vardelay (index 1) — no saved state changes meaning.
     {param::kEngine, 0, 5, 1, 5},
-    {param::kPitch, -12.0, 12.0, 0.0, -1},
+    // Task-33 continuation (Phase 5): the control domain -48..+48 st —
+    // per-engine support stays capability-derived (displayed); the clamp
+    // semantics are the existing counted envelope saturation.
+    {param::kPitch, -48.0, 48.0, 0.0, -1},
     // Task 32: the ONE deliberate frozen-surface change since Task 29 —
     // the LFO rate's domain minimum moved 0.1 -> 0.0 Hz (the real OFF
     // state; the task's product mandate). The normalised mapping is exact
