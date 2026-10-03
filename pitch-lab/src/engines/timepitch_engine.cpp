@@ -25,8 +25,11 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
+
+#include <pocketfft/pocketfft_hdronly.h>
 
 #include "core/errors.h"
 #include "core/resampler.h"
@@ -69,6 +72,7 @@ class TimePitchEngine final : public PitchEngine {
     shape_ = "hann";
     tolerance_ = 768;
     puvHz_ = 200.0;
+    formantRatio_ = 1.0;
 
     for (const auto& [key, value] : cfg.parameters) {
       if (key == "mode") {
@@ -77,10 +81,11 @@ class TimePitchEngine final : public PitchEngine {
           // mode is a CONFIG ERROR — never a disguised substitute. The
           // choice list grows as each checkpoint lands; the frozen final
           // set is fixed|adaptive|pitch_synced|pitch_formant (§6.6).
-          if (*s != "fixed" && *s != "adaptive" && *s != "pitch_synced") {
+          if (*s != "fixed" && *s != "adaptive" && *s != "pitch_synced" &&
+              *s != "pitch_formant") {
             throw ConfigError("", "mode",
                               "mode '" + *s +
-                                  "' is not available in this build (Fixed=OLA, Adaptive=WSOLA, Pitch-Synced=TD-PSOLA)");
+                                  "' is not available in this build (Fixed=OLA, Adaptive=WSOLA, Pitch-Synced=TD-PSOLA, Pitch+Formant=FD-PSOLA)");
           }
           mode_ = *s;
         } else {
@@ -127,6 +132,20 @@ class TimePitchEngine final : public PitchEngine {
         } else {
           throw ConfigError("", "puv_hz", "puv_hz must be a number");
         }
+      } else if (key == "formant_ratio") {
+        // §6.6.1 item 1/7: the Pitch + Formant spectral-envelope ratio —
+        // the domain verbatim from the validated prototype
+        // (candidate_fdpsola.cpp: formant_ratio ∈ [0.25, 4.0], default 1.0
+        // = the TD-PSOLA bit-identity).
+        if (const auto* d = std::get_if<double>(&value)) {
+          if (!std::isfinite(*d) || *d < 0.25 || *d > 4.0) {
+            throw ConfigError("", "formant_ratio",
+                              "formant_ratio must be in [0.25, 4.0]");
+          }
+          formantRatio_ = *d;
+        } else {
+          throw ConfigError("", "formant_ratio", "formant_ratio must be a number");
+        }
       } else if (key == "tolerance_frames") {
         // §6.6.1 item 4: the Adaptive (WSOLA) search tolerance — the domain
         // verbatim from the validated prototype (candidate_wsola.h:44).
@@ -170,7 +189,7 @@ class TimePitchEngine final : public PitchEngine {
     hs_ = windowFrames_ / overlap_;
     window_ = makeWindow(windowFrames_, shape_);
 
-    if (mode_ == "pitch_synced") {
+    if (mode_ == "pitch_synced" || mode_ == "pitch_formant") {
       preparePitchSynced();
       return;
     }
@@ -239,7 +258,7 @@ class TimePitchEngine final : public PitchEngine {
     // job's effective curve.
     curve_ = curve;
 
-    if (mode_ == "pitch_synced") {
+    if (mode_ == "pitch_synced" || mode_ == "pitch_formant") {
       return processPitchSynced(in, inFrames, out, outCapacity, inputFrameIndex);
     }
 
@@ -291,7 +310,7 @@ class TimePitchEngine final : public PitchEngine {
       throw EngineException("native.timepitch", "finish called twice");
     }
     finishing_ = true;
-    if (mode_ == "pitch_synced") {
+    if (mode_ == "pitch_synced" || mode_ == "pitch_formant") {
       return finishPitchSynced(out, outCapacity);
     }
     stretchEndD_ = std::numeric_limits<double>::max();  // until grains exhaust
@@ -337,7 +356,7 @@ class TimePitchEngine final : public PitchEngine {
     // trio and the tracker geometry are config/prepare-derived and survive
     // — §6.6.1 item 8's tracker clause). After reset, the same input with
     // the same curve produces bit-identical output to a fresh instance.
-    if (mode_ == "pitch_synced") {
+    if (mode_ == "pitch_synced" || mode_ == "pitch_formant") {
       resetPitchSynced();
       return;
     }
@@ -405,6 +424,32 @@ class TimePitchEngine final : public PitchEngine {
   std::vector<double> psolaGrainBuf_;
   double tNext_ = 0.0;       // the output-grid cursor (1:1 emission)
   double drainEnd_ = 0.0;
+
+  // --- Pitch + Formant (FD-PSOLA) state (allocated in preparePitchSynced) --
+  // §6.6.1 item 7: the per-voiced-grain spectral transform. THE RECORDED
+  // STREAMING DEVIATION (checkpoint 4, ratification queued): the frozen
+  // "one plan pair per distinct grain length, built in prepare()" assumed
+  // the batch prototype's KNOWN marks; the streaming marks depend on the
+  // realtime decode, and the full length domain pre-build measures 349 MB
+  // @192 kHz (probe-measured plan footprint, even-only) — infeasible, and
+  // lazy builds would allocate on the audio thread (forbidden). The
+  // production engine instead pre-builds a ladder of 5-SMOOTH plan sizes
+  // covering the whole domain (≤ ~75 entries, ≤ ~5 MB) and runs the frozen
+  // transform on the grain zero-padded to the smallest ladder size ≥ gLen:
+  // the SAME r2c → X′(k′) = X(k′/γ) (linear re/im, zero beyond the grain's
+  // analysis Nyquist) → c2r·(1/L) semantics on a denser bin lattice (the
+  // 5-smooth spacing bounds the padding at ~6 %). γ = 1 returns EARLY, so
+  // the frozen internal-consistency gate (Pitch + Formant == Pitch-Synced
+  // bit-identity at γ = 1) is EXACT.
+  struct FdPlanEntry {
+    int size = 0;
+    std::unique_ptr<pocketfft::detail::pocketfft_r<double>> plan;
+  };
+  std::vector<FdPlanEntry> fdPlans_;
+  std::vector<double> fdPacked_;
+  std::vector<double> fdSpecRe_;
+  std::vector<double> fdSpecIm_;
+  double formantRatio_ = 1.0;
 
   // --- deterministic window bank (candidate_ola.cpp makeWindow verbatim) --
   static std::vector<double> makeWindow(int n, const std::string& shape) {
@@ -815,6 +860,48 @@ class TimePitchEngine final : public PitchEngine {
     // The mark ring: bounded by the decode span + the scheduling margin
     // (the marks are >= 8 frames apart; the live span is a few hops).
     markRing_.assign(256, PsolaMark{});
+
+    // §6.6.1 item 7 (checkpoint 4): the FD plan ladder (Pitch + Formant only;
+    // see the FD state comment for the recorded streaming deviation). The
+    // ladder = the even 5-smooth sizes covering [round(2·pMin), round(2·pMax)]
+    // plus the first such size ≥ the domain top (the pad-out entry).
+    fdPlans_.clear();
+    if (mode_ == "pitch_formant") {
+      auto smooth5 = [](long long n) {
+        for (int p : {2, 3, 5}) {
+          while (n % p == 0) n /= p;
+        }
+        return n == 1;
+      };
+      const int gLenMin = std::max(4, static_cast<int>(std::round(2.0 * pMin_)));
+      const int gLenMax = std::max(gLenMin + 1, static_cast<int>(std::round(2.0 * pMax_)));
+      for (int n = gLenMin; n <= gLenMax; ++n) {
+        if ((n % 2) == 0 && smooth5(n)) {
+          fdPlans_.push_back(FdPlanEntry{
+              n, std::make_unique<pocketfft::detail::pocketfft_r<double>>(
+                     static_cast<std::size_t>(n))});
+        }
+      }
+      for (int n = gLenMax;; ++n) {
+        if ((n % 2) == 0 && smooth5(n)) {
+          if (fdPlans_.empty() || fdPlans_.back().size != n) {
+            fdPlans_.push_back(FdPlanEntry{
+                n, std::make_unique<pocketfft::detail::pocketfft_r<double>>(
+                       static_cast<std::size_t>(n))});
+          }
+          break;
+        }
+      }
+      const int lMax = fdPlans_.back().size;
+      fdPacked_.assign(static_cast<std::size_t>(lMax), 0.0);
+      fdSpecRe_.assign(static_cast<std::size_t>(lMax / 2 + 2), 0.0);
+      fdSpecIm_.assign(static_cast<std::size_t>(lMax / 2 + 2), 0.0);
+    } else {
+      fdPacked_.clear();
+      fdSpecRe_.clear();
+      fdSpecIm_.clear();
+    }
+
     resetPitchSynced();
     prepared_ = true;
   }
@@ -1078,6 +1165,89 @@ class TimePitchEngine final : public PitchEngine {
     accumBase_ = keepFrom;
   }
 
+  /// §6.6.1 item 7: the per-VOICED-grain spectral transform (the
+  /// candidate_fdpsola semantics on the recorded streaming plan ladder — see
+  /// the FD state comment). The frequency-domain rule is the candidate's
+  /// X′(f) = X(f/γ) verbatim: linear in re/im, sources beyond the analysis
+  /// Nyquist (fs/2) read zero — the honest γ<1 band-limit. γ = 1 (the frozen
+  /// |γ−1| < 1e-9 gate) and unvoiced grains return UNTOUCHED: the γ = 1 path
+  /// is BIT-IDENTICAL to Pitch-Synced (the internal-consistency gate, exact).
+  void transformGrainFd(const PsolaMark& mark, int gLen) {
+    if (!mark.voiced || std::fabs(formantRatio_ - 1.0) < 1.0e-9) return;
+    if (fdPlans_.empty() || gLen > fdPlans_.back().size) {
+      return;  // defensive: prepare covers the whole domain
+    }
+    const FdPlanEntry* pe = fdPlans_.data();
+    for (const auto& e : fdPlans_) {
+      if (e.size >= gLen) {
+        pe = &e;
+        break;
+      }
+    }
+    const int L = pe->size;
+    const int halfL = L / 2;
+    const double g = formantRatio_;
+    for (int c = 0; c < channels_; ++c) {
+      double* grain = psolaGrainBuf_.data() +
+                      static_cast<std::size_t>(c) * static_cast<std::size_t>(gLen);
+      std::memcpy(fdPacked_.data(), grain, static_cast<std::size_t>(gLen) * sizeof(double));
+      std::fill(fdPacked_.begin() + gLen, fdPacked_.end(), 0.0);
+      pe->plan->exec(fdPacked_.data(), 1.0, true);
+      // Unpack the half-spectrum (the packed-halfcomplex form; the
+      // candidate's loop with halfL).
+      for (int k = 0; k <= halfL; ++k) {
+        double re, im;
+        if (k == 0) {
+          re = fdPacked_[0];
+          im = 0.0;
+        } else if (k == halfL && (L % 2) == 0) {
+          re = fdPacked_[static_cast<std::size_t>(L - 1)];
+          im = 0.0;
+        } else {
+          re = fdPacked_[static_cast<std::size_t>(2 * k - 1)];
+          im = fdPacked_[static_cast<std::size_t>(2 * k)];
+        }
+        fdSpecRe_[static_cast<std::size_t>(k)] = re;
+        fdSpecIm_[static_cast<std::size_t>(k)] = im;
+      }
+      // X′(k′) = X(k′/γ) on the ladder grid: linear in re/im; source
+      // positions beyond the analysis Nyquist read zero (k0 >= halfL — the
+      // candidate's rule; the γ<1 band-limit).
+      for (int kp = 0; kp <= halfL; ++kp) {
+        const double q = static_cast<double>(kp) / g;
+        const int k0 = static_cast<int>(std::floor(q));
+        const double frac = q - static_cast<double>(k0);
+        double re, im;
+        if (k0 >= halfL) {
+          re = (k0 == halfL) ? fdSpecRe_[static_cast<std::size_t>(halfL)] : 0.0;
+          im = 0.0;
+          if (k0 == halfL && frac > 0.0) {
+            re = 0.0;  // interpolating past the Nyquist bin reads zero
+          }
+        } else {
+          const double re0 = fdSpecRe_[static_cast<std::size_t>(k0)];
+          const double im0 = fdSpecIm_[static_cast<std::size_t>(k0)];
+          const double re1 = fdSpecRe_[static_cast<std::size_t>(k0 + 1)];
+          const double im1 = fdSpecIm_[static_cast<std::size_t>(k0 + 1)];
+          re = re0 + frac * (re1 - re0);
+          im = im0 + frac * (im1 - im0);
+        }
+        if (kp == 0) {
+          fdPacked_[0] = re;
+          if ((L % 2) == 0) fdPacked_[static_cast<std::size_t>(L - 1)] = 0.0;
+        } else if (kp == halfL && (L % 2) == 0) {
+          fdPacked_[static_cast<std::size_t>(L - 1)] = re;
+        } else {
+          fdPacked_[static_cast<std::size_t>(2 * kp - 1)] = re;
+          fdPacked_[static_cast<std::size_t>(2 * kp)] = im;
+        }
+      }
+      // Inverse transform (c2r; 1/L scale), the first gLen samples back.
+      pe->plan->exec(fdPacked_.data(), 1.0 / static_cast<double>(L), false);
+      std::memcpy(grain, fdPacked_.data(), static_cast<std::size_t>(gLen) * sizeof(double));
+    }
+  }
+
   bool placePitchSyncedGrainsUpTo(FrameCount inputAvailableEnd) {
     bool placedAny = false;
     const double pMaxD = pMax_;
@@ -1165,6 +1335,13 @@ class TimePitchEngine final : public PitchEngine {
                          static_cast<std::size_t>(i)] =
               wv * readInput(c, static_cast<FrameCount>(std::floor(ip)));
         }
+      }
+
+      // §6.6.1 item 7 (checkpoint 4): the Pitch + Formant per-voiced-grain
+      // spectral transform — the FD hook between extraction and
+      // accumulation (γ = 1 and unvoiced grains pass through untouched).
+      if (mode_ == "pitch_formant") {
+        transformGrainFd(mark, gLen);
       }
 
       // RAW overlap-add with the PER-GRAIN level scale s/P (§6.6.1 item 6 —
@@ -1348,7 +1525,8 @@ namespace {
 // landed per VST checkpoint (Fixed first, Adaptive second — the checkpoint
 // discipline in the header); the choice INDEX of each mode is frozen by
 // this array order.
-const char* const kTimePitchModeChoices[] = {"fixed", "adaptive", "pitch_synced"};
+const char* const kTimePitchModeChoices[] = {"fixed", "adaptive", "pitch_synced",
+                                             "pitch_formant"};
 
 // Window shapes (§6.6 table, verbatim from candidate_ola.h).
 const char* const kTimePitchShapeChoices[] = {"hann", "hamming", "bartlett", "rect"};
@@ -1366,6 +1544,7 @@ const double kTimePitchOverlapValues[] = {2.0, 4.0, 8.0};
 // frozen array order above defines them.
 constexpr double kTpVisibleFixedAdaptive[] = {0.0, 1.0};
 constexpr double kTpVisibleAdaptiveOnly[] = {1.0};
+constexpr double kTpVisibleFormantOnly[] = {3.0};
 
 }  // namespace
 
@@ -1414,7 +1593,7 @@ EngineDescriptor timePitchEngineDescriptor() {
   // (landed per checkpoint; the key set grows with the mode implementations,
   // the tags are stable). Checkpoint 2 registers the Fixed + Adaptive rows.
   d.parameterKeys = {"mode", "window_frames", "overlap", "window_shape",
-                     "tolerance_frames", "puv_hz"};
+                     "tolerance_frames", "formant_ratio", "puv_hz"};
   d.parameters = {
       {
           .key = "mode",
@@ -1423,13 +1602,13 @@ EngineDescriptor timePitchEngineDescriptor() {
           .role = EngineParamRole::Configuration,
           .exposed = true,
           .min = 0.0,
-          .max = 2.0,  // fixed | adaptive | pitch_synced (checkpoint 3; final: 3)
+          .max = 3.0,  // fixed | adaptive | pitch_synced | pitch_formant (final)
           .defaultPlain = 0.0,  // "fixed" (§6.6 default)
           .unit = "",
-          .stepCount = 2,
+          .stepCount = 3,
           .choiceNames = kTimePitchModeChoices,
           .choiceValues = nullptr,
-          .choiceCount = 3,
+          .choiceCount = 4,
           .automatable = false,
           .rebuildsChain = true,  // §6.6.1 item 17: mode ∈ ChainSignature
           .dispFmt = "%s",
@@ -1539,6 +1718,30 @@ EngineDescriptor timePitchEngineDescriptor() {
           .dispFmt = "%d",
           .visibleWhenKey = "mode",
           .visibleWhenValues = kTpVisibleAdaptiveOnly,
+          .visibleWhenCount = 1,
+      },
+      {
+          // Checkpoint 4: formant_ratio is visible iff mode ∈
+          // {pitch_formant} (choice index 3) — registered always, shown per
+          // mode (the item-18 mechanism; the FINAL 25-row surface row).
+          .key = "formant_ratio",
+          .displayName = "Formant",
+          .kind = EngineParamKind::Real,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.25,
+          .max = 4.0,
+          .defaultPlain = 1.0,  // = the TD-PSOLA bit-identity (candidate_fdpsola)
+          .unit = "x",
+          .stepCount = -1,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%.2f",
+          .visibleWhenKey = "mode",
+          .visibleWhenValues = kTpVisibleFormantOnly,
           .visibleWhenCount = 1,
       },
   };

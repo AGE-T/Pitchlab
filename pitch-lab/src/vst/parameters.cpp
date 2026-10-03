@@ -98,6 +98,8 @@ constexpr EngineParamBinding kEngineParamBindings[]{
     {"native.timepitch", "overlap", param::kTpOverlap, "tp_overlap"},
     {"native.timepitch", "window_shape", param::kTpShape, "tp_shape"},
     {"native.timepitch", "tolerance_frames", param::kTpTolerance, "tp_tolerance"},
+    // Checkpoint 4: the FINAL surface row (the amendment's 25th row).
+    {"native.timepitch", "formant_ratio", param::kTpFormant, "tp_formant"},
 };
 
 [[nodiscard]] const EngineParamBinding* findBinding(const char* engineId,
@@ -386,6 +388,7 @@ void applyNormalised(ParamSnapshot& snap, uint32_t tag, double norm) {
     case param::kTpOverlap: snap.tpOverlap = static_cast<int64_t>(discreteIntValue(findParamMeta(param::kTpOverlap), p)); break;
     case param::kTpShape: snap.tpShape = clampInt(p, 0, 3); break;
     case param::kTpTolerance: snap.tpTolerance = static_cast<int64_t>(std::llround(p)); break;
+    case param::kTpFormant: snap.tpFormantRatio = p; break;
     case param::kMix: snap.mix = p; break;
     case param::kBypass: snap.bypass = (p >= 0.5); break;
     case param::kOutputLevel: snap.outputDb = p; break;
@@ -463,6 +466,7 @@ double plainValue(const ParamSnapshot& snap, uint32_t tag) {
     }
     case param::kTpShape: return static_cast<double>(snap.tpShape);
     case param::kTpTolerance: return static_cast<double>(snap.tpTolerance);
+    case param::kTpFormant: return snap.tpFormantRatio;
     case param::kMix: return snap.mix;
     case param::kBypass: return snap.bypass ? 1.0 : 0.0;
     case param::kOutputLevel: return snap.outputDb;

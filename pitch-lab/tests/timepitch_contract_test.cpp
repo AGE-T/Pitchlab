@@ -405,8 +405,8 @@ TEST_CASE("T-E12: configuration validation") {
   // pitch_synced LANDS WITH CHECKPOINT 3 (the mode is legal from now on;
   // pitch_formant stays checkpoint-4-locked — the anti-fake rule keeps the
   // unimplemented mode a CONFIG ERROR, never a disguised substitute)
-  CHECK_NOTHROW(engine->configure(cfgWith({{"mode", std::string{"pitch_synced"}}})));  // checkpoint 3
-  CHECK_THROWS(engine->configure(cfgWith({{"mode", std::string{"pitch_formant"}}})));  // lands with checkpoint 4
+  CHECK_NOTHROW(engine->configure(cfgWith({{"mode", std::string{"pitch_synced"}}})));    // checkpoint 3
+  CHECK_NOTHROW(engine->configure(cfgWith({{"mode", std::string{"pitch_formant"}}})));  // checkpoint 4: legal
   CHECK_THROWS(engine->configure(cfgWith({{"unknown_key", int64_t{1}}})));
 
   // valid extremes prepare and declare sane latencies
@@ -688,8 +688,8 @@ TEST_CASE("T-WSOLA: tolerance_frames validation") {
        {"tolerance_frames", ParameterValue{int64_t{8193}}}})));  // the domain is mode-independent
   CHECK_NOTHROW(engine->configure(cfgWith(
       {{"mode", ParameterValue{std::string{"pitch_synced"}}}})));  // checkpoint 3: the mode is legal
-  CHECK_THROWS(engine->configure(cfgWith(
-      {{"mode", ParameterValue{std::string{"pitch_formant"}}}})));  // lands with checkpoint 4
+  CHECK_NOTHROW(engine->configure(cfgWith(
+      {{"mode", ParameterValue{std::string{"pitch_formant"}}}})));  // checkpoint 4: the mode is legal
 }
 
 // ---------------------------------------------------------------------------
@@ -946,7 +946,83 @@ TEST_CASE("T-PSOLA: configuration validation (the hidden puv_hz row)") {
   CHECK_THROWS(engine->configure(cfgWith(
       {{"mode", ParameterValue{std::string{"pitch_synced"}}},
        {"puv_hz", ParameterValue{501.0}}})));
-  // Pitch + Formant lands with its checkpoint (the frozen final choice)
+  // formant_ratio domain (checkpoint 4; the mode is legal)
   CHECK_THROWS(engine->configure(cfgWith(
-      {{"mode", ParameterValue{std::string{"pitch_formant"}}}})));
+      {{"mode", ParameterValue{std::string{"pitch_formant"}}},
+       {"formant_ratio", ParameterValue{0.24}}})));
+  CHECK_THROWS(engine->configure(cfgWith(
+      {{"mode", ParameterValue{std::string{"pitch_formant"}}},
+       {"formant_ratio", ParameterValue{4.01}}})));
+  CHECK_NOTHROW(engine->configure(cfgWith(
+      {{"mode", ParameterValue{std::string{"pitch_formant"}}},
+       {"formant_ratio", ParameterValue{2.0}}})));
+}
+
+TEST_CASE_FIXTURE(PsolaFixture, "T-FD: the gamma = 1 bit-identity gate (Pitch+Formant == Pitch-Synced EXACT)") {
+  // THE FROZEN INTERNAL-CONSISTENCY GATE (§6.6.1 item 7, EXACT not a
+  // tolerance): with the default gamma = 1.0 the FD transform returns
+  // UNTOUCHED (|gamma-1| < 1e-9 early return) — the whole render is
+  // BIT-IDENTICAL to the Pitch-Synced mode driven identically.
+  const Rendered fd = render("vocal-48k", "p-identity",
+                             "mode = \"pitch_formant\", formant_ratio = 1.0", "fd-g1");
+  REQUIRE(fd.result.status == RenderStatus::Ok);
+  const Rendered td = render("vocal-48k", "p-identity",
+                             "mode = \"pitch_synced\"", "fd-tdref");
+  REQUIRE(td.result.status == RenderStatus::Ok);
+  REQUIRE(fd.master.meta.frames == td.master.meta.frames);
+  double worst = 0.0;
+  for (int64_t k = 0; k < fd.master.meta.frames; ++k) {
+    worst = std::max(worst,
+                     std::fabs(fd.master.channels[0][static_cast<std::size_t>(k)] -
+                               td.master.channels[0][static_cast<std::size_t>(k)]));
+  }
+  CHECK(worst == 0.0);  // EXACT — the frozen gate
+  std::printf("T-FD: gamma=1 bit-identity worst |y_fd - y_td| = %.3g (gate 0)\n", worst);
+}
+
+TEST_CASE_FIXTURE(PsolaFixture, "T-FD: formant-only shift (identity pitch, the envelope moves)") {
+  // The FD candidate's distinct capability (a): formant-only shifting —
+  // identity pitch ratio + gamma != 1: the PITCH stays (the candidate's own
+  // f0 gate class), the SPECTRAL ENVELOPE moves by ~gamma (measured through
+  // the high-frequency energy ratio — the envelope's upshift raises the
+  // differenced signal's share; the centroid-class measurement lives in the
+  // metric layer).
+  const Rendered ref = render("vocal-48k", "p-identity",
+                              "mode = \"pitch_synced\"", "fd-ref");
+  REQUIRE(ref.result.status == RenderStatus::Ok);
+  const Rendered up = render("vocal-48k", "p-identity",
+                             "mode = \"pitch_formant\", formant_ratio = 2.0", "fd-up2");
+  REQUIRE(up.result.status == RenderStatus::Ok);
+  // (a) the pitch transparency: the median tracked f0 unchanged
+  const analysis::PitchTrack track =
+      analysis::trackPitch(up.master.channels[0], 48000.0,
+                           analysis::kTrackerFminHz, analysis::kTrackerFmaxHz);
+  std::vector<double> f0s;
+  for (const auto& fr : track.frames) {
+    if (fr.voiced && fr.f0Hz > 0.0) f0s.push_back(fr.f0Hz);
+  }
+  REQUIRE(f0s.size() > 20);
+  std::sort(f0s.begin(), f0s.end());
+  const double median = f0s[f0s.size() / 2];
+  const double errSt = 12.0 * std::log2(median / 140.0);
+  CHECK(std::abs(errSt) <= 0.5);  // the pitch did NOT move (gamma moves formants)
+  // (b) the envelope moved: the first-difference (HF) energy share grows
+  auto hfRatio = [](const WavData& w) {
+    double hp = 0.0, tot = 0.0;
+    const int64_t n = w.meta.frames;
+    for (int64_t k = 1000; k < n - 1000; ++k) {
+      const double d = w.channels[0][static_cast<std::size_t>(k)] -
+                       w.channels[0][static_cast<std::size_t>(k - 1)];
+      const double v = w.channels[0][static_cast<std::size_t>(k)];
+      hp += d * d;
+      tot += v * v;
+    }
+    return hp / (tot + 1e-30);
+  };
+  const double rRef = hfRatio(ref.master);
+  const double rUp = hfRatio(up.master);
+  CHECK(rUp > rRef * 1.3);  // the envelope upshift raises the HF share
+  std::printf(
+      "T-FD: formant-only shift: median f0 %.2f Hz (err %+.3f st), HF share ref %.4f -> gamma=2 %.4f (%.2fx)\n",
+      median, errSt, rRef, rUp, rUp / rRef);
 }

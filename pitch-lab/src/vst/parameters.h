@@ -212,6 +212,7 @@ struct ParamSnapshot {
   int64_t tpOverlap = 2;       // ENGINE-FACING value (2/4/8 via choiceValues)
   int tpShape = 0;             // choice index: 0 = hann
   int64_t tpTolerance = 768;   // Adaptive (WSOLA) search tolerance (frames)
+  double tpFormantRatio = 1.0;  // Pitch+Formant envelope ratio (the final row)
   // mix / output
   double mix = 1.0;
   bool bypass = false;
@@ -251,6 +252,8 @@ struct ParamSnapshot {
     int64_t tpOverlap;
     int tpShape;
     int64_t tpTolerance;
+    // Checkpoint 4: the Pitch + Formant envelope ratio (the final surface row).
+    double tpFormantRatio;
 
     bool operator==(const ChainSignature& o) const = default;
   };
@@ -264,7 +267,8 @@ struct ParamSnapshot {
                           pvcHop,               pvpFftSize,
                           pvpHop,               tpMode,
                           tpWindowFrames,       tpOverlap,
-                          tpShape,              tpTolerance};
+                          tpShape,              tpTolerance,
+                          tpFormantRatio};
   }
 };
 

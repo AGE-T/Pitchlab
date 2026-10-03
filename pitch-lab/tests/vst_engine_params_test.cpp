@@ -68,16 +68,16 @@ const FrozenRow kFrozenSurface[] = {
     {param::kPvpFft, 0, 2, 1, 2},
     {param::kPvpHop, 0, 3, 2, 3},
     // Task 33: the native.timepitch rows of the task-33 amendment (the
-    // Fixed+Adaptive checkpoints register kTpMode/kTpWindow/kTpOverlap/
-    // kTpShape/kTpTolerance; checkpoint 3 grows the mode domain to the three
-    // registered choices fixed/adaptive/pitch_synced; kTpFormant lands with
-    // its mode checkpoint — the tags are reserved by the amendment, never
+    // final surface: kTpMode/kTpWindow/kTpOverlap/kTpShape/kTpTolerance/
+    // kTpFormant — the mode domain grew per checkpoint to the four
+    // registered choices; the tags are reserved by the amendment, never
     // renumbered; the HIDDEN puv_hz row is engine-owned, NOT on this surface).
-    {param::kTpMode, 0, 2, 0, 2},
+    {param::kTpMode, 0, 3, 0, 3},
     {param::kTpWindow, 64, 16384, 2048, 16320},
     {param::kTpOverlap, 0, 2, 0, 2},
     {param::kTpShape, 0, 3, 0, 3},
     {param::kTpTolerance, 0, 8192, 768, 8192},
+    {param::kTpFormant, 0.25, 4.0, 1.0, -1},
     {param::kMix, 0.0, 1.0, 1.0, -1},
     {param::kBypass, 0, 1, 0, 1},
     {param::kOutputLevel, -24.0, 12.0, 0.0, -1},
@@ -230,8 +230,8 @@ TEST_CASE("state compatibility: the generated table is exactly the frozen surfac
   // Task 33: 19 shared/existing rows + 5 native.timepitch rows (the
   // Fixed+Adaptive checkpoint) = 24 (the amendment's final surface is 25
   // when the Pitch+Formant formant_ratio row lands; tag 27 is bound then).
-  REQUIRE(parameterCount() == 24);
-  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 24);
+  REQUIRE(parameterCount() == 25);
+  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 25);
   for (const FrozenRow& row : kFrozenSurface) {
     const ParamMeta* m = metaOf(row.tag);
     REQUIRE(m != nullptr);
@@ -297,12 +297,13 @@ TEST_CASE("role split: shared realtime controls are explicit and complete") {
       CHECK(m.engineId[0] == '\0');
     }
   }
-  // 17 engine-owned rows total (12 v0.1 + 5 task-33 Fixed+Adaptive rows)
+  // 18 engine-owned rows total (12 v0.1 + 6 task-33 rows: the FINAL surface
+  // with the checkpoint-4 formant_ratio row)
   int engineOwned = 0;
   for (uint32_t i = 0; i < parameterCount(); ++i) {
     if (parameterTable()[i].role == ParamRole::EngineConfiguration) ++engineOwned;
   }
-  CHECK(engineOwned == 17);
+  CHECK(engineOwned == 18);
 }
 
 // ---------------------------------------------------------------------------

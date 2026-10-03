@@ -26,7 +26,7 @@ There is no second engine implementation, no stub, no fake quality score.
 > first-class streaming-pYIN tracker term included — never hidden, shown
 > in the STATUS panel per the existing mechanism).
 >
-> **IMPLEMENTATION STATUS (task-33 checkpoint 3, 2026-10-03):**
+> **IMPLEMENTATION STATUS (task-33 checkpoint 4, 2026-10-03 — the FINAL surface):**
 > `native.timepitch` IS REGISTERED as the 6th production engine with the
 > **Fixed (= OLA)**, **Adaptive (= WSOLA)** AND **Pitch-Synced (= TD-PSOLA)**
 > modes functional end-to-end (registry; parameters
@@ -35,12 +35,12 @@ There is no second engine implementation, no stub, no fake quality score.
 > composition; the declared-latency reporting; the editor panel with the
 > descriptor-driven per-mode visibility mechanism — the Tolerance row
 > appears only in the Adaptive mode). The parameter surface is 19 → **24**
-> rows at this checkpoint (the amendment's final surface is 25 when the
-> Pitch + Formant/formant_ratio row lands; tag 27 is bound then; the
-> Pitch-Synced `puv_hz` is the recorded HIDDEN row — validated [50, 500]
-> Hz, default 200, engine-internal, never exposed). The mode choice list
-> grows per checkpoint (an unregistered mode is a CONFIG ERROR — never a
-> disguised substitute). The Adaptive mode adds ZERO declared latency (the
+> rows — the amendment's FINAL 25-row surface (the formant_ratio row bound
+> at checkpoint 4, tag 27; the Pitch-Synced `puv_hz` is the recorded HIDDEN
+> row — validated [50, 500] Hz, default 200, engine-internal, never
+> exposed). The mode choice list grew per checkpoint to the complete frozen
+> set (an unregistered mode was a CONFIG ERROR until its checkpoint —
+> never a disguised substitute). The Adaptive mode adds ZERO declared latency (the
 > search reaches backward into the buffered back-margin); its
 > deterministic search order (0, +1, −1, +2, −2, … ties → 0) and the
 > drift-free law-anchored nominal are the §6.6.1 item 4 freeze.
@@ -66,7 +66,30 @@ There is no second engine implementation, no stub, no fake quality score.
 > integer extraction break the COLA sum on ringing material — the
 > contract gate encodes the candidate's probe-measured worst + a 10 %
 > parity allowance; pitch transparency dominant_err_st = 0 is the
-> candidate's own evidence). Pitch + Formant lands with its checkpoint.
+> candidate's own evidence).
+
+> **Pitch + Formant (checkpoint 4 — the mode set is COMPLETE):** the
+> per-VOICED-grain spectral transform (r2c → X′(k′) = X(k′/γ) linear in
+> re/im, sources beyond the analysis Nyquist read zero → c2r·(1/L))
+> inherited from the validated candidate (candidate_fdpsola). The
+> formant_ratio row ([0.25, 4.0], default 1.0, visible only in the
+> Pitch + Formant mode) completes the amendment's FINAL 25-row surface
+> (tag 27 — the last reserved tag bound). The FROZEN γ = 1
+> internal-consistency gate holds EXACTLY: the Pitch + Formant render at
+> the default γ is BIT-IDENTICAL to the Pitch-Synced render (measured
+> worst |y_fd − y_td| = 0 over the whole master). The formant-only
+> capability is verified: identity pitch + γ = 2 keeps the median f0
+> (−0.001 st) while the high-frequency energy share moves 2.19×.
+> RECORDED STREAMING DEVIATION (ratification queued): the frozen
+> "one plan pair per distinct grain length" assumed the batch prototype's
+> known marks; the streaming marks depend on the realtime decode and the
+> full-domain pre-build measures 349 MB @192 kHz (probe-measured) — the
+> production engine pre-builds a ladder of even 5-smooth plan sizes
+> covering the whole domain (≤ ~75 entries, ≤ ~5 MB) and runs the frozen
+> transform on the grain zero-padded to the smallest ladder size ≥ gLen;
+> the deviation is a denser interpolation lattice on the SAME
+> frequency-domain rule, bounded by the ~6 % 5-smooth spacing, with the
+> γ = 1 bit-identity EXACT (the early return).
 
 * Product-phase specification: `research/pitch-lab-vst3-product-phase-specification.md`
   (architecture, the realtime adaptation boundary, the parameter model, the

@@ -35,8 +35,9 @@ TEST_CASE("registry binding: engine identity comes from the v0.1 registry") {
 TEST_CASE("table integrity: every meta is well-formed and unique") {
   const ParamMeta* table = parameterTable();
   const uint32_t n = parameterCount();
-  // Task 33: 19 v0.1 rows + 5 native.timepitch rows (Fixed+Adaptive) = 24
-  CHECK(n == 24);
+  // Task 33: 19 v0.1 rows + 6 native.timepitch rows (Fixed+Adaptive+
+  // tolerance+formant; the amendment's FINAL surface) = 25
+  CHECK(n == 25);
   std::vector<uint32_t> tags;
   for (uint32_t i = 0; i < n; ++i) {
     const ParamMeta& m = table[i];
