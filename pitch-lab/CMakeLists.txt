@@ -204,6 +204,17 @@ pitchlab_add_doctest(pv_phaselocked_contract_test tests/pv_phaselocked_contract_
 # suite per mode (Adaptive/Pitch-Synced/Pitch+Formant).
 pitchlab_add_doctest(timepitch_contract_test tests/timepitch_contract_test.cpp)
 
+# Task-33 continuation Phase 1: the FIXED (OLA) production-vs-Task28
+# controlled comparison (the owner's crackle decision gate — the mandated
+# candidate_ola reference matrix at pitch 0/+12/-12 x window/overlap/shape).
+pitchlab_add_doctest(timepitch_ola_reference_test
+  tests/timepitch_ola_reference_test.cpp
+  prototypes/candidate_ola.cpp)
+# the prototypes/ includes resolve from the C++ tree root (the proto28
+# library's own include convention)
+target_include_directories(timepitch_ola_reference_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 # T-PAR: the streaming-vs-batch tracker parity gates (task 33, §6.6.1 item 8
 # — the OQ-2 frozen gates: V/U >= 98%, |Δf0| <= 10 cents jointly voiced,
 # transitions <= 2 hops; breach = the implementation STOP trigger).

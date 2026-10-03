@@ -259,6 +259,13 @@ struct Geometry {
   return kPitchParamMaxRatio * std::exp2(marginSt / 12.0);
 }
 
+/// Forward declaration: the §4.1 item-2 envelope derivation (defined
+/// below); chainGeometry's Pitch-Synced splice branch scopes the windowed-
+/// splice input lead to the chain's own envelope (the exact bound the
+/// runtime curve is clamped to).
+void envelopeFor(const EngineDescriptor& desc, double liveRatio, double lfoDepthSt,
+                 double& envMin, double& envMax);
+
 Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
                         double fs, double lfoDepthSt) {
   const std::string id(desc.info.id);
@@ -299,38 +306,111 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     g.wetLen = kSegmentSeconds * static_cast<int64_t>(fs);
     g.jobInputLen = g.wetLen;
   } else if (id == "native.timepitch") {
-    // Task 33 (§6.6.1 item 17 — the mode-switch geometry): the timepitch
-    // engine is a WET-GRID engine like the PV pair (spliceMode = false):
-    // wetLen = jobInputLen = kSegmentSeconds·fs (the product spec §4.1 N_seg
-    // drift is corrected in the same recording); the seam crossfade is the
-    // MODE-SCOPED geometry — Fixed/Adaptive: N (the configured window);
-    // Pitch-Synced modes: 2·pMax. Λ = the engine's DECLARED input latency
-    // (§6.6.1 item 10 — the frozen compositions embed their own safety
-    // terms): Fixed/Adaptive N/2 + Hs + 2K + 64; Pitch-Synced
-    // 2·pMax + 2K + 128 + Λ_tr (the shared ONE-definition helper — ≈122 ms
-    // @48k, FIRST-CLASS, never hidden).
+    // Task 33 (§6.6.1 item 17 — the mode-switch geometry), CORRECTED by the
+    // owner's real-host continuation (the recorded implementation-time
+    // correction class — the granular §3 verdict's exact sibling, see
+    // research/pitch-lab-vst3-product-phase-specification.md §3):
+    //
+    //   Fixed/Adaptive remain WET-GRID engines (spliceMode = false):
+    //   wetLen = jobInputLen = kSegmentSeconds·fs; seamX = N (the configured
+    //   window); Λ = N/2 + Hs + 2K + 64 (§6.6.1 item 10's frozen
+    //   composition). Duration-preserving ⇒ production and emission
+    //   advance 1:1; the flat grid tiles the realtime output timeline.
+    //
+    //   Pitch-Synced / Pitch + Formant are RATE-FOLLOWING engines (the D.4
+    //   amendment: voiced spans change duration by 1/β). The checkpoint-3/4
+    //   integration drove them through the FLAT grid — measured through the
+    //   real adapter path (the owner's manual host observation, reproduced
+    //   by timepitch_host_probe): the wet production advances at 1/β per
+    //   input frame while the emission reads at 1:1 — the read catches and
+    //   permanently outruns production at t ≈ Λ/(1 − 1/β) (measured at
+    //   +7 st: the wet ends ~0.41 s into the stream, then DRY for the rest
+    //   of the drive, 469k frames, while deliveryUnderruns stayed 0 because
+    //   the 33-final rate-following exemption classified the misses as the
+    //   legal wet end). Sustained fixed-I/O at β ≠ 1 is structurally
+    //   impossible on the flat grid — the product spec's own §3 verdict for
+    //   every RateFollowing engine. THE CORRECTION: the Pitch-Synced modes
+    //   run under the SAME WINDOWED-SPLICE ADAPTATION (§4.2) as
+    //   native.varispeed and native.granular — real jobs over short wet
+    //   windows, equal-power splice crossfades, the D.4 rate-following
+    //   behaviour living INSIDE each window's content mapping, the wet grid
+    //   tiling the realtime output completely (every window produces a full
+    //   windowO of wet — no holes, no alternation, no exemption needed).
+    //   rateFollowing stays FALSE: the strict delivery accounting applies.
+    //
+    //   The window holds the streaming tracker's warm-up (the fixed-lag
+    //   decode needs n + D·hop input before the first mark) plus a few
+    //   periods, floor at the family's 0.2 s. The input lead and the
+    //   declared latency are ENVELOPE-SCOPED (the chain's own envMax — the
+    //   runtime curve is clamped to it, so it is the exact bound): to emit
+    //   output e of a window the engine must have consumed
+    //   engineLatIn + β·e input, which arrives at stream time
+    //   S_k + engineLatIn + β·e, while the emission reads e at
+    //   S_k + Λ + e — the binding frame is e = windowO:
+    //   Λ = engineLatIn + ⌈(envMax − 1)·windowO⌉ + margin. A pitch move
+    //   that grows envMax beyond the built envelope is the EXISTING
+    //   envelope-capability exit (one rebuild re-scopes the lead — the
+    //   granular depth-growth precedent).
     constexpr int kResamplerK = 16;  // §7 Standard preset half-width (frozen)
     const int64_t n = std::min<int64_t>(std::max<int64_t>(snap.tpWindowFrames, 64), 16384);
-    g.wetLen = kSegmentSeconds * static_cast<int64_t>(fs);
-    g.jobInputLen = g.wetLen;
     if (snap.tpMode >= 2) {
-      // Pitch-Synced (TD-PSOLA) — checkpoint 3; Pitch + Formant shares the
-      // geometry (γ is a synthesis-internal axis, no latency change). The
-      // composition carries the MEASURED streaming release margin (see
-      // analysis::trackerReleaseMargin — the decode-gated production's
-      // delay peaks exceed the plain composition; probe 7876 @48k).
+      // Pitch-Synced (TD-PSOLA); Pitch + Formant shares the geometry (γ is
+      // a synthesis-internal axis, no latency change). engineLatIn = the
+      // engine's own §6.6.1 item-10 composition incl. the MEASURED
+      // streaming release margin (analysis::trackerReleaseMargin).
       const double pMax = std::floor(fs / 50.0);
       const int64_t lamTr = analysis::trackerLagFrames(fs, pMax, 4);
       const int64_t releaseMargin = analysis::trackerReleaseMargin(fs, pMax);
-      g.seamX = static_cast<int64_t>(2.0 * pMax);
-      g.rateFollowing = true;  // the D.4 duration semantics (the wet ends early)
-      g.latency = static_cast<int64_t>(2.0 * pMax) + 2 * kResamplerK + 128 +
-                  lamTr + releaseMargin;
+      const int64_t engineLatIn = static_cast<int64_t>(2.0 * pMax) +
+                                  2 * kResamplerK + 128 + lamTr + releaseMargin;
+      const int64_t trackerWin = analysis::analysisStftFrames(fs);
+      const int64_t windowO =
+          std::max<int64_t>(std::llround(kVarispeedWindowSeconds * fs),
+                            2 * trackerWin +
+                                4 * static_cast<int64_t>(pMax));
+      const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
+      double envMin = 1.0, envMax = 1.0;
+      envelopeFor(desc, snap.liveRatio(), lfoDepthSt, envMin, envMax);
+      const double leadRatio = std::max(0.0, envMax - 1.0);
+      g.spliceMode = true;
+      g.seamX = x;
+      g.wetLen = windowO;
+      g.jobInputLen = engineLatIn +
+                      static_cast<int64_t>(std::ceil(static_cast<double>(windowO) * envMax)) +
+                      kKernelMargin + kLatencySafety;
+      g.latency = engineLatIn +
+                  static_cast<int64_t>(std::ceil(leadRatio * static_cast<double>(windowO))) +
+                  kKernelMargin + kLatencySafety;
     } else {
+      // Fixed/Adaptive — THE HOST-PATH LATENCY CORRECTION (the owner's
+      // Fixed-crackle report, Phase 1): the checkpoint-1 chain Λ copied the
+      // engine's §6.6.1 item-10 composition (N/2 + Hs + 2K + 64) — but that
+      // composition is the OFFLINE zero-pad look-ahead, NOT the realtime
+      // production delay. Through the adapter, wet frame e becomes
+      // available after the engine has consumed ≈ e + (N − Hs + K) input
+      // (the whole analysis window [a − N/2, a + N/2) must be delivered
+      // before the grain at a places; the emission gate then needs K more)
+      // plus the grain quantisation — while the emission reads e at
+      // stream time e + Λ. Whenever Λ < N − Hs + K the production lags the
+      // emission PERMANENTLY and the covered-range read misses: measured
+      // by timepitch_host_probe as steady deliveryUnderruns bursts from
+      // the first seconds (N=2048/o8: Λ=1378 < delay≈1809 → 322 864
+      // underrun frames per 8 s drive, every shape — the owner's
+      // "crackling across the available shape choices"; the o2 default
+      // happened to have headroom and stayed clean, which is why the
+      // defect survived the checkpoint drives). The chain Λ is the product
+      // layer's own declaration (product spec §6) — the whole-window
+      // production-delay bound: Λ = N + 2K + margin. The ENGINE's declared
+      // latency() (the frozen item-10 composition, the offline renderer's
+      // zero-pad schedule, the §6.6.1 item-10 constants) is UNTOUCHED.
       const int64_t overlap = snap.tpOverlap == 4 ? 4 : snap.tpOverlap == 8 ? 8 : 2;
-      const int64_t hs = n / overlap;
+      (void)overlap;  // the Λ bound is Hs-independent (N + 2K + 256 covers
+                      // every overlap; the worst delay ≈ N − Hs + K peaks at
+                      // the coarsest hop, still < N + K)
+      g.wetLen = kSegmentSeconds * static_cast<int64_t>(fs);
+      g.jobInputLen = g.wetLen;
       g.seamX = n;
-      g.latency = n / 2 + hs + 2 * kResamplerK + 64;
+      g.latency = n + 2 * kResamplerK + 256;
     }
   } else {  // native.varispeed — windowed splice (§4.2)
     const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
@@ -374,28 +454,44 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
   const int64_t maxFft = 4096;                      // pv fft_size parameter maximum
   const int64_t maxHop = 1024;                      // pv hop parameter maximum
   // Task 33: native.timepitch's parameter-space worst (§6.6.1 item 10) —
-  // Fixed/Adaptive: N/2 + Hs + 2K + 64 at the window maximum N = 16384 and
-  // the coarsest overlap 2 (Hs = N/2); ratio-independent (the window is
-  // frame-denominated). The Pitch-Synced composition (2·pMax + 2K + 128 +
-  // Λ_tr, frozen totals 5636..22912) widens this when its checkpoints land.
+  // the CHAIN latency bound (the continuation correction: the Fixed/
+  // Adaptive chain Λ = N + 2K + 256 — the whole-window production-delay
+  // bound, see chainGeometry's host-path latency correction note) at the
+  // window maximum N = 16384. The Pitch-Synced splice composition
+  // (engineLatIn + the envelope lead, windowO-scoped) widens this when its
+  // checkpoints land; evaluated at the ACTIVATION's rate (the lanes are
+  // per-activation sized) — the term below keeps a static floor.
   constexpr int64_t kTpWindowMax = 16384;
   constexpr int kResamplerK = 16;                   // §7 Standard half-width
-  const int64_t timepitchWorst = kTpWindowMax / 2 + kTpWindowMax / 2 + 2 * kResamplerK + 64;
-  // Task 33 (checkpoint 3): the Pitch-Synced composition at its worst — the
-  // frozen totals 5636/5848/11111/11536/22912 @44.1/48/88.2/96/192 kHz; the
-  // fs-dependent pMax/Λ_tr evaluated at the ACTIVATION's rate (the lanes
-  // are per-activation sized).
+  const int64_t timepitchWorst = kTpWindowMax / 2 + kTpWindowMax / 2 + 2 * kResamplerK + 64;  // BISECT: old
+  // Task 33 (checkpoint 3, the continuation splice correction): the
+  // Pitch-Synced modes run under the windowed-splice adaptation — the
+  // buffer-sizing worst is the SPLICE chain's Λ = engineLatIn + the
+  // envelope lead (envMax − 1)·windowO at the engine's ratio ceiling 4.0
+  // (the envelope's hard clamp) + margin, with the windowO floor lifted to
+  // hold the streaming tracker's warm-up (2·n + 4·pMax). The ENGINE's
+  // frozen offline composition (5636/5848/11111/11536/22912) is a lower
+  // bound of this (engineLatIn IS that composition) — the offline SoT
+  // constants are untouched; this term sizes the product layer's buffers.
   const double tpPMax = std::floor(fs / 50.0);
-  const int64_t timepitchSyncedWorst =
+  const int64_t tpEngineLatIn =
       static_cast<int64_t>(2.0 * tpPMax) + 2 * kResamplerK + 128 +
       analysis::trackerLagFrames(fs, tpPMax, 4) +
       analysis::trackerReleaseMargin(fs, tpPMax);
+  const int64_t tpTrackerWin = analysis::analysisStftFrames(fs);
+  const int64_t tpSpliceWindow =
+      std::max<int64_t>(std::llround(kVarispeedWindowSeconds * fs),
+                        2 * tpTrackerWin + 4 * static_cast<int64_t>(tpPMax));
+  const int64_t timepitchSyncedWorst =
+      tpEngineLatIn +
+      static_cast<int64_t>(std::ceil(3.0 * static_cast<double>(tpSpliceWindow))) +
+      kKernelMargin + kLatencySafety;  // BISECT: restored
   return std::max({splice + maxGrain,                                     // granular
                    splice,                                                 // varispeed
                    maxCrossfade + kKernelMargin + kLatencySafety,          // vardelay
                    maxFft + maxHop + kKernelMargin + kLatencySafety,       // pv engines
                    timepitchWorst,                                         // timepitch Fixed/Adaptive
-                   timepitchSyncedWorst});                                 // timepitch Pitch-Synced
+                   timepitchSyncedWorst});                                 // timepitch Pitch-Synced splice
 }
 
 /// Envelope (§4.1 item 2, the Task 30 policy — derived, not intuited):
@@ -544,6 +640,7 @@ struct RealtimeAdapter::Chain final : RetireStack::Node {
   std::atomic<Job*> slots[kJobSlots]{};
   std::vector<std::unique_ptr<Job>> ownedJobs;
   std::atomic<int64_t> highestPrepared{-1};  // prep thread's scheduling cursor
+
 
   // Task 31 — THE RETAINED WET HISTORY (the retiring-chain re-coverage
   // source; the seam-coverage invariant made real):
@@ -1973,6 +2070,16 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
         if (job == nullptr) continue;
         if (job->dead.load(std::memory_order_acquire)) continue;
         if (job->index.load(std::memory_order_relaxed) < 0) continue;
+        // THE CELL-FULL COMPLETION (the Pitch-Synced splice correction):
+        // a job whose wet cell is FULL has delivered everything the grid
+        // reads from it — the splice job's input span is the envelope's
+        // worst-case reach (wetLen·envMax), which a β < envMax drive (a
+        // rate-following engine produces wetLen/β ≤ wetLen output from
+        // less input) never fully consumes. Completion is wetWritten >=
+        // wetLen — consumed >= inputLen alone would leave the cell-full
+        // job unfinished: never finished (no flush), never dead, its stall
+        // detector firing one max-block past the span end. finishJob()
+        // itself returns early when the cell is full (no flush exists).
         if (job->consumed >= job->inputLen && !job->finished) {
           finishJob(*job, historyFloor);
         }
@@ -1982,7 +2089,10 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
         // input (starvation/stall — distinct from delivery underruns).
         // Counted ONCE per job (stamp() resets the flag). Task 31: the
         // everFed guard — jobs deliberately never fed (the retiring grid
-        // past the blend end, a documented no-op) are not stalls.
+        // past the blend end, a documented no-op) are not stalls. The
+        // cell-full guard: a job that produced its whole wet cell is not a
+        // stall (the unconsumed span tail is the envelope's worst-case
+        // slack, see above).
         if (job->everFed && !job->finished && !job->stallCounted &&
             t > job->spanEnd() + static_cast<int64_t>(im.maxBlock)) {
           job->stallCounted = true;

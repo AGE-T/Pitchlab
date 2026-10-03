@@ -939,6 +939,17 @@ class TimePitchEngine final : public PitchEngine {
     finalFrontier_ = 0;
     aNext_ = 0.0;
     tNext_ = 0.0;
+    tOut_ = 0;  // THE OUTPUT CURSOR (the reset-reuse defect the continuation
+                // splice geometry exposed: reset() left tOut_ at the previous
+                // job's total while finalFrontier_ restarted at 0 — the
+                // emission gate tOut_ + 1 > finalFrontier_ then blocked
+                // FOREVER (measured: the first reset-reused splice job
+                // consumed 9712 frames, produced ZERO wet, and every later
+                // cell starved; the flat-grid 10-s jobs never recycled
+                // inside any test's length, so the defect shipped silent).
+                // The Fixed/Adaptive resetJobState() always reset tOut_;
+                // this line restores the T-D3 contract for the Pitch-Synced
+                // family (fresh-prepare == reset-reuse, bit-identical).
     grainsPlaced_ = 0;
     finishing_ = false;
     drainEnd_ = 0.0;
@@ -1292,6 +1303,7 @@ class TimePitchEngine final : public PitchEngine {
       if (!finishing_ && markCount_ > 0) {
         const double newestPos =
             static_cast<double>(markAt(static_cast<std::size_t>(markCount_ - 1)).pos);
+
         // The schedule must never place a mark BEHIND its cursor: the batch
         // prototype's markIndexNear always has the full mark list available,
         // so the mark nearest aNext_ can only be behind it by the ZC

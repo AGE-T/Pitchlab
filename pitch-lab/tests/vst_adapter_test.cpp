@@ -471,6 +471,19 @@ TEST_CASE("mid-stream envelope exits on preserving + splice engines") {
     d.snap(engine, -7.0);  // and out the other side
     d.run(std::vector<double>(sig.begin() + 2 * two, sig.end()), blocks);
     const StatusSnapshot st = d.status();
+    if (st.faults != 0) {
+      std::printf("[diag] engine=%d faults=%llu underruns=%llu dryHist=%llu stalls=%llu exc=%llu procF=%llu prepF=%llu adopt=%llu rprep=%llu clamps=%llu\n",
+                  engine, (unsigned long long)st.faults,
+                  (unsigned long long)st.deliveryUnderruns,
+                  (unsigned long long)st.dryHistoryMisses,
+                  (unsigned long long)st.jobStalls,
+                  (unsigned long long)st.engineExceptions,
+                  (unsigned long long)st.engineProcessFaults,
+                  (unsigned long long)st.preparationFailures,
+                  (unsigned long long)st.chainAdoptionFailures,
+                  (unsigned long long)st.reprepares,
+                  (unsigned long long)st.clampEvents);
+    }
     CHECK(st.faults == 0);
     CHECK(st.chainReady);
     CHECK(st.clampEvents >= 1);  // the exits were detected and handled

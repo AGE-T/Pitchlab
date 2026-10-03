@@ -269,6 +269,7 @@ class RealtimeAdapter final {
   [[nodiscard]] MetersSnapshot meters() const { return meters_.load(); }
   [[nodiscard]] StatusSnapshot status() const { return status_.load(); }
 
+
  private:
   struct Chain;
   struct Job;
