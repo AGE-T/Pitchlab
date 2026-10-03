@@ -4512,7 +4512,7 @@
     {
       "phase": "D",
       "case": "block-mixed",
-      "engine": "(Õ‚«,",
+      "engine": "(]∫|Ù",
       "material": "sustain-220",
       "pitch_st": 12.00,
       "sample_rate": 48000.0,
@@ -6076,7 +6076,7 @@
     {
       "phase": "F",
       "case": "stereo-distinct-channels",
-      "engine": "(Õ‚«,",
+      "engine": "(]∫|Ù",
       "material": "stereo-220-311",
       "pitch_st": 12.00,
       "sample_rate": 48000.0,
@@ -6286,7 +6286,7 @@
       "sample_rate": 48000.0,
       "block_size": 512,
       "channels": 2,
-      "parameters": {"engine_index": "4", "switches_to": "(Õ‚«,", "pitch_st": "0->12->0->12"},
+      "parameters": {"engine_index": "4", "switches_to": "(]∫|Ù", "pitch_st": "0->12->0->12"},
       "adapter_mode": "windowed-splice",
       "reported_latency": 15638,
       "observed_latency": null,
@@ -6309,12 +6309,12 @@
       "rt_fault_delta": 0,
       "reprepare_delta": -1,
       "result": "PASS",
-      "diagnostic": "seg1-identity f=220Hz(exp 220) zc=- err=0.0st eng=4(exp 4) ready | seg2-p+12 f=442Hz(exp 440) zc=- err=0.1st eng=4(exp 4) ready | seg3-after-reset f=220Hz(exp 220) zc=- err=0.0st eng=4(exp 4) ready | seg4-dest-engine f=501Hz(exp 440) zc=- err=2.2st eng=5(exp 5) ready | seg5-back f=442Hz(exp 440) zc=- err=0.1st eng=4(exp 4) ready | (dest=(Õ‚«,)"
+      "diagnostic": "seg1-identity f=220Hz(exp 220) zc=- err=0.0st eng=4(exp 4) ready | seg2-p+12 f=442Hz(exp 440) zc=- err=0.1st eng=4(exp 4) ready | seg3-after-reset f=220Hz(exp 220) zc=- err=0.0st eng=4(exp 4) ready | seg4-dest-engine f=501Hz(exp 440) zc=- err=2.2st eng=5(exp 5) ready | seg5-back f=442Hz(exp 440) zc=- err=0.1st eng=4(exp 4) ready | (dest=(]∫|Ù)"
     },
     {
       "phase": "G",
       "case": "reset-and-switch-cycle",
-      "engine": "(Õ‚«,",
+      "engine": "(]∫|Ù",
       "material": "two-tone-220-440",
       "pitch_st": 12.00,
       "sample_rate": 48000.0,

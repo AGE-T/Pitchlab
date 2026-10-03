@@ -71,10 +71,11 @@ const FrozenRow kFrozenSurface[] = {
     // Fixed-mode checkpoint registers kTpMode/kTpWindow/kTpOverlap/kTpShape;
     // kTpTolerance/kTpFormant land with their mode checkpoints — the tags
     // are reserved by the amendment, never renumbered).
-    {param::kTpMode, 0, 0, 0, 0},
+    {param::kTpMode, 0, 1, 0, 1},
     {param::kTpWindow, 64, 16384, 2048, 16320},
     {param::kTpOverlap, 0, 2, 0, 2},
     {param::kTpShape, 0, 3, 0, 3},
+    {param::kTpTolerance, 0, 8192, 768, 8192},
     {param::kMix, 0.0, 1.0, 1.0, -1},
     {param::kBypass, 0, 1, 0, 1},
     {param::kOutputLevel, -24.0, 12.0, 0.0, -1},
@@ -218,11 +219,11 @@ TEST_CASE("enumeration hygiene: unique tags per engine, disjoint across engines"
 
 TEST_CASE("state compatibility: the generated table is exactly the frozen surface") {
   initEngineRegistryOnce();
-  // Task 33: 19 shared/existing rows + 4 native.timepitch Fixed-checkpoint
-  // rows = 23 (the amendment's final surface is 25 when the Adaptive and
-  // Pitch+Formant parameter rows land; tags 26/27 are reserved).
-  REQUIRE(parameterCount() == 23);
-  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 23);
+  // Task 33: 19 shared/existing rows + 5 native.timepitch rows (the
+  // Fixed+Adaptive checkpoint) = 24 (the amendment's final surface is 25
+  // when the Pitch+Formant formant_ratio row lands; tag 27 is bound then).
+  REQUIRE(parameterCount() == 24);
+  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 24);
   for (const FrozenRow& row : kFrozenSurface) {
     const ParamMeta* m = metaOf(row.tag);
     REQUIRE(m != nullptr);
@@ -288,12 +289,12 @@ TEST_CASE("role split: shared realtime controls are explicit and complete") {
       CHECK(m.engineId[0] == '\0');
     }
   }
-  // 16 engine-owned rows total (12 v0.1 + 4 task-33 Fixed-checkpoint rows)
+  // 17 engine-owned rows total (12 v0.1 + 5 task-33 Fixed+Adaptive rows)
   int engineOwned = 0;
   for (uint32_t i = 0; i < parameterCount(); ++i) {
     if (parameterTable()[i].role == ParamRole::EngineConfiguration) ++engineOwned;
   }
-  CHECK(engineOwned == 16);
+  CHECK(engineOwned == 17);
 }
 
 // ---------------------------------------------------------------------------

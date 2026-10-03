@@ -26,19 +26,23 @@ There is no second engine implementation, no stub, no fake quality score.
 > first-class streaming-pYIN tracker term included — never hidden, shown
 > in the STATUS panel per the existing mechanism).
 >
-> **IMPLEMENTATION STATUS (task-33 checkpoint 1, 2026-10-02):**
+> **IMPLEMENTATION STATUS (task-33 checkpoint 2, 2026-10-02):**
 > `native.timepitch` IS REGISTERED as the 6th production engine with the
-> **Fixed (= OLA)** mode functional end-to-end (registry, parameters
-> kTpMode/kTpWindow/kTpOverlap/kTpShape — tags 22..25, the adapter's
-> wet-grid geometry branch, the declared-latency reporting, the editor
-> panel with the descriptor-driven per-mode visibility mechanism). The
-> parameter surface is 19 → **23** rows at this checkpoint (the amendment's
-> final surface is 25 when the Adaptive/Tolerance and Pitch +
-> Formant/Formant rows land; tags 26/27 are reserved by the amendment).
-> The mode choice list grows per checkpoint (an unregistered mode is a
-> CONFIG ERROR — never a disguised substitute). Adaptive, Pitch-Synced and
-> Pitch + Formant land with their own checkpoints; the Pitch-Synced
-> latency (≈122 ms) appears with theirs.
+> **Fixed (= OLA)** AND **Adaptive (= WSOLA)** modes functional end-to-end
+> (registry; parameters kTpMode/kTpWindow/kTpOverlap/kTpShape/kTpTolerance
+> — tags 22..26; the adapter's wet-grid geometry branch; the
+> declared-latency reporting; the editor panel with the descriptor-driven
+> per-mode visibility mechanism — the Tolerance row appears only in the
+> Adaptive mode). The parameter surface is 19 → **24** rows at this
+> checkpoint (the amendment's final surface is 25 when the Pitch +
+> Formant/formant_ratio row lands; tag 27 is bound then). The mode choice
+> list grows per checkpoint (an unregistered mode is a CONFIG ERROR —
+> never a disguised substitute). The Adaptive mode adds ZERO declared
+> latency (the search reaches backward into the buffered back-margin); its
+> deterministic search order (0, +1, −1, +2, −2, … ties → 0) and the
+> drift-free law-anchored nominal are the §6.6.1 item 4 freeze. Pitch-
+> Synced and Pitch + Formant land with their own checkpoints; the
+> Pitch-Synced latency (≈122 ms) appears with theirs.
 
 * Product-phase specification: `research/pitch-lab-vst3-product-phase-specification.md`
   (architecture, the realtime adaptation boundary, the parameter model, the

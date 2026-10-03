@@ -97,6 +97,7 @@ constexpr EngineParamBinding kEngineParamBindings[]{
     {"native.timepitch", "window_frames", param::kTpWindow, "tp_window"},
     {"native.timepitch", "overlap", param::kTpOverlap, "tp_overlap"},
     {"native.timepitch", "window_shape", param::kTpShape, "tp_shape"},
+    {"native.timepitch", "tolerance_frames", param::kTpTolerance, "tp_tolerance"},
 };
 
 [[nodiscard]] const EngineParamBinding* findBinding(const char* engineId,
@@ -384,6 +385,7 @@ void applyNormalised(ParamSnapshot& snap, uint32_t tag, double norm) {
     case param::kTpWindow: snap.tpWindowFrames = static_cast<int64_t>(std::llround(p)); break;
     case param::kTpOverlap: snap.tpOverlap = static_cast<int64_t>(discreteIntValue(findParamMeta(param::kTpOverlap), p)); break;
     case param::kTpShape: snap.tpShape = clampInt(p, 0, 3); break;
+    case param::kTpTolerance: snap.tpTolerance = static_cast<int64_t>(std::llround(p)); break;
     case param::kMix: snap.mix = p; break;
     case param::kBypass: snap.bypass = (p >= 0.5); break;
     case param::kOutputLevel: snap.outputDb = p; break;
@@ -460,6 +462,7 @@ double plainValue(const ParamSnapshot& snap, uint32_t tag) {
       return 0.0;
     }
     case param::kTpShape: return static_cast<double>(snap.tpShape);
+    case param::kTpTolerance: return static_cast<double>(snap.tpTolerance);
     case param::kMix: return snap.mix;
     case param::kBypass: return snap.bypass ? 1.0 : 0.0;
     case param::kOutputLevel: return snap.outputDb;
@@ -539,6 +542,7 @@ void formatParamValue(uint32_t tag, double plain, char* buf, std::size_t bufSize
     case param::kGrJitter:
     case param::kTpWindow:
     case param::kTpOverlap:
+    case param::kTpTolerance:
       std::snprintf(buf, bufSize, "%d", static_cast<int>(std::llround(plain)));
       return;
     default: {

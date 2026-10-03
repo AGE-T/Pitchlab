@@ -532,3 +532,151 @@ TEST_CASE("T-D3: reset() reuse bit-identity") {
               ab ? "yes" : "NO", ac ? "yes" : "NO",
               static_cast<long long>(a.output[0].size()));
 }
+
+// ---------------------------------------------------------------------------
+// CHECKPOINT 2 — the Adaptive (= WSOLA) mode (§6.6.1 item 4). The two-stage
+// engine and the accumulation policy are SHARED with Fixed; only the
+// per-grain ANALYSIS-POSITION CHOICE changes (the SSE search). Zero declared
+// latency added (the search reaches backward into the buffered back-margin).
+// ---------------------------------------------------------------------------
+
+namespace {
+
+struct AdaptiveFixture {
+  TestRoot tr{"timepitch-adaptive"};
+  EngineRegistry registry{TestRoot::productionRegistry()};
+
+  AdaptiveFixture() {
+    tr.makeCurve("a-identity", kIdentityCurve);
+    tr.makeCurve("a-p12", staticSemitoneCurve("a-p12", 12.0));
+    tr.makeCurve("a-m12", staticSemitoneCurve("a-m12", -12.0));
+    tr.makeAsset("mono-48k", 48000, {sineFrames(440.0, 48000, 48000)});
+    tr.makeAsset("stereo-48k", 48000,
+                 {sineFrames(440.0, 48000, 24000), sineFrames(440.0, 48000, 24000)});
+  }
+
+  struct Rendered {
+    JobResult result;
+    WavData master;
+  };
+
+  Rendered render(const std::string& asset, const std::string& curve,
+                  const std::string& params, const std::string& tag) {
+    const std::string expId = "exp-adp-" + tag;
+    const fs::path exp =
+        tr.makeExperiment(expId, experimentToml(expId, asset, curve, 48000, 1,
+                                                "native.timepitch", "benchmark", params));
+    const RenderSummary summary = renderExperiment(exp, tr, registry);
+    REQUIRE(summary.results.size() == 1);
+    REQUIRE(summary.results[0].status == RenderStatus::Ok);
+    REQUIRE(summary.results[0].masterWav != fs::path());
+    return Rendered{summary.results[0], readWav(summary.results[0].masterWav)};
+  }
+};
+
+}  // namespace
+
+TEST_CASE_FIXTURE(AdaptiveFixture,
+                  "T-WSOLA: adaptive identity, shifts, length, determinism") {
+  const std::string params = "mode = \"adaptive\"";
+  // identity: the overlap is already aligned => delta 0 everywhere => the
+  // exact OLA identity path
+  {
+    const Rendered r = render("mono-48k", "a-identity", params, "id");
+    const WavData input = readWav(tr.root / "assets" / "corpus" / "mono-48k" / "signal.wav");
+    const int64_t n = std::min<int64_t>(input.meta.frames, r.master.meta.frames);
+    REQUIRE(n >= 47000);
+    double worst = 0.0;
+    for (int64_t k = 0; k < n; ++k) {
+      worst = std::max(worst, std::fabs(r.master.channels[0][static_cast<std::size_t>(k)] -
+                                        input.channels[0][static_cast<std::size_t>(k)]));
+    }
+    CHECK(worst <= kAudioEquivDbfs);
+    CHECK(r.result.lengthDeltaFrames == 0);
+    CHECK(r.result.flushFrames == r.result.declaredLatency.outputLatencyFrames);
+  }
+  // ±12 st: the shift happens (the candidate gate); Preserving length exact
+  for (const char* curve : {"a-p12", "a-m12"}) {
+    CAPTURE(curve);
+    const Rendered r = render("mono-48k", curve, params, curve);
+    const double expected =
+        440.0 * std::exp2((std::strcmp(curve, "a-p12") == 0 ? 12.0 : -12.0) / 12.0);
+    const double f = dominantFrequency(r.master.channels[0], 48000, 4000, 30000);
+    const double errSt = 12.0 * std::log2(f / expected);
+    CHECK(std::abs(errSt) <= kFixedShiftToleranceSt);
+    CHECK(r.result.lengthDeltaFrames == 0);
+    CHECK(r.result.flushFrames == r.result.declaredLatency.outputLatencyFrames);
+    std::printf("T-WSOLA: %s -> f=%.3f expected=%.3f err=%+.3f st, delta %lld, flush %lld/%lld\n",
+                curve, f, expected, errSt,
+                static_cast<long long>(r.result.lengthDeltaFrames),
+                static_cast<long long>(r.result.flushFrames),
+                static_cast<long long>(r.result.declaredLatency.outputLatencyFrames));
+  }
+  // determinism: byte-identical re-render (the search is schedule-pure)
+  {
+    const Rendered a = render("mono-48k", "a-p12", params, "det");
+    const Rendered b = render("mono-48k", "a-p12", params, "det");
+    REQUIRE(a.master.channels[0].size() == b.master.channels[0].size());
+    CHECK(std::memcmp(a.master.channels[0].data(), b.master.channels[0].data(),
+                      a.master.channels[0].size() * sizeof(double)) == 0);
+  }
+  // stereo coherence: the shared channel-0 decision keeps identical inputs
+  // bit-identical per channel
+  {
+    const std::string expId = "exp-adp-st";
+    const fs::path exp = tr.makeExperiment(
+        expId, experimentToml(expId, "stereo-48k", "a-p12", 48000, 2, "native.timepitch",
+                              "benchmark", params));
+    const RenderSummary summary = renderExperiment(exp, tr, registry);
+    REQUIRE(summary.results.size() == 1);
+    REQUIRE(summary.results[0].status == RenderStatus::Ok);
+    const WavData wav = readWav(summary.results[0].masterWav);
+    REQUIRE(wav.channels.size() == 2);
+    REQUIRE(wav.channels[0].size() == wav.channels[1].size());
+    CHECK(std::memcmp(wav.channels[0].data(), wav.channels[1].data(),
+                      wav.channels[0].size() * sizeof(double)) == 0);
+  }
+}
+
+TEST_CASE("T-WSOLA: near-silent input — the tie-break holds the nominal (no drift)") {
+  // The MEASURED defect regression (candidate_wsola.cpp:86-91): an
+  // ascending-from-−tol search order tied to −tolerance on near-silent
+  // input and drifted backwards until the input window overflowed. The
+  // frozen order (0, +1, −1, +2, −2, … ties → 0) must render silence
+  // cleanly: no overflow fault, all-zero output.
+  const int64_t N = 48000;
+  std::vector<double> silence(static_cast<std::size_t>(N), 0.0);
+  std::vector<double> ratio(static_cast<std::size_t>(N), 2.0);
+  auto engine = makeTimePitchEngine();
+  EngineConfiguration cfg;
+  cfg.seed = 0;
+  cfg.parameters = {{"mode", ParameterValue{std::string{"adaptive"}}},
+                    {"tolerance_frames", ParameterValue{int64_t{768}}}};
+  const DriveReport dr =
+      driveEngine(*engine, cfg, {silence}, 48000, ratio, 4096, 262144);
+  CHECK(dr.producedTotal > 0);
+  double peak = 0.0;
+  for (double v : dr.output[0]) peak = std::max(peak, std::fabs(v));
+  CHECK(peak == 0.0);  // silence in, silence out (delta 0 ties, no drift)
+}
+
+TEST_CASE("T-WSOLA: tolerance_frames validation") {
+  auto cfgWith = [](std::vector<std::pair<std::string, ParameterValue>> params) {
+    EngineConfiguration cfg;
+    cfg.seed = 1;
+    cfg.parameters = std::move(params);
+    return cfg;
+  };
+  auto engine = makeTimePitchEngine();
+  CHECK_NOTHROW(engine->configure(cfgWith(
+      {{"mode", ParameterValue{std::string{"adaptive"}}},
+       {"tolerance_frames", ParameterValue{int64_t{8192}}}})));
+  CHECK_THROWS(engine->configure(cfgWith(
+      {{"mode", ParameterValue{std::string{"adaptive"}}},
+       {"tolerance_frames", ParameterValue{int64_t{8193}}}})));
+  CHECK_THROWS(engine->configure(cfgWith(
+      {{"mode", ParameterValue{std::string{"adaptive"}}},
+       {"tolerance_frames", ParameterValue{int64_t{-1}}}})));
+  CHECK_THROWS(engine->configure(cfgWith(
+      {{"mode", ParameterValue{std::string{"pitch_synced"}}}})));  // lands with its checkpoint
+}

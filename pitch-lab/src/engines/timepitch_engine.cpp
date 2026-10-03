@@ -52,6 +52,7 @@ class TimePitchEngine final : public PitchEngine {
     windowFrames_ = 2048;
     overlap_ = 2;
     shape_ = "hann";
+    tolerance_ = 768;
 
     for (const auto& [key, value] : cfg.parameters) {
       if (key == "mode") {
@@ -60,9 +61,10 @@ class TimePitchEngine final : public PitchEngine {
           // mode is a CONFIG ERROR — never a disguised substitute. The
           // choice list grows as each checkpoint lands; the frozen final
           // set is fixed|adaptive|pitch_synced|pitch_formant (§6.6).
-          if (*s != "fixed") {
+          if (*s != "fixed" && *s != "adaptive") {
             throw ConfigError("", "mode",
-                              "mode '" + *s + "' is not available in this build (Fixed=OLA)");
+                              "mode '" + *s +
+                                  "' is not available in this build (Fixed=OLA, Adaptive=WSOLA)");
           }
           mode_ = *s;
         } else {
@@ -97,6 +99,21 @@ class TimePitchEngine final : public PitchEngine {
         } else {
           throw ConfigError("", "window_shape", "window_shape must be a string");
         }
+      } else if (key == "tolerance_frames") {
+        // §6.6.1 item 4: the Adaptive (WSOLA) search tolerance — the domain
+        // verbatim from the validated prototype (candidate_wsola.h:44).
+        // Validated for BOTH modes that accept the key (the descriptor only
+        // routes it; the value domain is mode-independent).
+        if (const auto* i = std::get_if<int64_t>(&value)) {
+          if (*i < 0 || *i > 8192) {
+            throw ConfigError("", "tolerance_frames",
+                              "tolerance_frames must be an integer in [0, 8192]");
+          }
+          tolerance_ = static_cast<int>(*i);
+        } else {
+          throw ConfigError("", "tolerance_frames",
+                            "tolerance_frames must be an integer");
+        }
       } else {
         // The key set is the descriptor's parameterKeys (validated both
         // sides); an unknown key here is a harness/registry coherence bug.
@@ -126,9 +143,11 @@ class TimePitchEngine final : public PitchEngine {
     window_ = makeWindow(windowFrames_, shape_);
 
     // Sliding input window: the analysis reach below the next grain centre
-    // (N/2, plus the WSOLA back-margin when that mode lands — 0 for Fixed)
-    // + the block arrival quantum + margin (the candidate_ola.cpp sizing).
-    inputBackMargin_ = 0;  // Fixed/OLA: the search reach lands with Adaptive
+    // (N/2, plus the WSOLA back-margin — the search reads down to
+    // a − N/2 − tolerance) + the block arrival quantum + margin (the
+    // candidate_ola.cpp sizing; candidate_wsola.cpp sets the margin BEFORE
+    // the base prepare so the window is sized with it).
+    inputBackMargin_ = (mode_ == "adaptive") ? tolerance_ + 64 : 0;
     const int64_t inputCapacity =
         static_cast<int64_t>(windowFrames_) + inputBackMargin_ +
         2 * static_cast<int64_t>(maxBlock_) + 256;
@@ -149,6 +168,7 @@ class TimePitchEngine final : public PitchEngine {
     grainScratch_.assign(
         static_cast<std::size_t>(channels_) * static_cast<std::size_t>(windowFrames_) + 16,
         0.0);
+    builtScratch_.assign(static_cast<std::size_t>(windowFrames_) + 16, 0.0);
     resetJobState();
 
     // Declared latency (§6.6.1 item 10 — the Fixed/Adaptive composition,
@@ -286,6 +306,7 @@ class TimePitchEngine final : public PitchEngine {
   int windowFrames_ = 2048;
   int overlap_ = 2;
   std::string shape_ = "hann";
+  int tolerance_ = 768;  // the Adaptive (WSOLA) search tolerance (frames)
 
   // --- job state (all allocated in prepare()) -----------------------------
   double fs_ = 0.0;
@@ -301,6 +322,8 @@ class TimePitchEngine final : public PitchEngine {
   std::vector<double> wsum_;                      // window sum per stretch position
   std::vector<std::vector<double>> inBuf_;        // sliding input window
   std::vector<double> grainScratch_;              // planar per-grain extraction
+  std::vector<double> builtScratch_;              // the WSOLA search's built
+                                                  // estimate over the overlap
   FrameCount inBase_ = 0;                         // absolute index of inBuf_[c][0]
   FrameCount inAvail_ = 0;                        // absolute end of delivered input
   FrameCount consumedTotal_ = 0;                  // cumulative consumed (§4.2.1 item 7)
@@ -363,12 +386,79 @@ class TimePitchEngine final : public PitchEngine {
     stretchEndD_ = 0.0;
   }
 
-  // --- the placement law seam (§6.6.1 item 2) ------------------------------
-  // Per-grain analysis-position adjustment: Fixed places every grain at the
+  // --- the placement law seam (§6.6.1 items 2/4) ----------------------------
+  // Per-grain analysis-position adjustment. Fixed places every grain at the
   // nominal schedule position (returns 0 — candidate_ola.cpp verbatim).
-  // Adaptive (WSOLA) replaces this with the similarity search; Pitch-Synced
-  // modes bypass the nominal grid entirely (the mark schedule).
-  [[nodiscard]] double grainAnalysisAdjustment(double /*aNominal*/) const { return 0.0; }
+  // Adaptive (WSOLA, §6.6.1 item 4 — candidate_wsola.cpp:52-120 verbatim):
+  // per-grain δ ∈ [−tol, +tol] SSE search against the BUILT estimate over
+  // the overlap region O = [s − N/2, s − Hs + N/2); deterministic scan
+  // order 0, +1, −1, +2, −2, …; strictly-smaller SSE wins, ties → δ = 0
+  // (closest to zero, positive first — the ascending-from-−tol order was a
+  // MEASURED defect: systematic backward drift on near-silent input);
+  // channel 0 drives the shared decision; the next NOMINAL advances from
+  // the law (drift-free); grain 0 has no built output ⇒ δ = 0; ZERO
+  // declared latency added (the search reaches BACKWARD into the buffered
+  // back-margin). Pitch-Synced modes bypass the nominal grid entirely (the
+  // mark schedule — their checkpoint).
+  double grainAnalysisAdjustment(double aNominal) {
+    if (mode_ != "adaptive" || grainsPlaced_ == 0 || tolerance_ == 0) {
+      return 0.0;
+    }
+    const double half = static_cast<double>(windowFrames_) / 2.0;
+    const double s = sNext_;
+    const int64_t ovStart = static_cast<int64_t>(std::ceil(s - half));
+    const int64_t ovEnd =
+        static_cast<int64_t>(std::floor(s - static_cast<double>(hs_) + half));
+    const int64_t ovLen = ovEnd - ovStart;
+    if (ovLen <= 0 || ovLen + 16 > static_cast<int64_t>(builtScratch_.size())) {
+      return 0.0;
+    }
+
+    // Normalised built estimate over O (the output-so-far comparison
+    // target; channel 0 — the shared decision).
+    for (int64_t i = 0; i < ovLen; ++i) {
+      const FrameCount rel = (ovStart + i) - stretchBase_;
+      double v = 0.0;
+      if (rel >= 0 && rel < stretchCapacity_) {
+        const double w = wsum_[static_cast<std::size_t>(rel)];
+        if (w > 1.0e-12) {
+          v = stretch_[0][static_cast<std::size_t>(rel)] / w;
+        }
+      }
+      builtScratch_[static_cast<std::size_t>(i)] = v;
+    }
+
+    // Deterministic search over the integer tolerance grid, ordered 0,
+    // +1, −1, +2, −2, …; strictly-smaller SSE replaces the best, so ties
+    // resolve to the delta CLOSEST TO ZERO (positive first) — the nominal
+    // schedule is preferred among equal candidates (the ascending-from-−tol
+    // order was a measured defect: on near-silent input every SSE is equal,
+    // the tie-break systematically chose −tolerance and the re-anchored
+    // schedule drifted backwards until the input window overflowed).
+    int64_t bestDelta = 0;
+    double bestSse = std::numeric_limits<double>::max();
+    const int64_t tol = static_cast<int64_t>(tolerance_);
+    for (int64_t radius = 0; radius <= tol; ++radius) {
+      const int64_t candidates[2] = {radius, -radius};
+      for (int ci = (radius == 0 ? 0 : 1); ci < 2; ++ci) {
+        const int64_t d = candidates[ci];
+        double sse = 0.0;
+        for (int64_t i = 0; i < ovLen; ++i) {
+          const double p = static_cast<double>(ovStart + i);
+          const double inputPos = aNominal + static_cast<double>(d) + (p - s);
+          const double v =
+              readInput(0, static_cast<FrameCount>(std::floor(inputPos)));
+          const double diff = v - builtScratch_[static_cast<std::size_t>(i)];
+          sse += diff * diff;
+        }
+        if (sse < bestSse) {
+          bestSse = sse;
+          bestDelta = d;
+        }
+      }
+    }
+    return static_cast<double>(bestDelta);
+  }
 
   // --- the accumulation policy seam (§6.6.1 items 3/6) ---------------------
   // Window-product normalisation family (Fixed/Adaptive): the grain is
@@ -642,9 +732,10 @@ namespace {
 
 // Mode choices (§6.6): the frozen final set is
 //   fixed | adaptive | pitch_synced | pitch_formant
-// landed per VST checkpoint (Fixed first — the checkpoint discipline in the
-// header); the choice INDEX of each mode is frozen by this array order.
-const char* const kTimePitchModeChoices[] = {"fixed"};
+// landed per VST checkpoint (Fixed first, Adaptive second — the checkpoint
+// discipline in the header); the choice INDEX of each mode is frozen by
+// this array order.
+const char* const kTimePitchModeChoices[] = {"fixed", "adaptive"};
 
 // Window shapes (§6.6 table, verbatim from candidate_ola.h).
 const char* const kTimePitchShapeChoices[] = {"hann", "hamming", "bartlett", "rect"};
@@ -657,9 +748,11 @@ const double kTimePitchOverlapValues[] = {2.0, 4.0, 8.0};
 
 // §6.6.1 item 18 visibility-guard data (frozen final form, set once):
 // window_frames / overlap / window_shape are visible iff mode ∈
-// {fixed, adaptive} (choice indices 0, 1). The guard VALUES are the mode
-// choice indices — the frozen array order above defines them.
+// {fixed, adaptive} (choice indices 0, 1); tolerance_frames iff mode ∈
+// {adaptive} (index 1). The guard VALUES are the mode choice indices — the
+// frozen array order above defines them.
 constexpr double kTpVisibleFixedAdaptive[] = {0.0, 1.0};
+constexpr double kTpVisibleAdaptiveOnly[] = {1.0};
 
 }  // namespace
 
@@ -706,8 +799,9 @@ EngineDescriptor timePitchEngineDescriptor() {
 
   // §6.6.1 item 1: exactly the seven descriptor rows of the §6.6 table
   // (landed per checkpoint; the key set grows with the mode implementations,
-  // the tags are stable). Checkpoint 1 registers the Fixed-mode rows.
-  d.parameterKeys = {"mode", "window_frames", "overlap", "window_shape"};
+  // the tags are stable). Checkpoint 2 registers the Fixed + Adaptive rows.
+  d.parameterKeys = {"mode", "window_frames", "overlap", "window_shape",
+                     "tolerance_frames"};
   d.parameters = {
       {
           .key = "mode",
@@ -716,13 +810,13 @@ EngineDescriptor timePitchEngineDescriptor() {
           .role = EngineParamRole::Configuration,
           .exposed = true,
           .min = 0.0,
-          .max = 0.0,  // single choice at this checkpoint (frozen final: 3)
+          .max = 1.0,  // fixed | adaptive (checkpoint 2; frozen final: 3)
           .defaultPlain = 0.0,  // "fixed" (§6.6 default)
           .unit = "",
-          .stepCount = 0,
+          .stepCount = 1,
           .choiceNames = kTimePitchModeChoices,
           .choiceValues = nullptr,
-          .choiceCount = 1,
+          .choiceCount = 2,
           .automatable = false,
           .rebuildsChain = true,  // §6.6.1 item 17: mode ∈ ChainSignature
           .dispFmt = "%s",
@@ -789,6 +883,29 @@ EngineDescriptor timePitchEngineDescriptor() {
           .visibleWhenKey = "mode",
           .visibleWhenValues = kTpVisibleFixedAdaptive,
           .visibleWhenCount = 2,
+      },
+      {
+          // §6.6.1 item 18: tolerance_frames is visible iff mode ∈
+          // {adaptive} (choice index 1) — registered always, shown per mode.
+          .key = "tolerance_frames",
+          .displayName = "Tolerance",
+          .kind = EngineParamKind::Integer,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 8192.0,
+          .defaultPlain = 768.0,  // ~16 ms @48 kHz (candidate_wsola.h:44)
+          .unit = "frames",
+          .stepCount = 8192,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%d",
+          .visibleWhenKey = "mode",
+          .visibleWhenValues = kTpVisibleAdaptiveOnly,
+          .visibleWhenCount = 1,
       },
   };
   d.factory = &makeTimePitchEngine;

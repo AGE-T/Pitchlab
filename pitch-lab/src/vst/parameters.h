@@ -80,7 +80,7 @@ enum Tags : uint32_t {
   kTpWindow = 23,        // timepitch: 64 .. 16384 frames (Fixed+Adaptive)
   kTpOverlap = 24,       // timepitch: 0 2x / 1 4x / 2 8x (Fixed+Adaptive)
   kTpShape = 25,         // timepitch: 0 hann / 1 hamming / 2 bartlett / 3 rect
-  kTpTolerance = 26,     // timepitch: 0 .. 8192 frames (Adaptive; reserved)
+  kTpTolerance = 26,     // timepitch: 0 .. 8192 frames (Adaptive)
   kTpFormant = 27,       // timepitch: 0.25 .. 4.0 (Pitch+Formant; reserved)
   // --- mix / output --------------------------------------------------------
   kMix = 30,         // 0 dry .. 1 wet
@@ -211,6 +211,7 @@ struct ParamSnapshot {
   int64_t tpWindowFrames = 2048;
   int64_t tpOverlap = 2;       // ENGINE-FACING value (2/4/8 via choiceValues)
   int tpShape = 0;             // choice index: 0 = hann
+  int64_t tpTolerance = 768;   // Adaptive (WSOLA) search tolerance (frames)
   // mix / output
   double mix = 1.0;
   bool bypass = false;
@@ -249,6 +250,7 @@ struct ParamSnapshot {
     int64_t tpWindowFrames;
     int64_t tpOverlap;
     int tpShape;
+    int64_t tpTolerance;
 
     bool operator==(const ChainSignature& o) const = default;
   };
@@ -262,7 +264,7 @@ struct ParamSnapshot {
                           pvcHop,               pvpFftSize,
                           pvpHop,               tpMode,
                           tpWindowFrames,       tpOverlap,
-                          tpShape};
+                          tpShape,              tpTolerance};
   }
 };
 

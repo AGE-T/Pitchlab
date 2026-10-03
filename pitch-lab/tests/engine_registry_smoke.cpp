@@ -203,7 +203,7 @@ int main() {
     CHECK(tp->capabilities.channelMode == pitchlab::ChannelMode::MonoAndStereo);
     CHECK(tp->capabilities.maxChannels == 2);
     CHECK(tp->capabilities.supportedSampleRates.size() == 5);
-    CHECK(tp->parameterKeys.size() == 4);  // the Fixed-mode checkpoint key set
+    CHECK(tp->parameterKeys.size() == 5);  // the Fixed+Adaptive key set
     std::unique_ptr<pitchlab::PitchEngine> tengine = tp->factory();
     CHECK(tengine != nullptr);
     CHECK(std::string(tengine->engineId()) == "native.timepitch");
