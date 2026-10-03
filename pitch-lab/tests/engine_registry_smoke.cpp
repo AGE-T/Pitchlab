@@ -203,7 +203,9 @@ int main() {
     CHECK(tp->capabilities.channelMode == pitchlab::ChannelMode::MonoAndStereo);
     CHECK(tp->capabilities.maxChannels == 2);
     CHECK(tp->capabilities.supportedSampleRates.size() == 5);
-    CHECK(tp->parameterKeys.size() == 5);  // the Fixed+Adaptive key set
+    CHECK(tp->parameterKeys.size() == 6);  // mode/window/overlap/shape/tolerance
+                                           // + the HIDDEN puv_hz row (checkpoint 3;
+                                           // exposed=false — the VST surface stays 24)
     std::unique_ptr<pitchlab::PitchEngine> tengine = tp->factory();
     CHECK(tengine != nullptr);
     CHECK(std::string(tengine->engineId()) == "native.timepitch");

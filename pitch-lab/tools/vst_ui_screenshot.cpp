@@ -633,8 +633,14 @@ int main(int argc, char** argv) {
     // (panel at (472,54); sliders local (12,51+40i)-(184,69+40i), 172 wide).
     constexpr int kRow1 = 114, kRow2 = 154, kRow3 = 194, kRow4 = 234;
     // click an engine segment and wait (bounded) for the adapter to ADOPT it
+    // The selector's committed layout: the rect (12,70)-(160,240) is divided
+    // EVENLY by the registry's engine count (the cp1 six-engine squeeze —
+    // 170/6 px per segment; the task-29 five-engine 34-px constant is gone).
+    // The click math derives from the SAME formula the editor uses, so a
+    // future registry change cannot desync the test again.
     auto selectEngine = [&](int e) {
-      click(86, 70 + 34 * e + 17);
+      const double segH = 170.0 / static_cast<double>(engineCount());
+      click(86, static_cast<int>(70.0 + segH * static_cast<double>(e) + segH / 2.0));
       bool adopted = false;
       for (int attempt = 0; attempt < 10 && !adopted; ++attempt) {
         processBlocks(2);
@@ -829,16 +835,18 @@ int main(int argc, char** argv) {
     expectNear("CHECK4 pvp hop preserved", edit->getParamNormalized(param::kPvpHop), pvpHopU,
                kUiTol);
 
-    // ---- CHECK M: the full ordered engine-switch matrix (20 pairs) ---------
+    // ---- CHECK M: the full ordered engine-switch matrix (registry-sized) ---
     // every a->b transition: the selector writes through, the adapter
     // adopts, audio continues (the adoption retries process real blocks),
     // no RT fault appears, the chain stays ready, and the live-control
     // collections survive the panel rebuild churn (the poll timer runs
     // throughout — a stale pointer would crash or corrupt here)
     {
+      const int nEng = engineCount();
+      const int pairTotal = nEng * (nEng - 1);
       int pairFailures = 0;
-      for (int a = 0; a < 5; ++a) {
-        for (int b = 0; b < 5; ++b) {
+      for (int a = 0; a < nEng; ++a) {
+        for (int b = 0; b < nEng; ++b) {
           if (a == b) continue;
           selectEngine(a);
           selectEngine(b);
@@ -848,9 +856,9 @@ int main(int argc, char** argv) {
       }
       if (pairFailures > 0) ++failures;
       const StatusSnapshot st = statusIface->getStatus();
-      std::printf("ui-binding: %-46s %s (%d/20 pairs clean, faults=%llu)\n",
+      std::printf("ui-binding: %-46s %s (%d/%d pairs clean, faults=%llu)\n",
                   "M engine switch matrix: all ordered pairs", pairFailures == 0 ? "PASS" : "FAIL",
-                  20 - pairFailures, static_cast<unsigned long long>(st.faults));
+                  pairTotal - pairFailures, pairTotal, static_cast<unsigned long long>(st.faults));
     }
 
     // ---- CHECK 5: the explicit long-poll stability pass --------------------

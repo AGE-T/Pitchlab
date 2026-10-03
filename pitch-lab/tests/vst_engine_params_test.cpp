@@ -68,10 +68,12 @@ const FrozenRow kFrozenSurface[] = {
     {param::kPvpFft, 0, 2, 1, 2},
     {param::kPvpHop, 0, 3, 2, 3},
     // Task 33: the native.timepitch rows of the task-33 amendment (the
-    // Fixed-mode checkpoint registers kTpMode/kTpWindow/kTpOverlap/kTpShape;
-    // kTpTolerance/kTpFormant land with their mode checkpoints — the tags
-    // are reserved by the amendment, never renumbered).
-    {param::kTpMode, 0, 1, 0, 1},
+    // Fixed+Adaptive checkpoints register kTpMode/kTpWindow/kTpOverlap/
+    // kTpShape/kTpTolerance; checkpoint 3 grows the mode domain to the three
+    // registered choices fixed/adaptive/pitch_synced; kTpFormant lands with
+    // its mode checkpoint — the tags are reserved by the amendment, never
+    // renumbered; the HIDDEN puv_hz row is engine-owned, NOT on this surface).
+    {param::kTpMode, 0, 2, 0, 2},
     {param::kTpWindow, 64, 16384, 2048, 16320},
     {param::kTpOverlap, 0, 2, 0, 2},
     {param::kTpShape, 0, 3, 0, 3},
@@ -126,9 +128,15 @@ TEST_CASE("descriptor integrity: every engine's parameter set is well-formed") {
           }
         }
       } else {
-        // fixed engine-internal values: choices carry the single value
-        CHECK(p.choiceCount >= 1);
-        CHECK(p.choiceNames != nullptr);
+        // engine-internal (hidden) rows: either a fixed choice-valued knob
+        // (the other engines' pattern) or a BOUNDED CONTINUOUS real — the
+        // task-33 puv_hz pattern: validated domain, engine-internal, never
+        // exposed on the VST surface
+        const bool boundedReal = p.kind == EngineParamKind::Real && p.max > p.min;
+        const bool hiddenOk = p.choiceCount >= 1 || boundedReal;
+        const bool namesOk = p.choiceCount == 0 || p.choiceNames != nullptr;
+        CHECK(hiddenOk);
+        CHECK(namesOk);
       }
     }
   }

@@ -1,5 +1,7 @@
 #include "vst/realtime_adapter.h"
 
+#include "analysis/pitch_tracker_streaming.h"
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -301,20 +303,28 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     // wetLen = jobInputLen = kSegmentSeconds·fs (the product spec §4.1 N_seg
     // drift is corrected in the same recording); the seam crossfade is the
     // MODE-SCOPED geometry — Fixed/Adaptive: N (the configured window);
-    // Pitch-Synced modes: 2·pMax (lands with their checkpoints).
-    // Λ = the engine's DECLARED input latency (§6.6.1 item 10 — the frozen
-    // composition already embeds its own safety terms: Fixed/Adaptive
-    // N/2 + Hs + 2K + 64 with K = the §7 Standard half-width). The mode
-    // fields default to the Fixed row (the snapshot domain is clamped; the
-    // engine re-validates at configure()).
-    const int64_t n = std::min<int64_t>(std::max<int64_t>(snap.tpWindowFrames, 64), 16384);
-    const int64_t overlap = snap.tpOverlap == 4 ? 4 : snap.tpOverlap == 8 ? 8 : 2;
-    const int64_t hs = n / overlap;
+    // Pitch-Synced modes: 2·pMax. Λ = the engine's DECLARED input latency
+    // (§6.6.1 item 10 — the frozen compositions embed their own safety
+    // terms): Fixed/Adaptive N/2 + Hs + 2K + 64; Pitch-Synced
+    // 2·pMax + 2K + 128 + Λ_tr (the shared ONE-definition helper — ≈122 ms
+    // @48k, FIRST-CLASS, never hidden).
     constexpr int kResamplerK = 16;  // §7 Standard preset half-width (frozen)
-    g.seamX = n;
-    g.latency = n / 2 + hs + 2 * kResamplerK + 64;
+    const int64_t n = std::min<int64_t>(std::max<int64_t>(snap.tpWindowFrames, 64), 16384);
     g.wetLen = kSegmentSeconds * static_cast<int64_t>(fs);
     g.jobInputLen = g.wetLen;
+    if (snap.tpMode >= 2) {
+      // Pitch-Synced (TD-PSOLA) — checkpoint 3; Pitch + Formant shares the
+      // geometry (γ is a synthesis-internal axis, no latency change).
+      const double pMax = std::floor(fs / 50.0);
+      const int64_t lamTr = analysis::trackerLagFrames(fs, pMax, 4);
+      g.seamX = static_cast<int64_t>(2.0 * pMax);
+      g.latency = static_cast<int64_t>(2.0 * pMax) + 2 * kResamplerK + 128 + lamTr;
+    } else {
+      const int64_t overlap = snap.tpOverlap == 4 ? 4 : snap.tpOverlap == 8 ? 8 : 2;
+      const int64_t hs = n / overlap;
+      g.seamX = n;
+      g.latency = n / 2 + hs + 2 * kResamplerK + 64;
+    }
   } else {  // native.varispeed — windowed splice (§4.2)
     const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
     const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
@@ -364,11 +374,20 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
   constexpr int64_t kTpWindowMax = 16384;
   constexpr int kResamplerK = 16;                   // §7 Standard half-width
   const int64_t timepitchWorst = kTpWindowMax / 2 + kTpWindowMax / 2 + 2 * kResamplerK + 64;
+  // Task 33 (checkpoint 3): the Pitch-Synced composition at its worst — the
+  // frozen totals 5636/5848/11111/11536/22912 @44.1/48/88.2/96/192 kHz; the
+  // fs-dependent pMax/Λ_tr evaluated at the ACTIVATION's rate (the lanes
+  // are per-activation sized).
+  const double tpPMax = std::floor(fs / 50.0);
+  const int64_t timepitchSyncedWorst =
+      static_cast<int64_t>(2.0 * tpPMax) + 2 * kResamplerK + 128 +
+      analysis::trackerLagFrames(fs, tpPMax, 4);
   return std::max({splice + maxGrain,                                     // granular
                    splice,                                                 // varispeed
                    maxCrossfade + kKernelMargin + kLatencySafety,          // vardelay
                    maxFft + maxHop + kKernelMargin + kLatencySafety,       // pv engines
-                   timepitchWorst});                                       // timepitch (task 33)
+                   timepitchWorst,                                         // timepitch Fixed/Adaptive
+                   timepitchSyncedWorst});                                 // timepitch Pitch-Synced
 }
 
 /// Envelope (§4.1 item 2, the Task 30 policy — derived, not intuited):

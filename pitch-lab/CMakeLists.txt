@@ -55,12 +55,15 @@ add_library(pitchlab_core
   src/analysis/metrics_modulation.cpp
   src/analysis/metrics_phase.cpp
   src/analysis/metrics_tracker.cpp
+  src/analysis/pitch_tracker_streaming.cpp
   src/analysis/analyzer.cpp
 )
 
 target_include_directories(pitchlab_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_features(pitchlab_core PUBLIC cxx_std_20)
-target_link_libraries(pitchlab_core PRIVATE pitchlab_pocketfft)
+# PUBLIC: the shared pYIN observation TU (§6.6.1 item 8) is included by the
+# VST product layer too (the adapter's chainGeometry Λ_tr branch).
+target_link_libraries(pitchlab_core PUBLIC pitchlab_pocketfft)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # -ffp-contract=off: FP determinism (implementation spec §7.5 — no FMA
@@ -200,6 +203,11 @@ pitchlab_add_doctest(pv_phaselocked_contract_test tests/pv_phaselocked_contract_
 # the §6.6.1 item 14 validation list). The mode checkpoints extend this
 # suite per mode (Adaptive/Pitch-Synced/Pitch+Formant).
 pitchlab_add_doctest(timepitch_contract_test tests/timepitch_contract_test.cpp)
+
+# T-PAR: the streaming-vs-batch tracker parity gates (task 33, §6.6.1 item 8
+# — the OQ-2 frozen gates: V/U >= 98%, |Δf0| <= 10 cents jointly voiced,
+# transitions <= 2 hops; breach = the implementation STOP trigger).
+pitchlab_add_doctest(pitch_tracker_parity_test tests/pitch_tracker_parity_test.cpp)
 
 # T-E14 / T-LEN-CAL: rate-following output-length calibration evidence
 # (spec §4.3.4/§13.1; the OD-6 evidence pack — full battery x 6 rates).

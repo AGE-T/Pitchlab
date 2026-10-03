@@ -30,9 +30,24 @@
 
 #include "core/errors.h"
 #include "core/resampler.h"
+#include "analysis/pitch_tracker.h"
+#include "analysis/pitch_tracker_streaming.h"
+#include "analysis/spectral.h"
 
 namespace pitchlab {
 namespace {
+
+constexpr double kGrainPi = 3.14159265358979323846;
+
+// ---------------------------------------------------------------------------
+// The Pitch-Synced mark record (§6.6.1 item 5 — the candidate_tdpsola.h
+// Mark form: the refined position, the period at the mark, the voicing).
+// ---------------------------------------------------------------------------
+struct PsolaMark {
+  FrameCount pos = 0;   // the refined mark position (input timeline)
+  double period = 0.0;  // the period at the mark (frames)
+  bool voiced = false;
+};
 
 // ---------------------------------------------------------------------------
 // The engine
@@ -53,6 +68,7 @@ class TimePitchEngine final : public PitchEngine {
     overlap_ = 2;
     shape_ = "hann";
     tolerance_ = 768;
+    puvHz_ = 200.0;
 
     for (const auto& [key, value] : cfg.parameters) {
       if (key == "mode") {
@@ -61,10 +77,10 @@ class TimePitchEngine final : public PitchEngine {
           // mode is a CONFIG ERROR — never a disguised substitute. The
           // choice list grows as each checkpoint lands; the frozen final
           // set is fixed|adaptive|pitch_synced|pitch_formant (§6.6).
-          if (*s != "fixed" && *s != "adaptive") {
+          if (*s != "fixed" && *s != "adaptive" && *s != "pitch_synced") {
             throw ConfigError("", "mode",
                               "mode '" + *s +
-                                  "' is not available in this build (Fixed=OLA, Adaptive=WSOLA)");
+                                  "' is not available in this build (Fixed=OLA, Adaptive=WSOLA, Pitch-Synced=TD-PSOLA)");
           }
           mode_ = *s;
         } else {
@@ -98,6 +114,18 @@ class TimePitchEngine final : public PitchEngine {
           shape_ = *s;
         } else {
           throw ConfigError("", "window_shape", "window_shape must be a string");
+        }
+      } else if (key == "puv_hz") {
+        // §6.6.1 item 1: the HIDDEN Pitch-Synced parameter (exposed=false in
+        // the descriptor — the adapter writes the validated default; the
+        // domain is validated here the same way).
+        if (const auto* d = std::get_if<double>(&value)) {
+          if (!std::isfinite(*d) || *d < 50.0 || *d > 500.0) {
+            throw ConfigError("", "puv_hz", "puv_hz must be in [50, 500] Hz");
+          }
+          puvHz_ = *d;
+        } else {
+          throw ConfigError("", "puv_hz", "puv_hz must be a number");
         }
       } else if (key == "tolerance_frames") {
         // §6.6.1 item 4: the Adaptive (WSOLA) search tolerance — the domain
@@ -141,6 +169,11 @@ class TimePitchEngine final : public PitchEngine {
     curve_ = *ctx.curve;
     hs_ = windowFrames_ / overlap_;
     window_ = makeWindow(windowFrames_, shape_);
+
+    if (mode_ == "pitch_synced") {
+      preparePitchSynced();
+      return;
+    }
 
     // Sliding input window: the analysis reach below the next grain centre
     // (N/2, plus the WSOLA back-margin — the search reads down to
@@ -206,6 +239,10 @@ class TimePitchEngine final : public PitchEngine {
     // job's effective curve.
     curve_ = curve;
 
+    if (mode_ == "pitch_synced") {
+      return processPitchSynced(in, inFrames, out, outCapacity, inputFrameIndex);
+    }
+
     // Absorb the input into the sliding input window (candidate_ola.cpp
     // process(): compact, bounds-check, copy, advance).
     compactInput();
@@ -254,6 +291,9 @@ class TimePitchEngine final : public PitchEngine {
       throw EngineException("native.timepitch", "finish called twice");
     }
     finishing_ = true;
+    if (mode_ == "pitch_synced") {
+      return finishPitchSynced(out, outCapacity);
+    }
     stretchEndD_ = std::numeric_limits<double>::max();  // until grains exhaust
     // Interleave grain placement with emission: the stretch live window is
     // bounded, so at small caller capacities the remaining grains can only
@@ -293,10 +333,14 @@ class TimePitchEngine final : public PitchEngine {
 
   void reset() override {
     // T-D3: clear ALL DSP state, keep the configuration; NO allocation
-    // (buffers are refilled with zeros in place; the window bank is
-    // config-derived and survives — §6.6.1 item 8's tracker clause general
-    // form). After reset, the same input with the same curve produces
-    // bit-identical output to a fresh instance.
+    // (buffers are refilled with zeros in place; the window bank, the plan
+    // trio and the tracker geometry are config/prepare-derived and survive
+    // — §6.6.1 item 8's tracker clause). After reset, the same input with
+    // the same curve produces bit-identical output to a fresh instance.
+    if (mode_ == "pitch_synced") {
+      resetPitchSynced();
+      return;
+    }
     resetJobState();
   }
 
@@ -307,6 +351,7 @@ class TimePitchEngine final : public PitchEngine {
   int overlap_ = 2;
   std::string shape_ = "hann";
   int tolerance_ = 768;  // the Adaptive (WSOLA) search tolerance (frames)
+  double puvHz_ = 200.0;  // the Pitch-Synced unvoiced period source (hidden)
 
   // --- job state (all allocated in prepare()) -----------------------------
   double fs_ = 0.0;
@@ -342,6 +387,24 @@ class TimePitchEngine final : public PitchEngine {
   double stretchEndD_ = 0.0;                      // finish() drain target (stretch tl)
   FrameCount latencyIn_ = 0;
   FrameCount latencyOut_ = 0;
+
+  // --- Pitch-Synced (TD-PSOLA) state (allocated in preparePitchSynced) -----
+  analysis::StreamingPitchTracker tracker_;
+  bool trackerDegenerate_ = false;
+  double puvFrames_ = 0.0;   // P_uv = fs / puv_hz
+  double pMax_ = 0.0;        // fs / 50
+  double pMin_ = 0.0;        // fs / 1000
+  std::vector<PsolaMark> markRing_;
+  int markHead_ = 0;
+  int markCount_ = 0;
+  std::size_t mkCursor_ = 0;
+  double tMark_ = 0.0;       // the next nominal mark position (input tl)
+  std::vector<std::vector<double>> psolaAccum_;  // raw OLA (no wsum)
+  FrameCount accumBase_ = 0;
+  FrameCount accumCapacity_ = 0;
+  std::vector<double> psolaGrainBuf_;
+  double tNext_ = 0.0;       // the output-grid cursor (1:1 emission)
+  double drainEnd_ = 0.0;
 
   // --- deterministic window bank (candidate_ola.cpp makeWindow verbatim) --
   static std::vector<double> makeWindow(int n, const std::string& shape) {
@@ -685,6 +748,556 @@ class TimePitchEngine final : public PitchEngine {
     }
   }
 
+
+  // =========================================================================
+  // Pitch-Synced (TD-PSOLA) — the second accumulation family (§6.6.1
+  // items 5/6/8). RAW OLA + per-grain s/P scale (the window-product
+  // normalisation was a MEASURED DEFECT here — the two policies are
+  // NEVER merged); the §7 resampler BYPASSED (the output grid == the
+  // accumulator grid, 1:1 emission); the marks come from the STREAMING
+  // fixed-lag pYIN tracker (item 8) fed on channel 0.
+  // =========================================================================
+
+  void preparePitchSynced() {
+    // The period grid (the prototype's prepare, verbatim bounds):
+    puvFrames_ = fs_ / puvHz_;
+    pMax_ = fs_ / analysis::kTrackerFminHz;
+    pMin_ = fs_ / analysis::kTrackerFmaxHz;
+
+    // The streaming tracker (§6.6.1 item 8): the frozen band 50..1000 Hz
+    // (kTrackerFmin/Fmax), the shared observation TU, the fixed-lag Viterbi
+    // D = 4. A degenerate configuration (impossible on the declared rates)
+    // takes the honest all-unvoiced fallback path.
+    trackerDegenerate_ = !tracker_.configure(fs_, analysis::kTrackerFminHz,
+                                             analysis::kTrackerFmaxHz);
+    if (!trackerDegenerate_) {
+      tracker_.prepare();
+    }
+
+    const int K = resampleKernelSpec(ResampleQuality::Standard).halfWidthTaps;
+    // The input window (the prototype's sizing + the tracker's pending
+    // span): 2 pMax analysis history + the declared lookahead + the
+    // tracker's (n + D·hop) undecoded reach + the driver blocks + margin —
+    // compaction NEVER needs a capacity-driven drop (the schedule-dependent
+    // corruption class; the prototype's recorded defect).
+    const FrameCount inCap = static_cast<FrameCount>(4.0 * pMax_) + 2 * K +
+                             static_cast<FrameCount>(tracker_.windowFrames()) +
+                             static_cast<FrameCount>(tracker_.lagFrames()) *
+                                 tracker_.hop() +
+                             2 * static_cast<FrameCount>(maxBlock_) + 512;
+    accumCapacity_ = static_cast<FrameCount>(2.0 * pMax_ + pMax_ + 2 * K +
+                                             2 * maxBlock_ + 512);
+    psolaAccum_.assign(static_cast<std::size_t>(channels_),
+                       std::vector<double>(static_cast<std::size_t>(accumCapacity_), 0.0));
+    psolaGrainBuf_.assign(static_cast<std::size_t>(channels_) *
+                                  static_cast<std::size_t>(2.0 * pMax_) + 16,
+                          0.0);
+    inBuf_.assign(static_cast<std::size_t>(channels_),
+                  std::vector<double>(static_cast<std::size_t>(inCap), 0.0));
+
+    // The declared latency (§6.6.1 item 10 — the Pitch-Synced composition,
+    // the synthesis part verbatim from candidate_tdpsola.cpp:236-253 and
+    // Λ_tr from the frozen item-8 formula):
+    //   input  = 2·pMax + 2K + 128 + Λ_tr
+    //   Λ_tr   = [n − minTag] + D·hop + ⌈pMax/4⌉
+    //   output = ⌊(4·pMax + 2K + 512)/max(0.25, minRatio)⌋ + 64
+    double minRatio = 1.0;
+    for (FrameCount i = 0; i < curve_.frames; ++i) {
+      minRatio = std::min(minRatio, curve_.ratio[static_cast<std::size_t>(i)]);
+    }
+    if (!(minRatio > 0.0)) minRatio = 0.5;
+    const int64_t lamTr = trackerLagFrames();
+    latencyIn_ = static_cast<FrameCount>(2.0 * pMax_) + 2 * K + 128 + lamTr;
+    latencyOut_ = static_cast<FrameCount>(
+        static_cast<double>(static_cast<FrameCount>(4.0 * pMax_) + 2 * K + 512) /
+        std::max(0.25, minRatio)) + 64;
+
+    // The mark ring: bounded by the decode span + the scheduling margin
+    // (the marks are >= 8 frames apart; the live span is a few hops).
+    markRing_.assign(256, PsolaMark{});
+    resetPitchSynced();
+    prepared_ = true;
+  }
+
+  /// The frozen tracker latency term (§6.6.1 item 8):
+  ///   Λ_tr = [n − minTag] + D·hop + ⌈pMax/4⌉
+  ///   minTag = llround((W + tauMin − 0.5)/2), W = n − tauMax
+  /// (probe-measured 1480 @48k availability; the frozen per-rate totals).
+  [[nodiscard]] int64_t trackerLagFrames() const {
+    // The frozen item-8 formula — the ONE definition in the analysis layer
+    // (analysis::trackerLagFrames); the degenerate-tracker fallback keeps
+    // the same composition (the geometry helpers are band-independent).
+    return analysis::trackerLagFrames(fs_, pMax_, 4);
+  }
+
+  void resetPitchSynced() {
+    for (auto& b : psolaAccum_) std::fill(b.begin(), b.end(), 0.0);
+    std::fill(psolaGrainBuf_.begin(), psolaGrainBuf_.end(), 0.0);
+    for (auto& b : inBuf_) std::fill(b.begin(), b.end(), 0.0);
+    if (!trackerDegenerate_) tracker_.reset();
+    inBase_ = 0;
+    inAvail_ = 0;
+    consumedTotal_ = 0;
+    inputExhausted_ = false;
+    accumBase_ = 0;
+    finalFrontier_ = 0;
+    aNext_ = 0.0;
+    tNext_ = 0.0;
+    grainsPlaced_ = 0;
+    finishing_ = false;
+    drainEnd_ = 0.0;
+    tMark_ = 0.0;
+    markHead_ = 0;
+    markCount_ = 0;
+    mkCursor_ = 0;
+  }
+
+  /// The tracker feed: observe every frame whose window is complete at the
+  /// delivered frontier (channel 0; the sliding-window reads are contiguous
+  /// by the compaction floor's tracker term).
+  void feedTracker() {
+    if (trackerDegenerate_) return;
+    while (tracker_.nextFrameStart() + tracker_.windowFrames() <= inAvail_) {
+      const FrameCount s = tracker_.nextFrameStart();
+      const FrameCount rel = s - inBase_;
+      if (rel < 0 || rel + tracker_.windowFrames() >
+                         static_cast<FrameCount>(inBuf_[0].size())) {
+        break;  // unreachable (the compaction floor keeps the window)
+      }
+      tracker_.observeFrame(inBuf_[0].data() + static_cast<std::size_t>(rel), s);
+    }
+  }
+
+  /// The nearest decoded tracker frame to t (the prototype's frameAt, over
+  /// the decoded ring; the ring holds the unconsumed decode span).
+  [[nodiscard]] bool decodedFrameNear(double t, double& f0Hz, bool& voiced) const {
+    if (trackerDegenerate_ || tracker_.decodedCount() == 0) {
+      voiced = false;
+      f0Hz = 0.0;
+      return false;
+    }
+    const int count = tracker_.decodedCount();
+    // Linear scan over the (bounded) ring: the mark cursor consumes behind
+    // the decode frontier, so the live span is a few hops.
+    std::size_t bestIdx = 0;
+    int64_t bestDist = std::numeric_limits<int64_t>::max();
+    for (int i = 0; i < count; ++i) {
+      const int64_t d =
+          std::abs(tracker_.decoded(i).center - static_cast<int64_t>(std::llround(t)));
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = static_cast<std::size_t>(i);
+      }
+    }
+    const auto& fr = tracker_.decoded(bestIdx);
+    voiced = fr.voiced && fr.f0Hz > 0.0;
+    f0Hz = fr.f0Hz;
+    return true;
+  }
+
+  /// Consume decoded frames the mark cursor has passed (the ring stays
+  /// bounded; the marks keep their own copies).
+  void consumeDecodedBehind(double t) {
+    if (trackerDegenerate_) return;
+    int consumed = 0;
+    while (consumed < tracker_.decodedCount() &&
+           static_cast<double>(tracker_.decoded(0).center) <
+               t - static_cast<double>(pMax_)) {
+      ++consumed;
+    }
+    if (consumed > 0) tracker_.consumeDecoded(consumed);
+  }
+
+  /// Generate marks while the next nominal mark's needs are covered: the
+  /// decode coverage (a decoded frame at/beyond the mark — the tail uses
+  /// the last decoded frame once the real input is fully delivered) and
+  /// the ZC input reach. The mark grid: t += max(8, round(P)) with the
+  /// period/voicing from the tracker (§6.6.1 item 5 — the batch form
+  /// verbatim, streaming-sourced).
+  void generateMarksUpTo() {
+    const int64_t nInClamp = nIn_;
+    for (;;) {
+      if (tMark_ >= static_cast<double>(nInClamp)) {
+        return;
+      }
+      // The period/voicing at the mark: the nearest decoded frame.
+      double f0 = 0.0;
+      bool voiced = false;
+      const bool haveFrame = decodedFrameNear(tMark_, f0, voiced);
+      const bool streamFullyDelivered = (consumedTotal_ >= nIn_);
+      const bool allStreamDelivered = (consumedTotal_ >= nIn_ + latencyIn_);
+      // (a) the decode coverage: a decoded frame at/beyond the mark, or the
+      //     settled tail (the prototype's frameAt clamping to the last
+      //     frame once the full padded stream is delivered — no more decode
+      //     can happen then).
+      if (!haveFrame) {
+        if (!allStreamDelivered) break;
+      } else {
+        const int count = tracker_.decodedCount();
+        const double newestCenter =
+            static_cast<double>(tracker_.decoded(count - 1).center);
+        if (newestCenter < tMark_ && !allStreamDelivered) break;
+      }
+      // The period (clamped into the band — the prototype's form).
+      double P = puvFrames_;
+      if (voiced && f0 > 0.0) {
+        P = std::clamp(fs_ / f0, pMin_, pMax_);
+      }
+      // (b) the ZC input reach delivered (the refinement scan; the scan
+      // itself clamps to [0, nIn − 1] — the delivered stream always covers
+      // the clamped range once the real input is in).
+      const int64_t span = voiced ? std::max<int64_t>(4, static_cast<int64_t>(P / 4.0)) : 0;
+      if (!streamFullyDelivered &&
+          tMark_ + static_cast<double>(span) > static_cast<double>(inAvail_)) {
+        break;
+      }
+      // The ZC refinement (the prototype's loop verbatim: the nearest
+      // positive-going crossing within ±P/4; no crossing ⇒ the mark STAYS
+      // nominal — documented, bounded).
+      FrameCount mark = static_cast<FrameCount>(tMark_);
+      if (voiced) {
+        const int64_t lo = std::max<int64_t>(0, static_cast<int64_t>(tMark_) - span);
+        const int64_t hi = std::min<int64_t>(nInClamp - 2,
+                                             static_cast<int64_t>(tMark_) + span);
+        int64_t best = -1;
+        int64_t bestDist = span + 1;
+        for (int64_t i = lo + 1; i <= hi; ++i) {
+          const double a = readInput(0, i - 1);
+          const double b2 = readInput(0, i);
+          if (a <= 0.0 && b2 > 0.0) {
+            const int64_t dist = std::abs(i - static_cast<int64_t>(tMark_));
+            if (dist < bestDist) {
+              bestDist = dist;
+              best = i;
+            }
+          }
+        }
+        if (best >= 0) mark = static_cast<FrameCount>(best);
+      }
+      pushMark(PsolaMark{mark, P, voiced});
+      tMark_ += static_cast<double>(std::max<int64_t>(8, static_cast<int64_t>(std::round(P))));
+      consumeDecodedBehind(tMark_);
+    }
+  }
+
+  void pushMark(const PsolaMark& mk) {
+    const std::size_t cap = markRing_.size();
+    if (markCount_ == static_cast<int>(cap)) {
+      // Drop the oldest (the synthesis cursor never reads that far back).
+      markHead_ = (markHead_ + 1) % static_cast<int>(cap);
+      --markCount_;
+      if (mkCursor_ > 0) --mkCursor_;
+    }
+    const std::size_t slot = static_cast<std::size_t>((markHead_ + markCount_) % static_cast<int>(cap));
+    markRing_[slot] = mk;
+    ++markCount_;
+  }
+
+  [[nodiscard]] const PsolaMark& markAt(std::size_t absIdx) const {
+    const std::size_t cap = markRing_.size();
+    const std::size_t slot =
+        static_cast<std::size_t>((markHead_ + static_cast<int>(absIdx)) % static_cast<int>(cap));
+    return markRing_[slot];
+  }
+
+  /// The prototype's markIndexNear over the ring (the advancing cursor +
+  /// the local i/i+1 compare).
+  [[nodiscard]] std::size_t markIndexNear(double a) const {
+    if (markCount_ == 0) return 0;
+    std::size_t i = mkCursor_;
+    while (i + 1 < static_cast<std::size_t>(markCount_) &&
+           static_cast<double>(markAt(i + 1).pos) < a) {
+      ++i;
+    }
+    if (i + 1 < static_cast<std::size_t>(markCount_)) {
+      const double d0 = std::fabs(static_cast<double>(markAt(i).pos) - a);
+      const double d1 = std::fabs(static_cast<double>(markAt(i + 1).pos) - a);
+      if (d1 < d0) return i + 1;
+    }
+    return i;
+  }
+
+  void compactPitchSyncedInput() {
+    if (finishing_) {
+      return;  // finish-mode re-reads the last mark's window: drop nothing.
+    }
+    // Drop ONLY input no future consumer will read (the prototype's two
+    // floors + the tracker's undecoded-window floor):
+    //   (a) the upcoming marks' window floor: aNext_ − 2 pMax − 128;
+    //   (b) the newest generated mark's grain start (the finish re-reads);
+    //   (c) the tracker's next undecoded frame start.
+    FrameCount keepFrom = std::max<FrameCount>(
+        0, static_cast<FrameCount>(aNext_) -
+               static_cast<FrameCount>(2.0 * pMax_) - 128);
+    if (markCount_ > 0) {
+      const PsolaMark& newest = markAt(static_cast<std::size_t>(markCount_ - 1));
+      const FrameCount fromLastMark = std::max<FrameCount>(
+          0, newest.pos - static_cast<FrameCount>(newest.period));
+      keepFrom = std::min(keepFrom, fromLastMark);
+    }
+    if (!trackerDegenerate_) {
+      keepFrom = std::min(keepFrom, std::max<FrameCount>(0, tracker_.nextFrameStart()));
+    }
+    if (inBase_ >= keepFrom) return;
+    const FrameCount drop = keepFrom - inBase_;
+    const FrameCount size = inAvail_ - inBase_;
+    if (drop >= size) {
+      for (auto& b : inBuf_) std::fill(b.begin(), b.end(), 0.0);
+      inBase_ = keepFrom;
+      return;
+    }
+    for (auto& b : inBuf_) {
+      std::memmove(b.data(), b.data() + static_cast<std::size_t>(drop),
+                   static_cast<std::size_t>(size - drop) * sizeof(double));
+      std::fill(b.begin() + static_cast<std::size_t>(size - drop), b.end(), 0.0);
+    }
+    inBase_ = keepFrom;
+  }
+
+  void compactAccum() {
+    const int K = resampleKernelSpec(ResampleQuality::Standard).halfWidthTaps;
+    const FrameCount keepFrom = std::max<FrameCount>(
+        0, tOut_ - K - 128);
+    if (accumBase_ >= keepFrom) return;
+    const FrameCount drop = keepFrom - accumBase_;
+    const FrameCount live = static_cast<FrameCount>(
+        std::max(0.0, std::max(static_cast<double>(finalFrontier_),
+                               tNext_ + pMax_)) -
+            static_cast<double>(accumBase_));
+    const FrameCount keep = std::min(live, accumCapacity_);
+    if (drop >= keep) {
+      for (auto& b : psolaAccum_) std::fill(b.begin(), b.end(), 0.0);
+      accumBase_ = keepFrom;
+      return;
+    }
+    for (auto& b : psolaAccum_) {
+      std::memmove(b.data(), b.data() + static_cast<std::size_t>(drop),
+                   static_cast<std::size_t>(keep - drop) * sizeof(double));
+      std::fill(b.begin() + static_cast<std::size_t>(keep - drop), b.end(), 0.0);
+    }
+    accumBase_ = keepFrom;
+  }
+
+  bool placePitchSyncedGrainsUpTo(FrameCount inputAvailableEnd) {
+    bool placedAny = false;
+    const double pMaxD = pMax_;
+    for (;;) {
+      // The schedule bounds (the prototype's recorded-corruption guards).
+      if (finishing_) {
+        if (aNext_ > static_cast<double>(nIn_) + 2.0 * pMaxD) break;
+      } else {
+        if (aNext_ > static_cast<double>(nIn_)) break;
+      }
+      const std::size_t mk = markIndexNear(aNext_);
+      if (markCount_ == 0) break;
+      const PsolaMark mark = markAt(mk);
+      const double P = mark.period;
+      const double half = P;  // grain length 2P, centred at the mark
+      const double grainCentreIn = static_cast<double>(mark.pos);
+      const double needEnd = grainCentreIn + half;
+      const FrameCount inputLimit =
+          finishing_ ? std::numeric_limits<FrameCount>::max() : inputAvailableEnd;
+      if (finishing_) {
+        if (grainCentreIn - half >= static_cast<double>(nIn_) + pMax_) break;
+      } else if (needEnd > static_cast<double>(inputLimit)) {
+        break;
+      }
+      // The STREAMING schedule gate: the marks arrive decode-gated (the
+      // fixed-lag tracker's Λ_tr behind the input frontier). When the
+      // schedule (aNext_) has passed the newest GENERATED mark by more than
+      // one period (more than the legitimate round()-drift + refinement
+      // jitter), wait for the decode to produce the next one — re-placing
+      // the last mark would corrupt the schedule (the batch prototype had
+      // its marks precomputed; the streaming engine paces the synthesis to
+      // the decode).
+      if (!finishing_ && markCount_ > 0) {
+        const double newestPos =
+            static_cast<double>(markAt(static_cast<std::size_t>(markCount_ - 1)).pos);
+        // The schedule must never place a mark BEHIND its cursor: the batch
+        // prototype's markIndexNear always has the full mark list available,
+        // so the mark nearest aNext_ can only be behind it by the ZC
+        // refinement jitter (bounded, part of the candidate's measured
+        // character). The streaming decode, however, produces marks Λ_tr
+        // behind the input frontier — allowing the placement to run one
+        // period past the newest GENERATED mark (the first version's
+        // `newestPos < aNext_ - P` boundary) placed the STALE mark's grain
+        // at the new output slot: a one-period displacement of the whole
+        // window (measured: the drum anchor's impulse edges broke
+        // bit-exactness at exactly w(1)·x one period late). Wait for the
+        // decode to produce a mark at/beyond the cursor instead.
+        if (newestPos < aNext_) break;
+      }
+
+      // The MC90 pitch schedule (pitch mode only — the stretch schedule is
+      // OUT OF SCOPE, the §6.6 scope lock): voiced marks s = P/β (output
+      // pitch = β·F0), u = P (cycle-accurate consumption — the duration
+      // changes by 1/β over voiced spans, D.4 RateFollowing); unvoiced
+      // marks keep the fixed P_uv spacing (s = u = P_uv).
+      const double beta = mark.voiced ? ratioAtInput(aNext_) : 1.0;
+      const double s = mark.voiced ? P / beta : puvFrames_;
+      const double u = mark.voiced ? P : puvFrames_;
+      const double t = tNext_;
+      const std::size_t mkNext = markIndexNear(aNext_ + u);
+
+      // Back-pressure on the accumulator live window (the prototype form).
+      const int K = resampleKernelSpec(ResampleQuality::Standard).halfWidthTaps;
+      const FrameCount liveLo = std::max<FrameCount>(0, tOut_ - K - 128);
+      const FrameCount tailEnd = static_cast<FrameCount>(t + half) + 2 * (K + 8);
+      if (tailEnd - liveLo > accumCapacity_ - 8) break;
+
+      // Extract the windowed grain (the PREPARE-BUILT window cache is
+      // replaced by direct evaluation in the streaming engine — the marks
+      // depend on the realtime decode, so the lengths are not known at
+      // prepare; the periodic-Hann formula is identical, deterministic).
+      const int gLen = std::max(4, static_cast<int>(std::round(2.0 * P)));
+      if (static_cast<std::size_t>(channels_) * static_cast<std::size_t>(gLen) >
+          psolaGrainBuf_.size()) {
+        break;  // P is bounded by pMax_ (prepare sizing covers it); defensive
+      }
+      for (int c = 0; c < channels_; ++c) {
+        for (int i = 0; i < gLen; ++i) {
+          const double ip = grainCentreIn - P + static_cast<double>(i);
+          const double wv =
+              0.5 * (1.0 - std::cos(2.0 * kGrainPi * static_cast<double>(i) /
+                                    static_cast<double>(gLen)));
+          psolaGrainBuf_[static_cast<std::size_t>(c) *
+                             static_cast<std::size_t>(gLen) +
+                         static_cast<std::size_t>(i)] =
+              wv * readInput(c, static_cast<FrameCount>(std::floor(ip)));
+        }
+      }
+
+      // RAW overlap-add with the PER-GRAIN level scale s/P (§6.6.1 item 6 —
+      // the second accumulation policy; identity s = P ⇒ scale 1, Hann(2P)@P
+      // is exactly COLA ⇒ bit-exact transparency).
+      const double grainScale = s / P;
+      compactAccum();
+      const FrameCount centre = static_cast<FrameCount>(std::llround(t));
+      const FrameCount gHalf = gLen / 2;
+      for (int i = 0; i < gLen; ++i) {
+        const FrameCount p = centre - gHalf + static_cast<FrameCount>(i);
+        const FrameCount rel = p - accumBase_;
+        if (rel < 0 || rel >= accumCapacity_) continue;  // guarded by pressure
+        for (int c = 0; c < channels_; ++c) {
+          psolaAccum_[static_cast<std::size_t>(c)][static_cast<std::size_t>(rel)] +=
+              grainScale *
+              psolaGrainBuf_[static_cast<std::size_t>(c) *
+                                 static_cast<std::size_t>(gLen) +
+                             static_cast<std::size_t>(i)];
+        }
+      }
+      ++grainsPlaced_;
+      placedAny = true;
+      mkCursor_ = mk;
+      aNext_ += u;
+      tNext_ = t + s;
+
+      // The write boundary below the new frontier (raw OLA: no
+      // normalisation pass — final positions are the accumulated values
+      // as-is; the next grain writes from tNext_ − its half).
+      const double halfNext = markAt(mkNext).period;
+      const double frontierD = std::max(0.0, tNext_ - halfNext);
+      const FrameCount frontier = static_cast<FrameCount>(frontierD);
+      if (finalFrontier_ < frontier) {
+        finalFrontier_ = frontier;
+      }
+    }
+    return placedAny;
+  }
+
+  void emitPitchSyncedFrames(AudioBlockOut& out, int outCapacity, FrameCount& produced) {
+    const double drainLimit = finishing_ ? drainEnd_
+                                          : std::numeric_limits<double>::max();
+    while (produced < static_cast<FrameCount>(outCapacity)) {
+      // Pitch mode: output grid == accumulator grid; 1:1 emission (the §7
+      // resampler bypassed — §6.6.1 item 2).
+      if (static_cast<double>(tOut_) + 1.0 >
+          static_cast<double>(finalFrontier_)) {
+        break;
+      }
+      if (finishing_ && static_cast<double>(tOut_) >= drainLimit) break;
+      const FrameCount rel = tOut_ - accumBase_;
+      for (int c = 0; c < channels_; ++c) {
+        out.channels[static_cast<std::size_t>(c)][static_cast<std::size_t>(produced)] =
+            (rel >= 0 && rel < accumCapacity_)
+                ? psolaAccum_[static_cast<std::size_t>(c)]
+                             [static_cast<std::size_t>(rel)]
+                : 0.0;
+      }
+      ++tOut_;
+      ++produced;
+    }
+  }
+
+  ProcessReport processPitchSynced(const AudioBlockView& in, int inFrames,
+                                   AudioBlockOut& out, int outCapacity,
+                                   FrameCount inputFrameIndex) {
+    (void)inputFrameIndex;
+    compactPitchSyncedInput();
+    if (inFrames > 0) {
+      if (in.channels == nullptr) {
+        throw EngineException("native.timepitch", "null input channels");
+      }
+      const FrameCount rel = inAvail_ - inBase_;
+      const auto cap = static_cast<FrameCount>(inBuf_[0].size());
+      if (rel + inFrames > cap) {
+        throw EngineException("native.timepitch",
+                              "input window overflow (sizing bug; report as engine defect)");
+      }
+      for (int c = 0; c < channels_; ++c) {
+        std::memcpy(inBuf_[static_cast<std::size_t>(c)].data() +
+                        static_cast<std::size_t>(rel),
+                    in.channels[static_cast<std::size_t>(c)],
+                    static_cast<std::size_t>(inFrames) * sizeof(double));
+      }
+    }
+    inAvail_ += inFrames;
+    consumedTotal_ += inFrames;
+
+    feedTracker();
+    generateMarksUpTo();
+    placePitchSyncedGrainsUpTo(inAvail_);
+
+    FrameCount produced = 0;
+    if (outCapacity > 0 && out.channels != nullptr) {
+      emitPitchSyncedFrames(out, outCapacity, produced);
+    }
+    const FrameCount streamEnd = nIn_ + latencyIn_;
+    inputExhausted_ = inputExhausted_ || (consumedTotal_ >= streamEnd);
+    ProcessReport rep;
+    rep.inputFramesConsumed = inFrames;
+    rep.outputFramesProduced = produced;
+    rep.inputExhausted = inputExhausted_;
+    return rep;
+  }
+
+  ProcessReport finishPitchSynced(AudioBlockOut& out, int outCapacity) {
+    drainEnd_ = std::numeric_limits<double>::max();
+    const double pMaxD = pMax_;
+    FrameCount produced = 0;
+    for (int64_t guard = 0; guard < (1 << 24); ++guard) {
+      generateMarksUpTo();  // the settled tail marks (the last frame clamped)
+      const bool placedAny = placePitchSyncedGrainsUpTo(0);
+      const bool grainsExhausted =
+          aNext_ >= static_cast<double>(nIn_) + pMaxD * 3.0;
+      if (grainsExhausted) {
+        drainEnd_ = tNext_ + pMaxD;
+      }
+      const FrameCount before = produced;
+      if (outCapacity > 0 && out.channels != nullptr) {
+        emitPitchSyncedFrames(out, outCapacity, produced);
+      }
+      if (produced == before && (!placedAny || grainsExhausted)) {
+        break;
+      }
+    }
+    ProcessReport rep;
+    rep.inputFramesConsumed = 0;
+    rep.outputFramesProduced = produced;
+    rep.inputExhausted = inputExhausted_;
+    return rep;
+  }
+
   void emitFinalFrames(AudioBlockOut& out, int outCapacity, FrameCount& produced,
                        FrameCount phaseLimit) {
     const int K = resampleKernelSpec(ResampleQuality::Standard).halfWidthTaps;
@@ -735,7 +1348,7 @@ namespace {
 // landed per VST checkpoint (Fixed first, Adaptive second — the checkpoint
 // discipline in the header); the choice INDEX of each mode is frozen by
 // this array order.
-const char* const kTimePitchModeChoices[] = {"fixed", "adaptive"};
+const char* const kTimePitchModeChoices[] = {"fixed", "adaptive", "pitch_synced"};
 
 // Window shapes (§6.6 table, verbatim from candidate_ola.h).
 const char* const kTimePitchShapeChoices[] = {"hann", "hamming", "bartlett", "rect"};
@@ -801,7 +1414,7 @@ EngineDescriptor timePitchEngineDescriptor() {
   // (landed per checkpoint; the key set grows with the mode implementations,
   // the tags are stable). Checkpoint 2 registers the Fixed + Adaptive rows.
   d.parameterKeys = {"mode", "window_frames", "overlap", "window_shape",
-                     "tolerance_frames"};
+                     "tolerance_frames", "puv_hz"};
   d.parameters = {
       {
           .key = "mode",
@@ -810,13 +1423,13 @@ EngineDescriptor timePitchEngineDescriptor() {
           .role = EngineParamRole::Configuration,
           .exposed = true,
           .min = 0.0,
-          .max = 1.0,  // fixed | adaptive (checkpoint 2; frozen final: 3)
+          .max = 2.0,  // fixed | adaptive | pitch_synced (checkpoint 3; final: 3)
           .defaultPlain = 0.0,  // "fixed" (§6.6 default)
           .unit = "",
-          .stepCount = 1,
+          .stepCount = 2,
           .choiceNames = kTimePitchModeChoices,
           .choiceValues = nullptr,
-          .choiceCount = 2,
+          .choiceCount = 3,
           .automatable = false,
           .rebuildsChain = true,  // §6.6.1 item 17: mode ∈ ChainSignature
           .dispFmt = "%s",
@@ -883,6 +1496,27 @@ EngineDescriptor timePitchEngineDescriptor() {
           .visibleWhenKey = "mode",
           .visibleWhenValues = kTpVisibleFixedAdaptive,
           .visibleWhenCount = 2,
+      },
+      {
+          // §6.6.1 item 1: the HIDDEN Pitch-Synced row (exposed=false —
+          // never in the VST surface, no binding; the adapter writes the
+          // validated default; all Task28 evidence is at that default).
+          .key = "puv_hz",
+          .displayName = "Unvoiced Period",
+          .kind = EngineParamKind::Real,
+          .role = EngineParamRole::Configuration,
+          .exposed = false,
+          .min = 50.0,
+          .max = 500.0,
+          .defaultPlain = 200.0,
+          .unit = "Hz",
+          .stepCount = -1,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%.1f",
       },
       {
           // §6.6.1 item 18: tolerance_frames is visible iff mode ∈
