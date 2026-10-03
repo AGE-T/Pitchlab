@@ -55,8 +55,17 @@ There is no second engine implementation, no stub, no fake quality score.
 > resampler BYPASSED; DurationBehaviour = RateFollowing (voiced spans
 > change duration by 1/β, unvoiced spans unchanged — measured 0.549× at
 > +12 st, 1.995× at −12 st on the contract fixture). The declared input
-> latency is the frozen composition `2·pMax + 2K + 128 + Λ_tr` — the
-> ≈122 ms @48k figure is FIRST-CLASS through the existing STATUS panel.
+> latency is the frozen composition `2·pMax + 2K + 128 + Λ_tr` PLUS the
+> MEASURED streaming release margin `2·hop + 2·pMax` (probe-measured
+> 7876 @48k through the realtime adapter vs the composed 5848 — the
+> decode-gated production's release granularity; the recorded correction
+> class, ratification queued): the corrected totals
+> 8424/8792/16687/17424/34688 @44.1/48/88.2/96/192 kHz — 8792 ≈ 183.2 ms
+> @48k, FIRST-CLASS through the existing STATUS panel. The D.4 duration
+> semantics surface in the realtime path as the wet legitimately ending
+> early (the compressed output stream): the adapter classifies the
+> rate-following chains' covered-range misses as the declared duration
+> behaviour — the dry mix continues, NO fault.
 > The streaming-vs-batch tracker parity gates (V/U ≥ 98 %, |Δf0| ≤ 10
 > cents jointly voiced, transitions ≤ 2 hops) hold with ZERO measured
 > deviation on the parity corpus (T-PAR suite). The unvoiced P_uv grid is

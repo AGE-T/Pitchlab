@@ -820,12 +820,38 @@ class TimePitchEngine final : public PitchEngine {
     }
 
     const int K = resampleKernelSpec(ResampleQuality::Standard).halfWidthTaps;
+    // The declared latency FIRST (the input window sizing depends on it):
+    // the §6.6.1 item 10 Pitch-Synced composition — the synthesis part
+    // verbatim from candidate_tdpsola.cpp:236-253, Λ_tr from the frozen
+    // item-8 formula, plus the MEASURED streaming release margin (see
+    // analysis::trackerReleaseMargin):
+    //   input  = 2·pMax + 2K + 128 + Λ_tr + (2·hop + 2·pMax)
+    //   Λ_tr   = [n − minTag] + D·hop + ⌈pMax/4⌉
+    //   output = ⌊(4·pMax + 2K + 512)/max(0.25, minRatio)⌋ + 64
+    const int64_t lamTrPre = trackerLagFrames();
+    const int64_t releaseMarginPre =
+        trackerDegenerate_ ? 0 : analysis::trackerReleaseMargin(fs_, pMax_);
+    latencyIn_ = static_cast<FrameCount>(2.0 * pMax_) + 2 * K + 128 +
+                 lamTrPre + releaseMarginPre;
+    double minRatioPre = 1.0;
+    for (FrameCount i = 0; i < curve_.frames; ++i) {
+      minRatioPre = std::min(minRatioPre, curve_.ratio[static_cast<std::size_t>(i)]);
+    }
+    if (!(minRatioPre > 0.0)) minRatioPre = 0.5;
+    latencyOut_ = static_cast<FrameCount>(
+        static_cast<double>(static_cast<FrameCount>(4.0 * pMax_) + 2 * K + 512) /
+        std::max(0.25, minRatioPre)) + 64;
+
     // The input window (the prototype's sizing + the tracker's pending
-    // span): 2 pMax analysis history + the declared lookahead + the
-    // tracker's (n + D·hop) undecoded reach + the driver blocks + margin —
-    // compaction NEVER needs a capacity-driven drop (the schedule-dependent
-    // corruption class; the prototype's recorded defect).
+    // span + THE DECLARED INPUT LATENCY — the §4.3.6 zero-pad era: the mark
+    // schedule stops at nIn while the driver keeps feeding the declared-
+    // latency pad, so the window must hold the full pad span; compaction
+    // NEVER needs a capacity-driven drop — the schedule-dependent corruption
+    // class, the prototype's recorded defect):
+    // 2 pMax analysis history + the declared input latency + the tracker's
+    // (n + D·hop) undecoded reach + the driver blocks + margin.
     const FrameCount inCap = static_cast<FrameCount>(4.0 * pMax_) + 2 * K +
+                             latencyIn_ +
                              static_cast<FrameCount>(tracker_.windowFrames()) +
                              static_cast<FrameCount>(tracker_.lagFrames()) *
                                  tracker_.hop() +
@@ -839,23 +865,6 @@ class TimePitchEngine final : public PitchEngine {
                           0.0);
     inBuf_.assign(static_cast<std::size_t>(channels_),
                   std::vector<double>(static_cast<std::size_t>(inCap), 0.0));
-
-    // The declared latency (§6.6.1 item 10 — the Pitch-Synced composition,
-    // the synthesis part verbatim from candidate_tdpsola.cpp:236-253 and
-    // Λ_tr from the frozen item-8 formula):
-    //   input  = 2·pMax + 2K + 128 + Λ_tr
-    //   Λ_tr   = [n − minTag] + D·hop + ⌈pMax/4⌉
-    //   output = ⌊(4·pMax + 2K + 512)/max(0.25, minRatio)⌋ + 64
-    double minRatio = 1.0;
-    for (FrameCount i = 0; i < curve_.frames; ++i) {
-      minRatio = std::min(minRatio, curve_.ratio[static_cast<std::size_t>(i)]);
-    }
-    if (!(minRatio > 0.0)) minRatio = 0.5;
-    const int64_t lamTr = trackerLagFrames();
-    latencyIn_ = static_cast<FrameCount>(2.0 * pMax_) + 2 * K + 128 + lamTr;
-    latencyOut_ = static_cast<FrameCount>(
-        static_cast<double>(static_cast<FrameCount>(4.0 * pMax_) + 2 * K + 512) /
-        std::max(0.25, minRatio)) + 64;
 
     // The mark ring: bounded by the decode span + the scheduling margin
     // (the marks are >= 8 frames apart; the live span is a few hops).

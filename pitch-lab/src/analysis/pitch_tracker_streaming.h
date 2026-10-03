@@ -170,4 +170,21 @@ class StreamingPitchTracker {
   return (n - minTag) + static_cast<int64_t>(dLag) * hop + (pMaxI + 3) / 4;
 }
 
+/// THE MEASURED STREAMING RELEASE MARGIN (task-33 checkpoint 3/4 correction;
+/// ratification queued — the recorded-correction class, cp1's 980->1480
+/// precedent): the decode-gated production releases output in bursts whose
+/// steady-state delay peaks exceed the item-10 composition by the gates'
+/// granularity — the decode-release granularity (<= 2 hop across the mark
+/// and placement gates) plus the mark-spacing/window reach (<= 2 pMax).
+/// Probe-measured peak delay 7876 @48 kHz through the realtime adapter
+/// (6866 through the direct harness; maxBlock 4096) vs the composed 5848:
+/// the margin + 2·hop + 2·pMax covers it with ~900 frames of headroom. The
+/// ONE definition both the engine's latency() and the product layer's
+/// chainGeometry read.
+[[nodiscard]] inline int64_t trackerReleaseMargin(double fs, double pMax) {
+  const int64_t hop = analysisStftFrames(fs) / 4;
+  const int64_t pm = static_cast<int64_t>(pMax);
+  return 2 * hop + 2 * pm;
+}
+
 }  // namespace pitchlab::analysis

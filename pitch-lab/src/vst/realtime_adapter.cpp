@@ -245,6 +245,7 @@ struct Geometry {
   int64_t advance = 0;      // spanStart spacing
   int64_t pacingLead = 0;   // production pacing lead (vardelay's W; §4.1 item 3/4)
   bool spliceMode = false;  // windowed-splice adaptation (§4.2)
+  bool rateFollowing = false;  // the D.4 duration-changing wet (task-33 Pitch-Synced modes)
 };
 
 /// The splice-mode worst-case read-rate coverage: the widest curve value the
@@ -314,11 +315,17 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     g.jobInputLen = g.wetLen;
     if (snap.tpMode >= 2) {
       // Pitch-Synced (TD-PSOLA) — checkpoint 3; Pitch + Formant shares the
-      // geometry (γ is a synthesis-internal axis, no latency change).
+      // geometry (γ is a synthesis-internal axis, no latency change). The
+      // composition carries the MEASURED streaming release margin (see
+      // analysis::trackerReleaseMargin — the decode-gated production's
+      // delay peaks exceed the plain composition; probe 7876 @48k).
       const double pMax = std::floor(fs / 50.0);
       const int64_t lamTr = analysis::trackerLagFrames(fs, pMax, 4);
+      const int64_t releaseMargin = analysis::trackerReleaseMargin(fs, pMax);
       g.seamX = static_cast<int64_t>(2.0 * pMax);
-      g.latency = static_cast<int64_t>(2.0 * pMax) + 2 * kResamplerK + 128 + lamTr;
+      g.rateFollowing = true;  // the D.4 duration semantics (the wet ends early)
+      g.latency = static_cast<int64_t>(2.0 * pMax) + 2 * kResamplerK + 128 +
+                  lamTr + releaseMargin;
     } else {
       const int64_t overlap = snap.tpOverlap == 4 ? 4 : snap.tpOverlap == 8 ? 8 : 2;
       const int64_t hs = n / overlap;
@@ -381,7 +388,8 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
   const double tpPMax = std::floor(fs / 50.0);
   const int64_t timepitchSyncedWorst =
       static_cast<int64_t>(2.0 * tpPMax) + 2 * kResamplerK + 128 +
-      analysis::trackerLagFrames(fs, tpPMax, 4);
+      analysis::trackerLagFrames(fs, tpPMax, 4) +
+      analysis::trackerReleaseMargin(fs, tpPMax);
   return std::max({splice + maxGrain,                                     // granular
                    splice,                                                 // varispeed
                    maxCrossfade + kKernelMargin + kLatencySafety,          // vardelay
@@ -506,6 +514,7 @@ struct RealtimeAdapter::Chain final : RetireStack::Node {
   char engineId[48] = {};  // prep-thread-written before publication (status
                            // consumers derive strings from engineIndex)
   bool spliceMode = false;  // windowed-splice adaptation (varispeed, granular — §4.2 + the recorded §3 correction)
+  bool rateFollowing = false;  // the D.4 duration-changing wet (task-33 Pitch-Synced modes)
   double fs = 48000.0;
   int channels = 2;
 
@@ -949,6 +958,7 @@ struct RealtimeAdapter::Impl {
         std::max(snap.lfoDepthSt, clampd(liveDepthSt, 0.0, kLfoDepthParamMax));
     const Geometry geo = chainGeometry(snap, desc, fs, geometryDepth);
     chain->spliceMode = geo.spliceMode;
+    chain->rateFollowing = geo.rateFollowing;
     chain->seamX = geo.seamX;
     chain->latency = geo.latency;
     chain->jobInputLen = geo.jobInputLen;
@@ -1923,8 +1933,21 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
             (im.retiring != nullptr &&
              q >= im.retiring->base.load(std::memory_order_relaxed));
         if (covered) {
-          im.faults++;
-          im.deliveryUnderruns++;  // Task 29: categorized (per-frame, like the aggregate)
+          // THE RATEFOLLOWING WET END (task-33 checkpoint 4): a Pitch-Synced
+          // chain's wet output stream is SHORTER than the input span (the
+          // D.4 duration semantics: the voiced span's duration changes by
+          // 1/beta) — once the wet legitimately ends, the covered-range read
+          // serves the dry mix for the remainder. That is the DECLARED
+          // duration behaviour working, NOT a delivery underrun: no fault is
+          // counted for a rate-following chain's covered-range miss. The
+          // duration-preserving chains keep the strict fault accounting.
+          const bool rateFollowingWet =
+              (act != nullptr && act->rateFollowing) ||
+              (im.retiring != nullptr && im.retiring->rateFollowing);
+          if (!rateFollowingWet) {
+            im.faults++;
+            im.deliveryUnderruns++;  // Task 29: categorized (per-frame, like the aggregate)
+          }
         }
         for (int c = 0; c < ch; ++c) wetv[c] = dryv[c];
       }

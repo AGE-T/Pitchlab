@@ -700,19 +700,26 @@ TEST_CASE("T-WSOLA: tolerance_frames validation") {
 // Pitch-Synced latency composition (≈122 ms @48k, FIRST-CLASS).
 // ---------------------------------------------------------------------------
 
-TEST_CASE("T-PSOLA: the frozen per-rate latency table (§6.6.1 item 8/10)") {
-  // THE FROZEN CONSTANTS: the Pitch-Synced declared input latency ==
-  // 2·pMax + 2K + 128 + Λ_tr — the frozen totals 5636/5848/11111/11536/22912
-  // @44.1/48/88.2/96/192 kHz (5848 ≈ 122 ms @48k — FIRST-CLASS, never
-  // hidden). A mismatch with this table IS the recorded arithmetic slip
-  // class — report, never silently absorb.
+TEST_CASE("T-PSOLA: the frozen per-rate latency table (§6.6.1 item 8/10 + the measured release margin)") {
+  // THE FROZEN CONSTANTS + THE MEASURED CORRECTION (recorded, ratification
+  // queued — the cp1 SoT's 980->1480 correction class): the item-10
+  // composition 2·pMax + 2K + 128 + Λ_tr was probed to UNDER-COVER the
+  // streaming decode-gated production's steady-state delay peaks (probe
+  // through the realtime adapter: 7876 @48 kHz vs the composed 5848; 6866
+  // through the direct harness; the peak is the gates' granularity — the
+  // decode release and the mark/placement gates). The declared input
+  // latency gains analysis::trackerReleaseMargin = 2·hop + 2·pMax: the
+  // corrected totals 8424/8792/16687/17424/34688 @44.1/48/88.2/96/192 kHz
+  // (8792 ≈ 183.2 ms @48k — FIRST-CLASS, never hidden). A mismatch with
+  // this table IS the recorded arithmetic slip class — report, never
+  // silently absorb.
   struct Rate {
     uint32_t fs;
     FrameCount totalIn;
   };
   for (const Rate& rt :
-       std::vector<Rate>{{44100u, 5636}, {48000u, 5848}, {88200u, 11111},
-                         {96000u, 11536}, {192000u, 22912}}) {
+       std::vector<Rate>{{44100u, 8424}, {48000u, 8792}, {88200u, 16687},
+                         {96000u, 17424}, {192000u, 34688}}) {
     CAPTURE(rt.fs);
     const int64_t N = rt.fs;  // one second
     const auto input = sineFrames(440.0, rt.fs, N);

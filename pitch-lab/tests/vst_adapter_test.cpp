@@ -365,14 +365,60 @@ struct StreamDrive {
 
 }  // namespace
 
+TEST_CASE("mid-stream MODE switches: every ordered timepitch-mode pair stays fault-free (the 12-pair matrix)") {
+  // §6.6.1 item 17: a mode change is a configuration/ChainSignature
+  // transition through the EXISTING adapter lifecycle — the full ordered-pair
+  // matrix over the four internal modes of native.timepitch (12 pairs): the
+  // adoption machinery, the equal-power seam and the latency accounting must
+  // stay fault-free with the chain ready, INCLUDING the
+  // Preserving<->RateFollowing duration-class crossings and the
+  // window-product<->raw-OLA accumulation-policy crossings (the two policies
+  // never merge — the switches exercise both sides).
+  initEngineRegistryOnce();
+  const int64_t two = static_cast<int64_t>(kFs * 2.0);
+  const int64_t four = static_cast<int64_t>(kFs * 4.0);
+  const auto sig = makeSine(four, 220.0);
+  const std::vector<int32_t> blocks = {512, 128, 1024, 256, 4096, 64};
+  auto modeSnap = [&](int mode, double pitchSt) {
+    ParamSnapshot s;
+    s.engineIndex = 5;  // native.timepitch (the registry-order pin: T-E19)
+    s.tpMode = mode;
+    s.pitchSt = pitchSt;
+    return s;
+  };
+  for (int a = 0; a < 4; ++a) {
+    for (int b = 0; b < 4; ++b) {
+      if (a == b) continue;
+      CAPTURE(a);
+      CAPTURE(b);
+      StreamDrive d;
+      d.start();
+      d.adapter.setParameterSnapshot(modeSnap(a, 4.0));
+      d.adapter.requestHardReset();
+      d.run(std::vector<double>(sig.begin(), sig.begin() + two), blocks);
+      d.adapter.setParameterSnapshot(modeSnap(b, 4.0));  // the mode switch
+      d.run(std::vector<double>(sig.begin() + two, sig.end()), blocks);
+      const StatusSnapshot st = d.status();
+      const int64_t latA = expectedLatencyFrames(modeSnap(a, 4.0), kFs);
+      const int64_t latB = expectedLatencyFrames(modeSnap(b, 4.0), kFs);
+      CHECK(st.faults == 0);
+      CHECK(st.chainReady);
+      // the effective emission latency is the MAXIMUM of the two mode
+      // chains (the same Λ_eff rule as the engine-pair matrix)
+      CHECK(st.latencyFrames == std::max(latA, latB));
+      d.deactivate();
+    }
+  }
+}
+
 TEST_CASE("mid-stream engine switches: every ordered pair stays fault-free") {
   initEngineRegistryOnce();
   const int64_t two = static_cast<int64_t>(kFs * 2.0);
   const int64_t four = static_cast<int64_t>(kFs * 4.0);
   const auto sig = makeSine(four, 220.0);
   const std::vector<int32_t> blocks = {512, 128, 1024, 256, 4096, 64};
-  for (int a = 0; a < 5; ++a) {
-    for (int b = 0; b < 5; ++b) {
+  for (int a = 0; a < engineCount(); ++a) {
+    for (int b = 0; b < engineCount(); ++b) {
       if (a == b) continue;
       CAPTURE(a);
       CAPTURE(b);
