@@ -1192,8 +1192,25 @@ class Recorder {
   std::deque<CaseRecord> records_;
 };
 
-const char* kEngineIds[5] = {"native.varispeed", "native.vardelay", "native.pv.classic",
-                             "native.pv.phaselocked", "native.granular"};
+// The engine id table. DEFECT RECORD (task-33 checkpoint 1): this table was
+// hardcoded with FIVE entries while the suite loops are bounded by
+// engineCount() (= 6 since native.timepitch registered) — every index-5 read
+// was OUT OF BOUNDS, emitting garbage bytes as the engine name into the
+// committed evidence artifact. The uninitialized bytes differ per run and per
+// compiler, so the CI byte-determinism gate failed at runs 37083417740 /
+// 37086707318 / 37086805086. The table is now sized to the production
+// registry and PINNED to it by the test case below: a future registry change
+// fails loudly here instead of silently corrupting the evidence again.
+const char* kEngineIds[6] = {"native.varispeed", "native.vardelay", "native.pv.classic",
+                             "native.pv.phaselocked", "native.granular", "native.timepitch"};
+
+TEST_CASE("engine id table is registry-pinned (the cp1 out-of-bounds-name defect guard)") {
+  REQUIRE(engineCount() == 6);
+  for (int i = 0; i < engineCount(); ++i) {
+    REQUIRE_MESSAGE(std::string(kEngineIds[i]) == engineIdForIndex(i),
+                    "kEngineIds drifted from the sealed production registry");
+  }
+}
 
 ParamSnapshot defaultSnapFor(int engine) {
   ParamSnapshot snap;
