@@ -87,18 +87,21 @@ pitchlab::EngineDescriptor makeDummy(const char* id, int order) {
 }  // namespace
 
 int main() {
-  // ---- V0.1 END STATE (cycle 4 closure): exactly five implemented engines,
-  // order aligned to the §14 end-state table ----
+  // ---- V0.1 END STATE + TASK 33 (§6.6/§6.6.1): exactly SIX implemented
+  // engines — the five v0.1 engines plus the unified time-pitch engine
+  // native.timepitch (6th production engine, selector index 5; the four
+  // Task28 algorithms are its internal MODES, never registry entries) ----
   {
     pitchlab::EngineRegistry registry;
     pitchlab::registerProductionEngines(registry);
     registry.seal();
-    CHECK(registry.size() == 5);  // THE v0.1 END STATE (§14 table)
+    CHECK(registry.size() == 6);  // the five v0.1 engines + native.timepitch
     CHECK(std::string(registry.at(0).info.id) == "native.varispeed");       // §14 order
     CHECK(std::string(registry.at(1).info.id) == "native.vardelay");
     CHECK(std::string(registry.at(2).info.id) == "native.pv.classic");
     CHECK(std::string(registry.at(3).info.id) == "native.pv.phaselocked");
     CHECK(std::string(registry.at(4).info.id) == "native.granular");
+    CHECK(std::string(registry.at(5).info.id) == "native.timepitch");       // task 33, index 5
     const pitchlab::EngineDescriptor* d = registry.findById("native.varispeed");
     CHECK(d != nullptr);
     CHECK(d->factory != nullptr);
@@ -180,6 +183,30 @@ int main() {
     std::unique_ptr<pitchlab::PitchEngine> gengine = gr->factory();
     CHECK(gengine != nullptr);
     CHECK(std::string(gengine->engineId()) == "native.granular");
+    // native.timepitch (§6.6/§6.6.1, task 33): 6th engine, selector index 5;
+    // ratio [0.25, 4.0]; MonoAndStereo; FixedBlock (per-mode hop — the
+    // honest blockFrames = 0 declaration); Deterministic; the declared rate
+    // set excludes 176.4 kHz (§6.6); mode-scoped parameter keys (the Fixed
+    // checkpoint registers mode/window_frames/overlap/window_shape — the
+    // §6.6.1 item 1 growth per checkpoint; the tags are stable).
+    const pitchlab::EngineDescriptor* tp = registry.findById("native.timepitch");
+    CHECK(tp != nullptr);
+    CHECK(tp == &registry.at(5));  // registration order == selector index
+    CHECK(tp->factory != nullptr);
+    CHECK(!tp->isReferenceRole);
+    CHECK(tp->capabilities.duration == pitchlab::DurationBehaviour::Preserving);
+    CHECK(tp->capabilities.minRatio == 0.25);
+    CHECK(tp->capabilities.maxRatio == 4.0);
+    CHECK(tp->capabilities.controlRate.kind == pitchlab::ControlRateSpec::Kind::FixedBlock);
+    CHECK(tp->capabilities.controlRate.blockFrames == 0);
+    CHECK(tp->capabilities.determinism == pitchlab::Determinism::Deterministic);
+    CHECK(tp->capabilities.channelMode == pitchlab::ChannelMode::MonoAndStereo);
+    CHECK(tp->capabilities.maxChannels == 2);
+    CHECK(tp->capabilities.supportedSampleRates.size() == 5);
+    CHECK(tp->parameterKeys.size() == 4);  // the Fixed-mode checkpoint key set
+    std::unique_ptr<pitchlab::PitchEngine> tengine = tp->factory();
+    CHECK(tengine != nullptr);
+    CHECK(std::string(tengine->engineId()) == "native.timepitch");
     CHECK(registry.sealed());
   }
 
@@ -253,6 +280,6 @@ int main() {
     std::fprintf(stderr, "engine_registry_smoke: %d check(s) FAILED\n", g_failures);
     return 1;
   }
-  std::printf("engine_registry_smoke: all checks passed (5 implemented engines — the v0.1 END STATE (§14): native.varispeed, native.vardelay, native.pv.classic, native.pv.phaselocked, native.granular; mechanism + factory binding sound)\n");
+  std::printf("engine_registry_smoke: all checks passed (6 implemented engines — the v0.1 END STATE (§14) + the task-33 6th engine native.timepitch (§6.6): native.varispeed, native.vardelay, native.pv.classic, native.pv.phaselocked, native.granular, native.timepitch; mechanism + factory binding sound)\n");
   return 0;
 }

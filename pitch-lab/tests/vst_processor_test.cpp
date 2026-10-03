@@ -240,7 +240,7 @@ TEST_CASE("lifecycle: buses are mono/stereo symmetric only") {
 TEST_CASE("engine switching through the registry: all five process audio") {
   const double fs = 48000.0;
   const auto sig = makeSine(static_cast<int64_t>(fs * 1.2), 220.0, fs);
-  for (int engine = 0; engine < 5; ++engine) {
+  for (int engine = 0; engine < engineCount(); ++engine) {
     CAPTURE(engineIdForIndex(engine));
     Host h;
     h.setup(fs, 2048);
@@ -1095,7 +1095,7 @@ TEST_CASE("audit §11: the full format matrix — mono/stereo × 32/64-bit × al
   const double fs = 48000.0;
   const int64_t total = static_cast<int64_t>(fs * 0.35);
   const auto sig = makeSine(total, 220.0, fs);
-  for (int engine = 0; engine < 5; ++engine) {
+  for (int engine = 0; engine < engineCount(); ++engine) {
     CAPTURE(engineIdForIndex(engine));
     for (int channels = 1; channels <= 2; ++channels) {
       for (int sz = 0; sz < 2; ++sz) {

@@ -39,6 +39,7 @@ add_library(pitchlab_core
   src/engines/granular_engine.cpp
   src/engines/pv_classic_engine.cpp
   src/engines/pv_phaselocked_engine.cpp
+  src/engines/timepitch_engine.cpp
   src/harness/json_writer.cpp
   src/harness/json_reader.cpp
   src/harness/experiment_compiler.cpp
@@ -192,6 +193,13 @@ pitchlab_add_doctest(pv_classic_contract_test tests/pv_classic_contract_test.cpp
 # pocketfft allocation audit and the L-D'99 multi-region sanity fixture
 # (the peak/region/rotation machinery on harmonic material).
 pitchlab_add_doctest(pv_phaselocked_contract_test tests/pv_phaselocked_contract_test.cpp)
+
+# T-E1..T-E13 + T-A1 + T-D3: native.timepitch engine contract suite — the
+# task-33 Fixed (= OLA) mode checkpoint (spec §6.6/§6.6.1; the frozen
+# window-product OLA arithmetic, the §6.6.1 item 10 latency composition,
+# the §6.6.1 item 14 validation list). The mode checkpoints extend this
+# suite per mode (Adaptive/Pitch-Synced/Pitch+Formant).
+pitchlab_add_doctest(timepitch_contract_test tests/timepitch_contract_test.cpp)
 
 # T-E14 / T-LEN-CAL: rate-following output-length calibration evidence
 # (spec §4.3.4/§13.1; the OD-6 evidence pack — full battery x 6 rates).

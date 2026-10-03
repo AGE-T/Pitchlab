@@ -71,6 +71,17 @@ enum Tags : uint32_t {
   kPvcHop = 19,          // pv.classic: 0 128 / 1 256 / 2 512 / 3 1024
   kPvpFft = 20,          // pv.phaselocked: as kPvcFft
   kPvpHop = 21,          // pv.phaselocked: as kPvcHop
+  // --- native.timepitch (task 33; §6.6 table + product spec §6 amendment) --
+  // The six frozen tags of the task-33 amendment; kTpTolerance/kTpFormant
+  // land with their mode checkpoints (the tags are reserved from the
+  // amendment — no other parameter may take 26/27).
+  kTpMode = 22,          // timepitch: mode choice index (fixed/adaptive/
+                         // pitch_synced/pitch_formant — landed per checkpoint)
+  kTpWindow = 23,        // timepitch: 64 .. 16384 frames (Fixed+Adaptive)
+  kTpOverlap = 24,       // timepitch: 0 2x / 1 4x / 2 8x (Fixed+Adaptive)
+  kTpShape = 25,         // timepitch: 0 hann / 1 hamming / 2 bartlett / 3 rect
+  kTpTolerance = 26,     // timepitch: 0 .. 8192 frames (Adaptive; reserved)
+  kTpFormant = 27,       // timepitch: 0.25 .. 4.0 (Pitch+Formant; reserved)
   // --- mix / output --------------------------------------------------------
   kMix = 30,         // 0 dry .. 1 wet
   kBypass = 31,      // VST3 bypass (Bypass parameter)
@@ -195,6 +206,11 @@ struct ParamSnapshot {
   int pvcHop = 512;            // v0.1 default
   int pvpFftSize = 2048;       // v0.1 default
   int pvpHop = 512;            // v0.1 default
+  // native.timepitch (task 33; §6.6 defaults)
+  int tpMode = 0;              // choice index: 0 = fixed (the §6.6 default)
+  int64_t tpWindowFrames = 2048;
+  int64_t tpOverlap = 2;       // ENGINE-FACING value (2/4/8 via choiceValues)
+  int tpShape = 0;             // choice index: 0 = hann
   // mix / output
   double mix = 1.0;
   bool bypass = false;
@@ -226,6 +242,13 @@ struct ParamSnapshot {
     int pvcHop;
     int pvpFftSize;
     int pvpHop;
+    // native.timepitch (task 33): mode ∈ ChainSignature (§6.6.1 item 17 —
+    // a mode change is a chain rebuild through the existing adapter
+    // lifecycle; NO second lifecycle).
+    int tpMode;
+    int64_t tpWindowFrames;
+    int64_t tpOverlap;
+    int tpShape;
 
     bool operator==(const ChainSignature& o) const = default;
   };
@@ -237,7 +260,9 @@ struct ParamSnapshot {
                           grOverlap,            grJitterFrames,
                           grWindowTriangular,   pvcFftSize,
                           pvcHop,               pvpFftSize,
-                          pvpHop};
+                          pvpHop,               tpMode,
+                          tpWindowFrames,       tpOverlap,
+                          tpShape};
   }
 };
 

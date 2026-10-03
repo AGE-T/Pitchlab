@@ -29,7 +29,11 @@ namespace {
 // ---------------------------------------------------------------------------
 
 constexpr std::array<ParamMeta, 7> kSharedTable{{
-    {param::kEngine, "engine", "Engine", "ENGINE", "", 0, 4, 1, 4,
+    // Task 33 (product spec §6 amendment #1): the ENGINE domain grows 0..4
+    // → 0..5 — the 6th production engine native.timepitch (selector index 5,
+    // display "Time Pitch"). The registry iteration order is the identity;
+    // the default stays native.vardelay (index 1) — no state-compat change.
+    {param::kEngine, "engine", "Engine", "ENGINE", "", 0, 5, 1, 5,
      "Engine", "%d", ParamRole::SharedRealtime, /*automatable=*/false},
     {param::kPitch, "pitch", "Pitch", "PITCH", "st", -12.0, 12.0, 0.0, -1,
      "Pitch", "%+.2f", ParamRole::SharedRealtime, true},
@@ -84,6 +88,15 @@ constexpr EngineParamBinding kEngineParamBindings[]{
     {"native.granular", "overlap", param::kGrOverlap, "gr_overlap"},
     {"native.granular", "window", param::kGrWindow, "gr_window"},
     {"native.granular", "jitter_frames", param::kGrJitter, "gr_jitter"},
+    // Task 33: the native.timepitch bindings (the stable tags of the
+    // product spec §6 amendment). kTpTolerance/kTpFormant binding rows land
+    // with their mode checkpoints — a binding row is only USED when the
+    // registry engine declares the exposed parameter (the integrity check
+    // enforces both directions; a row without a descriptor would be stale).
+    {"native.timepitch", "mode", param::kTpMode, "tp_mode"},
+    {"native.timepitch", "window_frames", param::kTpWindow, "tp_window"},
+    {"native.timepitch", "overlap", param::kTpOverlap, "tp_overlap"},
+    {"native.timepitch", "window_shape", param::kTpShape, "tp_shape"},
 };
 
 [[nodiscard]] const EngineParamBinding* findBinding(const char* engineId,
@@ -230,7 +243,11 @@ std::vector<std::string> validateEngineParameterModel() {
           issues.push_back(std::string(d.info.id) + "." + p.key +
                            ": exposed but has no stable VST binding");
         }
-        if (!(p.max > p.min)) {
+        if (!(p.max > p.min) &&
+            !(p.choiceCount == 1 && p.stepCount == 0)) {
+          // A pinned single-choice parameter (the task-33 staged mode
+          // surface: one mode registered → domain [0,0]) is the one legal
+          // max == min form; everything else must have a real domain.
           issues.push_back(std::string(d.info.id) + "." + p.key +
                            ": exposed domain max <= min");
         }
@@ -363,6 +380,10 @@ void applyNormalised(ParamSnapshot& snap, uint32_t tag, double norm) {
     case param::kPvcHop: snap.pvcHop = static_cast<int>(discreteIntValue(findParamMeta(param::kPvcHop), p)); break;
     case param::kPvpFft: snap.pvpFftSize = static_cast<int>(discreteIntValue(findParamMeta(param::kPvpFft), p)); break;
     case param::kPvpHop: snap.pvpHop = static_cast<int>(discreteIntValue(findParamMeta(param::kPvpHop), p)); break;
+    case param::kTpMode: snap.tpMode = clampInt(p, 0, 3); break;
+    case param::kTpWindow: snap.tpWindowFrames = static_cast<int64_t>(std::llround(p)); break;
+    case param::kTpOverlap: snap.tpOverlap = static_cast<int64_t>(discreteIntValue(findParamMeta(param::kTpOverlap), p)); break;
+    case param::kTpShape: snap.tpShape = clampInt(p, 0, 3); break;
     case param::kMix: snap.mix = p; break;
     case param::kBypass: snap.bypass = (p >= 0.5); break;
     case param::kOutputLevel: snap.outputDb = p; break;
@@ -424,6 +445,21 @@ double plainValue(const ParamSnapshot& snap, uint32_t tag) {
       }
       return 2.0;
     }
+    case param::kTpMode: return static_cast<double>(snap.tpMode);
+    case param::kTpWindow: return static_cast<double>(snap.tpWindowFrames);
+    case param::kTpOverlap: {
+      // the plain domain is the choice-index domain: map the engine value
+      // (2/4/8) back to its index (the kPvcFft pattern)
+      const ParamMeta* m = findParamMeta(param::kTpOverlap);
+      if (m != nullptr) {
+        for (int i = 0; i < m->choiceCount; ++i) {
+          if (m->choiceValues[i] == static_cast<double>(snap.tpOverlap)) return static_cast<double>(i);
+        }
+        return m->defaultPlain;
+      }
+      return 0.0;
+    }
+    case param::kTpShape: return static_cast<double>(snap.tpShape);
     case param::kMix: return snap.mix;
     case param::kBypass: return snap.bypass ? 1.0 : 0.0;
     case param::kOutputLevel: return snap.outputDb;
@@ -501,6 +537,8 @@ void formatParamValue(uint32_t tag, double plain, char* buf, std::size_t bufSize
     case param::kVdCrossfade:
     case param::kGrOverlap:
     case param::kGrJitter:
+    case param::kTpWindow:
+    case param::kTpOverlap:
       std::snprintf(buf, bufSize, "%d", static_cast<int>(std::llround(plain)));
       return;
     default: {

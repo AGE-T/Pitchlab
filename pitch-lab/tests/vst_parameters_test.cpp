@@ -15,16 +15,18 @@ using namespace pitchlab::vst;
 
 TEST_CASE("registry binding: engine identity comes from the v0.1 registry") {
   initEngineRegistryOnce();
-  CHECK(engineCount() == 5);
+  // Task 33: the 6th production engine (selector index 5).
+  CHECK(engineCount() == 6);
   CHECK(std::strcmp(engineIdForIndex(0), "native.varispeed") == 0);
   CHECK(std::strcmp(engineIdForIndex(1), "native.vardelay") == 0);
   CHECK(std::strcmp(engineIdForIndex(2), "native.pv.classic") == 0);
   CHECK(std::strcmp(engineIdForIndex(3), "native.pv.phaselocked") == 0);
   CHECK(std::strcmp(engineIdForIndex(4), "native.granular") == 0);
-  CHECK(engineIdForIndex(5) == nullptr);
+  CHECK(std::strcmp(engineIdForIndex(5), "native.timepitch") == 0);
+  CHECK(engineIdForIndex(6) == nullptr);
   CHECK(engineIdForIndex(-1) == nullptr);
   // the display names exist for the selector/UI
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < 6; ++i) {
     CHECK(engineNameForIndex(i) != nullptr);
     CHECK(std::strlen(engineNameForIndex(i)) > 0);
   }
@@ -33,14 +35,18 @@ TEST_CASE("registry binding: engine identity comes from the v0.1 registry") {
 TEST_CASE("table integrity: every meta is well-formed and unique") {
   const ParamMeta* table = parameterTable();
   const uint32_t n = parameterCount();
-  CHECK(n == 19);
+  // Task 33: 19 v0.1 rows + 4 native.timepitch Fixed-checkpoint rows = 23
+  CHECK(n == 23);
   std::vector<uint32_t> tags;
   for (uint32_t i = 0; i < n; ++i) {
     const ParamMeta& m = table[i];
     CHECK(m.tag != 0);
     CHECK(m.id != nullptr);
     CHECK(m.title != nullptr);
-    CHECK(m.max > m.min);
+    // a pinned single-choice row (the task-33 staged mode, domain [0,0]) is
+    // the one legal max == min form
+    const bool domainOk = m.max > m.min || (m.choiceCount == 1 && m.stepCount == 0);
+    CHECK(domainOk);
     CHECK(m.defaultPlain >= m.min);
     CHECK(m.defaultPlain <= m.max);
     CHECK(m.dispFmt != nullptr);
@@ -68,8 +74,11 @@ TEST_CASE("normalisation: round trips within tolerance for continuous params") {
         const double snapped = std::floor(u * m.stepCount + 0.5) / m.stepCount;
         CHECK(back == doctest::Approx(snapped).epsilon(1e-12));
         CHECK(plain == doctest::Approx(denormalise(m.tag, snapped)).epsilon(1e-9));
-      } else {
+      } else if (m.max > m.min) {
         CHECK(std::fabs(back - u) < 1e-9);
+      } else {
+        // pinned single-choice (the task-33 staged mode): constant map
+        CHECK(back == doctest::Approx(0.0).epsilon(1e-12));
       }
     }
   }

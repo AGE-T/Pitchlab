@@ -41,7 +41,10 @@ struct FrozenRow {
 };
 
 const FrozenRow kFrozenSurface[] = {
-    {param::kEngine, 0, 4, 1, 4},
+    // Task 33 (product spec §6 amendment #1): the ENGINE domain grows to
+    // 0..5 (the 6th production engine; selector index 5). The default stays
+    // native.vardelay (index 1) — no saved state changes meaning.
+    {param::kEngine, 0, 5, 1, 5},
     {param::kPitch, -12.0, 12.0, 0.0, -1},
     // Task 32: the ONE deliberate frozen-surface change since Task 29 —
     // the LFO rate's domain minimum moved 0.1 -> 0.0 Hz (the real OFF
@@ -64,6 +67,14 @@ const FrozenRow kFrozenSurface[] = {
     {param::kPvcHop, 0, 3, 2, 3},
     {param::kPvpFft, 0, 2, 1, 2},
     {param::kPvpHop, 0, 3, 2, 3},
+    // Task 33: the native.timepitch rows of the task-33 amendment (the
+    // Fixed-mode checkpoint registers kTpMode/kTpWindow/kTpOverlap/kTpShape;
+    // kTpTolerance/kTpFormant land with their mode checkpoints — the tags
+    // are reserved by the amendment, never renumbered).
+    {param::kTpMode, 0, 0, 0, 0},
+    {param::kTpWindow, 64, 16384, 2048, 16320},
+    {param::kTpOverlap, 0, 2, 0, 2},
+    {param::kTpShape, 0, 3, 0, 3},
     {param::kMix, 0.0, 1.0, 1.0, -1},
     {param::kBypass, 0, 1, 0, 1},
     {param::kOutputLevel, -24.0, 12.0, 0.0, -1},
@@ -81,7 +92,8 @@ const ParamMeta* metaOf(uint32_t tag) { return findParamMeta(tag); }
 TEST_CASE("descriptor integrity: every engine's parameter set is well-formed") {
   initEngineRegistryOnce();
   const EngineRegistry& reg = engineRegistry();
-  REQUIRE(reg.size() == 5);
+  // Task 33: the 6th production engine (native.timepitch) is registered.
+  REQUIRE(reg.size() == 6);
   for (std::size_t e = 0; e < reg.size(); ++e) {
     const EngineDescriptor& d = reg.at(e);
     CAPTURE(d.info.id);
@@ -97,7 +109,10 @@ TEST_CASE("descriptor integrity: every engine's parameter set is well-formed") {
       CHECK(!p.automatable);   // v0.1: engine configuration is not automatable
       CHECK(p.role == EngineParamRole::Configuration);
       if (p.exposed) {
-        CHECK(p.max > p.min);
+        // a pinned single-choice parameter (the task-33 staged mode surface:
+        // one registered mode → domain [0,0]) is the one legal max == min form
+        const bool domainOk = p.max > p.min || (p.choiceCount == 1 && p.stepCount == 0);
+        CHECK(domainOk);
         CHECK(p.defaultPlain >= p.min);
         CHECK(p.defaultPlain <= p.max);
         if (p.stepCount > 0 && p.choiceCount > 0) {
@@ -203,8 +218,11 @@ TEST_CASE("enumeration hygiene: unique tags per engine, disjoint across engines"
 
 TEST_CASE("state compatibility: the generated table is exactly the frozen surface") {
   initEngineRegistryOnce();
-  REQUIRE(parameterCount() == 19);
-  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 19);
+  // Task 33: 19 shared/existing rows + 4 native.timepitch Fixed-checkpoint
+  // rows = 23 (the amendment's final surface is 25 when the Adaptive and
+  // Pitch+Formant parameter rows land; tags 26/27 are reserved).
+  REQUIRE(parameterCount() == 23);
+  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 23);
   for (const FrozenRow& row : kFrozenSurface) {
     const ParamMeta* m = metaOf(row.tag);
     REQUIRE(m != nullptr);
@@ -213,11 +231,20 @@ TEST_CASE("state compatibility: the generated table is exactly the frozen surfac
     CHECK(m->max == row.max);
     CHECK(m->defaultPlain == row.def);
     CHECK(m->stepCount == row.steps);
-    // the frozen normalisation mapping is IDENTICAL (state round-trip)
+    // the frozen normalisation mapping is IDENTICAL (state round-trip);
+    // a pinned single-choice row (span 0 — the task-33 staged mode) maps
+    // everything to 0 (the choice index) in BOTH directions
+    const double span = row.max - row.min;
     CHECK(normalise(row.tag, row.min) == doctest::Approx(0.0).epsilon(1e-12));
-    CHECK(normalise(row.tag, row.max) == doctest::Approx(1.0).epsilon(1e-12));
-    CHECK(normalise(row.tag, row.def) ==
-          doctest::Approx((row.def - row.min) / (row.max - row.min)).epsilon(1e-9));
+    if (span > 0.0) {
+      CHECK(normalise(row.tag, row.max) == doctest::Approx(1.0).epsilon(1e-12));
+      CHECK(normalise(row.tag, row.def) ==
+            doctest::Approx((row.def - row.min) / span).epsilon(1e-9));
+    } else {
+      CHECK(normalise(row.tag, row.max) == doctest::Approx(0.0).epsilon(1e-12));
+      CHECK(denormalise(row.tag, 0.0) == doctest::Approx(row.min).epsilon(1e-12));
+      CHECK(denormalise(row.tag, 1.0) == doctest::Approx(row.min).epsilon(1e-12));
+    }
   }
   // every table row is one of the frozen tags (nothing invented)
   std::vector<uint32_t> tags;
@@ -261,12 +288,12 @@ TEST_CASE("role split: shared realtime controls are explicit and complete") {
       CHECK(m.engineId[0] == '\0');
     }
   }
-  // 12 engine-owned rows total (the v0.1 surface)
+  // 16 engine-owned rows total (12 v0.1 + 4 task-33 Fixed-checkpoint rows)
   int engineOwned = 0;
   for (uint32_t i = 0; i < parameterCount(); ++i) {
     if (parameterTable()[i].role == ParamRole::EngineConfiguration) ++engineOwned;
   }
-  CHECK(engineOwned == 12);
+  CHECK(engineOwned == 16);
 }
 
 // ---------------------------------------------------------------------------
@@ -318,8 +345,14 @@ TEST_CASE("plain<->normalised round trip over the whole frozen surface") {
       if (row.steps > 0) {
         const double snapped = std::floor(u * row.steps + 0.5) / row.steps;
         CHECK(back == doctest::Approx(snapped).epsilon(1e-12));
-      } else {
+      } else if (row.max > row.min) {
         CHECK(std::fabs(back - u) < 1e-9);
+      } else {
+        // a pinned single-choice parameter (the task-33 staged mode: domain
+        // [0,0]) collapses EVERY normalised value to the one plain value —
+        // the round trip is the constant map, not the identity
+        CHECK(back == doctest::Approx(0.0).epsilon(1e-12));
+        CHECK(plain == doctest::Approx(row.min).epsilon(1e-12));
       }
     }
     // the state round-trip: apply + read back is stable

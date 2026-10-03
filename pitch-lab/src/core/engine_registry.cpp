@@ -6,6 +6,7 @@
 #include "engines/granular_engine.h"
 #include "engines/pv_classic_engine.h"
 #include "engines/pv_phaselocked_engine.h"
+#include "engines/timepitch_engine.h"
 #include "engines/vardelay_engine.h"
 #include "engines/varispeed_engine.h"
 
@@ -58,10 +59,14 @@ const EngineDescriptor* EngineRegistry::findById(std::string_view id) const {
 //   3. "native.pv.classic"       Prototype, baseline, Preserving, hop-rate (§6.3/§6.3.1)
 //   4. "native.pv.phaselocked"  Prototype, Preserving, hop-rate, L-D'99 peak shift (§6.4/§6.4.1)
 //   5. "native.granular"        Prototype, creative-leaning, Preserving, per-grain hop (§6.5/§6.5.1)
+//   6. "native.timepitch"       Prototype, Task28 unification (§6.6/§6.6.1), mode-scoped
+//                              Preserving/RateFollowing, per-mode control rate
 //
 // Registry content == implemented engines, always — asserted by the
-// engine_registry_smoke test (T-E19: exactly these five, constructible
-// through their factories).
+// engine_registry_smoke test (T-E19: exactly these six, constructible
+// through their factories). The four Task28 algorithms are INTERNAL MODES
+// of native.timepitch — never registry entries (the §6.6 sheet's scope
+// lock; the proto.* research artefacts stay outside this registry).
 // ---------------------------------------------------------------------------
 void registerProductionEngines(EngineRegistry& registry) {
   registry.registerEngine(varispeedEngineDescriptor());
@@ -69,6 +74,7 @@ void registerProductionEngines(EngineRegistry& registry) {
   registry.registerEngine(pvClassicEngineDescriptor());
   registry.registerEngine(pvPhaseLockedEngineDescriptor());
   registry.registerEngine(granularEngineDescriptor());
+  registry.registerEngine(timePitchEngineDescriptor());
 }
 
 }  // namespace pitchlab

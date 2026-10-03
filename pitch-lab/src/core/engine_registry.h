@@ -15,13 +15,20 @@
 //     binaries only, flagged "test-only" in EngineInfo::origin
 //     (architecture §L "Reference comparison" layer).
 //
-// FREEZE STATE (superseded 2026-09-26, cycles 3-4): the production list now
-// contains exactly the IMPLEMENTED engines. Current content (cycle 4
-// closure, §17 step 4): ALL FIVE v0.1 engines — native.varispeed (§17 step 3
-// / §14), native.vardelay (§6.2/§6.2.1), native.pv.classic (§6.3/§6.3.1),
-// native.pv.phaselocked (§6.4/§6.4.1) and native.granular (§6.5/§6.5.1) —
-// the registry EQUALS the §14 "v0.1 end state" table (order aligned to it).
-// The engine_registry_smoke test (T-E19) asserts the exact intended content.
+// FREEZE STATE (superseded 2026-10-01, task 33): the production list now
+// contains exactly the IMPLEMENTED engines. Current content: the five v0.1
+// engines — native.varispeed (§17 step 3 / §14), native.vardelay
+// (§6.2/§6.2.1), native.pv.classic (§6.3/§6.3.1), native.pv.phaselocked
+// (§6.4/§6.4.1) and native.granular (§6.5/§6.5.1) — PLUS the task-33
+// unified time-pitch engine native.timepitch (§6.6/§6.6.1; 6th production
+// engine, selector index 5; the four Task28 algorithms are its internal
+// MODES, never registry entries — the proto.* research artefacts stay
+// outside the production registry). The engine_registry_smoke test (T-E19)
+// asserts the exact intended content.
+//
+// Task-33 checkpoint note: native.timepitch's MODE surface lands per VST
+// checkpoint (Fixed=OLA first); the ENGINE registration (identity,
+// capabilities, parameter tags) is complete from its first checkpoint.
 
 #include <string_view>
 #include <vector>
@@ -138,6 +145,20 @@ struct EngineParamDescriptor {
 
   // display
   const char* dispFmt = "%+.2f";  // printf format for real-valued display
+
+  // §6.6.1 item 18 (task 33) — descriptor-level per-mode VISIBILITY GUARD
+  // (the net-new minimal mechanism; NULL = always visible). The editor
+  // filters its generated engine panel by evaluating the guard against the
+  // AUTHORITATIVE controller value of `visibleWhenKey`'s parameter: the
+  // parameter is visible iff the guard key's plain value equals one of
+  // `visibleWhenValues` (the choice-INDEX domain of the guard key). The
+  // guard is generic descriptor data — the editor holds NO engine-parameter
+  // membership knowledge. HIDDEN-BY-CONDITION parameters REMAIN REGISTERED
+  // (the VST parameter count never changes with the selected mode — no tag
+  // churn, no state-compat hazard).
+  const char* visibleWhenKey = nullptr;
+  const double* visibleWhenValues = nullptr;
+  int visibleWhenCount = 0;
 };
 
 struct Capabilities {

@@ -8,7 +8,7 @@
 // through the processor so the meters/status show live values, and captures
 // the window pixels as the retained UI evidence (results/vst3/v0.1/ui/).
 //
-// Usage: vst_ui_screenshot <bundle-path> <engine 0..4> <pitch st> <lfo-depth>
+// Usage: vst_ui_screenshot <bundle-path> <engine 0..5> <pitch st> <lfo-depth>
 //                          <out-ppm>
 // Run under Xvfb (xvfb-run). Output: PPM (converted to PNG by scripts).
 
@@ -208,7 +208,7 @@ int main(int argc, char** argv) {
 
   if (argc < 6) {
     std::fprintf(stderr,
-                 "usage: %s <bundle-path> <engine 0..4> <pitch st> <lfo-depth st> "
+                 "usage: %s <bundle-path> <engine 0..5> <pitch st> <lfo-depth st> "
                  "<out-ppm> [switch-stress|ui-binding] [lfo-rate-hz]\n",
                  argv[0]);
     return 1;
@@ -428,7 +428,10 @@ int main(int argc, char** argv) {
                                  std::vector<float>(1024, 0.25f)};
     std::vector<float> sOut[2] = {std::vector<float>(1024, 0.0f),
                                   std::vector<float>(1024, 0.0f)};
-    const int engineCycle[] = {0, 2, 1, 4, 3, 0, 2, 1, 4, 3, 0};
+    // Task 33: the cycle covers ALL SIX production engines (the 6th,
+    // native.timepitch, included) — 13 switches through the live rebuild
+    // path while audio processes.
+    const int engineCycle[] = {0, 2, 1, 4, 3, 5, 0, 2, 1, 4, 3, 5, 0};
     for (int e : engineCycle) {
       edit->setParamNormalized(param::kEngine,
                                normalise(param::kEngine, static_cast<double>(e)));
@@ -458,7 +461,7 @@ int main(int argc, char** argv) {
     edit->setParamNormalized(param::kEngine,
                              normalise(param::kEngine, static_cast<double>(engine)));
     frame.runFor(400);
-    std::printf("switch-stress: 11 engine switches survived\n");
+    std::printf("switch-stress: 13 engine switches survived\n");
   }
 
   if (uiBinding) {

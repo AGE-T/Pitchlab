@@ -246,7 +246,7 @@ jobs:
           XVFB_PID=$!
           sleep 2
           mkdir -p /tmp/ui
-          for cfg in "1 5.0 0.0 vardelay_p5" "0 5.0 0.0 varispeed_p5" "4 7.0 0.0 granular_p7" "3 -3.0 0.75 pvlocked_m3_lfo"; do
+          for cfg in "1 5.0 0.0 vardelay_p5" "0 5.0 0.0 varispeed_p5" "4 7.0 0.0 granular_p7" "3 -3.0 0.75 pvlocked_m3_lfo" "5 0.0 0.0 timepitch_p0"; do
             set -- $cfg
             DISPLAY=:99 build/bin/Release/vst_ui_screenshot build/VST3/Release/PitchLab.vst3 $1 $2 $3 /tmp/ui/$4.ppm 2>&1 | tee -a ui-vst3.log
             python3 /tmp/convert_ui.py /tmp/ui/$4.ppm /tmp/ui/$4.png
@@ -264,7 +264,7 @@ jobs:
           # stale-slider use-after-free trigger); the capture proves the
           # editor survived with a correctly rebuilt panel.
           DISPLAY=:99 build/bin/Release/vst_ui_screenshot build/VST3/Release/PitchLab.vst3 1 5.0 0.0 /tmp/ui/switch_stress.ppm switch-stress 2>&1 | tee -a ui-vst3.log
-          grep -q "switch-stress: 11 engine switches survived" ui-vst3.log \
+          grep -q "switch-stress: 13 engine switches survived" ui-vst3.log \
             || { echo "FAIL: the engine-switch stress did not complete"; exit 1; }
           python3 /tmp/convert_ui.py /tmp/ui/switch_stress.ppm /tmp/ui/switch_stress.png
           # UI parameter-binding regression (the Windows incident): synthetic

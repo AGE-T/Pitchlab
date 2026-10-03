@@ -91,7 +91,7 @@ TEST_CASE("all five engines produce wet audio without faults") {
   initEngineRegistryOnce();
   const int64_t total = static_cast<int64_t>(kFs * 1.5);  // 1.5 s
   const std::vector<int32_t> blocks = {512, 128, 1024, 256, 4096, 64};
-  for (int engine = 0; engine < 5; ++engine) {
+  for (int engine = 0; engine < engineCount(); ++engine) {
     ParamSnapshot snap;
     snap.engineIndex = engine;
     snap.pitchSt = 5.0;  // +5 st: clearly audible processing
@@ -243,7 +243,7 @@ TEST_CASE("envelope re-prepare: automation beyond ±1 st rebuilds the chain") {
 TEST_CASE("latency: expected matches the active chain's reported latency") {
   initEngineRegistryOnce();
   const std::vector<int32_t> blocks = {1024};
-  for (int engine = 0; engine < 5; ++engine) {
+  for (int engine = 0; engine < engineCount(); ++engine) {
     ParamSnapshot snap;
     snap.engineIndex = engine;
     const int64_t expected = expectedLatencyFrames(snap, kFs);
@@ -894,7 +894,7 @@ TEST_CASE("T-J5: identity with LFO depth 0 is unchanged (no clamps, one chain)")
   // single initial chain, deterministic output (two identical drives are
   // bit-identical).
   initEngineRegistryOnce();
-  for (int engine = 0; engine < 5; ++engine) {
+  for (int engine = 0; engine < engineCount(); ++engine) {
     ParamSnapshot snap;
     snap.engineIndex = engine;
     snap.pitchSt = 0.0;
@@ -1022,7 +1022,7 @@ TEST_CASE("T-J11: latency reporting stays coherent at every LFO depth") {
   // the +-14 st legal surface).
   initEngineRegistryOnce();
   for (double depth : {0.0, 2.0}) {
-    for (int engine = 0; engine < 5; ++engine) {
+    for (int engine = 0; engine < engineCount(); ++engine) {
       ParamSnapshot snap;
       snap.engineIndex = engine;
       snap.lfoDepthSt = depth;

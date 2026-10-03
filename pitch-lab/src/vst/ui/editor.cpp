@@ -530,6 +530,30 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     // for an out-of-range index — no stale controls, no engine knowledge)
     const std::vector<EngineParamView>& params = engineParamsFor(engineIndex);
 
+    // §6.6.1 item 18 (task 33): descriptor-driven per-mode VISIBILITY. Each
+    // parameter's optional guard (visibleWhenKey/Values — generic descriptor
+    // data, engine-agnostic) is evaluated against the AUTHORITATIVE
+    // controller value of its guard key. Hidden-by-condition parameters
+    // REMAIN REGISTERED in the VST model (the parameter count never changes
+    // with the selected mode — no tag churn, no state-compat hazard); they
+    // are merely not shown here. A guard key that is not exposed (no stable
+    // tag) never hides anything (fail-visible).
+    auto guardVisible = [&](const EngineParamView& pv) -> bool {
+      if (pv.descriptor->visibleWhenKey == nullptr || pv.descriptor->visibleWhenCount <= 0 ||
+          pv.descriptor->visibleWhenValues == nullptr) {
+        return true;
+      }
+      if (engineId == nullptr) return true;
+      const uint32_t guardTag =
+          vstTagForEngineParam(engineId, pv.descriptor->visibleWhenKey);
+      if (guardTag == 0) return true;  // guard key not exposed: fail-visible
+      const double plain = denormalise(guardTag, ec->getParamNormalized(guardTag));
+      for (int i = 0; i < pv.descriptor->visibleWhenCount; ++i) {
+        if (pv.descriptor->visibleWhenValues[i] == plain) return true;
+      }
+      return false;
+    };
+
     // ---- row redesign (Task 29): the 12-pixel value-label defect is gone.
     // Each row: TITLE (left, engine-declared displayName) + VALUE (right,
     // ~80 px readable: choice text / formatted value + unit) on one line,
@@ -537,6 +561,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     // are readable.
     CCoord y = 36.0;
     for (const EngineParamView& pv : params) {
+      if (!guardVisible(pv)) continue;  // §6.6.1 item 18 (registered, not shown)
       auto* title = new ui_::MicroLabel(CRect(12, y, 102, y + 13),
                                         pv.meta->title, ui_::Palette::textFaint(), 0);
       enginePanel_->addView(title);
@@ -570,6 +595,30 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       }
     }
     updateValueLabels();  // populate the new rows from the authoritative values
+
+    // §6.6.1 item 18: guard tracking — remember the FIRST guard key of the
+    // current panel (generic: derived from the descriptors actually present,
+    // not from any engine list). The 33 ms poll re-evaluates it and rebuilds
+    // the panel when the value changes (the timepitch MODE selector's
+    // per-mode row filtering, and any future descriptor-declared guard).
+    enginePanelGuardTag_ = 0;
+    enginePanelGuardValue_ = -1.0;
+    if (engineId != nullptr) {
+      for (const EngineParamView& pv : params) {
+        if (pv.descriptor->visibleWhenKey == nullptr || pv.descriptor->visibleWhenCount <= 0 ||
+            pv.descriptor->visibleWhenValues == nullptr) {
+          continue;
+        }
+        const uint32_t guardTag =
+            vstTagForEngineParam(engineId, pv.descriptor->visibleWhenKey);
+        if (guardTag != 0) {
+          enginePanelGuardTag_ = guardTag;
+          enginePanelGuardValue_ =
+              denormalise(guardTag, ec->getParamNormalized(guardTag));
+          break;
+        }
+      }
+    }
   }
 
   ui_::PLSlider* addSliderTo(CViewContainer* parent, uint32_t tag, const CRect& r) {
@@ -724,6 +773,16 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
         rebuildEnginePanelControls();  // engine switch -> panel rebuild
       }
     }
+    // §6.6.1 item 18: the panel's guard key changed (e.g. the timepitch
+    // MODE) -> the descriptor-driven visibility filter re-evaluates. The
+    // rebuild recomputes the guard tracking from the current descriptors.
+    if (enginePanelGuardTag_ != 0) {
+      const double plain =
+          denormalise(enginePanelGuardTag_, ec->getParamNormalized(enginePanelGuardTag_));
+      if (plain != enginePanelGuardValue_) {
+        rebuildEnginePanelControls();
+      }
+    }
     if (bypassButton_ != nullptr) {
       const double v = ec->getParamNormalized(param::kBypass);
       if (std::fabs(v - bypassButton_->getValueNormalized()) > 1e-6) {
@@ -803,6 +862,10 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
                                                     // controls, ever)
   ui_::MicroLabel* varispeedNote_ = nullptr;  // lifecycle-managed (P2.2)
   int lastEngineIndex_ = -1;                  // instance-owned (P2.3)
+  // §6.6.1 item 18 (task 33): the current panel's visibility-guard key tag +
+  // the plain value it was built with (instance-owned; 0 = no guarded rows).
+  uint32_t enginePanelGuardTag_ = 0;
+  double enginePanelGuardValue_ = -1.0;
 
   ui_::PLSegmented* engineSelector_ = nullptr;
   ui_::PLSlider* pitchSlider_ = nullptr;

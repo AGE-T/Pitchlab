@@ -24,9 +24,21 @@ There is no second engine implementation, no stub, no fake quality score.
 > voiced spans change duration by 1/β, unvoiced spans unchanged); the
 > Pitch-Synced modes declare ≈122 ms input latency @48 kHz (the
 > first-class streaming-pYIN tracker term included — never hidden, shown
-> in the STATUS panel per the existing mechanism). Nothing in this
-> document's engine descriptions changes until the implementation commit;
-> the registry stays at five engines until then.
+> in the STATUS panel per the existing mechanism).
+>
+> **IMPLEMENTATION STATUS (task-33 checkpoint 1, 2026-10-02):**
+> `native.timepitch` IS REGISTERED as the 6th production engine with the
+> **Fixed (= OLA)** mode functional end-to-end (registry, parameters
+> kTpMode/kTpWindow/kTpOverlap/kTpShape — tags 22..25, the adapter's
+> wet-grid geometry branch, the declared-latency reporting, the editor
+> panel with the descriptor-driven per-mode visibility mechanism). The
+> parameter surface is 19 → **23** rows at this checkpoint (the amendment's
+> final surface is 25 when the Adaptive/Tolerance and Pitch +
+> Formant/Formant rows land; tags 26/27 are reserved by the amendment).
+> The mode choice list grows per checkpoint (an unregistered mode is a
+> CONFIG ERROR — never a disguised substitute). Adaptive, Pitch-Synced and
+> Pitch + Formant land with their own checkpoints; the Pitch-Synced
+> latency (≈122 ms) appears with theirs.
 
 * Product-phase specification: `research/pitch-lab-vst3-product-phase-specification.md`
   (architecture, the realtime adaptation boundary, the parameter model, the
@@ -56,11 +68,12 @@ suites + the official Steinberg VST3 SDK validator: 47/47).
 | PV-LOCKED | native.pv.phaselocked | Continuous realtime phase-locked vocoder. Latency ≈ 55 ms. |
 | VARISPEED | native.varispeed | **Windowed-splice adaptation** (labelled amber in the UI): the true varispeed engine run in 0.2 s windows with 15 ms crossfades — the offline continuous render is impossible in sustained fixed-block realtime. Fixed worst-case latency ≈ 226 ms. |
 | GRANULAR | native.granular | **Windowed-splice adaptation** (labelled amber): the same measured boundary as varispeed, on the input side (the read grid advances at the pitch ratio per output frame). Fixed worst-case latency ≈ 325 ms at the default grain. |
+| TIMEPITCH | native.timepitch | Wet-grid virtual-job engine (the PV-pair pattern): `seamX` = the configured window (2048 frames at the defaults), `wetLen = jobInputLen` = 10 s. Fixed (= OLA) mode declared latency: input ≈ 45 ms, output ≈ 71 ms @48 kHz defaults (the frozen §6.6.1 item 10 composition; mode-dependent — the Pitch-Synced modes declare ≈ 122 ms when they land). The OLA comb/flutter coloration is the mode's intentional character (the §6.6 honesty notes). |
 
 The ENGINE parameter's index follows the v0.1 **registry order** (§14-aligned,
 `engine_registry.cpp`): 0 varispeed, 1 vardelay, 2 pv.classic, 3
-pv.phaselocked, 4 granular — the engine identity ALWAYS comes from the
-registry (`engineIdForIndex` / `reg.at`); the editor's per-engine control
+pv.phaselocked, 4 granular, **5 timepitch (task 33)** — the engine identity
+ALWAYS comes from the registry (`engineIdForIndex` / `reg.at`); the editor's per-engine control
 panel is keyed to the same order. (A latent UI defect — the panel switch
 keyed to the implementation-chronology order, showing the granular panel
 for pv.classic and vice versa — was found and fixed by the CI `ui-binding`
@@ -79,7 +92,11 @@ Musical surface (host-automatable): **PITCH** (±12 st), **LFO RATE**
 Engine configuration (settable, not automatable — changing them re-prepares
 the chain with a crossfade): VARISPEED quality/aliasing, VARDELAY
 excursion/crossfade, GRANULAR grain/overlap/jitter/window, PV-CLASSIC and
-PV-LOCKED FFT size/hop. Non-selected engines keep their values (declared,
+PV-LOCKED FFT size/hop, and (task 33) the TIMEPITCH Mode/Window/Overlap/Shape
+rows — the Mode selector filters the panel per mode through the descriptor's
+visibility guard (hidden-by-condition parameters remain REGISTERED; the VST
+parameter count never changes with the selected mode). Non-selected engines
+keep their values (declared,
 not fake: only the selected engine's parameters are applied).
 
 The complete mapping between the VST3 parameter IDs and the v0.1 engine

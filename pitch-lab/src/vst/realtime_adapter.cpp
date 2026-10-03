@@ -295,6 +295,26 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     g.latency = snap.pvpFftSize + snap.pvpHop + kKernelMargin + kLatencySafety;
     g.wetLen = kSegmentSeconds * static_cast<int64_t>(fs);
     g.jobInputLen = g.wetLen;
+  } else if (id == "native.timepitch") {
+    // Task 33 (§6.6.1 item 17 — the mode-switch geometry): the timepitch
+    // engine is a WET-GRID engine like the PV pair (spliceMode = false):
+    // wetLen = jobInputLen = kSegmentSeconds·fs (the product spec §4.1 N_seg
+    // drift is corrected in the same recording); the seam crossfade is the
+    // MODE-SCOPED geometry — Fixed/Adaptive: N (the configured window);
+    // Pitch-Synced modes: 2·pMax (lands with their checkpoints).
+    // Λ = the engine's DECLARED input latency (§6.6.1 item 10 — the frozen
+    // composition already embeds its own safety terms: Fixed/Adaptive
+    // N/2 + Hs + 2K + 64 with K = the §7 Standard half-width). The mode
+    // fields default to the Fixed row (the snapshot domain is clamped; the
+    // engine re-validates at configure()).
+    const int64_t n = std::min<int64_t>(std::max<int64_t>(snap.tpWindowFrames, 64), 16384);
+    const int64_t overlap = snap.tpOverlap == 4 ? 4 : snap.tpOverlap == 8 ? 8 : 2;
+    const int64_t hs = n / overlap;
+    constexpr int kResamplerK = 16;  // §7 Standard preset half-width (frozen)
+    g.seamX = n;
+    g.latency = n / 2 + hs + 2 * kResamplerK + 64;
+    g.wetLen = kSegmentSeconds * static_cast<int64_t>(fs);
+    g.jobInputLen = g.wetLen;
   } else {  // native.varispeed — windowed splice (§4.2)
     const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
     const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
@@ -336,10 +356,19 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
   const int64_t maxCrossfade = 8192;                // vdCrossfadeFrames parameter maximum
   const int64_t maxFft = 4096;                      // pv fft_size parameter maximum
   const int64_t maxHop = 1024;                      // pv hop parameter maximum
+  // Task 33: native.timepitch's parameter-space worst (§6.6.1 item 10) —
+  // Fixed/Adaptive: N/2 + Hs + 2K + 64 at the window maximum N = 16384 and
+  // the coarsest overlap 2 (Hs = N/2); ratio-independent (the window is
+  // frame-denominated). The Pitch-Synced composition (2·pMax + 2K + 128 +
+  // Λ_tr, frozen totals 5636..22912) widens this when its checkpoints land.
+  constexpr int64_t kTpWindowMax = 16384;
+  constexpr int kResamplerK = 16;                   // §7 Standard half-width
+  const int64_t timepitchWorst = kTpWindowMax / 2 + kTpWindowMax / 2 + 2 * kResamplerK + 64;
   return std::max({splice + maxGrain,                                     // granular
                    splice,                                                 // varispeed
                    maxCrossfade + kKernelMargin + kLatencySafety,          // vardelay
-                   maxFft + maxHop + kKernelMargin + kLatencySafety});     // pv engines
+                   maxFft + maxHop + kKernelMargin + kLatencySafety,       // pv engines
+                   timepitchWorst});                                       // timepitch (task 33)
 }
 
 /// Envelope (§4.1 item 2, the Task 30 policy — derived, not intuited):
