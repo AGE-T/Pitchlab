@@ -254,6 +254,12 @@ pitchlab_add_vst_suite(vst_realtime_status_test)
 # the underrun counts — reproduced through the REAL adapter path).
 pitchlab_add_vst_suite(timepitch_host_probe)
 
+# Task-34 continuation: the host-continuity probe (the second-round owner
+# observations — the remaining RECT crackles, the intermittent Pitch-Synced
+# wet, the pitch-slide "wet switching on/off" — the static material matrix,
+# the RECT focus, the sweep/step host models, the wet-continuity telemetry).
+pitchlab_add_vst_suite(timepitch_continuity_probe)
+
 # The host-simulation driver: renders corpus material through the REAL VST3
 # process path (used for the retained audio examples; tools/vst_host_sim.cpp)
 add_executable(vst_host_sim ${CMAKE_SOURCE_DIR}/tools/vst_host_sim.cpp
