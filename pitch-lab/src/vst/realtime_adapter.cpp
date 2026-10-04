@@ -274,23 +274,16 @@ void envelopeFor(const EngineDescriptor& desc, double liveRatio, double lfoDepth
 
 Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
                         double fs, double lfoDepthSt, double liveRatioForGeometry) {
-  // Task 34 (the host-continuity root cause RC-1): the envelope-scoped
-  // splice geometries (granular, varispeed, the Time Pitch Pitch-Synced
-  // modes) MUST derive the input lead from the chain's OWN live ratio —
-  // the ratio the runtime curve is clamped to — NOT from
-  // snap.liveRatio(). The snapshot is the PUBLISHED parameter value: a
-  // host that streams automation WITHOUT republishing the parameter (the
-  // automation-only model, BlockAutomation only) leaves the snapshot
-  // frozen while the live pitch moves — the measured consequence (the
-  // timepitch_continuity_probe sweep trace): every rebuild kept the
-  // SNAPSHOT's identity-side geometry (lat=8888 const through a -12..+12
-  // sweep), the declared latency fell ~9600 frames short of the real
-  // production delay at +12 st, the emission read permanently outran the
-  // wet production, and the covered-range misses served DRY for whole
-  // sweep phases (23713 underruns — the owner's "wet switching on/off"
-  // and "glitch effect" observations). With the snapshot PUBLISHED per
-  // block (the drag model) the geometry followed and the same sweep is
-  // fault-free — the two host models measured the defect class exactly.
+  // Task 34 (the RC-1 investigation, PARTIALLY REVERTED — see the
+  // buildChain call-site note): the envelope-scoped splice geometries
+  // (granular, varispeed, the Time Pitch Pitch-Synced modes) derive the
+  // input lead from liveRatioForGeometry, which CALLERS pass from the
+  // PUBLISHED snapshot (snap.liveRatio()) — the deterministic source the
+  // committed audio-path evidence was generated with. The automation-only
+  // host model (the snapshot frozen while automation moves the live
+  // pitch) keeps its Lambda deficit UNTIL the epoch-versioned exit-ratio
+  // handoff lands (measured before the revert: 23713 underruns over a
+  // -12..+12 pitch_synced sweep, wet runs up to 0.57 s served dry).
   const std::string id(desc.info.id);
   Geometry g;
   if (id == "native.vardelay") {
@@ -1113,7 +1106,20 @@ struct RealtimeAdapter::Impl {
     // the chain must cover the curve it will actually serve)
     const double geometryDepth =
         std::max(snap.lfoDepthSt, clampd(liveDepthSt, 0.0, kLfoDepthParamMax));
-    const Geometry geo = chainGeometry(snap, desc, fs, geometryDepth, liveRatio);
+    const Geometry geo = chainGeometry(snap, desc, fs, geometryDepth, snap.liveRatio());
+    // Task 34 NOTE (the RC-1 revert): the geometry MUST stay deterministic —
+    // derived from the PUBLISHED snapshot, never from the audio-thread's
+    // racing exitLiveRatio. The first fix attempt passed liveRatio here;
+    // the CI audio-path artifact regenerated DIFFERENT bytes for the
+    // curve-driven granular evidence rows (the rebuild-moment exitRatio is
+    // scheduling-dependent) — the adapter's bit-determinism guarantee wins.
+    // The automation-only host Lambda deficit (RC-1: the snapshot stays
+    // frozen while automation moves the live pitch; the measured 23713
+    // underrun class) is RECORDED as the next iteration's target: the
+    // correct fix is an epoch-versioned exit-ratio handoff (the audio
+    // thread publishes (epoch, ratio) pairs; the preparation thread builds
+    // from the epoch it acts on) — a deliberate, tested change, not a
+    // quick race-prone substitution.
     chain->spliceMode = geo.spliceMode;
     chain->rateFollowing = geo.rateFollowing;
     chain->seamX = geo.seamX;
