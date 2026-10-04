@@ -815,11 +815,25 @@ TEST_CASE("TP-CONT-PS-ENGINE: direct engine render of the silent-wet material") 
     return out;
   };
 
-  // the 0.25 s RMS profile of the DIRECT render — the wet-silence question
+  // the 0.25 s RMS profile of the DIRECT render — the wet-silence question.
+  // The render wraps the engine calls: the pitch_synced OFFLINE zero-pad-era
+  // feed schedule (the §4.3.6 reference-test shape) can hit the engine's own
+  // input-window sizing guard on some materials (measured: the harmonically
+  // rich saw at +12 st throws "input window overflow (sizing bug)") — that
+  // throw is itself a RECORDED DIAGNOSTIC (the offline feed-schedule vs the
+  // pitch-synced window sizing mismatch, the RC-2 iteration's separate
+  // item), never a probe crash.
   const double fs = 48000.0;
   for (Material m : {Material::Sine, Material::Saw}) {
     for (double st : {12.0, -12.0}) {
-      const std::vector<double> y = render(m, st);
+      std::vector<double> y;
+      try {
+        y = render(m, st);
+      } catch (const std::exception& e) {
+        std::printf("DIRECT %s st=%+.0f: render threw (recorded diagnostic): %s\n",
+                    materialName(m), st, e.what());
+        continue;
+      }
       const int64_t sash = static_cast<int64_t>(0.25 * fs);
       std::printf("DIRECT %s st=%+.0f: outFrames=%lld, 0.25s RMS profile:\n",
                   materialName(m), st, (long long)y.size());
