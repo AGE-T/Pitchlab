@@ -273,17 +273,7 @@ void envelopeFor(const EngineDescriptor& desc, double liveRatio, double lfoDepth
                  double& envMin, double& envMax);
 
 Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
-                        double fs, double lfoDepthSt, double liveRatioForGeometry) {
-  // Task 34 (the RC-1 investigation, PARTIALLY REVERTED — see the
-  // buildChain call-site note): the envelope-scoped splice geometries
-  // (granular, varispeed, the Time Pitch Pitch-Synced modes) derive the
-  // input lead from liveRatioForGeometry, which CALLERS pass from the
-  // PUBLISHED snapshot (snap.liveRatio()) — the deterministic source the
-  // committed audio-path evidence was generated with. The automation-only
-  // host model (the snapshot frozen while automation moves the live
-  // pitch) keeps its Lambda deficit UNTIL the epoch-versioned exit-ratio
-  // handoff lands (measured before the revert: 23713 underruns over a
-  // -12..+12 pitch_synced sweep, wet runs up to 0.57 s served dry).
+                        double fs, double lfoDepthSt) {
   const std::string id(desc.info.id);
   Geometry g;
   if (id == "native.vardelay") {
@@ -307,7 +297,7 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     // absurd latency at every pitch. A pitch move beyond the built
     // envelope is the EXISTING envelope exit (one rebuild re-scopes).
     double envMin = 1.0, envMax = 1.0;
-    envelopeFor(desc, liveRatioForGeometry, lfoDepthSt, envMin, envMax);
+    envelopeFor(desc, snap.liveRatio(), lfoDepthSt, envMin, envMax);
     const double worstEnv = std::max(1.0, envMax);
     g.spliceMode = true;
     g.seamX = x;
@@ -393,7 +383,7 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
                                 4 * static_cast<int64_t>(pMax));
       const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
       double envMin = 1.0, envMax = 1.0;
-      envelopeFor(desc, liveRatioForGeometry, lfoDepthSt, envMin, envMax);
+      envelopeFor(desc, snap.liveRatio(), lfoDepthSt, envMin, envMax);
       const double leadRatio = std::max(0.0, envMax - 1.0);
       g.spliceMode = true;
       g.seamX = x;
@@ -443,7 +433,7 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
     const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
     double envMin = 1.0, envMax = 1.0;
-    envelopeFor(desc, liveRatioForGeometry, lfoDepthSt, envMin, envMax);
+    envelopeFor(desc, snap.liveRatio(), lfoDepthSt, envMin, envMax);
     const double worstEnv = std::max(1.0, envMax);
     g.spliceMode = true;
     g.seamX = x;
@@ -879,6 +869,12 @@ struct RealtimeAdapter::Impl {
   std::atomic<uint64_t> reprepares{0};
   uint64_t faults = 0;
   uint64_t clampEvents = 0;
+  // Task 34: the wet-continuity telemetry (audio-thread-only accumulators;
+  // see StatusSnapshot's field note).
+  uint64_t dryFallbackFrames = 0;    // covered-range frames served from the
+                                     // dry lane (the emission loop)
+  uint64_t jobsCompleted = 0;        // jobs reaching their finished state
+  std::atomic<uint64_t> resets{0};   // requestHardReset/requestProcessingReset
   uint64_t automationDropped = 0;  // audio-thread-accumulated (P1.3 diagnostics)
   bool blockFaultGuard = false;  // reset per process() block (audio thread)
   // ---- Task 29: categorized fault diagnostics ------------------------------
@@ -896,12 +892,6 @@ struct RealtimeAdapter::Impl {
   uint64_t seamRecoveries = 0;       // Task 31: frames served by the retained
                                      // wet history (the re-coverage source;
                                      // a cadence diagnostic, NOT a fault)
-  // Task 34: the wet-continuity telemetry (audio-thread-only accumulators;
-  // see StatusSnapshot's field note).
-  uint64_t dryFallbackFrames = 0;    // covered-range frames served from the
-                                     // dry lane (the emission loop)
-  uint64_t jobsCompleted = 0;        // jobs reaching their finished state
-  std::atomic<uint64_t> resets{0};   // requestHardReset/requestProcessingReset
   // Task 32: the realtime-capability measurement (audio-thread-only
   // accumulators; see StatusSnapshot's field note). engineCpuNanos counts
   // steady-clock nanoseconds spent inside engine->process() (feedJob +
@@ -1106,20 +1096,7 @@ struct RealtimeAdapter::Impl {
     // the chain must cover the curve it will actually serve)
     const double geometryDepth =
         std::max(snap.lfoDepthSt, clampd(liveDepthSt, 0.0, kLfoDepthParamMax));
-    const Geometry geo = chainGeometry(snap, desc, fs, geometryDepth, snap.liveRatio());
-    // Task 34 NOTE (the RC-1 revert): the geometry MUST stay deterministic —
-    // derived from the PUBLISHED snapshot, never from the audio-thread's
-    // racing exitLiveRatio. The first fix attempt passed liveRatio here;
-    // the CI audio-path artifact regenerated DIFFERENT bytes for the
-    // curve-driven granular evidence rows (the rebuild-moment exitRatio is
-    // scheduling-dependent) — the adapter's bit-determinism guarantee wins.
-    // The automation-only host Lambda deficit (RC-1: the snapshot stays
-    // frozen while automation moves the live pitch; the measured 23713
-    // underrun class) is RECORDED as the next iteration's target: the
-    // correct fix is an epoch-versioned exit-ratio handoff (the audio
-    // thread publishes (epoch, ratio) pairs; the preparation thread builds
-    // from the epoch it acts on) — a deliberate, tested change, not a
-    // quick race-prone substitution.
+    const Geometry geo = chainGeometry(snap, desc, fs, geometryDepth);
     chain->spliceMode = geo.spliceMode;
     chain->rateFollowing = geo.rateFollowing;
     chain->seamX = geo.seamX;
@@ -2388,9 +2365,7 @@ int64_t expectedLatencyFrames(const ParamSnapshot& snapshot, double sampleRate) 
   // the SNAPSHOT depth (the main-thread parameter value); a chain built for a
   // LIVE automated depth beyond it reports its own (larger) latency through
   // the normal per-chain setLatencySamples event (spec §4.1 item 5).
-  return chainGeometry(snapshot, desc, sampleRate, snapshot.lfoDepthSt,
-                       snapshot.liveRatio())
-      .latency;
+  return chainGeometry(snapshot, desc, sampleRate, snapshot.lfoDepthSt).latency;
 }
 
 // ---------------------------------------------------------------------------

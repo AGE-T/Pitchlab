@@ -147,10 +147,8 @@ struct StatusSnapshot {
   // pre-Task-31 adapter counted these frames as delivery underruns +
   // dry-fallback bursts because job recycling had destroyed the data.
   uint64_t seamRecoveries = 0;  // frames served by the retained wet history
-  // --- Task 34 (host-continuity investigation): the WET-CONTINUITY
-  // telemetry (numeric only; the consumers/probes classify — the audio
-  // thread never formats strings). The aggregate `faults` composition is
-  // UNCHANGED (these are diagnostics, not fault classes).
+  // --- Task 34 (the wet-continuity telemetry): numeric only; the aggregate
+  // `faults` composition is UNCHANGED (diagnostics, not fault classes).
   uint64_t dryFallbackFrames = 0;  // covered-range frames the emission served
                                    // from the DRY lane (wet miss — includes
                                    // the rate-following exempt class)
