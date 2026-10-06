@@ -298,3 +298,13 @@ if(LINUX AND PITCHLAB_BUILD_VST3)
   set_source_files_properties(${SDK_ROOT}/public.sdk/source/vst/hosting/module_linux.cpp
     PROPERTIES COMPILE_OPTIONS "-w")
 endif()
+
+# Task-35 TASK C (the master recovery pack): the TimePitch continuity
+# DIFFERENTIAL HARNESS — one authoritative diagnostic-first instrument
+# recording the canonical baseline of the full metric set (host model x
+# schedule x format x block); the RC-1/RC-2a/RC-3 re-derivation checkpoints
+# diff against it. Asserts ONLY the frozen invariants (render determinism,
+# the static zero-miss class); the open RC defect classes are REPORTED rows.
+pitchlab_add_vst_suite(timepitch_differential_harness)
+target_compile_definitions(timepitch_differential_harness PRIVATE
+  PITCHLAB_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
