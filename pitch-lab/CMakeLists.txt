@@ -220,6 +220,16 @@ target_include_directories(timepitch_ola_reference_test
 # transitions <= 2 hops; breach = the implementation STOP trigger).
 pitchlab_add_doctest(pitch_tracker_parity_test tests/pitch_tracker_parity_test.cpp)
 
+# Task-35 RC-2b diagnostic probe (the exact-octave TD-PSOLA null
+# investigation). Diagnostic-only: it drives the PRODUCTION engine offline
+# (no production-code change), asserts ONLY the frozen contract properties
+# (render determinism, the gamma=1 parity gate) and the simulator's own
+# validated behaviour; the null magnitudes / neighbourhood shape / candidate
+# verdicts stay MEASURED REPORTS for the owner decision.
+pitchlab_add_doctest(rc2b_octave_null_probe tests/rc2b_octave_null_probe.cpp)
+target_compile_definitions(rc2b_octave_null_probe PRIVATE
+  PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 # T-E14 / T-LEN-CAL: rate-following output-length calibration evidence
 # (spec §4.3.4/§13.1; the OD-6 evidence pack — full battery x 6 rates).
 pitchlab_add_doctest(length_calibration_test tests/length_calibration_test.cpp)
