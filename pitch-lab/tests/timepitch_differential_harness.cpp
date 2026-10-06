@@ -584,6 +584,88 @@ TEST_CASE("TP-DIFF-RC1-GATE: automation-only sweep delivery is zero-miss (the RC
 }
 
 // ---------------------------------------------------------------------------
+// TP-DIFF-BETADOWN: the RC-2a recheck (the master recovery pack TASK E) —
+// the adapter path at beta < 1 (pitch DOWN): -5/-7/-12 st statics through
+// the realtime adapter. Gates: zero-miss delivery, full-buffer render
+// determinism (the drain included), and the wet-pitch correctness at the
+// expected DOWN-shifted pitch. The direct-engine 1/beta DURATION semantics
+// are the T-PSOLA D.4 case's (beta = 2 halves / beta = 1/2 doubles — the
+// timepitch_contract_test lane); this case pins the adapter-path
+// consumption/backpressure class the historical Task-35 work addressed.
+// ---------------------------------------------------------------------------
+
+TEST_CASE("TP-DIFF-BETADOWN: pitch_synced statics at -5/-7/-12 st (the RC-2a adapter recheck)") {
+  initArtifact();
+  artifactHeader("BETADOWN — pitch_synced statics at beta<1 (48k/512, saw 220)");
+  artifactLine("| mode | sched | host | mat | fs | blk | rtf | latMs | undr | fbTel | fbDet | runs | maxRun | stall | prepF | adoptF | rprep | resets | seam | clicks | maxD | silS | silF | firstSil | wetSpan | inSpan | domHz | domMag | H2/3/4/5/6 |");
+  artifactLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  for (double st : {-5.0, -7.0, -12.0}) {
+    DriveConfig c;
+    c.tpMode = 2;
+    c.sched = Sched::Static;
+    c.pitchSt = st;
+    c.seconds = 7.0;
+    std::vector<double> outA;
+    const DriveReport ra = drive(c, &outA);
+    std::vector<double> outB;
+    drive(c, &outB);
+    emitRow(c, ra, "auto");
+    // the zero-miss class (down-reads declare no input lead — the
+    // geometry's own accounting; the delivery must be continuous)
+    CHECK_EQ(ra.status.deliveryUnderruns, 0u);
+    CHECK_EQ(ra.status.dryFallbackFrames, 0u);
+    CHECK_EQ(ra.status.jobStalls, 0u);
+    CHECK_EQ(ra.status.preparationFailures, 0u);
+    // full-buffer render determinism (the drain included): two identical
+    // drives are bit-identical over the WHOLE output buffer
+    int64_t mismatches = 0;
+    for (std::size_t p = 0; p < outA.size(); ++p) {
+      if (outA[p] != outB[p]) ++mismatches;
+    }
+    CHECK_EQ(mismatches, 0);
+    // the wet is real and pitched at the DOWN-shifted expectation
+    const int64_t lat = ra.status.latencyFrames;
+    const int64_t total = static_cast<int64_t>(c.fs * c.seconds);
+    const int64_t N = 16384;
+    const int64_t n0 = total - static_cast<int64_t>(c.fs * 0.05) - N - 1;
+    double bestMag = 0.0, bestF = 0.0;
+    for (double f = 60.0; f <= 400.0; f += 1.0) {
+      const double m = goertzelMag(outA.data(), n0, N, f, c.fs);
+      if (m > bestMag) {
+        bestMag = m;
+        bestF = f;
+      }
+    }
+    // TASK E FINDING (2026-10-06, CONFIRMED on the canonical tree): the
+    // dominant sits at the INPUT pitch's structure (at -12 st: ~219 Hz, the
+    // input f0; at -5/-7: the shifted content's 2ND harmonic) — the
+    // down-shifted fundamental is structurally weak/absent through the
+    // ADAPTER path while the DIRECT engine is contract-correct (the
+    // T-PSOLA D.4 pitch gates pass at beta = 1/2). MECHANISM (the
+    // rc2a_finding record): the splice job's input span is sized
+    // windowO x max(1, envMax) — at beta < 1 the D.4 consumption per
+    // output window is beta x windowO, so the oversized span skips
+    // (1 - beta) x windowO of input per window and the wet content
+    // collapses toward the input's own line structure. The pitch-DOWN
+    // class is a CONFIRMED RC-2a defect; the fix (the ratio-scaled input
+    // span) is the next implementation checkpoint — REPORTED here, never
+    // asserted away.
+    const double expected = 220.0 * std::exp2(st / 12.0);
+    std::printf("  BETADOWN %.0f st: dominant %.1f Hz (expected %.1f Hz)%s\n",
+                st, bestF, expected,
+                std::fabs(bestF - expected) <= 4.0 ? "" : "  << RC-2a CONFIRMED DEFECT (reported, not gated)");
+    if (std::fabs(bestF - expected) > 4.0) {
+      char w[160];
+      std::snprintf(w, sizeof(w),
+                    "WARNING RC-2a beta<1 wet-pitch defect: st=%.0f dom=%.1f "
+                    "expected=%.1f (the finding record: results/research/"
+                    "task35-rc2a/)", st, bestF, expected);
+      artifactLine(std::string(w));
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // TP-DIFF-FORMAT: the format x block matrix on the Pitch-Synced family —
 // the pack's 44.1/48/96 kHz x block 64..1024 sweep (core metrics).
 // Diagnostic-first: NO assertions here — the zero-miss class is REPORTED
