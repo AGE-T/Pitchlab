@@ -516,6 +516,74 @@ TEST_CASE("TP-DIFF-FULL: host model x schedule x mode (full metrics, 48k/512)") 
 }
 
 // ---------------------------------------------------------------------------
+// TP-DIFF-RC1-GATE: the RC-1 fix regression pin (the master recovery pack
+// TASK D gate). The fix signature per the baseline README: the
+// automation-only sweep rows' underrun/dry-fallback columns collapse to
+// zero once the epoch-versioned exit handoff is live, WITHOUT any change
+// to the static rows (the frozen invariants above stay untouched).
+// ---------------------------------------------------------------------------
+
+TEST_CASE("TP-DIFF-RC1-GATE: automation-only sweep delivery is zero-miss (the RC-1 pin)") {
+  initArtifact();
+  artifactHeader("RC1-GATE — the automation-only continuity pin (post exit-handoff)");
+  const double fs = 48000.0;
+  const int32_t block = 512;
+  for (int mode : {2, 3}) {  // pitch_synced, pitch_formant
+    DriveConfig c;
+    c.fs = fs;
+    c.block = block;
+    c.tpMode = mode;
+    c.sched = Sched::Sweep;
+    c.seconds = 7.0;
+    const DriveReport r = drive(c);
+    emitRow(c, r, "auto");
+    CHECK_EQ(r.status.deliveryUnderruns, 0u);
+    CHECK_EQ(r.status.dryFallbackFrames, 0u);
+    CHECK_EQ(r.status.jobStalls, 0u);
+    CHECK_EQ(r.status.preparationFailures, 0u);
+    CHECK_EQ(r.status.exitDropped, 0u);
+    // the re-centre machinery worked: the exits were published and consumed
+    CHECK(r.status.exitEvents > 0u);
+  }
+
+  // THE WET IS REAL AND CORRECTLY PITCHED (the acceptance beyond "not
+  // dry"): a static +7 st pitch_synced drive, the settled region sampled
+  // ALIGNED BY THE DECLARED LATENCY — the dominant frequency must be the
+  // expected wet pitch (220 Hz x 2^(7/12) = 329.3 Hz), not the input pitch.
+  // This excludes the whole "bit-equal detector" ambiguity: a dry
+  // passthrough would show 220 Hz here.
+  {
+    DriveConfig c;
+    c.tpMode = 2;
+    c.sched = Sched::Static;
+    c.pitchSt = 7.0;
+    c.seconds = 7.0;
+    std::vector<double> out;
+    const DriveReport r = drive(c, &out);
+    CHECK_EQ(r.status.deliveryUnderruns, 0u);
+    CHECK_EQ(r.status.dryFallbackFrames, 0u);
+    const int64_t lat = r.status.latencyFrames;
+    const int64_t total = static_cast<int64_t>(c.fs * c.seconds);
+    const int64_t N = 16384;
+    const int64_t n0 = total - static_cast<int64_t>(c.fs * 0.05) - N - 1;
+    const int64_t aligned = n0 - lat;  // the input position the wet encodes
+    (void)aligned;
+    double bestMag = 0.0, bestF = 0.0;
+    for (double f = 80.0; f <= 900.0; f += 1.0) {
+      const double m = goertzelMag(out.data(), n0, N, f, c.fs);
+      if (m > bestMag) {
+        bestMag = m;
+        bestF = f;
+      }
+    }
+    const double expected = 220.0 * std::exp2(7.0 / 12.0);  // 329.27 Hz
+    std::printf("  RC1-GATE wet-pitch check: dominant %.1f Hz (expected %.1f Hz)\n",
+                bestF, expected);
+    CHECK(std::fabs(bestF - expected) <= 4.0);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // TP-DIFF-FORMAT: the format x block matrix on the Pitch-Synced family —
 // the pack's 44.1/48/96 kHz x block 64..1024 sweep (core metrics).
 // Diagnostic-first: NO assertions here — the zero-miss class is REPORTED

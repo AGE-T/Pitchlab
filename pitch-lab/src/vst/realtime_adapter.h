@@ -156,6 +156,13 @@ struct StatusSnapshot {
                                    // (cadence: segment completions)
   uint64_t resets = 0;             // requestHardReset + requestProcessingReset
                                    // operations (state/reason agnostic)
+  // --- Task 35 (the exit-handoff telemetry): numeric only; the aggregate
+  // `faults` composition is UNCHANGED (diagnostics, not fault classes).
+  uint64_t exitEvents = 0;         // persistent envelope exits published by
+                                   // the audio thread (the versioned handoff)
+  uint64_t exitDropped = 0;        // exit events dropped on ring overrun
+                                   // (the wedged-preparation class — bounded,
+                                   // counted, never silent)
   // --- Task 32: the realtime-capability MEASUREMENT (numeric only) ----------
   //
   // The honest sustainability signal for the CURRENT configuration: the

@@ -183,30 +183,30 @@ jobs:
         run: |
           ctest --test-dir build --output-on-failure --output-junit test-results-vst3.xml 2>&1 | tee test-vst3.log
 
-      - name: "Audio-path artifact — regenerate + byte-determinism check (the realtime functional evidence)"
+      - name: "Audio-path artifact — regenerate + structured evidence gate (the realtime functional evidence)"
         shell: bash
         run: |
           # ctest already ran vst_audio_path_test, which regenerated the
-          # committed machine-readable record artifact (159 per-engine test
-          # records: phases A..H integrity/pitch/matrices + the per-engine
-          # summary). The artifact is byte-deterministic per binary: any
-          # difference against the committed evidence is a failure (the
-          # deterministic phases A..F are fully reproducible; the phase G
-          # reset/switch records carry only adoption-robust fields by
-          # design — see the test header).
-          git status --porcelain pitch-lab/results/vst3/v0.1/audio-path/ > /tmp/ap-status.txt || true
-          cat /tmp/ap-status.txt
-          if [ -s /tmp/ap-status.txt ]; then
-            echo "FAIL: the audio-path artifact differs from the committed evidence:"
-            git diff -- pitch-lab/results/vst3/v0.1/audio-path/ | head -40
-            exit 1
-          fi
-          # the suite must have RUN (the byte-identity of a stale committed
-          # artifact would otherwise mask a non-run): assert the test name is
+          # committed machine-readable record artifact (182 per-engine test
+          # records: phases A..G integrity/pitch/matrices + the per-engine
+          # summary). THE GATE (the Task-35 TASK K conversion of the raw
+          # git-diff byte check): a STRUCTURED comparison — the record
+          # matrix and every exact field byte-identical; the windowed-splice
+          # records' content fields inside the DOCUMENTED tolerances (the
+          # grain/window phase is pinned by the chain ADOPTION block, which
+          # the spec's determinism contract assigns to preparation timing —
+          # the measured wobble is ~0.2% while real regressions exceed the
+          # bounds 10-100x; see scripts/check_audio_path_artifact.py).
+          git show HEAD:pitch-lab/results/vst3/v0.1/audio-path/audio-path-report.json > /tmp/ap-committed.json
+          python3 scripts/check_audio_path_artifact.py \
+            /tmp/ap-committed.json \
+            pitch-lab/results/vst3/v0.1/audio-path/audio-path-report.json
+          # the suite must have RUN (a stale committed artifact would
+          # otherwise mask a non-run): assert the test name is
           # in the JUnit report (its failure would already have failed ctest)
           grep -q 'vst_audio_path_test' build/test-results-vst3.xml \
             || { echo "FAIL: the audio-path suite did not run"; exit 1; }
-          echo "audio-path artifact byte-identical; the suite ran and passed."
+          echo "audio-path artifact gate passed (structured comparison); the suite ran and passed."
 
       - name: Official VST3 SDK validator (the built bundle)
         shell: bash

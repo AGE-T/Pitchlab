@@ -3,6 +3,7 @@
 #include "analysis/pitch_tracker_streaming.h"
 
 #include <algorithm>
+#include <bit>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -273,7 +274,7 @@ void envelopeFor(const EngineDescriptor& desc, double liveRatio, double lfoDepth
                  double& envMin, double& envMax);
 
 Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
-                        double fs, double lfoDepthSt) {
+                        double fs, double lfoDepthSt, double liveRatio) {
   const std::string id(desc.info.id);
   Geometry g;
   if (id == "native.vardelay") {
@@ -297,7 +298,18 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     // absurd latency at every pitch. A pitch move beyond the built
     // envelope is the EXISTING envelope exit (one rebuild re-scopes).
     double envMin = 1.0, envMax = 1.0;
-    envelopeFor(desc, snap.liveRatio(), lfoDepthSt, envMin, envMax);
+    // Task 35 (RC-1 re-derivation, the spec §4.1 exit-handoff amendment):
+    // the envelope-scoped geometry derives from the CHAIN'S OWN centre
+    // ratio — the exit-moment ratio of the versioned handoff for a
+    // re-centre build, the snapshot ratio for the parameter class — NEVER
+    // the raw snapshot when the chain was re-centred by an exit (the
+    // previous derivation read snap.liveRatio() HERE, so an automation-only
+    // host model that publishes no fresh snapshots sized the whole sweep's
+    // input lead for the STARTUP pitch: the frozen-Lambda underrun class,
+    // measured). The ratio is deterministic per the amendment (the in-order
+    // ring consumption), so the Task-34 bit-determinism concern does not
+    // re-arise.
+    envelopeFor(desc, liveRatio, lfoDepthSt, envMin, envMax);
     const double worstEnv = std::max(1.0, envMax);
     g.spliceMode = true;
     g.seamX = x;
@@ -383,7 +395,9 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
                                 4 * static_cast<int64_t>(pMax));
       const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
       double envMin = 1.0, envMax = 1.0;
-      envelopeFor(desc, snap.liveRatio(), lfoDepthSt, envMin, envMax);
+      // Task 35 (RC-1 re-derivation): the chain's OWN centre ratio — the
+      // frozen-Lambda fix, same class as the granular/varispeed branches.
+      envelopeFor(desc, liveRatio, lfoDepthSt, envMin, envMax);
       const double leadRatio = std::max(0.0, envMax - 1.0);
       g.spliceMode = true;
       g.seamX = x;
@@ -433,7 +447,18 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     const int64_t windowO = std::max<int64_t>(64, std::llround(kVarispeedWindowSeconds * fs));
     const int64_t x = std::max<int64_t>(8, std::llround(kVarispeedCrossfadeSeconds * fs));
     double envMin = 1.0, envMax = 1.0;
-    envelopeFor(desc, snap.liveRatio(), lfoDepthSt, envMin, envMax);
+    // Task 35 (RC-1 re-derivation, the spec §4.1 exit-handoff amendment):
+    // the envelope-scoped geometry derives from the CHAIN'S OWN centre
+    // ratio — the exit-moment ratio of the versioned handoff for a
+    // re-centre build, the snapshot ratio for the parameter class — NEVER
+    // the raw snapshot when the chain was re-centred by an exit (the
+    // previous derivation read snap.liveRatio() HERE, so an automation-only
+    // host model that publishes no fresh snapshots sized the whole sweep's
+    // input lead for the STARTUP pitch: the frozen-Lambda underrun class,
+    // measured). The ratio is deterministic per the amendment (the in-order
+    // ring consumption), so the Task-34 bit-determinism concern does not
+    // re-arise.
+    envelopeFor(desc, liveRatio, lfoDepthSt, envMin, envMax);
     const double worstEnv = std::max(1.0, envMax);
     g.spliceMode = true;
     g.seamX = x;
@@ -779,15 +804,31 @@ struct RealtimeAdapter::Impl {
                                              // spurious re-prepare churn —
                                              // measured startup faults)
   std::atomic<uint64_t> requestEpoch{1};   // bumped on rebuild requests
-  std::atomic<double> exitLiveRatio{0.0};  // audio thread's live ratio (per block);
-                                            // 0.0 = NO AUDIO YET (invalid) — the
-                                            // preparation thread must NOT take it
-                                            // as a live centre before the first
-                                            // block (the pre-audio hard-reset
-                                            // rebuild would otherwise centre the
-                                            // chain at ratio 1 — far from the
-                                            // published pitch — forcing a clamp +
-                                            // churn cascade; measured)
+  // --- Task 35 (RC-1 re-derivation): the EPOCH-VERSIONED EXIT-EVENT RING ---
+  // The audio thread OWNS the persistent envelope-exit detection (spec
+  // §4.1, THE TASK-35 EXIT-HANDOFF AMENDMENT): at each block end it compares
+  // the capability-clamped block-end pitch ratio against the ACTIVE chain's
+  // envelope and, on an exit, publishes one (epoch, ratio) pair — the
+  // exit-moment ratio — to this bounded lock-free SPSC ring. The
+  // preparation thread consumes the events IN ORDER (oldest unconsumed
+  // first), one re-centre build per consumed event: the re-centre geometry
+  // is a pure function of (parameters trajectory, input, block schedule) —
+  // the preparation-poll-timing dependence (the Task-34 RC-1 determinism
+  // gap) is removed at the contract level. The payload words are atomics
+  // (the Task-24 seqlock lesson: plain writes + fences are TSAN races,
+  // not just logically-safe shortcuts). The ring POSITION is the epoch
+  // (monotone, unique, order-preserving); overrun drops are COUNTED
+  // telemetry (exitDropped), never silent.
+  static constexpr int kExitRingSlots = 64;
+  struct ExitEventSlot {
+    std::atomic<uint64_t> epoch{0};      // the ring position + 1 (0 = empty)
+    std::atomic<uint64_t> ratioBits{0};  // std::bit_cast<uint64_t>(ratio)
+  };
+  ExitEventSlot exitRing[kExitRingSlots];
+  std::atomic<uint64_t> exitHead{0};     // audio-thread publish cursor
+  std::atomic<uint64_t> exitTail{0};     // prep-thread consumption watermark
+  uint64_t exitEvents = 0;               // audio-private counter (status)
+  uint64_t exitDropped = 0;              // audio-private counter (status)
   // Task 30: the audio thread's LIVE LFO depth (the depth timeline's block-end
   // carry — automation-aware, like lastPitchSt). −1.0 = NO AUDIO YET (the
   // depth domain is [0, 2] st, so 0.0 would be ambiguous with “depth 0”).
@@ -1096,7 +1137,7 @@ struct RealtimeAdapter::Impl {
     // the chain must cover the curve it will actually serve)
     const double geometryDepth =
         std::max(snap.lfoDepthSt, clampd(liveDepthSt, 0.0, kLfoDepthParamMax));
-    const Geometry geo = chainGeometry(snap, desc, fs, geometryDepth);
+    const Geometry geo = chainGeometry(snap, desc, fs, geometryDepth, liveRatio);
     chain->spliceMode = geo.spliceMode;
     chain->rateFollowing = geo.rateFollowing;
     chain->seamX = geo.seamX;
@@ -1272,41 +1313,60 @@ struct RealtimeAdapter::Impl {
       } else if (pend == nullptr) {
         if (epoch != builtRequestEpoch || !(snap.chainSignature() == builtSig) ||
             builtFs != fs || builtChannels != channels) {
+          // the parameter/reset/format class: the envelope centres at the
+          // SNAPSHOT's ratio — the deterministic parameter state. (Task 35,
+          // the exit-handoff amendment: the previous poll-moment
+          // exitLiveRatio override here was the OTHER load-lag path — the
+          // audio-thread exit events now carry any in-flight automation
+          // drift as explicit, versioned re-centres.)
           build = true;
-          if (epoch != builtRequestEpoch) {
-            // an audio-thread (or hard-reset) request carries the freshest
-            // live ratio for the envelope re-centre
-            const double exitRatio = exitLiveRatio.load(std::memory_order_acquire);
-            if (exitRatio > 0.0 && std::isfinite(exitRatio)) liveRatio = exitRatio;
-            const double exitDepth = exitLiveDepth.load(std::memory_order_acquire);
-            if (exitDepth >= 0.0) liveDepth = std::max(liveDepth, exitDepth);
-          }
         } else {
-          // envelope exit against the ACTIVE chain (freshest audio-thread
-          // ratio first, snapshot as fallback). Task-33 continuation (Phase
-          // 5): the comparison uses the live ratio CLAMPED INTO THE
-          // ENGINE'S DECLARED RANGE — with the widened -48..+48 st control
-          // the raw live ratio routinely sits beyond a narrower engine's
-          // maxRatio, the (correctly capability-clamped) envelope never
-          // covers it, and the raw comparison rebuilt the SAME chain every
-          // block: the measured futile-churn loop (163 re-prepares in a 6 s
-          // drive — the Task-30 churn class). The pitch beyond the
-          // capability saturates AT the capability (the counted clamp
-          // events); the saturated value is what the envelope must cover.
-          double r = exitLiveRatio.load(std::memory_order_acquire);
-          if (!(r > 0.0) || !std::isfinite(r)) r = snap.liveRatio();
-          {
-            const EngineRegistry& regExit = engineRegistry();
-            const int exitIdx = act->engineIndex;
-            if (exitIdx >= 0 && exitIdx < static_cast<int>(regExit.size())) {
-              const auto& cap =
-                  regExit.at(static_cast<std::size_t>(exitIdx)).capabilities;
-              r = clampd(r, cap.minRatio, cap.maxRatio);
+          // --- Task 35 (RC-1 re-derivation): the EPOCH-VERSIONED EXIT
+          // CONSUMPTION. The audio thread detects the persistent envelope
+          // exits and publishes (epoch, ratio) pairs; this thread consumes
+          // them IN ORDER (oldest unconsumed first — the SPSC ring preserves
+          // order and content), one re-centre build per consumed event,
+          // centred at the event's EXIT-MOMENT ratio. The consumed event
+          // sequence is order-deterministic: the re-centre geometry no
+          // longer depends on this thread's poll timing (the Task-34 RC-1
+          // determinism gap). A consumed event whose ratio the CURRENT
+          // envelope already covers (e.g. the pitch moved back, or a
+          // parameter build re-centred in between) is marked consumed
+          // WITHOUT a build — stale-event churn is structurally excluded.
+          const uint64_t head = exitHead.load(std::memory_order_acquire);
+          const uint64_t tail = exitTail.load(std::memory_order_relaxed);
+          if (head > tail) {
+            const ExitEventSlot& slot = exitRing[tail % kExitRingSlots];
+            const uint64_t evEpoch = slot.epoch.load(std::memory_order_acquire);
+            const double evRatio =
+                std::bit_cast<double>(slot.ratioBits.load(std::memory_order_acquire));
+            // the epoch sanity check also guards the (benign, bounded)
+            // mid-drain consume race documented at the resume reset
+            if (evEpoch == tail + 1 && evRatio > 0.0 && std::isfinite(evRatio)) {
+              double r = evRatio;
+              {
+                // the capability clamp — identical to the audio-side clamp
+                // (idempotent; kept for defence in depth)
+                const EngineRegistry& regExit = engineRegistry();
+                const int exitIdx = act->engineIndex;
+                if (exitIdx >= 0 && exitIdx < static_cast<int>(regExit.size())) {
+                  const auto& cap =
+                      regExit.at(static_cast<std::size_t>(exitIdx)).capabilities;
+                  r = clampd(r, cap.minRatio, cap.maxRatio);
+                }
+              }
+              if (r < act->envMin || r > act->envMax) {
+                build = true;
+                liveRatio = r;
+              }
+              // consume (advance the watermark) whether or not a build
+              // follows — exactly-once semantics per event
+              exitTail.store(tail + 1, std::memory_order_release);
+            } else {
+              // a torn/unexpected slot (only possible in the documented
+              // mid-drain race) — skip it to preserve progress
+              exitTail.store(tail + 1, std::memory_order_release);
             }
-          }
-          if (r < act->envMin || r > act->envMax) {
-            build = true;
-            liveRatio = r;
           }
           // Task 30 — the ENVELOPE-CAPABILITY exit: the live LFO depth grew
           // beyond the chain's margin. The curve's legal excursion around
@@ -1315,7 +1375,11 @@ struct RealtimeAdapter::Impl {
           // the depth's ONLY lifecycle trigger: a depth SHRINK keeps the
           // wider envelope (harmless coverage), and depth movement WITHIN
           // the margin never rebuilds — the pre-Task-30 design rebuilt on
-          // every clamped BLOCK instead (the measured churn root).
+          // every clamped BLOCK instead (the measured churn root). The
+          // max(snapshot, live) coverage term is monotone-safe under load
+          // lag by construction (a wider envelope never churns) — this
+          // check stays on the preparation side by design (the Task-35
+          // amendment records the reasoning).
           {
             double d = snap.lfoDepthSt;
             const double exitDepth = exitLiveDepth.load(std::memory_order_acquire);
@@ -1546,7 +1610,14 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
 
   im.streamPos = 0;
   im.streamPosMirror.store(0, std::memory_order_release);
-  im.exitLiveRatio.store(0.0, std::memory_order_release);  // no audio yet
+  // Task 35: the exit-event ring is drained on activation/reset — the stale
+  // events of a previous stream must not drive the new stream's re-centres
+  // (the cursors are audio/prep pair; at reset neither is running a build,
+  // so the aligned re-init is race-free under the reset protocol).
+  im.exitHead.store(0, std::memory_order_release);
+  im.exitTail.store(0, std::memory_order_release);
+  im.exitEvents = 0;
+  im.exitDropped = 0;
   im.exitLiveDepth.store(-1.0, std::memory_order_release);  // no audio yet (sentinel)
   im.latencyNow = 0;
   im.latencyEff = 0;
@@ -1792,6 +1863,15 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   if (im.resumeResetPending.exchange(false, std::memory_order_acq_rel)) {
     im.retireActiveNow();
     im.requestEpoch.fetch_add(1, std::memory_order_acq_rel);
+    // Task 35: drain the exit-event ring on the AUDIO thread (the producer —
+    // race-free here): the pre-suspend exit events must not drive the fresh
+    // chain's re-centres (the resume contract is "reset + fresh chain").
+    // The drain advances the CONSUMPTION watermark to the publish cursor —
+    // the epochs stay monotone (no cursor-reset ABA against a prep thread
+    // that may be mid-poll; a concurrent consume of one already-read event
+    // is bounded and benign).
+    im.exitTail.store(im.exitHead.load(std::memory_order_acquire),
+                      std::memory_order_release);
     im.lastPitchSt = snap.pitchSt;
     im.everHadPitchAutomation = false;
     im.lastSnapPitchSt = snap.pitchSt;
@@ -2220,7 +2300,51 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   // of the realtime-capability measurement; reset at chain adoption — see
   // the Impl field note)
   im.rtFrames += frames;
-  im.exitLiveRatio.store(std::exp2(im.lastPitchSt / 12.0), std::memory_order_relaxed);
+  // --- Task 35 (RC-1 re-derivation): THE AUDIO-THREAD ENVELOPE-EXIT
+  // DETECTION (spec §4.1, THE TASK-35 EXIT-HANDOFF AMENDMENT). The
+  // block-end pitch-parameter ratio (NO LFO — the excursion is inside the
+  // envelope by construction, so the transient clamp class is structurally
+  // excluded) is compared against the ACTIVE chain's prepared envelope. On
+  // an exit, one (epoch, ratio) pair — the EXIT-MOMENT ratio — is appended
+  // to the SPSC ring for the preparation thread's in-order consumption.
+  // Bounded work, no allocation, no lock, no blocking. The detection is
+  // gated on pend == nullptr exactly like the previous preparation-side
+  // check (a pending swap already supersedes this chain's envelope).
+  {
+    const double rLive = std::exp2(im.lastPitchSt / 12.0);
+    Chain* actE = im.active.load(std::memory_order_acquire);
+    Chain* pendE = im.pending.load(std::memory_order_acquire);
+    if (actE != nullptr && pendE == nullptr &&
+        (rLive < actE->envMin || rLive > actE->envMax)) {
+      double r = rLive;
+      const EngineRegistry& regExit = engineRegistry();
+      const int exitIdx = actE->engineIndex;
+      if (exitIdx >= 0 && exitIdx < static_cast<int>(regExit.size())) {
+        const auto& cap =
+            regExit.at(static_cast<std::size_t>(exitIdx)).capabilities;
+        // the pitch beyond the capability saturates AT the capability (the
+        // counted clamp events); the saturated value is what the envelope
+        // must cover — identical to the previous preparation-side semantics
+        r = clampd(rLive, cap.minRatio, cap.maxRatio);
+      }
+      if (r < actE->envMin || r > actE->envMax) {
+        const uint64_t head = im.exitHead.load(std::memory_order_relaxed);
+        const uint64_t tail = im.exitTail.load(std::memory_order_acquire);
+        if (head - tail < static_cast<uint64_t>(im.kExitRingSlots)) {
+          auto& slot = im.exitRing[head % static_cast<uint64_t>(im.kExitRingSlots)];
+          slot.epoch.store(head + 1, std::memory_order_relaxed);
+          slot.ratioBits.store(std::bit_cast<uint64_t>(r), std::memory_order_relaxed);
+          im.exitHead.store(head + 1, std::memory_order_release);
+          ++im.exitEvents;
+        } else {
+          // the ring is full (the preparation thread is wedged — the
+          // adoption force deadline bounds the state): drop + count, never
+          // block, never allocate
+          ++im.exitDropped;
+        }
+      }
+    }
+  }
   // Task 30: publish the live LFO depth (the depth timeline's block-end value
   // — automation-aware) for the preparation thread's envelope-capability
   // check. Relaxed is sufficient (telemetry cadence, same as exitLiveRatio).
@@ -2351,6 +2475,9 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   st.dryFallbackFrames = im.dryFallbackFrames;
   st.jobsCompleted = im.jobsCompleted;
   st.resets = im.resets.load(std::memory_order_relaxed);
+  // Task 35: the exit-handoff telemetry
+  st.exitEvents = im.exitEvents;
+  st.exitDropped = im.exitDropped;
   status_.store(st);
 }
 
@@ -2365,7 +2492,9 @@ int64_t expectedLatencyFrames(const ParamSnapshot& snapshot, double sampleRate) 
   // the SNAPSHOT depth (the main-thread parameter value); a chain built for a
   // LIVE automated depth beyond it reports its own (larger) latency through
   // the normal per-chain setLatencySamples event (spec §4.1 item 5).
-  return chainGeometry(snapshot, desc, sampleRate, snapshot.lfoDepthSt).latency;
+  return chainGeometry(snapshot, desc, sampleRate, snapshot.lfoDepthSt,
+                       snapshot.liveRatio())
+      .latency;
 }
 
 // ---------------------------------------------------------------------------

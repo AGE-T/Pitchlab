@@ -216,6 +216,64 @@ honour the full contract).
    * automation that exits the envelope is bridged by the clamp for the
      few milliseconds until the re-centred replacement chain is live
      (item 4) — the clamp only ever bridges, it never decides.
+
+   **THE TASK-35 EXIT-HANDOFF AMENDMENT (RC-1 re-derivation; the
+   deterministic envelope-exit handoff).** Recorded before implementation
+   per the recovery program. The Task-34 record (`bbc25a6`) proved that the
+   adapter's bit-determinism guarantee, as it stood, did not cover the
+   PREPARATION-THREAD POLL TIMING: the re-centre geometry was derived from
+   the preparation thread's poll-moment view of the live ratio
+   (`exitLiveRatio` — a single overwritten atom), so the new chain's
+   envelope centre (and with it the job input lead Λ and the curve-clamp
+   window) depended on wall-clock load, and identical drives could render
+   different bytes after a re-centre. The amendment:
+
+   * **The audio thread OWNS the persistent envelope-exit detection.** At
+     each block end the audio thread compares the block-end pitch-parameter
+     ratio (capability-clamped, the exact comparison the preparation thread
+     performed) against the ACTIVE chain's prepared envelope. The
+     pitch-parameter timeline is the detection signal — the LFO excursion
+     is inside the envelope by construction, so the transient LFO clamp
+     class (§4.1 item 2, counted, never a trigger) is structurally
+     excluded from the exit path.
+   * **The exit handoff is EPOCH-VERSIONED.** Each detected exit publishes
+     one `(epoch, ratio)` pair — the exit-moment ratio — to a bounded
+     lock-free single-producer/single-consumer event ring (64 events,
+     audio-thread producer, preparation-thread consumer, allocation-free,
+     no locks). The ring preserves ORDER and CONTENT: the preparation
+     thread consumes the events IN ORDER (oldest unconsumed first), one
+     re-centre build per consumed event, centred at that event's
+     exit-moment ratio. Overrun drops are counted telemetry, never silent.
+   * **THE DETERMINISM AMENDMENT (the point of this note).** The re-centre
+     ratio is always an AUDIO-THREAD-MEASURED, VERSIONED exit-moment ratio:
+     the preparation-side poll-moment read of the live ratio (the
+     unbounded load-lag path that the Task-34 CI evidence exposed) is
+     REMOVED. The re-centre chain sequence is the in-order consumption of
+     the versioned event stream. The remaining run-to-run variance in HOW
+     MANY events are consumed per build cycle (the audio thread publishes
+     while no swap is pending; the publication windows therefore depend on
+     the adoption moments) is BOUNDED by the pending-chain gate and belongs
+     to the already-documented preparation-timing class — the exact BLOCK
+     of a mid-stream chain swap depends on preparation timing — which the
+     bit-determinism contract has always excluded ("deterministic per
+     (parameters trajectory, input, block schedule) while the chain set is
+     constant"). What the amendment buys: no unbounded load-lag in the
+     geometry, an order-preserving exactly-once handoff, and the
+     automation-only delivery continuity (RC-1). Two second-order
+     consequences are recorded: (a) the parameter/reset-class rebuilds
+     centre their envelope at the SNAPSHOT's ratio (the previous
+     poll-moment `exitLiveRatio` override — the other load-lag path — is
+     removed); the audio-thread exit events carry any in-flight automation
+     drift as explicit, versioned re-centres; (b) the re-centre cadence is
+     one chain build per consumed exit event (bounded by the 1 ms
+     preparation cadence; the lifecycle pins that bound re-prepare counts
+     keep their meaning — the counts scale with the automation's
+     envelope-exit rate, exactly as the sweep geometry dictates).
+   * **Realtime safety is unchanged:** the detection is a bounded
+     comparison + ring append on the audio path (no allocation, no lock,
+     no blocking); the depth-growth capability exit (§4.1 item 2 / Task 30)
+     stays on the preparation side — its `max(snapshot, live)` coverage
+     term is monotone-safe under load lag by construction.
 3. **Live curve.** The job's dense curve array is owned by the adapter and
    is written per input frame as frames arrive (automation sampled at
    frame granularity with per-block ramps taken from the VST3
