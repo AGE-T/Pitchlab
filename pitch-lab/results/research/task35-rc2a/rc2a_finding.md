@@ -49,26 +49,52 @@ the input's line structure leaks through) with NO diagnostic signal — the
 fault counters stay zero. Down-shifts within the product's −48..+48 st range
 are a first-class use case.
 
-## Root cause (primary hypothesis; the fix checkpoint verifies)
+## Root cause (refined after the tiling-code analysis; the fix checkpoint verifies)
 
-`chainGeometry`'s Pitch-Synced splice branch sizes the job's input span as
-`jobInputLen = engineLatIn + ceil(windowO × envMax) + margins` with
-`worstEnv = max(1, envMax)` flooring the ratio term at 1. Under the D.4
-rate-following semantics the engine consumes `beta × windowO` of input per
-`windowO` of wet produced: at beta < 1 the span holds `(1 − beta) × windowO`
-MORE input than the window's wet can hold, and the excess input is skipped at
-each window boundary. The skip fraction grows as beta falls
-(−5: 25%, −7: 33%, −12: 50%), which matches the measured degradation ladder
-(the −5 row survives; −7/−12 collapse). The pitch-UP direction was never
-affected because `max(1, envMax) = envMax` there — the span accidentally
-carried the correct ratio scaling. The fix direction: scale the input span by
-the CHAIN'S OWN centre-ratio envelope (both directions), re-deriving the
-windowed-splice tiling accounting for beta < 1, with the direct engine as the
-content arbiter and the full zero-miss/determinism gates re-run.
+TWO accounting facts compose, both verified in the source:
 
-Confidence: HIGH on the phenomenon and its adapter-path exclusivity; MEDIUM on
-the precise span-accounting mechanism (the fix checkpoint's differential
-measurements decide).
+1. **The job's wet is capped at `wetLen` while the engine's D.4 production
+   is not.** `feedJob` offers the engine the lane's free space
+   (`outCap = min(free, pacing)`; splice-mode chains are never paced), but
+   the append caps at `job.wetLen - job.wetWritten` — the wet produced
+   beyond the window is DISCARDED. At beta < 1 the engine produces
+   `span/beta` of wet for the span, so the job's window fills after
+   consuming only the FIRST `beta x windowO` of content-bearing input; the
+   span's remainder is consumed and discarded.
+2. **The input advance per window is ratio-independent.** The tiling sets
+   `advance = wetLen - seamX` (one field for both timelines) — the input
+   skips `(advance - beta x (wetLen - seamX))` of content per window. At
+   beta = 0.5 roughly half the input never reaches any window's wet; the
+   output becomes fragments of 2x-slowed content on an average-1x grid —
+   the input's own line structure dominates the spectrum (the measured 219
+   Hz at -12 st), and the shifted fundamental collapses. The degradation
+   ladder (beta 0.749 clean; 2/3 the 2nd harmonic; 0.5 the input pitch)
+   matches the growing skip fraction.
+
+The pitch-UP direction survives structurally: the ratio-scaled SHORTFALL
+class there warps the duration/timbre (the overlapped content), but every
+fragment still carries the correct `f0 x beta` pitch, so the measurable
+pitch stays right — the asymmetry the measurements show. (The granular
+branch is unaffected: its grain re-reading realizes the rate inside the
+window differently — the artifact's granular -12 row measures 117 Hz vs the
+expected 110, the documented downshift-envelope-edge limitation, NOT this
+collapse.)
+
+**The fix design (CP-5, a real checkpoint):** decouple the input advance
+from the output advance for the Pitch-Synced splice grid —
+`advance_in = ceil(beta x (wetLen - seamX))` at the chain's centre ratio
+(the output grid stays 1x realtime — the host contract), size
+`jobInputLen` to guarantee `>= wetLen` of wet across the envelope
+(`engineLatIn + ceil(envMax x windowO)` — the existing no-holes guarantee),
+and re-derive the emission mapping, the Task-31 retiring limits, the
+frontier math, and the T-S-class pins that assume the single `advance`
+field. The BETADOWN pitch gates get PROMOTED to hard assertions as the
+fix's regression gate, with the direct engine as the content arbiter.
+
+Confidence: HIGH on the phenomenon, the adapter-path exclusivity, and the
+two accounting facts (both read in the source and consistent with every
+measured row); MEDIUM on the exact fix shape (the CP-5 differential
+measurements decide the final form).
 
 ## Required action
 
