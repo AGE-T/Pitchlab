@@ -109,3 +109,86 @@ NO (the pack mandates the recheck-then-re-derive path for RC-2a; this is a
 content-correctness defect inside the frozen D.4/windowed-splice semantics,
 not a semantic amendment — the frozen contract is being RESTORED, not
 changed).
+
+---
+
+## CP-5 CORRECTION (2026-10-07) — the two-instrument arbitration corrects this finding
+
+**The CONFIRMED-defect classification above is CORRECTED by the CP-5 measurements. The adapter path at beta < 1 delivers the DIRECT engine's content — the "defect" was an instrument inconsistency, and the recorded fix design is un-implementable within the bounded adapter resource model. Nothing below rewrites the original record; this section supersedes its disposition.**
+
+**1. The recheck's wet-pitch metric was not adapter-discriminating.** The raw
+Goertzel dominant (60..400 Hz sweep, ±4 Hz band) fails IDENTICALLY on the
+DIRECT render: measured on the canonical tree (the probe case
+`TP-PS-BETA-DOWN-CONTENT`, `tests/timepitch_host_probe.cpp`) the direct
+full-buffer job at -7 st reports a 293 Hz dominant and at -12 st a 220 Hz
+dominant — the same values this finding recorded for the adapter path. The
+mechanism is the FROZEN synthesis itself: the MC90 mark law tiles 2P-length
+grains at output hop s = P/beta, so at strong down-shifts the grain CARRIER
+(the input's own periodicity) dominates the spectrum with the shifted
+fundamental as a sideband (measured H2:H1 ~= 2:1 at beta = 1/2 exact tiling;
+at -5 st the 33% grain overlap restores H1 dominance, which is why the -5 row
+measured "correct"). A direct-vs-adapter comparison through this instrument
+measures the synthesis character, not the adaptation.
+
+**2. The contract's pitch instrument arbitrates BOTH paths to the exact
+expected pitch.** The clean-room pYIN tracker (the same instrument every
+pitch gate uses) over the settled wet, sine 220 material, 48 kHz:
+
+| st | tracker(adapter) | tracker(direct) | expected |
+|---|---|---|---|
+| -5 | 164.7 Hz | 164.7 Hz | 164.8 Hz |
+| -7 | 146.8 Hz | 146.7 Hz | 146.8 Hz |
+| -12 | 110.0 Hz | 110.0 Hz | 110.0 Hz |
+
+The delivery accounting stays zero-miss on every row (underruns 0,
+telemetry-dry 0, stalls 0, preparation failures 0), and the full-buffer
+render determinism holds. The package's adapter/direct consistency item is
+now a HARD gate in `TP-DIFF-BETADOWN` (the raw Goertzel dominant is demoted
+to reported telemetry alongside the direct's reference value — the TASK K
+pattern: the over-strict pin converted with evidence, diagnostics kept).
+
+**3. The recorded fix design is un-implementable within the bounded adapter.**
+Content continuity at rate beta_c < 1 requires the job input origins to
+advance at beta_c x (output step) — then the content the emission needs at
+output time T lives at input beta_c x T, i.e. (1 - beta_c) x T BEHIND the
+stream, unboundedly. With `kJobSlots = 3` (realtime_adapter.cpp:46) and the
+bounded dry retention (max(worst-case Lambda, prep lead)), neither the slot
+ring nor any bounded buffer can serve it: jobs stamped on the input timeline
+accumulate (alive count grows ~ (1/beta_c - 1) x T / (wetLen - seamX));
+jobs stamped on the emission timeline need input the dry lane no longer
+holds. The finding's two accounting facts are TRUE in the source (the wet
+append IS capped at wetLen; the input origins DO advance ratio-independently)
+but they do NOT produce a pitch/content defect measurable by the contract
+instrument: each splice job is synthesis-self-contained (its own tracker
+warm-up, its own mark grid), and the input-origin skips land at the seam
+crossfades between INDEPENDENT jobs. No CP-5 production change was made; the
+frozen semantics are untouched.
+
+**4. The mandated matrix (90 rows) is GREEN everywhere except the RC2b
+class.** `TP-DIFF-BETAMATRIX` (committed; the CP-5 record was produced with
+`PITCHLAB_TP_DIFF_FULLMATRIX=1`): pitch {0,+7,-5,-7,-12} st x fs
+{44.1,48,96} kHz x block {64..1024}, sine, tracker-arbitrated — every row
+pitch-OK and zero-miss. The +12 rows measure the RC2b known character
+through the adapter: the DIRECT engine NULLS at the exact pitch-up octave
+(measured g(440 Hz) = 0.0002 on the direct render — the analytic
+cancellation, the owner's own anchor measurement), and the adapter's
+465-468 Hz readings are the imperfect-cancellation residue of the tiling.
+The RC2b DO-NOT-TOUCH disposition stands; no gate was added.
+
+**5. Newly recorded reported classes (diagnostic-first, no gates).** On the
+harmonic-stack material the pYIN tracker itself is unreliable ON PSOLA-down
+output (both paths measure non-canonical medians — the burst-tiling content
+sits outside the tracker's design domain); the path DELTA at -7/-12 on saw
+is real and uncharacterized by either instrument — the human-listening
+question for the engine-selection lane. The exit-ring headroom was measured
+(exitDropped reproduces locally: 24-25 events during the pitch_formant
+sweep; 42 on the CP-4d CI runner) with delivery zero-miss throughout — the
+self-healing safe path works; the ring stays at 64 (the 64 -> 256 change is
+NOT needed; deferred with this record).
+
+**Disposition: RC-2a = RESOLVED AS METRIC ARTIFACT (the adapter path delivers
+the direct engine's content at beta < 1; the frozen contract restored in the
+measurement domain, untouched in code). The down-shift spectral character
+(the carrier sideband structure) belongs to the RC2b / engine-selection
+owner lane. TIMEPITCH remains NOT COMPLETE pending the owner listening and
+the RC2b disposition, as recorded in the master worklog.**

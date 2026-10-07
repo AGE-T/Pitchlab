@@ -30,6 +30,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -42,9 +43,11 @@
 #include "vst/realtime_status.h"
 
 #include "engines/timepitch_engine.h"
+#include "analysis/pitch_tracker.h"
 
 using namespace pitchlab;
 using namespace pitchlab::vst;
+using namespace pitchlab::analysis;
 
 namespace {
 
@@ -598,5 +601,231 @@ TEST_CASE("TP-PITCH-RANGE: widened control vs capability-derived support") {
                 clamps == row.expectClamps ? "OK" : "MISMATCH");
     CHECK_MESSAGE(r.status.faults == 0, row.what);
     CHECK_MESSAGE(clamps == row.expectClamps, row.what);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TP-PS-BETA-DOWN-CONTENT (CP-5 diagnostic, 2026-10-07): the RC-2a recheck
+// with BOTH pitch instruments — the raw Goertzel dominant (what the BETADOWN
+// case reports) AND the contract's own pitch instrument (the clean-room pYIN
+// tracker) — on the DIRECT full-buffer render AND the real adapter path, at
+// -5/-7/-12 st, pure sine 220 input.
+//
+// PROBED MECHANISM (this file, 2026-10-07): a single TD-PSOLA job at
+// beta = 0.5 (adapter geometry, large output capacity) produces ONLY
+// carrier-at-the-input-pitch content: the mark law s = P/beta tiles
+// 2P-length grains at hop 2P (exact tiling, no overlap) — the output is the
+// input's own 220 Hz wave shape amplitude-modulated at 110 Hz (measured
+// Goertzel: 220:0.26 vs 110:0.13, EVERYWHERE in the production, flush
+// included). THE DIRECT FULL-BUFFER RENDER MEASURES THE SAME (220-dominant
+// with the 110 sideband at half) — so the raw Goertzel-dominant metric
+// CANNOT separate the adapter from the direct, and the RC-2a finding's
+// "adapter-path-only" classification needs the tracker metric arbitration.
+// DIAGNOSTIC-FIRST: prints the table; no assertions.
+// ---------------------------------------------------------------------------
+namespace {
+
+double goertzelMagAt(const double* s, int64_t n0, int64_t n, double f, double fs) {
+  const double w = 2.0 * kPi * f / fs;
+  const double coeff = 2.0 * std::cos(w);
+  double q0 = 0.0, q1 = 0.0, q2 = 0.0;
+  for (int64_t i = 0; i < n; ++i) {
+    q0 = coeff * q1 - q2 + s[n0 + i];
+    q2 = q1;
+    q1 = q0;
+  }
+  return std::sqrt(q1 * q1 + q2 * q2 - coeff * q1 * q2) / static_cast<double>(n);
+}
+
+double goertzelDominant(const std::vector<double>& s, int64_t n0, int64_t n,
+                        double fs) {
+  double best = 0.0, bestF = 0.0;
+  for (double f = 60.0; f <= 400.0; f += 1.0) {
+    const double m = goertzelMagAt(s.data(), n0, n, f, fs);
+    if (m > best) { best = m; bestF = f; }
+  }
+  return bestF;
+}
+
+/// median voiced f0 of the settled region (the contract's pitch instrument)
+double trackerMedianF0(const std::vector<double>& s, double fs, int64_t b0,
+                       int64_t b1) {
+  if (b0 < 0) return 0.0;
+  if (b1 > static_cast<int64_t>(s.size())) b1 = static_cast<int64_t>(s.size());
+  if (b1 - b0 < 4096) return 0.0;
+  const std::vector<double> seg(s.begin() + static_cast<std::ptrdiff_t>(b0),
+                                s.begin() + static_cast<std::ptrdiff_t>(b1));
+  const PitchTrack tr = trackPitch(seg, fs, kTrackerFminHz, kTrackerFmaxHz);
+  std::vector<double> v;
+  for (const auto& f : tr.frames)
+    if (f.voiced && f.f0Hz > 0.0) v.push_back(f.f0Hz);
+  if (v.empty()) return 0.0;
+  std::sort(v.begin(), v.end());
+  return v[v.size() / 2];
+}
+
+/// one DIRECT full-buffer render at a constant ratio; returns the wet
+std::vector<double> directRender(double fs, int maxBlock, double beta,
+                                 int64_t nIn, bool sawMaterial = false) {
+  auto engine = makeTimePitchEngine();
+  EngineConfiguration cfg;
+  cfg.seed = 7;
+  cfg.parameters.emplace_back("mode", ParameterValue{std::string("pitch_synced")});
+  engine->configure(cfg);
+  std::vector<double> curve(static_cast<std::size_t>(nIn), beta);
+  PitchCurveView cv{};
+  cv.ratio = curve.data();
+  cv.frames = static_cast<FrameCount>(curve.size());
+  cv.sampleRate = fs;
+  ProcessContext ctx{};
+  ctx.sampleRate = fs;
+  ctx.channels = 1;
+  ctx.maxBlockFrames = maxBlock;
+  ctx.totalInputFrames = nIn;
+  ctx.curve = &cv;
+  engine->prepare(ctx);
+  std::vector<double> x = sawMaterial
+      ? musicalInput(nIn, fs, 0.5, 220.0)
+      : std::vector<double>();
+  if (!sawMaterial) {
+    x.assign(static_cast<std::size_t>(nIn), 0.0);
+    for (int64_t i = 0; i < nIn; ++i)
+      x[static_cast<std::size_t>(i)] =
+          0.5 * std::sin(2.0 * kPi * 220.0 * static_cast<double>(i) / fs);
+  }
+  std::vector<double> wet;
+  wet.reserve(300000);
+  std::vector<double> outBuf(static_cast<std::size_t>(65536), 0.0);
+  FrameCount consumed = 0;
+  while (consumed < nIn) {
+    const int take = static_cast<int>(std::min<int64_t>(maxBlock, nIn - consumed));
+    const double* inCh[1] = {x.data() + consumed};
+    AudioBlockView inView{inCh, 1, take};
+    double* outCh[1] = {outBuf.data()};
+    AudioBlockOut outView{outCh, 1, 65536};
+    const ProcessReport rep =
+        engine->process(inView, take, outView, 65536, cv, consumed);
+    for (FrameCount i = 0; i < rep.outputFramesProduced; ++i)
+      wet.push_back(outBuf[static_cast<std::size_t>(i)]);
+    consumed += take;
+  }
+  std::vector<double> finBuf(static_cast<std::size_t>(262144), 0.0);
+  double* finCh[1] = {finBuf.data()};
+  AudioBlockOut outView{finCh, 1, 262144};
+  const ProcessReport frep = engine->finish(outView, 262144);
+  for (FrameCount i = 0; i < frep.outputFramesProduced; ++i)
+    wet.push_back(finBuf[static_cast<std::size_t>(i)]);
+  return wet;
+}
+
+}  // namespace
+
+TEST_CASE("TP-PS-BETA-DOWN-CONTENT: direct vs adapter, both pitch instruments") {
+  const double fs = 48000.0;
+  const int maxBlock = 512;
+  const int64_t windowO = 12032;
+  const int64_t chainAdvance = windowO - 720;
+  const int64_t nIn = 120000;  // 2.5 s direct render input
+  std::printf("|  st  | path | produced | D.4 exp | goertzelDom | trackerMed | expected |\n");
+  for (double st : {12.0, -5.0, -7.0, -12.0}) {
+    const double beta = std::exp2(st / 12.0);
+    const double expected = 220.0 * beta;
+    // ---- direct ----
+    {
+      const std::vector<double> wet = directRender(fs, maxBlock, beta, nIn);
+      const int64_t mid = (int64_t)wet.size() / 2;
+      const double gDom = goertzelDominant(wet, mid, 32768, fs);
+      const double tMed = trackerMedianF0(wet, fs, mid, mid + 96000);
+      const double gExp = goertzelMagAt(wet.data(), mid, 32768, expected, fs);
+      const double gH2 = goertzelMagAt(wet.data(), mid, 32768, 2.0 * expected, fs);
+      std::printf("| %5.0f | direct | %8lld | %7lld | %9.1f Hz | %8.1f Hz | %6.1f Hz | g(expected)=%.4f g(2x)=%.4f\n",
+                  st, (long long)wet.size(), (long long)(2 * nIn), gDom, tMed,
+                  expected, gExp, gH2);
+    }
+    // ---- direct on the FINDING's own material (the harmonic stack) ----
+    {
+      const std::vector<double> wet = directRender(fs, maxBlock, beta, nIn, true);
+      const int64_t mid = (int64_t)wet.size() / 2;
+      const double gDom = goertzelDominant(wet, mid, 32768, fs);
+      const double tMed = trackerMedianF0(wet, fs, mid, mid + 96000);
+      std::printf("| %5.0f | direct(saw) | %8lld | %7lld | %9.1f Hz | %8.1f Hz | %6.1f Hz |\n",
+                  st, (long long)wet.size(), 0LL, gDom, tMed, expected);
+    }
+    // ---- adapter ----
+    {
+      DriveConfig c;
+      c.tpMode = 2;
+      c.pitchSt = st;
+      c.seconds = 7;
+      c.block = maxBlock;
+      RealtimeAdapter adapter;
+      adapter.activate(fs, 2, c.block);
+      adapter.setParameterSnapshot(snapshotFor(c));
+      adapter.requestHardReset();
+      const int64_t total = static_cast<int64_t>(fs * c.seconds);
+      const std::vector<double> sig = musicalInput(total, fs, c.amp, c.inputFreq);
+      // make the adapter input a PURE SINE so the two paths see the same material
+      for (int64_t i = 0; i < total; ++i)
+        const_cast<std::vector<double>&>(sig)[static_cast<std::size_t>(i)] =
+            0.5 * std::sin(2.0 * kPi * 220.0 * static_cast<double>(i) / fs);
+      std::vector<double> out0(static_cast<std::size_t>(total), 0.0);
+      std::vector<double> out1(static_cast<std::size_t>(total), 0.0);
+      int64_t pos = 0;
+      while (pos < total) {
+        const int32_t take = static_cast<int32_t>(std::min<int64_t>(c.block, total - pos));
+        const double* in[2] = {sig.data() + pos, sig.data() + pos};
+        double* o[2] = {out0.data() + pos, out1.data() + pos};
+        BlockAutomation none;
+        adapter.process(in, o, take, none);
+        pos += take;
+        std::this_thread::sleep_for(std::chrono::microseconds(250));
+      }
+      const StatusSnapshot stSnap = adapter.status();
+      const int64_t latFrames = stSnap.latencyFrames;
+      const int64_t begin = latFrames + static_cast<int64_t>(fs * 0.5);
+      const int64_t end = total - static_cast<int64_t>(fs * 0.05);
+      const double gDom = goertzelDominant(out0, begin, 32768, fs);
+      const double tMed = trackerMedianF0(out0, fs, begin, end);
+      const double gExp = goertzelMagAt(out0.data(), begin, 32768, expected, fs);
+      const double gH2 = goertzelMagAt(out0.data(), begin, 32768, 2.0 * expected, fs);
+      std::printf("      adapter targeted: g(expected)=%.4f g(2x)=%.4f\n", gExp, gH2);
+      // ALSO arbitrate on the FINDING's own material (the harmonic stack):
+      // the same drive with musicalInput (no sine replacement).
+      {
+        RealtimeAdapter a2;
+        a2.activate(fs, 2, c.block);
+        a2.setParameterSnapshot(snapshotFor(c));
+        a2.requestHardReset();
+        const int64_t total2 = static_cast<int64_t>(fs * c.seconds);
+        const std::vector<double> sig2 = musicalInput(total2, fs, c.amp, c.inputFreq);
+        std::vector<double> o2a(static_cast<std::size_t>(total2), 0.0);
+        std::vector<double> o2b(static_cast<std::size_t>(total2), 0.0);
+        int64_t pos2 = 0;
+        while (pos2 < total2) {
+          const int32_t take2 = static_cast<int32_t>(std::min<int64_t>(c.block, total2 - pos2));
+          const double* in2[2] = {sig2.data() + pos2, sig2.data() + pos2};
+          double* oo[2] = {o2a.data() + pos2, o2b.data() + pos2};
+          BlockAutomation none2;
+          a2.process(in2, oo, take2, none2);
+          pos2 += take2;
+          std::this_thread::sleep_for(std::chrono::microseconds(250));
+        }
+        const int64_t begin2 = stSnap.latencyFrames + static_cast<int64_t>(fs * 0.5);
+        const int64_t end2 = total2 - static_cast<int64_t>(fs * 0.05);
+        const double gDom2 = goertzelDominant(o2a, begin2, 32768, fs);
+        const double tMed2 = trackerMedianF0(o2a, fs, begin2, end2);
+        std::printf("| %5.0f | adapter(saw) | %8lld | %7lld | %9.1f Hz | %8.1f Hz | %6.1f Hz | undr=%llu fbTel=%llu faults=%llu\n",
+                    st, 0LL, 0LL, gDom2, tMed2, expected,
+                    (unsigned long long)stSnap.deliveryUnderruns,
+                    (unsigned long long)stSnap.dryFallbackFrames,
+                    (unsigned long long)stSnap.faults);
+      }
+      std::printf("| %5.0f | adapter| %8lld | %7lld | %9.1f Hz | %8.1f Hz | %6.1f Hz | undr=%llu fbTel=%llu faults=%llu adv=%lld\n",
+                  st, 0LL, 0LL, gDom, tMed, expected,
+                  (unsigned long long)stSnap.deliveryUnderruns,
+                  (unsigned long long)stSnap.dryFallbackFrames,
+                  (unsigned long long)stSnap.faults,
+                  (long long)chainAdvance);
+    }
   }
 }

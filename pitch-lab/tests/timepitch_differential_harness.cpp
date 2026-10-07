@@ -42,8 +42,13 @@
 #include "vst/realtime_adapter.h"
 #include "vst/realtime_status.h"
 
+#include "analysis/pitch_tracker.h"
+
+#include "engines/timepitch_engine.h"
+
 using namespace pitchlab;
 using namespace pitchlab::vst;
+using namespace pitchlab::analysis;
 
 namespace {
 
@@ -595,6 +600,93 @@ TEST_CASE("TP-DIFF-RC1-GATE: automation-only sweep delivery is zero-miss (the RC
   }
 }
 
+// --- CP-5 arbitration helpers (2026-10-07) -----------------------------------
+//
+// THE TWO PITCH INSTRUMENTS and what they measure on the frozen TD-PSOLA
+// pitch-down synthesis (measured on the canonical tree, see the probe case
+// TP-PS-BETA-DOWN-CONTENT in timepitch_host_probe.cpp):
+//
+//   * the RAW GOERTZEL DOMINANT (60..400 Hz sweep) reads the GRAIN CARRIER:
+//     the mark law s = P/beta tiles 2P-length grains at hop s, so at strong
+//     down-shifts the output's spectral dominant sits at the INPUT pitch's
+//     carrier (2x the shifted f0 at beta = 1/2) with the shifted
+//     fundamental as a sideband. MEASURED IDENTICAL ON THE DIRECT RENDER:
+//     the direct full-buffer job at -7/-12 st reports the same 293/220 Hz
+//     dominant the adapter does. The raw Goertzel dominant therefore CANNOT
+//     separate the adapter path from the direct engine — it measures the
+//     frozen synthesis character, not an adapter defect.
+//   * the CONTRACT'S PITCH INSTRUMENT (the clean-room pYIN tracker) reads
+//     the shifted fundamental EXACTLY on both paths at -5/-7/-12 (sine):
+//     164.7 / 146.8 / 110.0 Hz vs the expected 164.8 / 146.8 / 110.0.
+
+/// median voiced f0 over [b0, b1) — the contract's pitch instrument
+double trackerMedianF0(const std::vector<double>& s, double fs, int64_t b0,
+                       int64_t b1) {
+  if (b0 < 0) return 0.0;
+  if (b1 > static_cast<int64_t>(s.size())) b1 = static_cast<int64_t>(s.size());
+  if (b1 - b0 < 4096) return 0.0;
+  const std::vector<double> seg(s.begin() + static_cast<std::ptrdiff_t>(b0),
+                                s.begin() + static_cast<std::ptrdiff_t>(b1));
+  const PitchTrack tr = trackPitch(seg, fs, kTrackerFminHz, kTrackerFmaxHz);
+  std::vector<double> v;
+  for (const auto& f : tr.frames)
+    if (f.voiced && f.f0Hz > 0.0) v.push_back(f.f0Hz);
+  if (v.empty()) return 0.0;
+  std::sort(v.begin(), v.end());
+  return v[v.size() / 2];
+}
+
+/// ONE direct offline job (the whole-curve render, no adapter) at a constant
+/// ratio over a pure sine — the content arbiter the RC-2a fix discipline
+/// names. Returns the full wet (production + finish flush).
+std::vector<double> directRenderSine(double fs, int maxBlock, double beta,
+                                     int64_t nIn) {
+  auto engine = makeTimePitchEngine();
+  EngineConfiguration cfg;
+  cfg.seed = 7;
+  cfg.parameters.emplace_back("mode", ParameterValue{std::string("pitch_synced")});
+  engine->configure(cfg);
+  std::vector<double> curve(static_cast<std::size_t>(nIn), beta);
+  PitchCurveView cv{};
+  cv.ratio = curve.data();
+  cv.frames = static_cast<FrameCount>(curve.size());
+  cv.sampleRate = fs;
+  ProcessContext ctx{};
+  ctx.sampleRate = fs;
+  ctx.channels = 1;
+  ctx.maxBlockFrames = maxBlock;
+  ctx.totalInputFrames = nIn;
+  ctx.curve = &cv;
+  engine->prepare(ctx);
+  std::vector<double> x(static_cast<std::size_t>(nIn), 0.0);
+  for (int64_t i = 0; i < nIn; ++i)
+    x[static_cast<std::size_t>(i)] =
+        0.5 * std::sin(2.0 * kPi * 220.0 * static_cast<double>(i) / fs);
+  std::vector<double> wet;
+  wet.reserve(300000);
+  std::vector<double> outBuf(static_cast<std::size_t>(65536), 0.0);
+  FrameCount consumed = 0;
+  while (consumed < nIn) {
+    const int take = static_cast<int>(std::min<int64_t>(maxBlock, nIn - consumed));
+    const double* inCh[1] = {x.data() + consumed};
+    AudioBlockView inView{inCh, 1, take};
+    double* outCh[1] = {outBuf.data()};
+    AudioBlockOut outView{outCh, 1, 65536};
+    const ProcessReport rep =
+        engine->process(inView, take, outView, 65536, cv, consumed);
+    for (FrameCount i = 0; i < rep.outputFramesProduced; ++i)
+      wet.push_back(outBuf[static_cast<std::size_t>(i)]);
+    consumed += take;
+  }
+  std::vector<double> finBuf(static_cast<std::size_t>(262144), 0.0);
+  double* finCh[1] = {finBuf.data()};
+  AudioBlockOut outView{finCh, 1, 262144};
+  const ProcessReport frep = engine->finish(outView, 262144);
+  for (FrameCount i = 0; i < frep.outputFramesProduced; ++i)
+    wet.push_back(finBuf[static_cast<std::size_t>(i)]);
+  return wet;
+}
+
 // ---------------------------------------------------------------------------
 // TP-DIFF-BETADOWN: the RC-2a recheck (the master recovery pack TASK E) —
 // the adapter path at beta < 1 (pitch DOWN): -5/-7/-12 st statics through
@@ -608,7 +700,7 @@ TEST_CASE("TP-DIFF-RC1-GATE: automation-only sweep delivery is zero-miss (the RC
 
 TEST_CASE("TP-DIFF-BETADOWN: pitch_synced statics at -5/-7/-12 st (the RC-2a adapter recheck)") {
   initArtifact();
-  artifactHeader("BETADOWN — pitch_synced statics at beta<1 (48k/512, saw 220)");
+  artifactHeader("BETADOWN — pitch_synced statics at beta<1 (48k/512, saw + sine arbitration)");
   artifactLine("| mode | sched | host | mat | fs | blk | rtf | latMs | undr | fbTel | fbDet | runs | maxRun | stall | prepF | adoptF | rprep | resets | seam | clicks | maxD | silS | silF | firstSil | wetSpan | inSpan | domHz | domMag | H2/3/4/5/6 |");
   artifactLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   for (double st : {-5.0, -7.0, -12.0}) {
@@ -635,46 +727,194 @@ TEST_CASE("TP-DIFF-BETADOWN: pitch_synced statics at -5/-7/-12 st (the RC-2a ada
       if (outA[p] != outB[p]) ++mismatches;
     }
     CHECK_EQ(mismatches, 0);
-    // the wet is real and pitched at the DOWN-shifted expectation
-    const int64_t lat = ra.status.latencyFrames;
-    const int64_t total = static_cast<int64_t>(c.fs * c.seconds);
-    const int64_t N = 16384;
-    const int64_t n0 = total - static_cast<int64_t>(c.fs * 0.05) - N - 1;
-    double bestMag = 0.0, bestF = 0.0;
-    for (double f = 60.0; f <= 400.0; f += 1.0) {
-      const double m = goertzelMag(outA.data(), n0, N, f, c.fs);
-      if (m > bestMag) {
-        bestMag = m;
-        bestF = f;
+
+    // ---- CP-5 (2026-10-07): the TWO-INSTRUMENT ARBITRATION -------------------
+    //
+    // The TASK E finding classified the beta<1 wet-pitch defect as
+    // ADAPTER-PATH-ONLY from the raw Goertzel dominant. The CP-5 diagnostic
+    // (the probe case TP-PS-BETA-DOWN-CONTENT) FALSIFIED that exclusivity:
+    // the DIRECT full-buffer render measures the SAME raw Goertzel dominant
+    // at -7/-12 (the frozen TD-PSOLA pitch-down synthesis tiles 2P grains
+    // at hop s = P/beta, so the grain CARRIER at the input pitch dominates
+    // the spectrum; the shifted fundamental survives as the sideband) —
+    // while the CONTRACT'S pitch instrument (the pYIN tracker) reads the
+    // shifted fundamental EXACTLY on BOTH paths. THE HARD GATES below are
+    // therefore the tracker-arbitrated pair:
+    //   (1) the adapter's settled wet reads the EXPECTED shifted pitch;
+    //   (2) the adapter and the DIRECT engine AGREE (the package's
+    //       adapter/direct consistency item).
+    // The raw Goertzel dominant stays REPORTED (never asserted away) as the
+    // synthesis-character telemetry, with the direct's own value alongside.
+    DriveConfig sine = c;
+    sine.material = Material::Sine;
+    sine.seconds = 5.0;
+    std::vector<double> sineOut;
+    const DriveReport rs = drive(sine, &sineOut);
+    const int64_t latS = rs.status.latencyFrames;
+    const int64_t beginS = latS + static_cast<int64_t>(sine.fs * 0.5);
+    const int64_t endS = static_cast<int64_t>(sine.fs * sine.seconds) -
+                         static_cast<int64_t>(sine.fs * 0.05);
+    const double tAdapter = trackerMedianF0(sineOut, sine.fs, beginS, endS);
+    const double expected = 220.0 * std::exp2(st / 12.0);
+    const std::vector<double> directWet = directRenderSine(sine.fs, 512, std::exp2(st / 12.0), 120000);
+    const int64_t midD = static_cast<int64_t>(directWet.size()) / 2;
+    const double tDirect = trackerMedianF0(directWet, sine.fs, midD, midD + 96000);
+    const double gAdapter = goertzelMag(sineOut.data(), beginS, 32768, 60.0 + 0.0, sine.fs);
+    (void)gAdapter;
+    double gDomA = 0.0, gDomD = 0.0;
+    {
+      double best = 0.0;
+      for (double f = 60.0; f <= 400.0; f += 1.0) {
+        const double m = goertzelMag(sineOut.data(), beginS, 32768, f, sine.fs);
+        if (m > best) { best = m; gDomA = f; }
+      }
+      best = 0.0;
+      for (double f = 60.0; f <= 400.0; f += 1.0) {
+        const double m = goertzelMag(directWet.data(), midD, 32768, f, sine.fs);
+        if (m > best) { best = m; gDomD = f; }
       }
     }
-    // TASK E FINDING (2026-10-06, CONFIRMED on the canonical tree): the
-    // dominant sits at the INPUT pitch's structure (at -12 st: ~219 Hz, the
-    // input f0; at -5/-7: the shifted content's 2ND harmonic) — the
-    // down-shifted fundamental is structurally weak/absent through the
-    // ADAPTER path while the DIRECT engine is contract-correct (the
-    // T-PSOLA D.4 pitch gates pass at beta = 1/2). MECHANISM (the
-    // rc2a_finding record): the splice job's input span is sized
-    // windowO x max(1, envMax) — at beta < 1 the D.4 consumption per
-    // output window is beta x windowO, so the oversized span skips
-    // (1 - beta) x windowO of input per window and the wet content
-    // collapses toward the input's own line structure. The pitch-DOWN
-    // class is a CONFIRMED RC-2a defect; the fix (the ratio-scaled input
-    // span) is the next implementation checkpoint — REPORTED here, never
-    // asserted away.
+    char row[192];
+    std::snprintf(row, sizeof(row),
+                  "| %.0f st | sine arbitration | tracker adapter=%.1f direct=%.1f expected=%.1f | goertzel adapter=%.0f direct=%.0f (the carrier character, reported) | undr=%llu fbTel=%llu faults=%llu |",
+                  st, tAdapter, tDirect, expected, gDomA, gDomD,
+                  (unsigned long long)rs.status.deliveryUnderruns,
+                  (unsigned long long)rs.status.dryFallbackFrames,
+                  (unsigned long long)rs.status.faults);
+    artifactLine(row);
+    std::printf("  BETADOWN %.0f st [sine]: tracker adapter=%.1f direct=%.1f (expected %.1f); goertzel adapter=%.0f direct=%.0f\n",
+                st, tAdapter, tDirect, expected, gDomA, gDomD);
+    // HARD: the adapter's settled wet reads the expected shifted pitch
+    // (the contract's instrument; the ±2 Hz band = the sweep of the
+    // tracker's own 10-cent bins + margin)
+    CHECK_MESSAGE(std::fabs(tAdapter - expected) <= 2.0,
+                  "the adapter wet must read the expected shifted pitch (the pYIN tracker, sine arbitration)");
+    // HARD (the RC-2a package's adapter/direct consistency item): the two
+    // paths read the SAME pitch
+    CHECK_MESSAGE(std::fabs(tAdapter - tDirect) <= 2.0,
+                  "the adapter path must agree with the direct engine (the tracker, sine arbitration)");
+    // the sine delivery class stays zero-miss too
+    CHECK_EQ(rs.status.deliveryUnderruns, 0u);
+    CHECK_EQ(rs.status.dryFallbackFrames, 0u);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TP-DIFF-BETAMATRIX (CP-5, 2026-10-07): the RC-2a package's mandated
+// validation matrix — pitch {0,+7,+12,-5,-7,-12} st x fs {44.1,48,96} kHz x
+// block {64,128,256,512,1024} on the Pitch-Synced adapter path, static
+// drives, SINE material (the unambiguous pitch-metric class), the pYIN
+// tracker as the pitch instrument. REPORTED (diagnostic-first): the hard
+// gates stay in BETADOWN (the 48k/512 canonical point) and the frozen
+// invariants; this case RECORDS the mandated matrix so a regression lands
+// in the artifact as a diffable row, not as a flipped assertion.
+//
+// The pitch correctness measure per row: the tracker median over the
+// settled region vs the expected shifted pitch (the ±2 Hz band reported;
+// any violation prints a WARNING line into the artifact — the RC-2a
+// lesson: reported, never asserted away).
+//
+// Default (CI budget): fs = 48 kHz x blocks {64,512,1024} = 18 rows.
+// PITCHLAB_TP_DIFF_FULLMATRIX=1 runs the FULL 90-row matrix (the CP-5
+// evidence record was produced with it).
+// ---------------------------------------------------------------------------
+TEST_CASE("TP-DIFF-BETAMATRIX: the mandated fs x block x pitch matrix (reported)") {
+  initArtifact();
+  artifactHeader("BETAMATRIX — pitch_synced statics, sine, tracker-arbitrated (the CP-5 mandated matrix)");
+  artifactLine("| st | fs | blk | latMs | undr | fbTel | fbDet | stall | prepF | clicks | maxD | rtf | trackerMed | expected | pitchOK | live | jobsC | exitDrop | resets |");
+  artifactLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  const bool full = std::getenv("PITCHLAB_TP_DIFF_FULLMATRIX") != nullptr;
+  const double fsSet[] = {44100.0, 48000.0, 96000.0};
+  const int blkSet[] = {64, 128, 256, 512, 1024};
+  int rows = 0, violations = 0;
+  for (double st : {0.0, 7.0, 12.0, -5.0, -7.0, -12.0}) {
     const double expected = 220.0 * std::exp2(st / 12.0);
-    std::printf("  BETADOWN %.0f st: dominant %.1f Hz (expected %.1f Hz)%s\n",
-                st, bestF, expected,
-                std::fabs(bestF - expected) <= 4.0 ? "" : "  << RC-2a CONFIRMED DEFECT (reported, not gated)");
-    if (std::fabs(bestF - expected) > 4.0) {
-      char w[160];
-      std::snprintf(w, sizeof(w),
-                    "WARNING RC-2a beta<1 wet-pitch defect: st=%.0f dom=%.1f "
-                    "expected=%.1f (the finding record: results/research/"
-                    "task35-rc2a/)", st, bestF, expected);
-      artifactLine(std::string(w));
+    for (double fs : fsSet) {
+      for (int blk : blkSet) {
+        if (!full && fs != 48000.0) continue;
+        if (!full && blk != 64 && blk != 512 && blk != 1024) continue;
+        DriveConfig c;
+        c.tpMode = 2;
+        c.sched = Sched::Static;
+        c.pitchSt = st;
+        c.fs = fs;
+        c.block = static_cast<int32_t>(blk);
+        c.seconds = 2.5;
+        c.material = Material::Sine;
+        std::vector<double> out;
+        const DriveReport r = drive(c, &out);
+        const int64_t lat = r.status.latencyFrames;
+        const int64_t begin = lat + static_cast<int64_t>(fs * 0.5);
+        const int64_t end = static_cast<int64_t>(fs * c.seconds) -
+                            static_cast<int64_t>(fs * 0.05);
+        const double tMed = trackerMedianF0(out, fs, begin, end);
+        const bool ok = tMed > 0.0 && std::fabs(tMed - expected) <= 2.0;
+        ++rows;
+        if (!ok) ++violations;
+        char row[224];
+        std::snprintf(row, sizeof(row),
+                      "| %.0f | %.0f | %d | %.1f | %llu | %llu | %llu | %llu | %llu | %lld | %.4f | %.3f | %.1f | %.1f | %s | %d | %llu | %llu | %llu |",
+                      st, fs, blk, static_cast<double>(lat) / fs * 1000.0,
+                      (unsigned long long)r.status.deliveryUnderruns,
+                      (unsigned long long)r.status.dryFallbackFrames,
+                      (unsigned long long)r.fallbackFrames,
+                      (unsigned long long)r.status.jobStalls,
+                      (unsigned long long)r.status.preparationFailures,
+                      (long long)r.clicks, r.maxAbsDelta, r.rtf, tMed, expected,
+                      ok ? "OK" : "VIOLATION", r.status.liveJobs,
+                      (unsigned long long)r.status.jobsCompleted,
+                      (unsigned long long)r.status.exitDropped,
+                      (unsigned long long)r.status.resets);
+        artifactLine(row);
+        if (!ok) {
+          char w[160];
+          std::snprintf(w, sizeof(w),
+                        "WARNING BETAMATRIX pitch violation: st=%.0f fs=%.0f blk=%d tracker=%.1f expected=%.1f",
+                        st, fs, blk, tMed, expected);
+          artifactLine(w);
+          std::printf("  %s\n", w);
+        }
+      }
     }
   }
+  // reset-reuse rows (the package's reset/reuse item): repeated hard resets
+  // at the strongest down-shift; the post-reset output must re-pitch
+  {
+    DriveConfig c;
+    c.tpMode = 2;
+    c.sched = Sched::RepeatedReset;
+    c.pitchSt = -12.0;
+    c.seconds = 6.0;
+    c.material = Material::Sine;
+    std::vector<double> out;
+    const DriveReport r = drive(c, &out);
+    const int64_t lat = r.status.latencyFrames;
+    const double tMed = trackerMedianF0(
+        out, c.fs, lat + static_cast<int64_t>(c.fs * 1.0),
+        static_cast<int64_t>(c.fs * c.seconds) - static_cast<int64_t>(c.fs * 0.05));
+    char row[224];
+    std::snprintf(row, sizeof(row),
+                  "| reset-reuse | %.0f | %d | %.1f | %llu | %llu | %llu | %llu | %llu | %lld | %.4f | %.3f | %.1f | %.1f | %s | %d | %llu | %llu | %llu |",
+                  c.fs, c.block, static_cast<double>(lat) / c.fs * 1000.0,
+                  (unsigned long long)r.status.deliveryUnderruns,
+                  (unsigned long long)r.status.dryFallbackFrames,
+                  (unsigned long long)r.fallbackFrames,
+                  (unsigned long long)r.status.jobStalls,
+                  (unsigned long long)r.status.preparationFailures,
+                  (long long)r.clicks, r.maxAbsDelta, r.rtf, tMed, 110.0,
+                  (tMed > 0.0 && std::fabs(tMed - 110.0) <= 2.0) ? "OK" : "VIOLATION",
+                  r.status.liveJobs, (unsigned long long)r.status.jobsCompleted,
+                  (unsigned long long)r.status.exitDropped,
+                  (unsigned long long)r.status.resets);
+    artifactLine(row);
+    std::printf("  BETAMATRIX reset-reuse: resets=%llu tracker=%.1f (expected 110.0) undr=%llu fbTel=%llu faults=%llu\n",
+                (unsigned long long)r.status.resets, tMed,
+                (unsigned long long)r.status.deliveryUnderruns,
+                (unsigned long long)r.status.dryFallbackFrames,
+                (unsigned long long)r.status.faults);
+  }
+  std::printf("  BETAMATRIX: %d rows, %d pitch violations (reported; the artifact carries the rows)\n",
+              rows, violations);
 }
 
 // ---------------------------------------------------------------------------
