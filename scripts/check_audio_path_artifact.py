@@ -17,6 +17,17 @@
 #   first-fix failure class: output_rms 0.3507 -> 0.3469 WITH
 #   tonal_ratio 0.878 -> 0.669; the RC-1 dry bursts: zero nonzero_frames).
 #
+# CALIBRATION (the CI evidence, 2026-10-06/07): the union of the observed
+#   wobbles across 3 local runs + 2 independent CI runner runs (CP-2's raw
+#   diff + the CP-4b structured gate): output_rms +-0.003, output_peak
+#   +-0.019, tonal_ratio +-0.081, pitch_err_st +-0.024, pitch_zc +-4.1 Hz,
+#   nonzero_frames +-0.02%, max_jump +-0.001. The tolerances below sit at
+#   ~2x the observed maxima; the recorded real-regression signatures exceed
+#   them by wide margins (the first-fix class: tonal_ratio 0.878 -> 0.669 =
+#   0.209 WITH the joint rms/peak/pitch movement; the RC-1 dry class: the
+#   nonzero_frames/output_rms collapse to ~zero) — a genuine content
+#   regression moves SEVERAL fields jointly and trips the gate on each.
+#
 # WHAT the gate checks:
 #   * the record matrix itself is FROZEN: the record count and every
 #     identity field (phase, case, engine, material, pitch_st, sample_rate,
@@ -47,7 +58,7 @@ EXACT_FIELDS = [
 # the windowed-splice content tolerances (documented; see the header)
 SPLICE_TOLERANCES = {
     "output_rms": 0.01,
-    "output_peak": 0.01,
+    "output_peak": 0.04,
     "nonzero_frames": None,   # relative: 0.5% of the committed value
     "max_jump": 0.005,
     "pitch_measured": 3.0,    # Hz (measured wobble ±2.5)
@@ -55,7 +66,7 @@ SPLICE_TOLERANCES = {
                               # zero-crossing estimate; the correctness
                               # gate is pitch_err_st below)
     "pitch_err_st": 0.06,     # 6 cents — inside every declared family bound
-    "tonal_ratio": 0.02,
+    "tonal_ratio": 0.15,
 }
 
 SPLICE_MODE = "windowed-splice"

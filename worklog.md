@@ -1693,3 +1693,16 @@ Work Log:
 
 Stage Summary:
 - RC-2a is now a CONFIRMED, MEASURED, PERMANENTLY-REPRODUCIBLE defect class on the canonical tree (the harness case is committed as the instrument): the Pitch-Synced down-shifts beyond ~ -5 st produce zero-miss but wrongly-pitched wet through the adapter, undetectable by every prior gate. The direct-engine semantics are clean. The fix (the ratio-scaled input span) is CP-5, sequenced after CP-3's CI verification per the one-checkpoint discipline. TIMEPITCH remains NOT COMPLETE: RC-1 fixed (CP-3, CI pending), RC-2a confirmed (CP-5 next), RC-2b owner decision pending (the package persisted), RC-3 recheck queued (TASK G — the same harness carries the seam classes), the human host listening pending.
+
+---
+Task ID: 35-taskk-gate-calibration
+Agent: Z.ai Code (orchestrator)
+Task: the audio-path artifact gate's FIRST CI calibration (the TASK K comparator, CP-4b's evidence).
+
+Work Log:
+- CP-4b (78b6511, docs-only) FAILED on the CI: the structured comparator's LOCALLY-calibrated tolerances were tighter than the CI runner's actual wobble for rec[119] (D/native.granular/block-4096): output_peak 0.6559 -> 0.6369 (delta 0.019 > 0.01) and tonal_ratio 0.458 -> 0.539 (delta 0.081 > 0.02) — the grain-phase alignment on the CI runner lands further from the committed reference than the local runs measured. CP-4 (991e195) itself PASSED with the same comparator — the wobble is a per-run coin flip inside the documented adoption-timing class.
+- CALIBRATED to the union of the observed evidence (3 local runs + the CP-2 CI raw diff + the CP-4b CI structured diff): output_peak 0.01 -> 0.04, tonal_ratio 0.02 -> 0.15; the other fields' tolerances confirmed (the observed maxima are 2-10x inside). The calibration record is in the script header.
+- VERIFIED both ways: the reconstructed CP-4b CI-observed values PASS; the synthetic first-fix-signature regression (output_rms collapse + tonal 0.878->0.669 + pitch error + fault delta) is still CAUGHT (4 violations) — a genuine content regression moves SEVERAL fields jointly and trips the gate on each.
+
+Stage Summary:
+- The structured gate is now calibrated to the full observed CI variance while retaining the regression sensitivity; the gate's first real CI iteration did exactly what the TASK K conversion is for: the observational flake became a MEASURED, DOCUMENTED, TIGHTENABLE gate instead of a coin-flip byte check.
