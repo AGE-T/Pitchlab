@@ -136,6 +136,28 @@ suites + the official Steinberg VST3 SDK validator: 47/47).
 2. **The Pitch-Synced flat-grid starvation** — the D.4 rate-following modes were driven through the §4.1 flat wet-grid, where the wet production advances at 1/β per input frame while the emission reads at 1:1: the read catches and permanently outruns production at t ≈ Λ/(1 − 1/β) (measured +7 st: one continuous 469 057-frame dry run from 0.41 s while `deliveryUnderruns` stayed 0 — the rate-following exemption classified the starvation as the legal wet end). Corrected to the §4.2 windowed-splice adaptation (the spec's own verdict for every RateFollowing engine); the exemption no longer masks anything (strict accounting).
 3. **The Pitch-Synced engine reset-reuse defect** — `resetPitchSynced()` never reset the output cursor `tOut_`: every reset-reused engine emitted ZERO wet forever (the emission gate `tOut_ + 1 > finalFrontier_` blocked permanently). Latent since checkpoint 3 (the flat-grid 10-s jobs never recycled inside any test's length); the splice geometry's job recycling exposed it immediately. The T-D3 bit-identity is restored (fresh-prepare == reset-reuse, exact).
 
+### The TASK G recheck record (2026-10-08; the owner's "Fixed / RECT: occasional crackles" report, re-measured at `d8b226a`)
+
+**The residual Fixed/RECT crackle is REAL, REPRODUCIBLE, and is the SYNTHESIS
+CHARACTER of the rect window — not a delivery fault and not the re-centre
+seam.** The full mandated matrix (Fixed × shapes {hann control, rect} × pitch
+{0, +7, −7, +12, −12} × {static, sweep, instant step, repeated step, repeated
+reset, recentre} × block {64…1024} × fs {44.1, 48, 96 kHz}; 420 drives) lives
+at `results/vst3/task35/rc3-rect-recheck/` with the owner listening WAVs. The
+mechanism: the rect window has no taper, so at pitch ≠ 0 the stretched-content
+mismatch at every OLA grain boundary passes through the window-product
+normalisation unattenuated (the tapered shapes mask it to zero; pitch 0 is
+EXACT identity on every shape). The crackle measures IDENTICALLY through the
+direct offline engine (no adapter) and the production adapter path, and the
+engine is BIT-IDENTICAL to the validated Task-28 OLA reference on every rect
+configuration (the reference clicks the same) — frozen-design behaviour per
+§6.6.1, recorded in the spec §12 known limitations as an owner-decision item.
+Zero delivery faults / zero re-centres on every static rect row; the pure
+re-centre seam (hann, ±1.5 st boundary oscillation, 8 rebuilds) measures ZERO
+clicks — the RC-3 seam class is clean at `d8b226a`; the sweep seam clicks
+remain at their historical rate (hann sweep 48k: 8-12 per 8 s, all
+seam-correlated — the documented Task-30 character).
+
 ### Pitch range and capability honesty (the task-33 continuation Phase 5)
 
 The PITCH control spans **−48 … +48 st** (the broadest shared control range the surface needs). Each engine's ACTUAL support is **capability-derived** and displayed under the control ("supported: −X … +X st", from the selected engine's declared `minRatio`/`maxRatio` — Time Pitch and the PV pair −24…+24, VARDELAY −12…+12, GRANULAR −36…+36, VARISPEED −48…+48). A control value beyond the selected engine's support takes the **existing explicit saturation**: the chain envelope clamps the runtime curve to the engine's declared range, every clamp is COUNTED (`clamps` in the runtime status), and no fault is raised — the live ratio itself enters the envelope derivation clamped into the engine's declared range (the out-of-range pitch saturates AT the capability; the envelope is provably inside `[minRatio, maxRatio]`; the envelope-exit compares the clamped value — no churn). The mode names are user-facing (**Fixed / Adaptive / Pitch Synced / Pitch + Formant**); the internal identifiers are unchanged. The editor footer derives the engine count from the authoritative registry (PRODUCTION REGISTRY (6)).

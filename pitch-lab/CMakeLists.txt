@@ -230,6 +230,10 @@ pitchlab_add_doctest(rc2b_octave_null_probe tests/rc2b_octave_null_probe.cpp)
 target_compile_definitions(rc2b_octave_null_probe PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
+# Task-35 TASK G (the RC-3 / Fixed-RECT crackle recheck) is registered in
+# src/vst/CMakeLists.txt (the VST suite — the probe drives the PRODUCTION
+# adapter path, which needs the adapter linkage).
+
 # T-E14 / T-LEN-CAL: rate-following output-length calibration evidence
 # (spec §4.3.4/§13.1; the OD-6 evidence pack — full battery x 6 rates).
 pitchlab_add_doctest(length_calibration_test tests/length_calibration_test.cpp)

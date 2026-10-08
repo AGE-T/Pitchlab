@@ -736,6 +736,33 @@ Windows CI lane is a future owner decision, not part of this phase.
 * pv.classic AA cutoff carries the +1 st envelope margin (§4.1 item 2).
 * Automation that exits the ±1 st envelope re-prepares the chain (a
   crossfade seam during fast pitch sweeps — masked by the sweep itself).
+* **The `native.timepitch` Fixed-mode `window_shape=rect` synthesis
+  character (the TASK G recheck record, measured at `d8b226a`):** at any
+  NON-ZERO pitch the rect window's OLA synthesis produces audible
+  grain-boundary content discontinuities — the rect window has NO taper,
+  so the stretched-content mismatch at every OLA grain boundary passes
+  through the window-product normalisation unattenuated (the tapered
+  shapes hann/hamming/bartlett mask the same discontinuity to zero).
+  MEASURED: direct offline render AND production adapter path, saw 220,
+  48k/512, the harness click threshold: rect +7 = 81/79 clicks (direct /
+  adapter — the two paths agree), −7 = 154/150, +12 = 515/502, −12 =
+  137/134, 0 st = EXACT identity (0 clicks, −240 dB) on both paths; ZERO
+  delivery faults, ZERO re-centres, ZERO seam correlation on the static
+  rows (the crackle is the synthesis, not the delivery and not the
+  re-centre seam). The production engine is BIT-IDENTICAL to the
+  validated Task-28 OLA reference on every rect configuration (the
+  committed `timepitch_ola_reference_test`: e.g. +12/ov2 rect 717/717
+  clicks on BOTH sides) — the reference behaviour itself, not a migration
+  defect. Adjacent measured class: at +12 st on 44.1 kHz the hann shape's
+  own content steps measure maxΔ 0.129 — marginally above the 0.12
+  harness threshold (48 kHz measures 0.119, just below it; 96 kHz 0.059)
+  — the same content class, fs-scaled, below the click threshold at
+  every other (fs, pitch) point. Evidence:
+  `results/vst3/task35/rc3-rect-recheck/` (the 420-row matrix + the
+  listening WAVs + the click zoom) and the worklog task-35 TASK G entry.
+  This is FROZEN-design behaviour (§6.6.1 window arithmetic verbatim from
+  the validated prototype) — an owner-decision item, never silently
+  changed.
 * Realtime output is deterministic per (parameters trajectory, input,
   block schedule) while the chain set is constant — the single-chain drive
   is bit-identical across runs (tested); the exact BLOCK of a mid-stream

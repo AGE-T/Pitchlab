@@ -308,3 +308,13 @@ endif()
 pitchlab_add_vst_suite(timepitch_differential_harness)
 target_compile_definitions(timepitch_differential_harness PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+# Task-35 TASK G (the RC-3 / Fixed-RECT crackle recheck). Diagnostic-only:
+# it drives the PRODUCTION adapter (the chain/recentre/seam machinery —
+# no production-code change), asserts ONLY the frozen contract properties
+# (the static zero-miss class at the canonical operating point, both
+# shapes; render determinism); the click counts / seam correlation /
+# shape comparison stay MEASURED REPORTS for the owner decision.
+pitchlab_add_vst_suite(rc3_rect_crackle_probe)
+target_compile_definitions(rc3_rect_crackle_probe PRIVATE
+  PITCHLAB_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
