@@ -56,13 +56,23 @@ function slugify(text: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
+function childText(node: React.ReactNode): string {
+  if (node == null || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(childText).join("");
+  if (typeof node === "object" && "props" in node) {
+    return childText((node as { props?: { children?: React.ReactNode } }).props?.children);
+  }
+  return "";
+}
+
 const META = [
-  { label: "Kör", value: "Round 9 · Q-7" },
+  { label: "Kör", value: "Round 10 · Q-7 numerika + m02 12/13" },
   { label: "REA", value: "6.7.0" },
   { label: "Ghidra", value: "12.1.4" },
-  { label: "Eredmény", value: "Q-7 LEZÁRVA" },
-  { label: "Javítás", value: "R = ratio/16 (nem /64)" },
-  { label: "Egységpont", value: "f = 0 pontosan" },
+  { label: "Javítás", value: "49.939¢ / 199.923¢ (nem 50.13/201.68)" },
+  { label: "Törvény", value: "|cents − walk·depth| ≤ 0.101¢" },
+  { label: "Walk", value: "F ∈ [0,1] (1.0 elérhető)" },
 ];
 
 export function ReportViewer({
@@ -113,17 +123,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 9. kör
+                Octavox Research — 10. kör
               </h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                Q-7: a sebesség-térkép mezőkötések (+0x4128 / +0x40F8) feloldása · Eventide Octavox RE projekt
+                A 9. kör matematikájának validálása + a tracker 12/13 kimenetek adatútvonala · Eventide Octavox RE projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              Q-7 CLOSED
+              ROUND 10 · KÉSZ
             </Badge>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -152,9 +162,9 @@ export function ReportViewer({
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                    A 9. körre frissített teljes kutatási csomag: a round-9 megállapítások és a nyolc
-                    kanonikus dokumentum, 33 nyers elemzési bizonyíték, a DSP PoC és a round-8
-                    átvevői jelentés — önegyértő manifesttel.
+                    A 10. körre frissített teljes kutatási csomag: a round-10 megállapítások és a nyolc
+                    kanonikus dokumentum, a round-9 és round-10 nyers elemzési bizonyítékok, a DSP PoC
+                    és a round-8 átvevői jelentés — önegyértő manifesttel.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
@@ -164,7 +174,7 @@ export function ReportViewer({
                       {formatBytes(delivery.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      226 fájl · sha256sum -c
+                      243 fájl · sha256sum -c
                     </Badge>
                   </div>
                   {delivery.sha256 ? (
@@ -219,7 +229,7 @@ export function ReportViewer({
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Tartalom
               </p>
-              <ScrollArea className="h-[60vh] pr-3">
+              <ScrollArea className="h-[60vh] pr-3 [&_[data-radix-scroll-area-viewport]>div]:block!">
                 <nav className="space-y-1 text-sm">
                   {headings
                     .filter((h) => h.level <= 2)
@@ -250,7 +260,7 @@ export function ReportViewer({
                   remarkPlugins={[remarkGfm]}
                   components={{
                     h1: ({ children }) => {
-                      const id = slugify(String(children));
+                      const id = slugify(childText(children));
                       return (
                         <h1
                           id={id}
@@ -261,7 +271,7 @@ export function ReportViewer({
                       );
                     },
                     h2: ({ children }) => {
-                      const id = slugify(String(children));
+                      const id = slugify(childText(children));
                       return (
                         <h2
                           id={id}
@@ -272,7 +282,7 @@ export function ReportViewer({
                       );
                     },
                     h3: ({ children }) => {
-                      const id = slugify(String(children));
+                      const id = slugify(childText(children));
                       return (
                         <h3 id={id} className="mb-2 mt-6 scroll-mt-32 text-base font-semibold">
                           {children}
@@ -351,9 +361,9 @@ export function ReportViewer({
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            Octavox RE — 9. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
-            forrásfájl: <code className="font-mono">OCTAVOX_ROUND9_FINDINGS.md</code> · csomag:{" "}
-            <code className="font-mono">Octavox_RE_evidence_round9.zip</code>
+            Octavox RE — 10. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
+            forrásfájl: <code className="font-mono">OCTAVOX_ROUND10_FINDINGS.md</code> · csomag:{" "}
+            <code className="font-mono">Octavox_RE_evidence_round10.zip</code>
           </p>
         </div>
       </footer>

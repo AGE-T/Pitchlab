@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Octavox Research — Round 9 Findings",
+  title: "Octavox Research — Round 10 Findings",
   description:
-    "Q-7 resolved: the pitch rate map bindings (+0x4128/+0x40F8), the R = ratio/16 correction and the cents→ratio quartic — Eventide Octavox reverse engineering, round 9.",
+    "Round-9 mathematics validated (the modulation law quantified, example cent values corrected) and the tracker read-outs 12/13 (m02 params 0xc/0xd) traced end to end — Eventide Octavox reverse engineering, round 10.",
   keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting"],
   authors: [{ name: "Z.ai Team" }],
   icons: {
