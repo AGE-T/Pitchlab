@@ -3,12 +3,31 @@
 import { useMemo, useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Check, Copy, Download, FileArchive } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 type Heading = { id: string; text: string; level: number };
+
+type Delivery = {
+  fileName: string;
+  url: string;
+  sizeBytes: number;
+  sha256: string | null;
+};
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+  if (bytes >= 1024) {
+    return `${(bytes / 1024).toFixed(1)} kB`;
+  }
+  return `${bytes} B`;
+}
 
 function extractHeadings(markdown: string): Heading[] {
   const headings: Heading[] = [];
@@ -46,9 +65,27 @@ const META = [
   { label: "Egységpont", value: "f = 0 pontosan" },
 ];
 
-export function ReportViewer({ markdown }: { markdown: string }) {
+export function ReportViewer({
+  markdown,
+  delivery,
+}: {
+  markdown: string;
+  delivery?: Delivery | null;
+}) {
   const headings = useMemo(() => extractHeadings(markdown), [markdown]);
   const [activeId, setActiveId] = useState<string>("");
+  const [shaCopied, setShaCopied] = useState(false);
+
+  const copySha = async () => {
+    if (!delivery?.sha256) return;
+    try {
+      await navigator.clipboard.writeText(delivery.sha256);
+      setShaCopied(true);
+      window.setTimeout(() => setShaCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable — the hash remains selectable/copyable manually */
+    }
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -100,6 +137,82 @@ export function ReportViewer({ markdown }: { markdown: string }) {
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
+        {delivery ? (
+          <Card className="mb-6 border-emerald-600/40 bg-emerald-600/[0.04] dark:border-emerald-500/40 dark:bg-emerald-500/[0.06]">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <FileArchive
+                      className="size-5 shrink-0 text-emerald-600 dark:text-emerald-500"
+                      aria-hidden="true"
+                    />
+                    <h2 className="text-base font-semibold tracking-tight">
+                      Eredménycsomag — letöltés
+                    </h2>
+                  </div>
+                  <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                    A 9. körre frissített teljes kutatási csomag: a round-9 megállapítások és a nyolc
+                    kanonikus dokumentum, 33 nyers elemzési bizonyíték, a DSP PoC és a round-8
+                    átvevői jelentés — önegyértő manifesttel.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
+                      {delivery.fileName}
+                    </Badge>
+                    <Badge variant="outline" className="text-[11px]">
+                      {formatBytes(delivery.sizeBytes)}
+                    </Badge>
+                    <Badge variant="outline" className="text-[11px]">
+                      226 fájl · sha256sum -c
+                    </Badge>
+                  </div>
+                  {delivery.sha256 ? (
+                    <div className="mt-3 flex items-start gap-2">
+                      <p className="min-w-0 flex-1 break-all font-mono text-[11px] leading-relaxed text-muted-foreground">
+                        <span className="sr-only">A csomag SHA-256 ellenőrző összege: </span>
+                        SHA-256: {delivery.sha256}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 shrink-0"
+                        onClick={copySha}
+                        aria-label={
+                          shaCopied ? "SHA-256 a vágólapon" : "SHA-256 másolása a vágólapra"
+                        }
+                      >
+                        {shaCopied ? (
+                          <Check className="size-3.5 text-emerald-600 dark:text-emerald-500" />
+                        ) : (
+                          <Copy className="size-3.5" />
+                        )}
+                      </Button>
+                      <a
+                        href={`${delivery.url}.sha256`}
+                        download
+                        className="shrink-0 self-center whitespace-nowrap text-[11px] font-medium underline underline-offset-4 hover:text-foreground"
+                      >
+                        .sha256 fájl
+                      </a>
+                    </div>
+                  ) : null}
+                </div>
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 dark:bg-emerald-500 dark:text-primary-foreground dark:hover:bg-emerald-600"
+                >
+                  <a href={delivery.url} download>
+                    <Download aria-hidden="true" />
+                    Letöltés · ZIP
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
         <div className="flex gap-8">
           <aside className="hidden w-56 shrink-0 lg:block">
             <div className="sticky top-40">
@@ -239,7 +352,8 @@ export function ReportViewer({ markdown }: { markdown: string }) {
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
             Octavox RE — 9. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
-            forrásfájl: <code className="font-mono">OCTAVOX_ROUND9_FINDINGS.md</code>
+            forrásfájl: <code className="font-mono">OCTAVOX_ROUND9_FINDINGS.md</code> · csomag:{" "}
+            <code className="font-mono">Octavox_RE_evidence_round9.zip</code>
           </p>
         </div>
       </footer>

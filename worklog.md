@@ -47,3 +47,23 @@ Stage Summary:
 - Key corrections: round-8 "in-place-constructed objects" = actually the vector<float> DESTRUCTOR in FUN_1800E7DF0; R = ratio/64 REFUTED → R = ratio/16; D2 record field order fixed (consumer: period, i5=interval, i4=unused, correction); module [212] rdm noise recovered into the inventory.
 - Runtime questions retained as UNK (walk statistics, correction convergence, one-sided-modulation audibility, modamt class-metadata bounds, unread ring[wp+2]); no PoC substitution.
 - Artifacts: /home/z/octavox/work/Octavox_RE_evidence/docs/OCTAVOX_ROUND9_FINDINGS.md + updated canonical docs/README; round-9 raw evidence in /home/z/octavox/analysis/r9_*.txt + decompile_1800E7DF0.json; originals untouched (hashes verified pre/post).
+
+---
+Task ID: 3
+Agent: Z.ai Code (main agent)
+Task: Package all round-9 result products into a single delivery ZIP and make it downloadable from the web app
+
+Work Log:
+- Read worklog + inspected the research tree: confirmed round 9 was completed (Q-7 CLOSED, docs updated); verified originals unchanged (Ox.vst3 7bb260f6…, round-8 zip 04fe8f94…).
+- Staged the 33 raw round-9 analysis artifacts (r9_scan.py, 30 x r9_*.txt, decompile_1800E7DF0.json + .err) from /home/z/octavox/analysis/ into the package at evidence/analysis_round9/ (docs cite them by bare file name, so names are preserved); copied OCTAVOX_AGENT_HANDOVER_REPORT.md (f1235d97…) to the package root.
+- Wrote DELIVERY_ROUND9.md (courier doc: contents, manifest delta, verification instructions, not-included list, provenance).
+- Regenerated checksums.txt for the round-9 edition (sha256sum format, CRLF, case-insensitive path order, excludes itself): 226 records, 226/226 OK via sha256sum -c. Diffed against the round-8 manifest: 185 unchanged / 5 updated (README + 4 canonical docs) / 0 removed / 36 new — exactly as documented in DELIVERY_ROUND9.md.
+- Built Octavox_RE_evidence_round9.zip with `zip -r -X -D` (no directory entries, matching the round-8 convention: 227 entries = 226 files + checksums.txt). Verified: unzip -t clean; independent extraction + sha256sum -c = 226/226 OK; zip SHA-256 cf76ae6021075f587b212aaf8a6c74d48163866bf52e9a48dd49a95b64bbac35; size 1 416 832 B.
+- Published: public/Octavox_RE_evidence_round9.zip + sidecar .sha256; mirrored both to download/ and rewrote download/README.md with the delivery table.
+- Updated the web UI: page.tsx now computes delivery metadata server-side (zip size + sha256 from the sidecar) and passes it to ReportViewer; report-viewer.tsx gained a delivery card (emerald-accented, FileArchive icon, file name/size/manifest badges, full SHA-256 with copy-to-clipboard button, .sha256 sidecar link, primary Download button with download attribute); footer now names the package. Fixed two self-introduced defects: a dropped `@/` in the Badge import (module-not-found in dev.log) and a stray `n` character in the button label.
+- Browser-verified with agent-browser: delivery card renders (a11y refs for button/links), hrefs = /Octavox_RE_evidence_round9.zip and .sha256 sidecar, full hash displayed, copy button toggles to check state, download click does not navigate away, TOC anchor jump works (scrollY 6829), no horizontal overflow at 390px/1920px, footer at document bottom, zero console/page errors. End-to-end: curl-downloaded the zip over HTTP and re-hashed it = cf76ae60… byte-identical. bun run lint clean; dev.log clean.
+
+Stage Summary:
+- Delivered Octavox_RE_evidence_round9.zip (1.35 MB, 227 entries, 226 files + manifest, SHA-256 cf76ae6021075f587b212aaf8a6c74d48163866bf52e9a48dd49a95b64bbac35) = the complete round-9 evidence package: updated README + 4 canonical docs + OCTAVOX_ROUND9_FINDINGS.md, unchanged round-8 evidence/poc (185 files byte-identical), 33 new raw round-9 artifacts, the round-8 acceptance report, DELIVERY_ROUND9.md, and a regenerated self-verifying manifest.
+- Download channel: the app's / page carries a delivery card (Letöltés · ZIP button + hash copy + .sha256 sidecar); the zip is served from public/ and mirrored in download/.
+- The target binary is intentionally NOT in the zip (documented in DELIVERY_ROUND9.md); originals remain untouched and were re-verified at delivery time.
