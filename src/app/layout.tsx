@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Octavox Agent Handover Report",
+  title: "Octavox Research — Round 9 Findings",
   description:
-    "Clean-room environment setup, REA validation and research recovery — Eventide Octavox reverse engineering acceptance report.",
+    "Q-7 resolved: the pitch rate map bindings (+0x4128/+0x40F8), the R = ratio/16 correction and the cents→ratio quartic — Eventide Octavox reverse engineering, round 9.",
   keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting"],
   authors: [{ name: "Z.ai Team" }],
   icons: {

@@ -38,11 +38,12 @@ function slugify(text: string): string {
 }
 
 const META = [
+  { label: "Kör", value: "Round 9 · Q-7" },
   { label: "REA", value: "6.7.0" },
   { label: "Ghidra", value: "12.1.4" },
-  { label: "JDK", value: "Temurin 21" },
-  { label: "Csomag", value: "191 bejegyzés · 190/190 hash OK" },
-  { label: "Reprodukció", value: "3 / 3 sikeres" },
+  { label: "Eredmény", value: "Q-7 LEZÁRVA" },
+  { label: "Javítás", value: "R = ratio/16 (nem /64)" },
+  { label: "Egységpont", value: "f = 0 pontosan" },
 ];
 
 export function ReportViewer({ markdown }: { markdown: string }) {
@@ -75,17 +76,17 @@ export function ReportViewer({ markdown }: { markdown: string }) {
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research Handover
+                Octavox Research — 9. kör
               </h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                Clean-room környezeti és elfogadási jelentés · Eventide Octavox RE projekt
+                Q-7: a sebesség-térkép mezőkötések (+0x4128 / +0x40F8) feloldása · Eventide Octavox RE projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              GO
+              Q-7 CLOSED
             </Badge>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -237,8 +238,8 @@ export function ReportViewer({ markdown }: { markdown: string }) {
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            Octavox RE kézhezvételi jelentés · készült ténylegesen ellenőrzött környezetben ·
-            forrásfájl: <code className="font-mono">OCTAVOX_AGENT_HANDOVER_REPORT.md</code>
+            Octavox RE — 9. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
+            forrásfájl: <code className="font-mono">OCTAVOX_ROUND9_FINDINGS.md</code>
           </p>
         </div>
       </footer>
