@@ -14,9 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
+  title: "Octavox Agent Handover Report",
+  description:
+    "Clean-room environment setup, REA validation and research recovery — Eventide Octavox reverse engineering acceptance report.",
+  keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting"],
   authors: [{ name: "Z.ai Team" }],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
