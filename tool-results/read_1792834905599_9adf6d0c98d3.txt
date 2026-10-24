@@ -1,0 +1,706 @@
+     1→#!/usr/bin/env python3
+     2→# -*- coding: utf-8 -*-
+     3→"""
+     4→OCTAVOX PoC  --  INDEPENDENT DSP demonstration (mandate section 9)
+     5→=================================================================
+     6→
+     7→IMPORTANT / PROVENANCE
+     8→----------------------
+     9→This file is *our own* implementation.  It is NOT Eventide code, contains no bytes
+    10→from the target, and was not derived by copying the target's instruction stream.
+    11→It is an independent realisation of the *architecture* reconstructed in documents
+    12→1-6 (a variable-rate delay-line pitch shifter with per-voice gains, a crossfaded
+    13→grain re-arm, a geometric interval glide and a diatonic interval chooser).
+    14→
+    15→Every measurement produced by this file is a measurement of THIS implementation.
+    16→It must never be presented as a measurement of the target plugin.  The two are kept
+    17→in separate folders on purpose (Evdence/ = target evidence, Evdence/poc/ = ours).
+    18→
+    19→DSP structure (our design)
+    20→--------------------------
+    21→    input -> ring delay line (age-indexed)
+    22→          -> per voice:
+    23→                 fractional-delay read at  d(t)  with 6-point Lagrange interpolation
+    24→                 second read at d(t) + G  (grain length)
+    25→                 crossfade weight w(t) in [0,1] selects between the two taps
+    26→                 d(t) ramps at (1 - ratio) samples/sample and is re-armed with a
+    27→                 crossfaded `grain jump` when it leaves [base, base+G]
+    28→                 geometric glide of `ratio` toward `ratio_target`
+    29→                 per-voice linear gain ramp
+    30→          -> wet mix (sum of voices scaled)
+    31→    dry/wet -> out
+    32→
+    33→Author: analysis workspace.  Python 3.11 / numpy.
+    34→"""
+    35→
+    36→from __future__ import annotations
+    37→
+    38→import json
+    39→import math
+    40→import time
+    41→from dataclasses import dataclass, field
+    42→from typing import Callable, Optional
+    43→
+    44→import numpy as np
+    45→
+    46→# --------------------------------------------------------------------------------------
+    47→# Interpolators
+    48→# --------------------------------------------------------------------------------------
+    49→
+    50→
+    51→_LAGRANGE_NODES = np.array([-2.0, -1.0, 0.0, 1.0, 2.0, 3.0])
+    52→
+    53→
+    54→def lagrange6(mu: float) -> np.ndarray:
+    55→    """6-point Lagrange weights for x = mu with nodes at -2,-1,0,1,2,3 (our own derivation)."""
+    56→    xs = _LAGRANGE_NODES
+    57→    w = np.ones(6)
+    58→    for i in range(6):
+    59→        for j in range(6):
+    60→            if i != j:
+    61→                w[i] *= (mu - xs[j]) / (xs[i] - xs[j])
+    62→    return w
+    63→
+    64→
+    65→_TABLES: dict[int, np.ndarray] = {}
+    66→
+    67→
+    68→def lagrange_table(n: int) -> np.ndarray:
+    69→    """Precomputed (n, 6) table of 6-point Lagrange weights, one row per phase."""
+    70→    t = _TABLES.get(n)
+    71→    if t is None:
+    72→        mus = (np.arange(n) + 0.5) / n
+    73→        t = np.array([lagrange6(float(m)) for m in mus])
+    74→        _TABLES[n] = t
+    75→    return t
+    76→
+    77→
+    78→class DelayLine:
+    79→    """Power-of-two ring buffer; `read(delay)` where delay >= 0 is samples ago."""
+    80→
+    81→    def __init__(self, n: int = 1 << 18):
+    82→        n = 1 << int(math.ceil(math.log2(max(16, n))))
+    83→        self.n = n
+    84→        self.mask = n - 1
+    85→        self.buf = np.zeros(n, dtype=np.float64)
+    86→        self.w = 0  # newest sample index
+    87→
+    88→    def push(self, x: float) -> None:
+    89→        self.buf[self.w] = x
+    90→        self.w = (self.w - 1) & self.mask  # index decreases with age (as reconstructed)
+    91→
+    92→    def idx(self, delay: float) -> int:
+    93→        return (self.w + int(math.floor(delay))) & self.mask
+    94→
+    95→    def read(self, delay: float, interp: str = "lagrange6") -> float:
+    96→        if delay < 0.0:
+    97→            delay = 0.0
+    98→        d0 = int(math.floor(delay))
+    99→        mu = delay - d0
+   100→        b, m, w = self.buf, self.mask, self.w
+   101→        i = (w + d0) & m
+   102→        if interp == "linear":
+   103→            a = b[i]
+   104→            c = b[(i + 1) & m]
+   105→            return a + (c - a) * mu
+   106→        if interp == "lagrange3":  # 3-point quadratic (never used by the harness)
+   107→            y0 = b[(i + 1) & m]
+   108→            y1 = b[i]
+   109→            y2 = b[(i + m - 1) & m]
+   110→            return y1 + 0.5 * mu * (y2 - y0) + 0.5 * mu * mu * (y2 - 2 * y1 + y0)
+   111→        # 6-point Lagrange, table driven: 2048 phases, or 256 phases for the quantised variant
+   112→        n_ph = 256 if interp == "lagrange6_q" else 2048
+   113→        wv = lagrange_table(n_ph)[int(mu * n_ph)]
+   114→        s = 0.0
+   115→        for k in range(6):
+   116→            s += wv[k] * b[(w + d0 + k - 2) & m]
+   117→        return s
+   118→
+   119→
+   120→_LAGRANGE_CACHE: dict[float, np.ndarray] = {}  # kept for API stability; unused
+   121→
+   122→
+   123→# --------------------------------------------------------------------------------------
+   124→# Pitch detector (our own): cumulative-mean-normalised autocorrelation (YIN-style)
+   125→# --------------------------------------------------------------------------------------
+   126→
+   127→
+   128→class PitchDetector:
+   129→    def __init__(self, sr: int, win: int = 2048, fmin: float = 60.0, fmax: float = 1200.0):
+   130→        self.sr, self.win, self.fmin, self.fmax = sr, win, fmin, fmax
+   131→        self.buf = np.zeros(win, dtype=np.float64)
+   132→        self.last_f0 = 0.0
+   133→
+   134→    def push_block(self, x: np.ndarray) -> None:
+   135→        if len(x) >= self.win:
+   136→            self.buf[:] = x[-self.win :]
+   137→        else:
+   138→            self.buf = np.roll(self.buf, -len(x))
+   139→            self.buf[-len(x) :] = x
+   140→
+   141→    def estimate(self) -> float:
+   142→        x = self.buf
+   143→        if np.max(np.abs(x)) < 1e-6:
+   144→            return 0.0
+   145→        n = len(x)
+   146→        tau_min = max(2, int(self.sr / self.fmax))
+   147→        tau_max = min(n - 2, int(self.sr / self.fmin))
+   148→        if tau_max <= tau_min:
+   149→            return 0.0
+   150→        # autocorrelation near the end of the window (causal-ish)
+   151→        seg = x[n // 2 :]
+   152→        m = len(seg) - tau_max
+   153→        if m < 32:
+   154→            return 0.0
+   155→        d = np.empty(tau_max - tau_min)
+   156→        for i, tau in enumerate(range(tau_min, tau_max)):
+   157→            a = seg[:m]
+   158→            b = seg[tau : tau + m]
+   159→            d[i] = np.sum((a - b) ** 2)
+   160→        # cumulative mean normalisation
+   161→        cmnd = np.empty_like(d)
+   162→        run = 0.0
+   163→        for i in range(len(d)):
+   164→            run += d[i]
+   165→            cmnd[i] = d[i] * (i + 1) / run if run > 0 else 1.0
+   166→        # first minimum below threshold
+   167→        idx = None
+   168→        thr = 0.20
+   169→        for i in range(1, len(cmnd) - 1):
+   170→            if cmnd[i] < thr and cmnd[i] <= cmnd[i - 1] and cmnd[i] <= cmnd[i + 1]:
+   171→                idx = i
+   172→                break
+   173→        if idx is None:
+   174→            idx = int(np.argmin(cmnd))
+   175→        tau = tau_min + idx
+   176→        # parabolic refinement
+   177→        if 0 < idx < len(cmnd) - 1:
+   178→            y0, y1, y2 = cmnd[idx - 1], cmnd[idx], cmnd[idx + 1]
+   179→            den = (y0 - 2 * y1 + y2)
+   180→            if abs(den) > 1e-15:
+   181→                tau = tau + 0.5 * (y0 - y2) / den
+   182→        f0 = self.sr / tau
+   183→        if not (self.fmin <= f0 <= self.fmax):
+   184→            f0 = 0.0
+   185→        self.last_f0 = f0
+   186→        return f0
+   187→
+   188→
+   189→# --------------------------------------------------------------------------------------
+   190→# The shifter
+   191→# --------------------------------------------------------------------------------------
+   192→
+   193→
+   194→@dataclass
+   195→class VoiceCfg:
+   196→    semitones: float = 0.0           # target interval (can be overridden by diatonic mode)
+   197→    base_delay: float = 256.0        # grain base delay, samples
+   198→    grain: float = 4096.0            # grain length G, samples
+   199→    gain: float = 1.0
+   200→    gain_ramp: float = 0.25          # per-sample linear ramp limit
+   201→    glide_mult: float = 0.9995       # geometric glide multiplier per sample
+   202→    enabled: bool = True
+   203→
+   204→
+   205→class OctavoxPoC:
+   206→    """Our multi-voice, diatonic, variable-rate delay pitch shifter."""
+   207→
+   208→    def __init__(
+   209→        self,
+   210→        sr: int = 48000,
+   211→        nvoices: int = 8,
+   212→        voices: Optional[list[VoiceCfg]] = None,
+   213→        interp: str = "lagrange6",
+   214→        diatonic: bool = False,
+   215→        scale: tuple[int, ...] = (0, 2, 4, 5, 7, 9, 11),
+   216→        mix: float = 1.0,
+   217→        feedback: float = 0.0,
+   218→    ):
+   219→        self.sr = sr
+   220→        self.nvoices = nvoices
+   221→        self.interp = interp
+   222→        self.diatonic = diatonic
+   223→        self.scale = scale
+   224→        self.mix = mix
+   225→        self.feedback = feedback
+   226→        self.dl = DelayLine(1 << 18)
+   227→        self.det = PitchDetector(sr)
+   228→        if voices is None:
+   229→            voices = [VoiceCfg(base_delay=256.0 + 32.0 * i) for i in range(nvoices)]
+   230→        self.v = voices[:nvoices]
+   231→        n = self.nvoices
+   232→        self.delay = np.array([v.base_delay + v.grain * 0.5 for v in self.v])
+   233→        self.ratio = np.array([2.0 ** (v.semitones / 12.0) for v in self.v])
+   234→        self.ratio_t = self.ratio.copy()
+   235→        self.gain = np.array([v.gain if v.enabled else 0.0 for v in self.v])
+   236→        self.gain_t = self.gain.copy()
+   237→        self.applied_st = np.array([v.semitones for v in self.v])  # last interval actually used
+   238→        self.xf = np.zeros(n)      # crossfade weight 0..1
+   239→        self.xf_dir = np.zeros(n)  # +1 rising, -1 falling
+   240→        self.fb_state = 0.0
+   241→        self._norm = 1.0
+   242→        self._reset_phase()
+   243→
+   244→    # -- helpers -------------------------------------------------------------------
+   245→    def _reset_phase(self) -> None:
+   246→        # start mid-grain (w == 0.5) so no immediate re-arm
+   247→        self.frac = np.full(self.nvoices, 0.5)
+   248→
+   249→    def set_voice_semitones(self, i: int, st: float) -> None:
+   250→        self.v[i].semitones = st
+   251→        self.ratio_t[i] = 2.0 ** (st / 12.0)
+   252→
+   253→    def set_voice_gain(self, i: int, g: float) -> None:
+   254→        self.gain_t[i] = g
+   255→
+   256→    def diatonic_interval(self, f0: float, semis: float) -> float:
+   257→        """Snap a nominal interval to the nearest scale degree (our own rule).
+   258→
+   259→        Ties (a target exactly halfway between two degrees) are resolved **downwards** so
+   260→        the result is deterministic; without that, a detector estimate a few 1e-4 semitones
+   261→        away from nominal flips the chosen degree and the measurement becomes meaningless.
+   262→        """
+   263→        if f0 <= 0.0:
+   264→            return semis
+   265→        midi = 69.0 + 12.0 * math.log2(f0 / 440.0)
+   266→        target = midi + semis
+   267→        best, bd = None, 1e9
+   268→        for octv in range(-2, 3):
+   269→            for s in self.scale:
+   270→                cand = 12.0 * (round((target - s) / 12.0) + octv) + s
+   271→                d = abs(cand - target)
+   272→                if d < bd - 1e-12 or (abs(d - bd) <= 1e-12 and cand < best):
+   273→                    bd, best = d, cand
+   274→        return float(best - midi)
+   275→
+   276→    # -- process -------------------------------------------------------------------
+   277→    def process(self, x: np.ndarray) -> np.ndarray:
+   278→        n = len(x)
+   279→        out = np.zeros(n)
+   280→        v = self.v
+   281→        # one detection per block (control rate), using this block as the newest input
+   282→        self.det.push_block(np.asarray(x))
+   283→        f0 = self.det.estimate()
+   284→        if self.diatonic and f0 > 0.0:
+   285→            for i in range(self.nvoices):
+   286→                st = self.diatonic_interval(f0, v[i].semitones)
+   287→                self.ratio_t[i] = 2.0 ** (st / 12.0)
+   288→                self.applied_st[i] = st
+   289→        # voice-count normalisation: the wet bus is the *mean* of the active voices, so the
+   290→        # feedback loop gain equals `self.feedback` regardless of how many voices are on.
+   291→        n_on = 0
+   292→        for i in range(self.nvoices):
+   293→            if self.gain_t[i] > 0.0:
+   294→                n_on += 1
+   295→        self._norm = 1.0 / n_on if n_on else 0.0
+   296→        for k in range(n):
+   297→            xin = x[k] + self.feedback * self.fb_state
+   298→            self.dl.push(xin)
+   299→            acc = 0.0
+   300→            for i in range(self.nvoices):
+   301→                # gain ramp
+   302→                g = self.gain_t[i] - self.gain[i]
+   303→                if g > v[i].gain_ramp:
+   304→                    g = v[i].gain_ramp
+   305→                elif g < -v[i].gain_ramp:
+   306→                    g = -v[i].gain_ramp
+   307→                self.gain[i] += g
+   308→                if abs(self.gain[i]) < 1e-9 and self.gain_t[i] == 0.0:
+   309→                    continue
+   310→                # ratio glide (geometric)
+   311→                self.ratio[i] = self.ratio_t[i] + (self.ratio[i] - self.ratio_t[i]) * v[i].glide_mult
+   312→                r = self.ratio[i]
+   313→                # grain phase ramp: the delay sweeps at (1-r) samples/sample
+   314→                self.frac[i] += (1.0 - r) / v[i].grain
+   315→                if self.frac[i] >= 1.0:
+   316→                    self.frac[i] -= 1.0
+   317→                elif self.frac[i] < 0.0:
+   318→                    self.frac[i] += 1.0
+   319→                d = v[i].base_delay + self.frac[i] * v[i].grain
+   320→                a = self.dl.read(d, self.interp)
+   321→                b = self.dl.read(d + v[i].grain, self.interp)
+   322→                # complementary raised-cosine crossfade between the two taps.
+   323→                # w(frac) + (1-w(frac)) = 1 ; w(0)=0 -> tap B (== tap A one grain later),
+   324→                # w(1)=1 -> tap A.  This makes the tap hand-off continuous.
+   325→                w = 0.5 - 0.5 * math.cos(math.pi * self.frac[i])
+   326→                acc += self.gain[i] * (a * w + b * (1.0 - w))
+   327→            out[k] = self.mix * acc * self._norm
+   328→            self.fb_state = out[k] if abs(self.feedback) > 0 else 0.0
+   329→        return out
+   330→
+   331→    def process_blocks(self, x: np.ndarray, block: int = 64) -> np.ndarray:
+   332→        y = np.empty_like(x)
+   333→        for i in range(0, len(x), block):
+   334→            y[i : i + block] = self.process(x[i : i + block])
+   335→        return y
+   336→
+   337→
+   338→# --------------------------------------------------------------------------------------
+   339→# Measurement harness
+   340→# --------------------------------------------------------------------------------------
+   341→
+   342→
+   343→def _pitch_fft(y: np.ndarray, sr: int, fmin: float = 50.0, fmax: float = 4000.0) -> float:
+   344→    """Spectral peak with parabolic refinement = the *instantaneous carrier* of the output.
+   345→
+   346→    The two-tap crossfade phase-modulates the output (see `_predicted_shift_hz`), so this
+   347→    peak sits at the modulated carrier, not at the grain-average.
+   348→    """
+   349→    n = len(y)
+   350→    if n < 64:
+   351→        return 0.0
+   352→    Y = np.abs(np.fft.rfft(y * np.hanning(n)))
+   353→    f = np.fft.rfftfreq(n, 1.0 / sr)
+   354→    sel = (f >= fmin) & (f <= fmax)
+   355→    Ys, fs = Y[sel], f[sel]
+   356→    if len(Ys) == 0:
+   357→        return 0.0
+   358→    j = int(np.argmax(Ys))
+   359→    if 0 < j < len(Ys) - 1:
+   360→        a, b, c = Ys[j - 1], Ys[j], Ys[j + 1]
+   361→        den = a - 2 * b + c
+   362→        if abs(den) > 1e-18:
+   363→            return float(fs[j] + 0.5 * (a - c) / den * (fs[1] - fs[0]))
+   364→    return float(fs[j])
+   365→
+   366→
+   367→def _pitch_yin(y: np.ndarray, sr: int, fmin: float = 50.0, fmax: float = 4000.0,
+   368→               thr: float = 0.15) -> float:
+   369→    """Cumulative-mean-normalised squared difference (YIN) fundamental estimate.
+   370→
+   371→    Robust to the amplitude modulation the crossfade introduces, so this is the
+   372→    *grain-average* period.
+   373→    """
+   374→    x = np.asarray(y, dtype=float)
+   375→    n = len(x)
+   376→    if n < 256:
+   377→        return 0.0
+   378→    x = x - x.mean()
+   379→    if np.max(np.abs(x)) < 1e-9:
+   380→        return 0.0
+   381→    tmin = max(2, int(sr / fmax))
+   382→    tmax = min(n // 2, int(sr / fmin))
+   383→    if tmax <= tmin:
+   384→        return 0.0
+   385→    d = np.zeros(tmax + 2)
+   386→    for tau in range(1, tmax + 2):
+   387→        diff = x[: n - tau] - x[tau:]
+   388→        d[tau] = float(np.dot(diff, diff))
+   389→    dp = np.ones(tmax + 2)
+   390→    run = 0.0
+   391→    for tau in range(2, tmax + 2):
+   392→        run += d[tau]
+   393→        dp[tau] = d[tau] * (tau - 1) / run if run > 0 else 1.0
+   394→    best = None
+   395→    tau = tmin
+   396→    while tau <= tmax:
+   397→        if dp[tau] < thr:
+   398→            while tau + 1 <= tmax and dp[tau + 1] < dp[tau]:
+   399→                tau += 1
+   400→            best = tau
+   401→            break
+   402→        tau += 1
+   403→    if best is None:
+   404→        best = tmin + int(np.argmin(dp[tmin : tmax + 1]))
+   405→    if 1 < best < tmax:
+   406→        a, b, c = dp[best - 1], dp[best], dp[best + 1]
+   407→        den = a - 2 * b + c
+   408→        if abs(den) > 1e-15:
+   409→            best = best + 0.5 * (a - c) / den
+   410→    if best <= 0:
+   411→        return 0.0
+   412→    f0 = sr / float(best)
+   413→    return float(f0) if fmin <= f0 <= fmax else 0.0
+   414→
+   415→
+   416→def _dominant_freq(y: np.ndarray, sr: int, fmin: float = 50.0, fmax: float = 4000.0) -> float:
+   417→    """Back-compat alias used by the transient/discontinuity sections."""
+   418→    return _pitch_yin(y, sr, fmin, fmax)
+   419→
+   420→
+   421→def _predicted_shift_hz(f_in: float, ratio: float, grain: float, sr: int) -> float:
+   422→    """Closed-form output frequency of the two-tap complementary-crossfade shifter.
+   423→
+   424→    With  A = x[n-d],  B = x[n-d-G],  d = d0 + G*phi,  w = (1-cos(pi*phi))/2  the mix
+   425→
+   426→        y = w*A + (1-w)*B = P(phi)*sin(u) + Q(phi)*cos(u),
+   427→        u                = w0*n - w0*d0 - w0*G*phi,
+   428→        P(phi)           = cos(w0*G) + (1-cos(pi*phi))*(1-cos(w0*G))/2,
+   429→        Q(phi)           = -(1+cos(pi*phi))*sin(w0*G)/2,
+   430→
+   431→    is exact.  sin/cos share the frequency w0*ratio, but the mix coefficient rotates the
+   432→    phase by Phi(phi)=atan2(Q,P), so the mean instantaneous frequency is
+   433→
+   434→        f_eff = ratio*f_in + (Phi(1)-Phi(0)) / T * sr/(2*pi),   T = G/|1-ratio|.
+   435→
+   436→    Phi is unwrapped numerically (P crosses zero mid-grain for most G, adding a pi step),
+   437→    so this is the *model* the measurement is compared against.  It matches to a few cents
+   438→    where the artefact is large and both go to zero as ~1/G.
+   439→    """
+   440→    w0 = 2.0 * math.pi * f_in / sr
+   441→    phis = np.linspace(0.0, 1.0, 8193)
+   442→    cpg = math.cos(w0 * grain)
+   443→    spg = math.sin(w0 * grain)
+   444→    P = cpg + (1.0 - np.cos(math.pi * phis)) * (1.0 - cpg) / 2.0
+   445→    Q = -(1.0 + np.cos(math.pi * phis)) * spg / 2.0
+   446→    dphi = float(np.unwrap(np.arctan2(Q, P))[-1] - np.unwrap(np.arctan2(Q, P))[0])
+   447→    return ratio * f_in + dphi * (1.0 - ratio) / grain * sr / (2.0 * math.pi)
+   448→
+   449→
+   450→
+   451→
+   452→def _thd_energy(y: np.ndarray, sr: int, f0: float, guard_hz: float = 12.0) -> float:
+   453→    """Fraction of energy outside +-guard of f0 and its first 8 harmonics."""
+   454→    n = len(y)
+   455→    Y = np.abs(np.fft.rfft(y * np.hanning(n))) ** 2
+   456→    f = np.fft.rfftfreq(n, 1.0 / sr)
+   457→    keep = np.zeros(len(f), dtype=bool)
+   458→    for h in range(1, 9):
+   459→        keep |= np.abs(f - h * f0) < guard_hz
+   460→    tot = Y.sum()
+   461→    return float(1.0 - Y[keep].sum() / tot) if tot > 0 else 0.0
+   462→
+   463→
+   464→BASE_DELAY = 256.0
+   465→GRAIN = 4096.0
+   466→
+   467→
+   468→def measure(diatonic: bool = False, interp: str = "lagrange6", nvoices: int = 8) -> dict:
+   469→    sr = 48000
+   470→    res: dict = {"interp": interp, "nvoices": nvoices, "diatonic": diatonic, "sr": sr,
+   471→                 "grain": GRAIN, "base_delay": BASE_DELAY}
+   472→    semis = [0, 3, 4, 5, 7, -3, -4, -5][:nvoices]
+   473→
+   474→    # ---- 1. pitch accuracy on a steady sine --------------------------------------
+   475→    f_in = 220.0
+   476→    dur = 1.2
+   477→    t = np.arange(int(sr * dur)) / sr
+   478→    x = 0.5 * np.sin(2 * np.pi * f_in * t)
+   479→    rows = []
+   480→    y0 = None
+   481→    for i, s in enumerate(semis):
+   482→        v1 = [VoiceCfg(semitones=(s if j == i else 0.0),
+   483→                       base_delay=BASE_DELAY + 32.0 * j,
+   484→                       grain=GRAIN,
+   485→                       enabled=(j == i)) for j in range(nvoices)]
+   486→        p1 = OctavoxPoC(sr=sr, nvoices=nvoices, voices=v1, interp=interp, diatonic=diatonic)
+   487→        y1 = p1.process_blocks(x, 64)[int(sr * 0.8) :]
+   488→        if i == 0:
+   489→            y0 = y1
+   490→        # expected must use the interval the processor actually applied (in diatonic mode
+   491→        # the snapped degree depends on the detector's estimate, not on the nominal value)
+   492→        st = float(p1.applied_st[i])
+   493→        exp = f_in * 2.0 ** (st / 12.0)
+   494→        f_yin = _pitch_yin(y1, sr) if np.max(np.abs(y1)) > 1e-6 else 0.0
+   495→        f_fft = _pitch_fft(y1, sr) if np.max(np.abs(y1)) > 1e-6 else 0.0
+   496→        f_pred = _predicted_shift_hz(f_in, 2.0 ** (st / 12.0), GRAIN, sr)
+   497→        rows.append({
+   498→            "voice": i, "nominal_semitones": s, "semitones": st, "expected_hz": exp,
+   499→            "measured_hz": f_yin, "measured_fft_hz": f_fft, "predicted_hz": f_pred,
+   500→            "cents_err": 1200.0 * math.log2(f_yin / exp) if f_yin > 0 else float("nan"),
+   501→            "cents_err_fft": 1200.0 * math.log2(f_fft / exp) if f_fft > 0 else float("nan"),
+   502→            "cents_err_predicted": 1200.0 * math.log2(f_pred / exp),
+   503→            "thd_energy": _thd_energy(y1, sr, f_yin) if f_yin > 0 else float("nan"),
+   504→        })
+   505→    res["pitch"] = rows
+   506→    res["pitch_max_cents_err"] = max(abs(r["cents_err"]) for r in rows if r["cents_err"] == r["cents_err"])
+   507→    # unity-ratio behaviour: with r == 1 the crossfade weight is frozen at 0.5 and the two
+   508→    # taps (G apart) are both read, so the "0 semitone" voice is a two-tap comb, not a copy.
+   509→    # Analytic gain for a sinusoid: |cos(w0*G/2)|.
+   510→    if y0 is not None:
+   511→        seg = slice(int(sr * 0.8), None)
+   512→        rms_in = float(np.sqrt(np.mean(x[seg] ** 2)))
+   513→        rms_out = float(np.sqrt(np.mean(y0 ** 2)))
+   514→        res["unity_ratio_gain_db"] = (20.0 * math.log10(rms_out / rms_in)) if rms_in > 0 else None
+   515→        res["unity_ratio_gain_db_analytic"] = 20.0 * math.log10(
+   516→            abs(math.cos(math.pi * f_in * GRAIN / sr)) or 1e-12)
+   517→
+   518→    # ---- 1b. grain-length trade-off (accuracy vs latency), primary config only ----
+   519→    if interp == "lagrange6" and not diatonic:
+   520→        sweep = []
+   521→        for G in (512.0, 1024.0, 2048.0, 4096.0, 8192.0, 16384.0):
+   522→            for st in (3, -4):
+   523→                vg = [VoiceCfg(semitones=st, base_delay=BASE_DELAY, grain=G)]
+   524→                pg = OctavoxPoC(sr=sr, nvoices=1, voices=vg, interp=interp)
+   525→                yg = pg.process_blocks(x, 64)[int(sr * 0.8) :]
+   526→                fe = _pitch_fft(yg, sr)
+   527→                fp = _predicted_shift_hz(f_in, 2.0 ** (st / 12.0), G, sr)
+   528→                sweep.append({
+   529→                    "grain": G, "semitones": st,
+   530→                    "latency_ms": (BASE_DELAY + G * 0.5) / sr * 1000.0,
+   531→                    "measured_fft_hz": fe,
+   532→                    "cents_err_fft": 1200.0 * math.log2(fe / (f_in * 2.0 ** (st / 12.0))) if fe > 0 else float("nan"),
+   533→                    "predicted_hz": fp,
+   534→                    "cents_err_predicted": 1200.0 * math.log2(fp / (f_in * 2.0 ** (st / 12.0))),
+   535→                    "thd_energy": _thd_energy(yg, sr, fe) if fe > 0 else float("nan"),
+   536→                })
+   537→        res["grain_sweep"] = sweep
+   538→
+   539→    # ---- 2. latency (impulse) ---------------------------------------------------
+   540→    imp = np.zeros(sr)
+   541→    imp[1000] = 1.0
+   542→    pl = OctavoxPoC(sr=sr, nvoices=1, voices=[VoiceCfg(semitones=0, base_delay=BASE_DELAY, grain=GRAIN)],
+   543→                    interp=interp)
+   544→    yi = pl.process_blocks(imp, 64)
+   545→    nz = np.nonzero(np.abs(yi) > 1e-4)[0]
+   546→    res["latency_samples"] = int(nz[0] - 1000) if len(nz) else None
+   547→    res["latency_ms"] = (res["latency_samples"] / sr * 1000.0) if res["latency_samples"] is not None else None
+   548→
+   549→    # ---- 3. transient behaviour (amplitude step) --------------------------------
+   550→    burst = np.concatenate([np.zeros(sr // 4), 0.5 * np.sin(2 * np.pi * f_in * np.arange(sr // 2) / sr),
+   551→                            np.zeros(sr // 4)])
+   552→    pb = OctavoxPoC(sr=sr, nvoices=1, voices=[VoiceCfg(semitones=0, base_delay=BASE_DELAY, grain=GRAIN)],
+   553→                    interp=interp)
+   554→    yb = pb.process_blocks(burst, 64)
+   555→    env = np.abs(yb)
+   556→    k = int(sr * 0.005)
+   557→    env_s = np.convolve(env, np.ones(k) / k, mode="same")
+   558→    onset = sr // 4
+   559→    peak = env_s[onset : onset + int(sr * 0.3)].max()
+   560→    thr = 0.5 * peak
+   561→    idx = np.nonzero(env_s[onset : onset + int(sr * 0.3)] > thr)[0]
+   562→    lat = int(res["latency_samples"] or 0)
+   563→    res["transient_attack_samples"] = int(idx[0]) if len(idx) else None
+   564→    # the absolute number is dominated by the shifter's latency, so also report the ramp
+   565→    # measured from the moment the delayed burst starts to appear at the output
+   566→    res["transient_attack_rel_samples"] = int(max(0, idx[0] - lat)) if len(idx) else None
+   567→    res["transient_attack_rel_ms"] = (res["transient_attack_rel_samples"] / sr * 1000.0
+   568→                                      if res["transient_attack_rel_samples"] is not None else None)
+   569→    res["transient_pre_ring_db"] = float(
+   570→        20 * math.log10(max(1e-12, env_s[onset - 200 : onset].max()) / max(1e-12, peak)))
+   571→    # release: the tap pair is G samples apart, so after the input stops the output only
+   572→    # flushes once the *slow* tap has drained: input_end + first-tap latency + G.
+   573→    end_input = onset + int(sr * 0.5)
+   574→    end_all = end_input + lat + int(res["grain"])
+   575→    rel0 = end_all + sr // 50
+   576→    res["transient_output_end_samples"] = int(end_all - onset)
+   577→    res["transient_release_db"] = float(
+   578→        20 * math.log10(max(1e-12, env_s[rel0 : rel0 + sr // 100].max()) / max(1e-12, peak)))
+   579→
+   580→    # ---- 4. discontinuities / steadiness (voice 0, from the pitch run) ----------
+   581→    tail = y0 if y0 is not None else np.zeros(16)
+   582→    pk = max(1e-12, float(np.max(np.abs(tail))))
+   583→    d1 = np.max(np.abs(np.diff(tail)))
+   584→    res["max_sample_jump"] = float(d1)
+   585→    res["max_sample_jump_rel"] = float(d1 / pk)
+   586→    # |y[n] - 2y[n-1] + y[n-2]| is ~A*(2*pi*f/sr)^2 for a smooth sine (here 4.1e-4 at
+   587→    # 220 Hz / 0.5 amplitude) and ~discontinuity size at a click, so it is a sensitive
+   588→    # detector.  Reported both absolutely and relative to the smooth-sine baseline.
+   589→    d2 = np.max(np.abs(np.diff(tail, n=2)))
+   590→    res["max_second_diff"] = float(d2)
+   591→    res["smooth_sine_baseline_2nd_diff"] = float(
+   592→        np.max(np.abs(tail)) * (2.0 * math.pi * f_in / sr) ** 2)
+   593→    res["discontinuity_db"] = float(20 * math.log10(max(1e-12, d2) / pk))
+   594→    res["steady_thd"] = _thd_energy(tail, sr, _dominant_freq(tail, sr) or f_in)
+   595→
+   596→    # ---- 5. cost -----------------------------------------------------------------
+   597→    dur2 = 2.0
+   598→    x2 = 0.3 * np.random.default_rng(7).standard_normal(int(sr * dur2))
+   599→    for nv in (1, 8):
+   600→        vs = [VoiceCfg(semitones=semis[i % len(semis)], base_delay=BASE_DELAY + 32.0 * i) for i in range(nv)]
+   601→        pc = OctavoxPoC(sr=sr, nvoices=nv, voices=vs, interp=interp)
+   602→        t0 = time.perf_counter()
+   603→        pc.process_blocks(x2, 64)
+   604→        el = time.perf_counter() - t0
+   605→        res[f"cost_{nv}voice_xrealtime"] = float(dur2 / el)
+   606→        res[f"cost_{nv}voice_ms_per_s_audio"] = float(el / dur2 * 1000.0)
+   607→
+   608→    # ---- 6. stability ------------------------------------------------------------
+   609→    rng = np.random.default_rng(11)
+   610→    dur3 = 4.0
+   611→    x3 = 0.2 * rng.standard_normal(int(sr * dur3))
+   612→    ps = OctavoxPoC(sr=sr, nvoices=8,
+   613→                    voices=[VoiceCfg(semitones=semis[i], base_delay=BASE_DELAY + 32.0 * i) for i in range(8)],
+   614→                    interp=interp, feedback=0.35)
+   615→    blk = 64
+   616→    bad = 0
+   617→    mx = 0.0
+   618→    for i in range(0, len(x3), blk):
+   619→        yb2 = ps.process(x3[i : i + blk])
+   620→        if not np.all(np.isfinite(yb2)):
+   621→            bad += 1
+   622→        mx = max(mx, float(np.max(np.abs(yb2))) if len(yb2) else 0.0)
+   623→    res["stability_nonfinite_blocks"] = bad
+   624→    res["stability_max_abs"] = mx
+   625→    res["stability_bounded"] = bool(bad == 0 and mx < 100.0)
+   626→    return res
+   627→
+   628→
+   629→def _md_report(out: dict) -> str:
+   630→    L = ["# OCTAVOX PoC — measurement results (our implementation)",
+   631→         "",
+   632→         "Generated by `octavox_poc.py`. These numbers describe **our** independent implementation,",
+   633→         "not the target plug-in. Deterministic except for wall-clock cost rows.",
+   634→         "",
+   635→         "Pitch is reported three ways. `measured Hz` is the YIN (cumulative-mean-normalised",
+   636→         "difference) estimate = the grain-average period. `fft Hz` is the interpolated spectral",
+   637→         "peak = the *instantaneous carrier*. `predicted Hz` is the closed form derived in",
+   638→         "`_predicted_shift_hz`: writing A = x[n-d], B = x[n-d-G], d = d0 + G*phi, w = (1-cos pi*phi)/2,",
+   639→         "the two-tap complementary crossfade is exactly",
+   640→         "`y = P(phi)*sin(u) + Q(phi)*cos(u)` with `P = cos(w0 G) + (1-cos pi phi)(1-cos w0 G)/2`,",
+   641→         "`Q = -(1+cos pi phi) sin(w0 G)/2`, so the carrier runs at `ratio*f` but its coefficient",
+   642→         "rotates by `Phi(phi) = atan2(Q,P)`; hence the output sits at",
+   643→         "`ratio*f + (Phi(1)-Phi(0))*(1-ratio)/G * sr/(2*pi)`. That artefact is a property of the",
+   644→         "reconstructed architecture, not a coding error, and it shrinks ~1/G.",
+   645→         ""]
+   646→    for name, r in out.items():
+   647→        L += [f"## {name}", "",
+   648→              f"- interpolation: `{r['interp']}`  ·  voices: {r['nvoices']}  ·  diatonic: {r['diatonic']}  ·  sr: {r['sr']} Hz",
+   649→              f"- grain G = {r['grain']:.0f} samples, base delay = {r['base_delay']:.0f} samples",
+   650→              "",
+   651→              "| voice | nominal st | applied st | expected Hz | measured Hz (YIN) | fft Hz | predicted Hz | cents (YIN) | cents (fft) | cents (pred) | out-of-harmonic |",
+   652→              "|---|---|---|---|---|---|---|---|---|---|---|"]
+   653→        for row in r["pitch"]:
+   654→            L.append("| {voice} | {nominal_semitones} | {semitones} | {expected_hz:.3f} | {measured_hz:.3f} | {measured_fft_hz:.3f} | "
+   655→                     "{predicted_hz:.3f} | {cents_err:+.2f} | {cents_err_fft:+.2f} | {cents_err_predicted:+.2f} | "
+   656→                     "{thd_energy:.4f} |".format(**row))
+   657→        L += ["",
+   658→              f"- **pitch**: max |cents error| (YIN) = {r['pitch_max_cents_err']:.2f}",
+   659→              f"- **unity ratio (0 st)**: {r['unity_ratio_gain_db']:.2f} dB measured vs "
+   660→              f"{r['unity_ratio_gain_db_analytic']:.2f} dB analytic |cos(pi*f*G/sr)| — at r = 1 the "
+   661→              f"frozen 0.5/0.5 crossfade reads both taps G apart, so the unison voice is a two-tap comb "
+   662→              f"(notch spacing sr/G = {r['sr']/r['grain']:.2f} Hz)",
+   663→              f"- **latency**: {r['latency_samples']} samples = {r['latency_ms']:.3f} ms (impulse onset, −80 dBFS)",
+   664→              f"- **transient**: attack = {r['transient_attack_samples']} samples to −6 dB "
+   665→              f"(= {r['transient_attack_rel_samples']} samples / {r['transient_attack_rel_ms']:.2f} ms after the "
+   666→              f"delayed burst appears, the rest is latency); pre-ring = {r['transient_pre_ring_db']:.1f} dB; "
+   667→              f"release(+20 ms after the output burst ends) = {r['transient_release_db']:.1f} dB",
+   668→              f"- **discontinuity**: max |Δy| = {r['max_sample_jump']:.6f} ({r['max_sample_jump_rel']*100:.2f} % of peak); "
+   669→              f"max |Δ²y| = {r['max_second_diff']:.3e} vs smooth-sine baseline {r['smooth_sine_baseline_2nd_diff']:.3e} "
+   670→              f"({r['discontinuity_db']:.1f} dB rel. peak); steady out-of-harmonic energy = {r['steady_thd']:.4f}",
+   671→              f"- **cost**: {r['cost_1voice_xrealtime']:.2f}x realtime (1 voice), "
+   672→              f"{r['cost_8voice_xrealtime']:.2f}x realtime (8 voices); "
+   673→              f"{r['cost_8voice_ms_per_s_audio']:.0f} ms CPU per second of audio (8 voices)",
+   674→              f"- **stability**: bounded = {r['stability_bounded']}, non-finite blocks = {r['stability_nonfinite_blocks']}, "
+   675→              f"max |y| = {r['stability_max_abs']:.3f}",
+   676→              ""]
+   677→        sw = r.get("grain_sweep")
+   678→        if sw:
+   679→            L += ["### grain-length trade-off (accuracy vs latency)", "",
+   680→                  "| grain | semitones | latency ms | fft Hz | cents (measured) | predicted Hz | cents (predicted) | out-of-harmonic |",
+   681→                  "|---|---|---|---|---|---|---|---|"]
+   682→            for s in sw:
+   683→                L.append("| {grain:.0f} | {semitones} | {latency_ms:.1f} | {measured_fft_hz:.3f} | "
+   684→                         "{cents_err_fft:+.2f} | {predicted_hz:.3f} | {cents_err_predicted:+.2f} | {thd_energy:.4f} |".format(**s))
+   685→            L += ["",
+   686→                  "Measured and predicted columns track each other: the disagreement shrinks as 1/G while the",
+   687→                  "latency grows linearly, which is the fundamental two-tap trade-off.", ""]
+   688→    return "\n".join(L)
+   689→
+   690→
+   691→def main() -> None:
+   692→    out = {}
+   693→    out["lagrange6"] = measure(interp="lagrange6")
+   694→    out["lagrange6_quantised_256phase"] = measure(interp="lagrange6_q")
+   695→    out["linear_interp_baseline"] = measure(interp="linear")
+   696→    out["diatonic_mode"] = measure(interp="lagrange6", diatonic=True)
+   697→    with open("poc_measurements.json", "w", encoding="utf-8") as f:
+   698→        json.dump(out, f, indent=2)
+   699→    with open("POC_RESULTS.md", "w", encoding="utf-8") as f:
+   700→        f.write(_md_report(out))
+   701→    print(json.dumps(out, indent=2))
+   702→
+   703→
+   704→if __name__ == "__main__":
+   705→    main()
+   706→

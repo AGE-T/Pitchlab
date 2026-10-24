@@ -2,19 +2,19 @@ import fs from "node:fs";
 import path from "node:path";
 import { ReportViewer } from "../components/report-viewer";
 
-const ROUND10_PATH = "/home/z/octavox/work/Octavox_RE_evidence/docs/OCTAVOX_ROUND10_FINDINGS.md";
-const LOCAL_FALLBACK = path.join(process.cwd(), "OCTAVOX_ROUND10_FINDINGS.md");
+const ROUND11_PATH = "/home/z/octavox/work/Octavox_RE_evidence/docs/OCTAVOX_ROUND11_FINDINGS.md";
+const LOCAL_FALLBACK = path.join(process.cwd(), "OCTAVOX_ROUND11_FINDINGS.md");
 
-const ZIP_NAME = "Octavox_RE_evidence_round10.zip";
+const ZIP_NAME = "Octavox_RE_evidence_round11.zip";
 
 function readMarkdown(): string {
   try {
-    return fs.readFileSync(ROUND10_PATH, "utf8");
+    return fs.readFileSync(ROUND11_PATH, "utf8");
   } catch {
     try {
       return fs.readFileSync(LOCAL_FALLBACK, "utf8");
     } catch {
-      return "# OCTAVOX_ROUND10_FINDINGS\n\nA 10. körös megállapítások fájlja nem található sem a kutatási fában, sem a projekt gyökerében (`OCTAVOX_ROUND10_FINDINGS.md`).";
+      return "# OCTAVOX_ROUND11_FINDINGS\n\nA 11. körös megállapítások fájlja nem található sem a kutatási fában, sem a projekt gyökerében (`OCTAVOX_ROUND11_FINDINGS.md`).";
     }
   }
 }

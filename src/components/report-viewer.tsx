@@ -67,12 +67,12 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 10 · Q-7 numerika + m02 12/13" },
-  { label: "REA", value: "6.7.0" },
-  { label: "Ghidra", value: "12.1.4" },
-  { label: "Javítás", value: "49.939¢ / 199.923¢ (nem 50.13/201.68)" },
-  { label: "Törvény", value: "|cents − walk·depth| ≤ 0.101¢" },
-  { label: "Walk", value: "F ∈ [0,1] (1.0 elérhető)" },
+  { label: "Kör", value: "Round 11 · numerikus audit + DSP validáció" },
+  { label: "Audit", value: "6/6 állítás reprodukálva · 2 címke javítva" },
+  { label: "Max. hiba", value: "0.10131¢ · belső (f ≈ 0.0561, nem a sarok)" },
+  { label: "Reziduum", value: "tömegében negatív · „felfelé” csak az irány" },
+  { label: "Acceptance", value: "45/45 kapu · exit 0" },
+  { label: "Fejlesztés", value: "pitch ±4.8¢ → ±0.03¢ · mod 2.3dB → 0.00dB" },
 ];
 
 export function ReportViewer({
@@ -123,17 +123,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 10. kör
+                Octavox Research — 11. kör
               </h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                A 9. kör matematikájának validálása + a tracker 12/13 kimenetek adatútvonala · Eventide Octavox RE projekt
+                Numerikus konzisztencia-audit + a WAV→WAV DSP demó független validációja és fejlesztése · Eventide Octavox RE projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 10 · KÉSZ
+              ROUND 11 · KÉSZ
             </Badge>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -162,9 +162,9 @@ export function ReportViewer({
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                    A 10. körre frissített teljes kutatási csomag: a round-10 megállapítások és a nyolc
-                    kanonikus dokumentum, a round-9 és round-10 nyers elemzési bizonyítékok, a DSP PoC
-                    és a round-8 átvevői jelentés — önegyértő manifesttel.
+                    A 11. körre frissített teljes kutatási csomag: a round-11 megállapítások, a javított
+                    kanonikus dokumentumok, a numerikus audit és a 45 kapus elfogadó teszt, a
+                    periodikusan igazított `delayline_aligned` fejlesztés — önegyértő manifesttel.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
@@ -174,7 +174,7 @@ export function ReportViewer({
                       {formatBytes(delivery.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      243 fájl · sha256sum -c
+                      255 fájl · sha256sum -c
                     </Badge>
                   </div>
                   {delivery.sha256 ? (
@@ -361,9 +361,9 @@ export function ReportViewer({
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            Octavox RE — 10. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
-            forrásfájl: <code className="font-mono">OCTAVOX_ROUND10_FINDINGS.md</code> · csomag:{" "}
-            <code className="font-mono">Octavox_RE_evidence_round10.zip</code>
+            Octavox RE — 11. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
+            forrásfájl: <code className="font-mono">OCTAVOX_ROUND11_FINDINGS.md</code> · csomag:{" "}
+            <code className="font-mono">Octavox_RE_evidence_round11.zip</code>
           </p>
         </div>
       </footer>
