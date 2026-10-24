@@ -67,12 +67,12 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 11 · numerikus audit + DSP validáció" },
-  { label: "Audit", value: "6/6 állítás reprodukálva · 2 címke javítva" },
-  { label: "Max. hiba", value: "0.10131¢ · belső (f ≈ 0.0561, nem a sarok)" },
-  { label: "Reziduum", value: "tömegében negatív · „felfelé” csak az irány" },
-  { label: "Acceptance", value: "45/45 kapu · exit 0" },
-  { label: "Fejlesztés", value: "pitch ±4.8¢ → ±0.03¢ · mod 2.3dB → 0.00dB" },
+  { label: "Kör", value: "Round 12 · natív C++17 DSP mag + statikus előrehaladás" },
+  { label: "Statika", value: "+0x40f0: 256×6 .rdata kernel · NEM Lagrange" },
+  { label: "Q-14", value: "egység = egyetlen tap · nincs két-tapú fésű" },
+  { label: "Unity fix", value: "bitespontos késleltetett másolat · 0.0000 dB fésű" },
+  { label: "Natív mag", value: "51/51 teszt · ASan tiszta · ~35–55× Python" },
+  { label: "Benchmark", value: "15.5× realtime (1 hang) · 51× (ctrl 512)" },
 ];
 
 export function ReportViewer({
@@ -123,17 +123,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 11. kör
+                Octavox Research — 12. kör
               </h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                Numerikus konzisztencia-audit + a WAV→WAV DSP demó független validációja és fejlesztése · Eventide Octavox RE projekt
+                Statikus rekonstrukció előrehaladás + a független natív C++17 DSP mag, az egységhangzás-javítással · Eventide Octavox RE projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 11 · KÉSZ
+              ROUND 12 · KÉSZ
             </Badge>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -162,9 +162,10 @@ export function ReportViewer({
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                    A 11. körre frissített teljes kutatási csomag: a round-11 megállapítások, a javított
-                    kanonikus dokumentumok, a numerikus audit és a 45 kapus elfogadó teszt, a
-                    periodikusan igazított `delayline_aligned` fejlesztés — önegyértő manifesttel.
+                    A 12. körre frissített teljes kutatási csomag: a round-12 megállapítások, a natív
+                    C++17 DSP mag (51/51 teszt, ASan-tiszta, ~35–55× a Python referenciához), a
+                    bitekpontos unity-javítás, a statikus bizonyítékok és a frissített kanonikus
+                    dokumentumok — önegyértő manifesttel.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
@@ -174,7 +175,7 @@ export function ReportViewer({
                       {formatBytes(delivery.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      255 fájl · sha256sum -c
+                      285 fájl · sha256sum -c
                     </Badge>
                   </div>
                   {delivery.sha256 ? (
@@ -361,9 +362,9 @@ export function ReportViewer({
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            Octavox RE — 11. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
-            forrásfájl: <code className="font-mono">OCTAVOX_ROUND11_FINDINGS.md</code> · csomag:{" "}
-            <code className="font-mono">Octavox_RE_evidence_round11.zip</code>
+            Octavox RE — 12. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
+            forrásfájl: <code className="font-mono">OCTAVOX_ROUND12_FINDINGS.md</code> · csomag:{" "}
+            <code className="font-mono">Octavox_RE_evidence_round12.zip</code>
           </p>
         </div>
       </footer>

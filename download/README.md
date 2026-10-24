@@ -2,26 +2,29 @@
 
 | file | size | SHA-256 |
 |---|---|---|
+| `Octavox_RE_evidence_round12.zip` | 1 776 634 B (~1.69 MB) | `a597546534c3f27bd941dea4a427ececbd9972e63b1fa183485eba509cdb0902` |
+| `Octavox_RE_evidence_round12.zip.sha256` | sidecar checksum | — |
 | `Octavox_RE_evidence_round11.zip` | 1 672 425 B (~1.59 MB) | `6ff8173a9e98e41092d762f32862ad88dd399291a6019cc29e71582194cf215b` |
-| `Octavox_RE_evidence_round11.zip.sha256` | sidecar checksum | — |
 
 Served from `public/` — download from the app root page (`/`) or directly at
-`/Octavox_RE_evidence_round11.zip`. The same files are mirrored here in `download/`.
+`/Octavox_RE_evidence_round12.zip`. The same files are mirrored here in `download/`.
 
-**Package:** round-11 edition of the Octavox RE evidence package (255 files + `checksums.txt`,
-256 zip entries). New since round 10: `docs/OCTAVOX_ROUND11_FINDINGS.md` (the independent
-numerical audit — all six round-10 claims reproduced, the max-error location and residual
-direction corrected, the one-`P`-ulp excess qualification; the demo validation with the
-stereo defect found and fixed; the acceptance suite and the period-aligned improvement),
-`evidence/analysis_round11/` (numeric audit + 45/45 gated acceptance tests + improvement note),
-`poc/octavox_v2.py` + the aligned example output; 10 files updated (7 canonical docs + the
-corrected `r10_verify.py` with its regenerated output; the original output preserved as
-`r10_verify_results_v1_superseded.txt`). Verify after extraction:
-`sha256sum -c checksums.txt` (255/255 OK expected); re-run the gates:
-`python3 evidence/analysis_round11/r11_numeric_audit.py` (exit 0) and
-`python3 evidence/analysis_round11/r11_acceptance_tests.py` (45/45, ~2.5 min).
+**Package:** round-12 edition of the Octavox RE evidence package (285 files + `checksums.txt`,
+286 zip entries). New since round 11: `docs/OCTAVOX_ROUND12_FINDINGS.md` (static advance —
+the interpolator is a static 256×6 `.rdata` kernel that is **not** Lagrange; the settled path
+reads ONE interpolated tap, so the target cannot sit in a two-tap blend at unity; crossfade
+mechanics decoded; Q-14's premise answered), `native/` (the independent C++17 DSP core —
+`delayline_aligned` ported with the unity engagement fix: **bit-exact delayed copy at exact
+unity, 0.0000 dB comb spread vs the Python v2 reference's 16.43 dB**; 51/51 release tests,
+51/51 ASan+UBSan, ≈ 35–55× the Python reference's speed; CMake + tests + bench + CLI +
+architecture note), `evidence/analysis_round12/` (4 read-only capstone scans of the shipped
+binary + the bit-exact OBS kernel extraction + native test/bench/metrics results). The
+round-11 suites re-run from the package: numeric audit exit 0, acceptance 45/45. Verify after
+extraction: `sha256sum -c checksums.txt` (285/285 OK expected); build and test the native core:
+`cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Release && cmake --build native/build -j &&
+./native/build/octavox_tests` (51/51, exit 0).
 
-The target binary `Ox.vst3` is intentionally not included (see `DELIVERY_ROUND11.md`; it was
-also not present in the round-11 environment — all inputs are the recorded OBS bit patterns).
-The round-10 edition is preserved at `/home/z/octavox/delivery/Octavox_RE_evidence_round10.zip`
-(SHA-256 `e7f9067ababaa033493b7a08730ffbc279ca2aa5295b246831daab6bf2237d9a`).
+The target binary `Ox.vst3` is intentionally not included (see `DELIVERY_ROUND12.md`; it was
+read-only-analysed this round — digest verified before and after every scan — but never
+executed). Earlier editions are preserved under `/home/z/octavox/delivery/` (round 11
+SHA-256 `6ff8173a…94cf215b`, round 10 `e7f9067a…3626dd90`).

@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Octavox Research — Round 11 Findings",
+  title: "Octavox Research — Round 12 Findings",
   description:
-    "Numerical consistency audit of round 10 (all six claims reproduced; the max-error location and residual direction corrected) plus the independent WAV-to-WAV DSP demo validated with a 45-case gated acceptance suite and the period-aligned delay-line improvement — Eventide Octavox reverse engineering, round 11.",
+    "Static DSP reconstruction advanced (the target interpolator is a static non-Lagrange 256x6 kernel; the settled path reads a single tap — no two-tap comb at unity) plus the independent native C++17 DSP core with the bit-exact unity fix, 51/51 tests, sanitizer-clean and 35-55x the Python reference speed — Eventide Octavox reverse engineering, round 12.",
   keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting"],
   authors: [{ name: "Z.ai Team" }],
   icons: {
