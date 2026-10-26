@@ -1,30 +1,21 @@
-# Downloads
+# Octavox RE evidence — delivery downloads
 
-| file | size | SHA-256 |
+| round | package | SHA-256 |
 |---|---|---|
-| `Octavox_RE_evidence_round12.zip` | 1 776 634 B (~1.69 MB) | `a597546534c3f27bd941dea4a427ececbd9972e63b1fa183485eba509cdb0902` |
-| `Octavox_RE_evidence_round12.zip.sha256` | sidecar checksum | — |
-| `Octavox_RE_evidence_round11.zip` | 1 672 425 B (~1.59 MB) | `6ff8173a9e98e41092d762f32862ad88dd399291a6019cc29e71582194cf215b` |
+| 8 (handover) | Octavox_RE_evidence_round8.zip | 04fe8f948e20812f533d3a4e32bbb8bac483593cea80451c8f8aa4875f33d445 |
+| 10 | Octavox_RE_evidence_round10.zip | (see the .sha256 sidecar) |
+| 11 | Octavox_RE_evidence_round11.zip | 6ff8173a9e98e41092d762f32862ad88dd399291a6019cc29e71582194cf215b |
+| 12 | Octavox_RE_evidence_round12.zip | a597546534c3f27bd941dea4a427ececbd9972e63b1fa183485eba509cdb0902 |
+| **15 (latest)** | **Octavox_RE_evidence_round15.zip** | **990b1d48cff8aa69186cd6855d1512abacbfe829a2924a0d6a7934affc7208ec** |
 
-Served from `public/` — download from the app root page (`/`) or directly at
-`/Octavox_RE_evidence_round12.zip`. The same files are mirrored here in `download/`.
+Round 15: the eight-voice harmonizer API completed (per-voice pitch ratio / gain / mute /
+base delay, wet/dry mix with the latency-aligned dry path, click-free bypass, block-boundary
+parameter semantics) — 85/85 acceptance cases (release + ASan), default path bit-identical
+to 12.0.0 (four reference hashes); static: Q-A/Q-B/Q-C closed (dead record field; the
++0x5F14 cadence selector {2,4,8}; the kernel table's second consumer = the output-stage
+"just for the filter" fractional-delay modules), Q-D open with a plan. VST3 readiness
+assessed; no wrapper built by design. Includes the rounds-13/14 scope rebuilt as the 14.0.0
+recovery record after two documented environment resets (provenance inside).
 
-**Package:** round-12 edition of the Octavox RE evidence package (285 files + `checksums.txt`,
-286 zip entries). New since round 11: `docs/OCTAVOX_ROUND12_FINDINGS.md` (static advance —
-the interpolator is a static 256×6 `.rdata` kernel that is **not** Lagrange; the settled path
-reads ONE interpolated tap, so the target cannot sit in a two-tap blend at unity; crossfade
-mechanics decoded; Q-14's premise answered), `native/` (the independent C++17 DSP core —
-`delayline_aligned` ported with the unity engagement fix: **bit-exact delayed copy at exact
-unity, 0.0000 dB comb spread vs the Python v2 reference's 16.43 dB**; 51/51 release tests,
-51/51 ASan+UBSan, ≈ 35–55× the Python reference's speed; CMake + tests + bench + CLI +
-architecture note), `evidence/analysis_round12/` (4 read-only capstone scans of the shipped
-binary + the bit-exact OBS kernel extraction + native test/bench/metrics results). The
-round-11 suites re-run from the package: numeric audit exit 0, acceptance 45/45. Verify after
-extraction: `sha256sum -c checksums.txt` (285/285 OK expected); build and test the native core:
-`cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Release && cmake --build native/build -j &&
-./native/build/octavox_tests` (51/51, exit 0).
-
-The target binary `Ox.vst3` is intentionally not included (see `DELIVERY_ROUND12.md`; it was
-read-only-analysed this round — digest verified before and after every scan — but never
-executed). Earlier editions are preserved under `/home/z/octavox/delivery/` (round 11
-SHA-256 `6ff8173a…94cf215b`, round 10 `e7f9067a…3626dd90`).
+Verify: `sha256sum -c Octavox_RE_evidence_round15.zip.sha256` then the instructions in
+DELIVERY_ROUND15.md inside the package.

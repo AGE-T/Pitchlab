@@ -1,0 +1,1613 @@
+     1→// OCTAVOX round 12 -- native test harness: correctness + unity regression.
+     2→//
+     3→// Gated by the process exit code (0 = all pass, 1 = any failure).
+     4→// Machine-readable results: --json <path> writes a JSON report; a summary
+     5→// table goes to stdout. Every case records the measured values so the
+     6→// report is evidence, not just a boolean.
+     7→//
+     8→// Deterministic by construction: every generator is a fixed formula or the
+     9→// shared 64-bit LCG (identical implementation exists on the Python side for
+    10→// the cross-language benchmark: evidence/analysis_round12/r12_native_metrics.py).
+    11→
+    12→#include <algorithm>
+    13→#include <cmath>
+    14→#include <sys/resource.h>
+    15→#include <cstdint>
+    16→#include <cstdio>
+    17→#include <cstring>
+    18→#include <string>
+    19→#include <vector>
+    20→
+    21→#include "octavox/dsp.hpp"
+    22→#include "wav_io.hpp"
+    23→
+    24→using namespace octavox;
+    25→
+    26→// ---------------------------------------------------------------------------
+    27→// Allocation counter interface (defined in alloc_counter.cpp)
+    28→// ---------------------------------------------------------------------------
+    29→namespace octavox {
+    30→namespace allocs {
+    31→long count();
+    32→void arm(bool on);
+    33→void reset();
+    34→}  // namespace allocs
+    35→}  // namespace octavox
+    36→
+    37→// ---------------------------------------------------------------------------
+    38→// Deterministic generators (shared spec with the Python metrics script)
+    39→// ---------------------------------------------------------------------------
+    40→namespace gen {
+    41→
+    42→/// 64-bit LCG, identical on the Python side. u in [0,1); sample = (2u-1)*amp.
+    43→struct Lcg {
+    44→    uint64_t s;
+    45→    explicit Lcg(uint64_t seed) : s(seed * 6364136223846793005ULL +
+    46→                                     1442695040888963407ULL) {}
+    47→    double next() {
+    48→        s = s * 6364136223846793005ULL + 1442695040888963407ULL;
+    49→        const uint64_t m = (s >> 11) & ((1ULL << 53) - 1);
+    50→        return static_cast<double>(m) / 9007199254740992.0;
+    51→    }
+    52→    double noise(double amp) { return (2.0 * next() - 1.0) * amp; }
+    53→};
+    54→
+    55→std::vector<float> tone(double f, int sr, int n, double amp) {
+    56→    std::vector<float> x(n);
+    57→    for (int i = 0; i < n; ++i)
+    58→        x[i] = static_cast<float>(amp * std::sin(2.0 * M_PI * f * i / sr));
+    59→    return x;
+    60→}
+    61→
+    62→std::vector<float> chord(const std::vector<double>& fs, int sr, int n,
+    63→                         double amp) {
+    64→    std::vector<float> x(n, 0.0f);
+    65→    for (double f : fs)
+    66→        for (int i = 0; i < n; ++i)
+    67→            x[i] += static_cast<float>(amp / fs.size() *
+    68→                                       std::sin(2.0 * M_PI * f * i / sr));
+    69→    return x;
+    70→}
+    71→
+    72→std::vector<float> noise(uint64_t seed, int n, double amp) {
+    73→    Lcg rng(seed);
+    74→    std::vector<float> x(n);
+    75→    for (int i = 0; i < n; ++i) x[i] = static_cast<float>(rng.noise(amp));
+    76→    return x;
+    77→}
+    78→
+    79→std::vector<float> impulse(int n) {
+    80→    std::vector<float> x(n, 0.0f);
+    81→    x[0] = 1.0f;
+    82→    return x;
+    83→}
+    84→
+    85→/// Percussive burst train: exponential decays.
+    86→std::vector<float> bursts(int sr, int n, double period_s, double amp) {
+    87→    std::vector<float> x(n, 0.0f);
+    88→    Lcg rng(99);
+    89→    const int per = static_cast<int>(period_s * sr);
+    90→    for (int i = 0; i < n; ++i) {
+    91→        const int t = i % per;
+    92→        if (t < 200)
+    93→            x[i] = static_cast<float>(amp * std::exp(-t / 40.0) *
+    94→                                      (t == 0 ? 1.0 : rng.noise(1.0)));
+    95→    }
+    96→    return x;
+    97→}
+    98→
+    99→std::vector<float> chirp(double f0, double f1, int sr, int n, double amp) {
+   100→    std::vector<float> x(n);
+   101→    const double T = static_cast<double>(n) / sr;
+   102→    for (int i = 0; i < n; ++i) {
+   103→        const double t = static_cast<double>(i) / sr;
+   104→        const double f = f0 * std::pow(f1 / f0, t / T);
+   105→        x[i] = static_cast<float>(amp * std::sin(2.0 * M_PI * f * t));
+   106→    }
+   107→    return x;
+   108→}
+   109→
+   110→}  // namespace gen
+   111→
+   112→// ---------------------------------------------------------------------------
+   113→// Measurement helpers
+   114→// ---------------------------------------------------------------------------
+   115→namespace meas {
+   116→
+   117→/// Radix-2 complex FFT (in-place, n a power of two).
+   118→void fft(double* re, double* im, int n) {
+   119→    for (int i = 1, j = 0; i < n; ++i) {
+   120→        int bit = n >> 1;
+   121→        for (; j & bit; bit >>= 1) j ^= bit;
+   122→        j ^= bit;
+   123→        if (i < j) {
+   124→            std::swap(re[i], re[j]);
+   125→            std::swap(im[i], im[j]);
+   126→        }
+   127→    }
+   128→    for (int len = 2; len <= n; len <<= 1) {
+   129→        const double ang = -2.0 * M_PI / len;
+   130→        const double wr = std::cos(ang), wi = std::sin(ang);
+   131→        for (int i = 0; i < n; i += len) {
+   132→            double cr = 1.0, ci = 0.0;
+   133→            for (int k = 0; k < len / 2; ++k) {
+   134→                const double ur = re[i + k], ui = im[i + k];
+   135→                const double vr = re[i + k + len / 2] * cr -
+   136→                                  im[i + k + len / 2] * ci;
+   137→                const double vi = re[i + k + len / 2] * ci +
+   138→                                  im[i + k + len / 2] * cr;
+   139→                re[i + k] = ur + vr;
+   140→                im[i + k] = ui + vi;
+   141→                re[i + k + len / 2] = ur - vr;
+   142→                im[i + k + len / 2] = ui - vi;
+   143→                const double nr = cr * wr - ci * wi;
+   144→                ci = cr * wi + ci * wr;
+   145→                cr = nr;
+   146→            }
+   147→        }
+   148→    }
+   149→}
+   150→
+   151→/// FFT peak pitch with parabolic interpolation (Hann window).
+   152→/// Returns 0.0 when no peak above the threshold is found.
+   153→double pitchFFT(const float* x, int n, int sr, double fmin, double fmax) {
+   154→    int N = 1;
+   155→    while (N < n && N < 262144) N <<= 1;  // round 13: 2^18 zero-pad (low-f0
+   156→    // pitch at 96/192 kHz needs ~4x finer bins than the round-12 2^16 cap)
+   157→    if (N < 16) return 0.0;
+   158→    std::vector<double> re(N, 0.0), im(N, 0.0);
+   159→    const int off = n - N;  // use the newest N samples
+   160→    for (int i = 0; i < N; ++i) {
+   161→        const double w = 0.5 - 0.5 * std::cos(2.0 * M_PI * i / N);
+   162→        re[i] = static_cast<double>(x[off + i]) * w;
+   163→    }
+   164→    fft(re.data(), im.data(), N);
+   165→    const int kmin = std::max(1, static_cast<int>(fmin * N / sr));
+   166→    const int kmax = std::min(N / 2 - 2, static_cast<int>(fmax * N / sr));
+   167→    if (kmax <= kmin) return 0.0;
+   168→    int kpeak = kmin;
+   169→    double best = 0.0;
+   170→    for (int k = kmin; k <= kmax; ++k) {
+   171→        const double m = re[k] * re[k] + im[k] * im[k];
+   172→        if (m > best) {
+   173→            best = m;
+   174→            kpeak = k;
+   175→        }
+   176→    }
+   177→    if (best <= 0.0) return 0.0;
+   178→    // Round 13: log-domain parabolic peak interpolation. The round-12
+   179→    // linear-power parabola carries a systematic, bin-fraction-dependent
+   180→    // bias of up to ~5 cents (measured on pure reference tones: +1.9 c at
+   181→    // 69.3 Hz, -5.2 c at 75.6 Hz/44.1 kHz); the log-domain form is
+   182→    // analytically matched to the Hann window and measures pure tones to
+   183→    // within 0.25 cents across the battery's frequencies and rates
+   184→    // (probe evidence: evidence/analysis_round13/r13_meter_bias.txt).
+   185→    const double la = std::log(re[kpeak - 1] * re[kpeak - 1] +
+   186→                               im[kpeak - 1] * im[kpeak - 1] + 1e-300);
+   187→    const double lb = std::log(best);
+   188→    const double lc = std::log(re[kpeak + 1] * re[kpeak + 1] +
+   189→                               im[kpeak + 1] * im[kpeak + 1] + 1e-300);
+   190→    double d = 0.0;
+   191→    const double den = la - 2.0 * lb + lc;
+   192→    if (std::abs(den) > 1e-300) d = 0.5 * (la - lc) / den;
+   193→    if (d > 0.5) d = 0.5;
+   194→    if (d < -0.5) d = -0.5;
+   195→    return static_cast<double>(sr) * (kpeak + d) / N;
+   196→}
+   197→
+   198→double rms(const float* x, int n) {
+   199→    double s = 0.0;
+   200→    for (int i = 0; i < n; ++i) s += static_cast<double>(x[i]) * x[i];
+   201→    return n ? std::sqrt(s / n) : 0.0;
+   202→}
+   203→
+   204→double peak(const float* x, int n) {
+   205→    double p = 0.0;
+   206→    for (int i = 0; i < n; ++i) p = std::max(p, std::abs(static_cast<double>(x[i])));
+   207→    return p;
+   208→}
+   209→
+   210→bool allFinite(const float* x, int n) {
+   211→    for (int i = 0; i < n; ++i)
+   212→        if (!std::isfinite(x[i])) return false;
+   213→    return true;
+   214→}
+   215→
+   216→/// Envelope modulation in dB: max/min of RMS windows of `w` samples over the
+   217→/// steady region (skip the first skip samples). w = sr/1000 gives the 1 ms
+   218→/// metric; w = period gives the period-synchronous metric (the r11 lesson:
+   219→/// a 1 ms window phase-breathes several dB on a plain tone).
+   220→double envModulationDb(const float* x, int n, int sr, int skip, int w) {
+   221→    std::vector<double> env;
+   222→    for (int i0 = skip; i0 + w <= n; i0 += w) {
+   223→        env.push_back(rms(x + i0, w));
+   224→    }
+   225→    if (env.empty()) return 0.0;
+   226→    double lo = 1e300, hi = 0.0;
+   227→    for (double v : env) {
+   228→        if (v < lo) lo = v;
+   229→        if (v > hi) hi = v;
+   230→    }
+   231→    if (lo <= 0.0) return hi > 0.0 ? 999.0 : 0.0;
+   232→    return 20.0 * std::log10(hi / lo);
+   233→}
+   234→
+   235→double centsBetween(double fMeasured, double fNominal) {
+   236→    if (fMeasured <= 0.0 || fNominal <= 0.0) return 999.0;
+   237→    return 1200.0 * std::log2(fMeasured / fNominal);
+   238→}
+   239→
+   240→/// Max absolute sample-to-sample difference (transition click meter).
+   241→double maxStep(const float* x, int n, int i0 = 0) {
+   242→    double m = 0.0;
+   243→    for (int i = std::max(1, i0 + 1); i < n; ++i)
+   244→        m = std::max(m, std::abs(static_cast<double>(x[i]) - x[i - 1]));
+   245→    return m;
+   246→}
+   247→
+   248→}  // namespace meas
+   249→
+   250→// ---------------------------------------------------------------------------
+   251→// Case framework + JSON report
+   252→// ---------------------------------------------------------------------------
+   253→struct CaseResult {
+   254→    std::string name;
+   255→    bool pass = false;
+   256→    std::string note;
+   257→    std::vector<std::pair<std::string, double>> values;
+   258→    double duration_ms = 0.0;  // round 13: per-case CPU time (P4 profiling)
+   259→    double cpu_t0 = 0.0;       // getrusage user+sys at construction
+   260→};
+   261→
+   262→// Round 13: CPU time (user+sys) via getrusage -- a real syscall, immune to
+   263→// the vDSO clock_gettime livelock observed intermittently in the development
+   264→// sandbox. For this single-threaded suite CPU time is the honest duration
+   265→// metric (scheduler noise excluded); total wall time is measured externally.
+   266→double cpuNowMs() {
+   267→    struct rusage ru;
+   268→    getrusage(RUSAGE_SELF, &ru);
+   269→    return (ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) * 1e3 +
+   270→           (ru.ru_utime.tv_usec + ru.ru_stime.tv_usec) * 1e-3;
+   271→}
+   272→
+   273→// Finishes a case: records the CPU time, sets pass from the accumulated
+   274→// notes and appends to the result list (round 13).
+   275→void finishCase(std::vector<CaseResult>& R, CaseResult& c) {
+   276→    c.duration_ms = cpuNowMs() - c.cpu_t0;
+   277→    c.pass = c.note.empty();
+   278→    R.push_back(std::move(c));
+   279→}
+   280→
+   281→static std::vector<CaseResult> g_results;
+   282→
+   283→void addValue(CaseResult& c, const std::string& k, double v) {
+   284→    c.values.emplace_back(k, v);
+   285→}
+   286→
+   287→bool check(CaseResult& c, bool ok, const std::string& what) {
+   288→    if (!ok) c.note += (c.note.empty() ? "" : "; ") + what;
+   289→    return ok;
+   290→}
+   291→
+   292→double semitoneRatio(double cents) { return std::pow(2.0, cents / 1200.0); }
+   293→
+   294→// Runs the engine over a full signal in one go (64-aligned internally is
+   295→// irrelevant -- process takes the whole block).
+   296→std::vector<float> run(const Config& cfg, const std::vector<float>& in,
+   297→                       int block = 1 << 20) {
+   298→    AlignedDelayLine e;
+   299→    if (!e.prepare(cfg)) {
+   300→        return {};
+   301→    }
+   302→    std::vector<float> out(in.size(), 0.0f);
+   303→    int done = 0;
+   304→    while (done < static_cast<int>(in.size())) {
+   305→        const int n = std::min(block, static_cast<int>(in.size()) - done);
+   306→        e.process(in.data() + done, out.data() + done, n);
+   307→        done += n;
+   308→    }
+   309→    return out;
+   310→}
+   311→
+   312→// ---------------------------------------------------------------------------
+   313→// The cases
+   314→// ---------------------------------------------------------------------------
+   315→void casesPrepareReset(std::vector<CaseResult>& R) {
+   316→    {  // 1. default prepare
+   317→        CaseResult c{"prepare_default"}; c.cpu_t0 = cpuNowMs();
+   318→        Config cfg;
+   319→        AlignedDelayLine e;
+   320→        const bool ok = e.prepare(cfg);
+   321→        check(c, ok, "prepare failed");
+   322→        check(c, e.latencySamples() == 2304, "latency != 2304");
+   323→        check(c, e.ready(), "not ready");
+   324→        finishCase(R, c);
+   325→    }
+   326→    {  // 2. invalid configs rejected
+   327→        CaseResult c{"prepare_invalid_rejected"}; c.cpu_t0 = cpuNowMs();
+   328→        int rejected = 0, total = 0;
+   329→        Config bad;
+   330→        auto tryCfg = [&](const Config& cfg) {
+   331→            ++total;
+   332→            AlignedDelayLine e;
+   333→            if (!e.prepare(cfg)) ++rejected;
+   334→        };
+   335→        bad = Config();
+   336→        bad.sample_rate = 0.0;
+   337→        tryCfg(bad);
+   338→        bad = Config();
+   339→        bad.voices = 9;
+   340→        tryCfg(bad);
+   341→        bad = Config();
+   342→        bad.grain = 0.0;
+   343→        tryCfg(bad);
+   344→        bad = Config();
+   345→        bad.feedback = 1.0;
+   346→        tryCfg(bad);
+   347→        bad = Config();
+   348→        bad.base_delay = 0.0;
+   349→        tryCfg(bad);
+   350→        addValue(c, "rejected", rejected);
+   351→        addValue(c, "total", total);
+   352→        check(c, rejected == total, "some invalid configs accepted");
+   353→        finishCase(R, c);
+   354→    }
+   355→    {  // 3. reset determinism
+   356→        CaseResult c{"reset_determinism"}; c.cpu_t0 = cpuNowMs();
+   357→        Config cfg;
+   358→        cfg.ratio = semitoneRatio(400.0);
+   359→        const auto in = gen::tone(220.0, 48000, 48000, 0.5);
+   360→        AlignedDelayLine a, b;
+   361→        a.prepare(cfg);
+   362→        b.prepare(cfg);
+   363→        std::vector<float> oa(in.size(), 0.f), ob(in.size(), 0.f),
+   364→            ob2(in.size(), 0.f);
+   365→        a.process(in.data(), oa.data(), in.size());
+   366→        b.process(in.data(), ob.data(), in.size());
+   367→        b.reset();
+   368→        b.process(in.data(), ob2.data(), in.size());
+   369→        double d1 = 0.0, d2 = 0.0;
+   370→        for (size_t i = 0; i < in.size(); ++i) {
+   371→            d1 = std::max(d1, std::abs((double)oa[i] - ob[i]));
+   372→            d2 = std::max(d2, std::abs((double)ob[i] - ob2[i]));
+   373→        }
+   374→        addValue(c, "fresh_vs_fresh", d1);
+   375→        addValue(c, "reset_vs_fresh", d2);
+   376→        check(c, d1 == 0.0, "two fresh engines differ");
+   377→        check(c, d2 == 0.0, "reset engine differs from fresh");
+   378→        finishCase(R, c);
+   379→    }
+   380→    {  // 4. repeated prepare
+   381→        CaseResult c{"repeated_prepare"}; c.cpu_t0 = cpuNowMs();
+   382→        Config cfg;
+   383→        cfg.ratio = semitoneRatio(500.0);
+   384→        const auto in = gen::tone(330.0, 48000, 24000, 0.4);
+   385→        AlignedDelayLine a, b;
+   386→        a.prepare(cfg);
+   387→        std::vector<float> oa(in.size(), 0.f), ob(in.size(), 0.f);
+   388→        a.process(in.data(), oa.data(), in.size());
+   389→        a.prepare(cfg);  // re-prepare
+   390→        a.process(in.data(), ob.data(), in.size());
+   391→        b.prepare(cfg);
+   392→        std::vector<float> oc(in.size(), 0.f);
+   393→        b.process(in.data(), oc.data(), in.size());
+   394→        double d = 0.0;
+   395→        for (size_t i = 0; i < in.size(); ++i)
+   396→            d = std::max(d, std::abs((double)ob[i] - oc[i]));
+   397→        addValue(c, "reprepared_vs_fresh", d);
+   398→        check(c, d == 0.0, "re-prepared engine differs from fresh");
+   399→        finishCase(R, c);
+   400→    }
+   401→    {  // 5. block-size invariance
+   402→        CaseResult c{"block_size_invariance"}; c.cpu_t0 = cpuNowMs();
+   403→        Config cfg;
+   404→        cfg.ratio = semitoneRatio(700.0);
+   405→        const auto in = gen::tone(196.0, 48000, 48000, 0.4);
+   406→        const auto ref = run(cfg, in, 1 << 20);
+   407→        const int splits[] = {1, 7, 16, 64, 128, 512, 1024, 4096};
+   408→        double worst = 0.0;
+   409→        for (int s : splits) {
+   410→            const auto got = run(cfg, in, s);
+   411→            double d = 0.0;
+   412→            for (size_t i = 0; i < in.size(); ++i)
+   413→                d = std::max(d, std::abs((double)ref[i] - got[i]));
+   414→            worst = std::max(worst, d);
+   415→        }
+   416→        // mixed split pattern
+   417→        {
+   418→            AlignedDelayLine e;
+   419→            e.prepare(cfg);
+   420→            std::vector<float> got(in.size(), 0.f);
+   421→            size_t i = 0;
+   422→            int pat[] = {1, 64, 7, 512, 16, 4096, 3};
+   423→            int pi = 0;
+   424→            while (i < in.size()) {
+   425→                int n = std::min(pat[pi % 7], (int)(in.size() - i));
+   426→                e.process(in.data() + i, got.data() + i, n);
+   427→                i += n;
+   428→                ++pi;
+   429→            }
+   430→            double d = 0.0;
+   431→            for (size_t k = 0; k < in.size(); ++k)
+   432→                d = std::max(d, std::abs((double)ref[k] - got[k]));
+   433→            worst = std::max(worst, d);
+   434→        }
+   435→        addValue(c, "worst_split_diff", worst);
+   436→        check(c, worst == 0.0, "block split changed the output");
+   437→        finishCase(R, c);
+   438→    }
+   439→    {  // 6. steady-state allocation-free
+   440→        CaseResult c{"steady_state_no_allocation"}; c.cpu_t0 = cpuNowMs();
+   441→        Config cfg;
+   442→        cfg.ratio = semitoneRatio(400.0);
+   443→        cfg.voices = 8;
+   444→        cfg.feedback = 0.35;
+   445→        const auto in = gen::noise(1234, 48000, 0.5);
+   446→        AlignedDelayLine e;
+   447→        e.prepare(cfg);
+   448→        std::vector<float> out(in.size(), 0.f);
+   449→        e.process(in.data(), out.data(), 24000);  // warm-up (tables, paths)
+   450→        allocs::reset();
+   451→        allocs::arm(true);
+   452→        e.process(in.data() + 24000, out.data() + 24000,
+   453→                  static_cast<int>(in.size()) - 24000);
+   454→        allocs::arm(false);
+   455→        const long n = allocs::count();
+   456→        addValue(c, "allocations_during_process", static_cast<double>(n));
+   457→        check(c, n == 0, "allocations during steady-state process()");
+   458→        finishCase(R, c);
+   459→    }
+   460→}
+   461→
+   462→void casesUnity(std::vector<CaseResult>& R) {
+   463→    const int sr = 48000;
+   464→
+   465→    // bit-exact delayed-copy gate used by the unity battery
+   466→    auto unityExact = [&](const std::string& name, const std::vector<float>& in,
+   467→                          bool arrive_from_shift = false) {
+   468→        CaseResult c{name}; c.cpu_t0 = cpuNowMs();
+   469→        Config cfg;  // ratio exactly 1.0, 1 voice, neutral
+   470→        AlignedDelayLine e;
+   471→        e.prepare(cfg);
+   472→        if (arrive_from_shift) {
+   473→            // arrive from +4 st first: 1 s shifted, then unity, then settle
+   474→            e.setRatio(semitoneRatio(400.0));
+   475→            std::vector<float> pre(sr, 0.f);
+   476→            e.process(in.data(), pre.data(), sr);
+   477→            e.setRatio(1.0);
+   478→            std::vector<float> mid(static_cast<int>(0.3 * sr), 0.f);
+   479→            if ((int)in.size() > sr)
+   480→                e.process(in.data() + sr, mid.data(),
+   481→                           std::min((int)in.size() - sr, (int)mid.size()));
+   482→        }
+   483→        const int d_park = e.voiceStats(0).parked_delay;
+   484→        addValue(c, "d_park", d_park);
+   485→        check(c, d_park >= 256 && d_park < 256 + 4096, "d_park out of range");
+   486→        check(c, e.voiceStats(0).parked == 1, "voice not parked");
+   487→        const int skip = arrive_from_shift ? static_cast<int>(0.05 * sr) : 0;
+   488→        std::vector<float> out(in.size(), 0.f);
+   489→        e.process(in.data(), out.data(), in.size());
+   490→        // Reference ring semantics: a read at delay d returns the sample
+   491→        // pushed d-1 samples earlier, so the parked copy is in[k-d_park+1].
+   492→        double worst = 0.0;
+   493→        int worst_k = -1;
+   494→        // an engine that arrived from a shift has legitimate ring history:
+   495→        // bit-exactness is only decidable once the read reaches the current
+   496→        // run's own input (k >= d_park-1)
+   497→        const int k0 = std::max(skip, d_park - 1);
+   498→        for (int k = k0; k < (int)in.size(); ++k) {
+   499→            const int src = k - d_park + 1;
+   500→            const double expect = (src >= 0) ? static_cast<double>(in[src]) : 0.0;
+   501→            const double d = std::abs(static_cast<double>(out[k]) - expect);
+   502→            if (d > worst) {
+   503→                worst = d;
+   504→                worst_k = k;
+   505→            }
+   506→        }
+   507→        addValue(c, "max_abs_diff", worst);
+   508→        addValue(c, "worst_k", worst_k);
+   509→        check(c, worst == 0.0, "unity output is not the bit-exact delayed copy");
+   510→        // the pre-delay region is exactly zero (fresh engines only -- an
+   511→        // engine that arrived from a shift legitimately has ring history)
+   512→        if (!arrive_from_shift) {
+   513→            double pre_max = 0.0;
+   514→            for (int k = 0; k < d_park - 1 && k < (int)in.size(); ++k)
+   515→                pre_max = std::max(pre_max, std::abs((double)out[k]));
+   516→            addValue(c, "pre_delay_region_max", pre_max);
+   517→            check(c, pre_max == 0.0, "output before d_park not silent");
+   518→        }
+   519→        finishCase(R, c);
+   520→    };
+   521→
+   522→    unityExact("unity_tone_220_bitexact", gen::tone(220.0, sr, 48000, 0.5));
+   523→    unityExact("unity_tone_1100_bitexact", gen::tone(1100.0, sr, 48000, 0.5));
+   524→    unityExact("unity_noise_bitexact", gen::noise(42, 48000, 0.8));
+   525→    unityExact("unity_chord_bitexact",
+   526→               gen::chord({196.0, 294.0, 392.0, 494.0}, sr, 48000, 0.8));
+   527→    {
+   528→        std::vector<float> sil(48000, 0.0f);
+   529→        unityExact("unity_silence_bitexact", sil);
+   530→    }
+   531→    unityExact("unity_lowlevel_bitexact", gen::tone(220.0, sr, 48000, 0.001));
+   532→    unityExact("unity_enter_from_+400c_bitexact",
+   533→               gen::tone(220.0, sr, 96000, 0.5), true);
+   534→
+   535→    {  // unity gain exactly 1 (follows from bit-exactness, measured anyway)
+   536→        CaseResult c{"unity_gain_exact"}; c.cpu_t0 = cpuNowMs();
+   537→        const auto in = gen::tone(220.0, sr, 48000, 0.5);
+   538→        Config cfg;
+   539→        AlignedDelayLine e;
+   540→        e.prepare(cfg);
+   541→        std::vector<float> out(in.size(), 0.f);
+   542→        e.process(in.data(), out.data(), in.size());
+   543→        const int d = e.voiceStats(0).parked_delay - 1;
+   544→        // out[d..] is an exact copy of in[0..n-d): compare matching segments
+   545→        const double ri = meas::rms(in.data(), in.size() - d);
+   546→        const double ro = meas::rms(out.data() + d, out.size() - d);
+   547→        addValue(c, "gain_db", 20.0 * std::log10(ro / ri));
+   548→        check(c, ro == ri, "unity RMS changed");
+   549→        finishCase(R, c);
+   550→    }
+   551→
+   552→    {  // entry continuity (from +400 cents into unity): no click
+   553→        CaseResult c{"unity_entry_continuity"}; c.cpu_t0 = cpuNowMs();
+   554→        Config cfg;
+   555→        AlignedDelayLine e;
+   556→        e.prepare(cfg);
+   557→        e.setRatio(semitoneRatio(400.0));
+   558→        const int preN = 2 * sr;
+   559→        const int postN = 1 * sr;
+   560→        const auto in = gen::tone(220.0, sr, preN + postN, 0.5);
+   561→        std::vector<float> out(in.size(), 0.f);
+   562→        e.process(in.data(), out.data(), preN);
+   563→        e.setRatio(1.0);
+   564→        e.process(in.data() + preN, out.data() + preN, postN);
+   565→        // during the transition (first 60 ms after the change)
+   566→        const int trans = static_cast<int>(0.06 * sr);
+   567→        const double step = meas::maxStep(out.data() + preN, trans);
+   568→        const double stepBefore = meas::maxStep(out.data() + preN - trans, trans);
+   569→        addValue(c, "transition_max_step", step);
+   570→        addValue(c, "pre_transition_max_step", stepBefore);
+   571→        check(c, step <= std::max(0.35, 2.0 * stepBefore + 1e-9),
+   572→              "transition click");
+   573→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   574→        finishCase(R, c);
+   575→    }
+   576→
+   577→    // near-unity battery: fresh-start vs via-unity-exit
+   578→    auto nearUnity = [&](const std::string& tag, double cents, bool viaUnity) {
+   579→        CaseResult c{"near_unity_" + tag + "_" +
+   580→                     (viaUnity ? "via_unity" : "fresh")}; c.cpu_t0 = cpuNowMs();
+   581→        const double ratio = semitoneRatio(cents);
+   582→        Config cfg;
+   583→        cfg.ratio = viaUnity ? 1.0 : ratio;
+   584→        AlignedDelayLine e;
+   585→        e.prepare(cfg);
+   586→        const auto in = gen::tone(220.0, sr, 3 * sr, 0.5);
+   587→        std::vector<float> out(in.size(), 0.f);
+   588→        if (viaUnity) {
+   589→            // 1 s at unity (parked), then depart
+   590→            e.process(in.data(), out.data(), sr);
+   591→            e.setRatio(ratio);
+   592→            e.process(in.data() + sr, out.data() + sr, 2 * sr);
+   593→        } else {
+   594→            e.process(in.data(), out.data(), in.size());
+   595→        }
+   596→        const double f0nom = 220.0;
+   597→        const double fm = meas::pitchFFT(out.data() + static_cast<int>(1.5 * sr),
+   598→                                         static_cast<int>(1.5 * sr), sr, 50.0,
+   599→                                         4000.0);
+   600→        const double err = meas::centsBetween(fm, f0nom) - cents;
+   601→        const double gainDb = 20.0 * std::log10(
+   602→            meas::rms(out.data() + sr, 2 * sr) /
+   603→            meas::rms(in.data() + sr, 2 * sr));
+   604→        const int perW = std::max(1, static_cast<int>(std::lround(sr / 220.0)));
+   605→        const double mod = meas::envModulationDb(out.data(), out.size(), sr,
+   606→                                                 static_cast<int>(1.5 * sr), perW);
+   607→        const double commits = static_cast<double>(e.voiceStats(0).commits);
+   608→        addValue(c, "measured_f0", fm);
+   609→        addValue(c, "pitch_error_cents", err);
+   610→        addValue(c, "gain_db", gainDb);
+   611→        addValue(c, "env_modulation_db", mod);
+   612→        addValue(c, "spacing", e.voiceStats(0).spacing);
+   613→        addValue(c, "commits", commits);
+   614→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   615→        check(c, std::abs(err) <= 2.0, "pitch error > 2 cents");
+   616→        // Round 13: the splice commit aligns FRESH near-unity engines within
+   617→        // ~50 ms, so the fresh gates equal the via-unity ones (round 12
+   618→        // allowed [-4, +2] dB for the documented static comb).
+   619→        check(c, gainDb >= -0.75 && gainDb <= 0.75,
+   620→              "gain outside +-0.75 dB (cold-start comb not aligned)");
+   621→        // Envelope modulation: at near-unity ratios the aligned blend is
+   622→        // essentially motionless (<= 0.75 dB); at large shifts the rotating
+   623→        // crossfade weight modulates by the design's inherent amount (the
+   624→        // r11/r12 battery class: 0.0-1.9 dB at +-500 c), gated accordingly.
+   625→        check(c, mod <= (std::abs(cents) <= 100.0 ? 0.75 : 2.0),
+   626→              "envelope modulation too high");
+   627→        finishCase(R, c);
+   628→    };
+   629→
+   630→    const double centsList[] = {1.0,  -1.0, 10.0, -10.0, 50.0,  -50.0,
+   631→                                100.0, -100.0, 500.0, -500.0, 1200.0, -1200.0};
+   632→    for (double cents : centsList) {
+   633→        char tag[32];
+   634→        std::snprintf(tag, sizeof(tag), "%+gc", cents);
+   635→        nearUnity(tag, cents, false);
+   636→    }
+   637→    // via-unity for the small shifts where the exit-commit matters most
+   638→    nearUnity("+1c", 1.0, true);
+   639→    nearUnity("-1c", -1.0, true);
+   640→    nearUnity("+10c", 10.0, true);
+   641→    nearUnity("-10c", -10.0, true);
+   642→    nearUnity("+50c", 50.0, true);
+   643→    nearUnity("-50c", -50.0, true);
+   644→
+   645→    {  // no-bypass: +-1 cent really shifts (measured change in pitch)
+   646→        CaseResult c{"no_bypass_region"}; c.cpu_t0 = cpuNowMs();
+   647→        const auto in = gen::tone(220.0, sr, 3 * sr, 0.5);
+   648→        Config cfg;
+   649→        cfg.ratio = semitoneRatio(1.0);
+   650→        const auto outP = run(cfg, in);
+   651→        cfg.ratio = semitoneRatio(-1.0);
+   652→        const auto outN = run(cfg, in);
+   653→        const double fp = meas::pitchFFT(outP.data() + sr, 2 * sr, sr, 50.0, 4000.0);
+   654→        const double fn = meas::pitchFFT(outN.data() + sr, 2 * sr, sr, 50.0, 4000.0);
+   655→        const double cp = meas::centsBetween(fp, 220.0);
+   656→        const double cn = meas::centsBetween(fn, 220.0);
+   657→        addValue(c, "plus_1c_measured_cents", cp);
+   658→        addValue(c, "minus_1c_measured_cents", cn);
+   659→        check(c, cp > 0.5, "+1 cent did not shift (bypass?)");
+   660→        check(c, cn < -0.5, "-1 cent did not shift (bypass?)");
+   661→        check(c, cp - cn > 1.0, "+/-1 cent outputs indistinguishable");
+   662→        finishCase(R, c);
+   663→    }
+   664→
+   665→    {  // unity with feedback: bounded + finite (comb is expected behaviour)
+   666→        CaseResult c{"unity_feedback_stability"}; c.cpu_t0 = cpuNowMs();
+   667→        Config cfg;
+   668→        cfg.feedback = 0.35;
+   669→        AlignedDelayLine e;
+   670→        e.prepare(cfg);
+   671→        const auto in = gen::noise(7, 5 * sr, 0.5);
+   672→        std::vector<float> out(in.size(), 0.f);
+   673→        e.process(in.data(), out.data(), in.size());
+   674→        const double pk = meas::peak(out.data(), out.size());
+   675→        addValue(c, "peak", pk);
+   676→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   677→        check(c, pk < 4.0, "unstable growth with feedback 0.35 at unity");
+   678→        finishCase(R, c);
+   679→    }
+   680→
+   681→    {  // 8 voices, spread off, all at unity: exact mean of the parked delays
+   682→        CaseResult c{"unity_8voice_unison_exact_mix"}; c.cpu_t0 = cpuNowMs();
+   683→        Config cfg;
+   684→        cfg.voices = 8;
+   685→        cfg.spread = false;
+   686→        AlignedDelayLine e;
+   687→        e.prepare(cfg);
+   688→        const auto in = gen::tone(220.0, sr, 48000, 0.5);
+   689→        std::vector<float> out(in.size(), 0.f);
+   690→        e.process(in.data(), out.data(), in.size());
+   691→        int d[8];
+   692→        for (int v = 0; v < 8; ++v) {
+   693→            d[v] = e.voiceStats(v).parked_delay;
+   694→            check(c, e.voiceStats(v).parked == 1, "voice not parked");
+   695→        }
+   696→        double worst = 0.0;
+   697→        for (int k = 4800; k < (int)in.size(); ++k) {
+   698→            double expect = 0.0;
+   699→            for (int v = 0; v < 8; ++v)
+   700→                expect += (k - d[v] + 1 >= 0) ? in[k - d[v] + 1] : 0.0f;
+   701→            expect /= 8.0;
+   702→            // the engine output is the float32 rounding of the double mean
+   703→            const float expected_f = static_cast<float>(expect);
+   704→            worst = std::max(worst, std::abs((double)out[k] - (double)expected_f));
+   705→        }
+   706→        addValue(c, "max_abs_diff_vs_exact_mean", worst);
+   707→        check(c, worst == 0.0, "8-voice unison mix is not the exact mean");
+   708→        finishCase(R, c);
+   709→    }
+   710→}
+   711→
+   712→void casesVoices(std::vector<CaseResult>& R) {
+   713→    const int sr = 48000;
+   714→    {  // 8 voices spread +700c: finite, bounded, dominant pitch present
+   715→        CaseResult c{"voices_8_spread_+700c"}; c.cpu_t0 = cpuNowMs();
+   716→        Config cfg;
+   717→        cfg.ratio = semitoneRatio(700.0);
+   718→        cfg.voices = 8;
+   719→        const auto in = gen::tone(220.0, sr, 3 * sr, 0.4);
+   720→        const auto out = run(cfg, in);
+   721→        check(c, !out.empty(), "no output");
+   722→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   723→        const double pk = meas::peak(out.data(), out.size());
+   724→        addValue(c, "peak", pk);
+   725→        check(c, pk < 2.5, "peak too high");
+   726→        const double f = meas::pitchFFT(out.data() + sr, 2 * sr, sr, 50.0, 4000.0);
+   727→        addValue(c, "dominant_f0", f);
+   728→        check(c, f > 150.0 && f < 800.0, "no dominant pitch found");
+   729→        finishCase(R, c);
+   730→    }
+   731→    {  // setVoices mid-stream: ramped normalisation, no NaN
+   732→        CaseResult c{"setvoices_midstream"}; c.cpu_t0 = cpuNowMs();
+   733→        Config cfg;
+   734→        cfg.ratio = semitoneRatio(400.0);
+   735→        AlignedDelayLine e;
+   736→        e.prepare(cfg);
+   737→        const auto in = gen::tone(220.0, sr, 3 * sr, 0.5);
+   738→        std::vector<float> out(in.size(), 0.f);
+   739→        e.process(in.data(), out.data(), sr);
+   740→        e.setVoices(8);
+   741→        e.process(in.data() + sr, out.data() + sr, sr);
+   742→        e.setVoices(1);
+   743→        e.process(in.data() + 2 * sr, out.data() + 2 * sr, sr);
+   744→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   745→        const double step = meas::maxStep(out.data() + sr, 48000);
+   746→        addValue(c, "max_step_after_voice_change", step);
+   747→        check(c, step < 0.5, "click on voice-count change");
+   748→        finishCase(R, c);
+   749→    }
+   750→}
+   751→
+   752→void casesStereo(std::vector<CaseResult>& R) {
+   753→    const int sr = 48000;
+   754→    {  // L tone / R silence at unity: R exactly zero, L bit-exact
+   755→        CaseResult c{"stereo_isolation_unity"}; c.cpu_t0 = cpuNowMs();
+   756→        Config cfg;
+   757→        MultichannelShifter m;
+   758→        check(c, m.prepare(cfg, 2), "prepare failed");
+   759→        const auto tin = gen::tone(220.0, sr, sr, 0.5);
+   760→        std::vector<float> chL = tin, chR(sr, 0.0f);
+   761→        std::vector<float> Lo(sr, 0.f), Ro(sr, 0.f);
+   762→        const float* in[2] = {chL.data(), chR.data()};
+   763→        float* out[2] = {Lo.data(), Ro.data()};
+   764→        m.process(in, out, 2, sr);
+   765→        const double rmax = meas::peak(Ro.data(), sr);
+   766→        addValue(c, "R_peak", rmax);
+   767→        check(c, rmax == 0.0, "right channel contaminated at unity");
+   768→        const int d = m.voiceStats(0, 0).parked_delay;
+   769→        double worst = 0.0;
+   770→        for (int k = d - 1; k < sr; ++k)
+   771→            worst = std::max(worst, std::abs((double)Lo[k] - chL[k - d + 1]));
+   772→        addValue(c, "L_bitexact_diff", worst);
+   773→        check(c, worst == 0.0, "left channel not bit-exact at unity");
+   774→        finishCase(R, c);
+   775→    }
+   776→    {  // L tone / R silence at +700c: R exactly zero
+   777→        CaseResult c{"stereo_isolation_shifted"}; c.cpu_t0 = cpuNowMs();
+   778→        Config cfg;
+   779→        cfg.ratio = semitoneRatio(700.0);
+   780→        MultichannelShifter m;
+   781→        m.prepare(cfg, 2);
+   782→        const auto tin = gen::tone(220.0, sr, 2 * sr, 0.5);
+   783→        std::vector<float> chL = tin, chR(2 * sr, 0.0f);
+   784→        std::vector<float> Lo(2 * sr, 0.f), Ro(2 * sr, 0.f);
+   785→        const float* in[2] = {chL.data(), chR.data()};
+   786→        float* out[2] = {Lo.data(), Ro.data()};
+   787→        m.process(in, out, 2, 2 * sr);
+   788→        const double rmax = meas::peak(Ro.data(), 2 * sr);
+   789→        addValue(c, "R_peak", rmax);
+   790→        check(c, rmax == 0.0, "right channel contaminated while shifting");
+   791→        finishCase(R, c);
+   792→    }
+   793→    {  // independence: R output identical whether L is processed or not
+   794→        CaseResult c{"stereo_independence"}; c.cpu_t0 = cpuNowMs();
+   795→        Config cfg;
+   796→        cfg.ratio = semitoneRatio(400.0);
+   797→        MultichannelShifter m;
+   798→        m.prepare(cfg, 2);
+   799→        const auto tl = gen::tone(220.0, sr, sr, 0.5);
+   800→        const auto tr = gen::tone(330.0, sr, sr, 0.5);
+   801→        std::vector<float> Lo(sr, 0.f), Ro(sr, 0.f);
+   802→        const float* in[2] = {tl.data(), tr.data()};
+   803→        float* out[2] = {Lo.data(), Ro.data()};
+   804→        m.process(in, out, 2, sr);
+   805→        // mono run on R alone
+   806→        AlignedDelayLine solo;
+   807→        solo.prepare(cfg);
+   808→        std::vector<float> Ro2(sr, 0.f);
+   809→        solo.process(tr.data(), Ro2.data(), sr);
+   810→        double worst = 0.0;
+   811→        for (int k = 0; k < sr; ++k)
+   812→            worst = std::max(worst, std::abs((double)Ro[k] - Ro2[k]));
+   813→        addValue(c, "R_diff_vs_solo", worst);
+   814→        check(c, worst == 0.0, "R output depends on L processing");
+   815→        finishCase(R, c);
+   816→    }
+   817→}
+   818→
+   819→void casesRatesFormats(std::vector<CaseResult>& R) {
+   820→    {  // 44.1 kHz
+   821→        CaseResult c{"rate_44100_+400c"}; c.cpu_t0 = cpuNowMs();
+   822→        Config cfg;
+   823→        cfg.sample_rate = 44100.0;
+   824→        cfg.ratio = semitoneRatio(400.0);
+   825→        const int sr = 44100;
+   826→        const auto in = gen::tone(220.0, sr, 3 * sr, 0.5);
+   827→        const auto out = run(cfg, in);
+   828→        const double f = meas::pitchFFT(out.data() + sr, 2 * sr, sr, 50.0, 4000.0);
+   829→        const double err = meas::centsBetween(f, 220.0) - 400.0;
+   830→        addValue(c, "pitch_error_cents", err);
+   831→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   832→        check(c, std::abs(err) <= 2.0, "pitch error > 2 cents at 44.1 kHz");
+   833→        finishCase(R, c);
+   834→    }
+   835→    {  // 96 kHz -- round 13: the decimated analysis path supports the full
+   836→       // detector range at this rate (round 12 fell back to S = G here and
+   837→       // the gate was a permissive 25 cents; the fix tightens it to the same
+   838→       // 2-cent gate as 44.1/48 kHz)
+   839→        CaseResult c{"rate_96000_+400c"}; c.cpu_t0 = cpuNowMs();
+   840→        Config cfg;
+   841→        cfg.sample_rate = 96000.0;
+   842→        cfg.ratio = semitoneRatio(400.0);
+   843→        const int sr = 96000;
+   844→        const auto in = gen::tone(220.0, sr, 3 * sr, 0.5);
+   845→        const auto out = run(cfg, in);
+   846→        const double f = meas::pitchFFT(out.data() + sr, 2 * sr, sr, 50.0, 4000.0);
+   847→        const double err = meas::centsBetween(f, 220.0) - 400.0;
+   848→        addValue(c, "pitch_error_cents", err);
+   849→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   850→        check(c, std::abs(err) <= 2.0, "pitch error > 2 cents at 96 kHz");
+   851→        finishCase(R, c);
+   852→    }
+   853→    {  // WAV round trip on the shipped example input (if present)
+   854→        CaseResult c{"wav_roundtrip_example_input"}; c.cpu_t0 = cpuNowMs();
+   855→        const char* candidates[] = {"../poc/example_input.wav",
+   856→                                    "../../poc/example_input.wav",
+   857→                                    "../../../poc/example_input.wav"};
+   858→        int sr = 0, ch = 0;
+   859→        std::vector<float> x;
+   860→        bool loaded = false;
+   861→        for (const char* pocPath : candidates) {
+   862→            try {
+   863→                x = wav::readWav(pocPath, sr, ch);
+   864→                loaded = true;
+   865→                break;
+   866→            } catch (const std::exception&) {
+   867→            }
+   868→        }
+   869→        if (!loaded || x.empty()) {
+   870→            c.note = "example_input.wav not found (running outside tree)";
+   871→            c.pass = true;  // environment-dependent skip, reported honestly
+   872→            addValue(c, "skipped", 1);
+   873→        } else {
+   874→            Config cfg;
+   875→            cfg.ratio = semitoneRatio(400.0);
+   876→            const auto out = run(cfg, x);
+   877→            check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   878→            wav::writeWav("/tmp/octavox_native_example_out.wav", out.data(),
+   879→                          out.size(), ch, sr);
+   880→            int sr2 = 0, ch2 = 0;
+   881→            const auto back = wav::readWav("/tmp/octavox_native_example_out.wav",
+   882→                                           sr2, ch2);
+   883→            check(c, sr2 == sr && ch2 == ch, "round-trip format changed");
+   884→            double worst = 0.0;
+   885→            for (size_t i = 0; i < out.size(); ++i)
+   886→                worst = std::max(worst, std::abs((double)out[i] - back[i]));
+   887→            addValue(c, "quant_error_max", worst);
+   888→            check(c, worst <= 2.0 / 32767.0,
+   889→                  "16-bit round-trip error too large (write/read asymmetry is "
+   890→                  "reference parity: round(y*32767) then /32768)");
+   891→            c.pass = c.note.empty();
+   892→        }
+   893→        finishCase(R, c);
+   894→    }
+   895→    {  // 24-bit WAV read
+   896→        CaseResult c{"wav_24bit_read"}; c.cpu_t0 = cpuNowMs();
+   897→        // write a minimal 24-bit WAV by hand
+   898→        const int sr = 48000, n = 256;
+   899→        std::vector<int32_t> vals(n);
+   900→        for (int i = 0; i < n; ++i) vals[i] = (i * 7919) % 4000000 - 2000000;
+   901→        std::vector<unsigned char> bytes(44 + 3 * n);
+   902→        std::memcpy(bytes.data(), "RIFF", 4);
+   903→        const uint32_t riffSz = 36 + 3 * n;
+   904→        std::memcpy(bytes.data() + 4, &riffSz, 4);
+   905→        std::memcpy(bytes.data() + 8, "WAVE", 4);
+   906→        std::memcpy(bytes.data() + 12, "fmt ", 4);
+   907→        const uint32_t fsz = 16;
+   908→        std::memcpy(bytes.data() + 16, &fsz, 4);
+   909→        const uint16_t af = 1, ch = 1, bits = 24;
+   910→        const uint32_t rate = sr, br = sr * 3;
+   911→        const uint16_t block = 3;
+   912→        std::memcpy(bytes.data() + 20, &af, 2);
+   913→        std::memcpy(bytes.data() + 22, &ch, 2);
+   914→        std::memcpy(bytes.data() + 24, &rate, 4);
+   915→        std::memcpy(bytes.data() + 28, &br, 4);
+   916→        std::memcpy(bytes.data() + 32, &block, 2);
+   917→        std::memcpy(bytes.data() + 34, &bits, 2);
+   918→        std::memcpy(bytes.data() + 36, "data", 4);
+   919→        const uint32_t dsz = 3 * n;
+   920→        std::memcpy(bytes.data() + 40, &dsz, 4);
+   921→        for (int i = 0; i < n; ++i) {
+   922→            bytes[44 + 3 * i] = vals[i] & 0xFF;
+   923→            bytes[45 + 3 * i] = (vals[i] >> 8) & 0xFF;
+   924→            bytes[46 + 3 * i] = (vals[i] >> 16) & 0xFF;
+   925→        }
+   926→        FILE* f = std::fopen("/tmp/octavox_24bit.wav", "wb");
+   927→        std::fwrite(bytes.data(), 1, bytes.size(), f);
+   928→        std::fclose(f);
+   929→        int sr2 = 0, ch2 = 0;
+   930→        auto x = wav::readWav("/tmp/octavox_24bit.wav", sr2, ch2);
+   931→        check(c, sr2 == sr && ch2 == 1 && (int)x.size() == n, "bad header");
+   932→        double worst = 0.0;
+   933→        for (int i = 0; i < n && i < (int)x.size(); ++i)
+   934→            worst = std::max(worst,
+   935→                             std::abs((double)x[i] - vals[i] / 8388608.0));
+   936→        addValue(c, "max_read_error", worst);
+   937→        check(c, worst == 0.0, "24-bit values wrong");
+   938→        finishCase(R, c);
+   939→    }
+   940→}
+   941→
+   942→void casesStability(std::vector<CaseResult>& R) {
+   943→    const int sr = 48000;
+   944→    {  // long run: 60 s noise, 8 voices, feedback
+   945→        CaseResult c{"longrun_60s_8voice_feedback"}; c.cpu_t0 = cpuNowMs();
+   946→        Config cfg;
+   947→        cfg.ratio = semitoneRatio(1200.0);
+   948→        cfg.voices = 8;
+   949→        cfg.feedback = 0.35;
+   950→        const auto in = gen::noise(2025, 60 * sr, 0.5);
+   951→        const auto out = run(cfg, in);
+   952→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   953→        const double pk = meas::peak(out.data(), out.size());
+   954→        addValue(c, "peak", pk);
+   955→        check(c, pk < 4.0, "unstable growth");
+   956→        // tail RMS must not exceed head RMS by much (no divergence)
+   957→        const double rh = meas::rms(out.data(), 5 * sr);
+   958→        const double rt = meas::rms(out.data() + 55 * sr, 5 * sr);
+   959→        addValue(c, "head_rms", rh);
+   960→        addValue(c, "tail_rms", rt);
+   961→        check(c, rt < 4.0 * rh + 1e-9, "diverging tail");
+   962→        finishCase(R, c);
+   963→    }
+   964→    {  // 30 s chirp +700c
+   965→        CaseResult c{"chirp_30s_+700c"}; c.cpu_t0 = cpuNowMs();
+   966→        Config cfg;
+   967→        cfg.ratio = semitoneRatio(700.0);
+   968→        const auto in = gen::chirp(100.0, 1000.0, sr, 30 * sr, 0.5);
+   969→        const auto out = run(cfg, in);
+   970→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+   971→        const double pk = meas::peak(out.data(), out.size());
+   972→        addValue(c, "peak", pk);
+   973→        check(c, pk < 3.0, "peak too high on chirp");
+   974→        finishCase(R, c);
+   975→    }
+   976→    {  // impulse latency
+   977→        CaseResult c{"impulse_latency"}; c.cpu_t0 = cpuNowMs();
+   978→        Config cfg;
+   979→        cfg.ratio = semitoneRatio(400.0);
+   980→        const auto in = gen::impulse(sr);
+   981→        const auto out = run(cfg, in);
+   982→        int first = -1;
+   983→        for (int k = 0; k < (int)out.size(); ++k)
+   984→            if (out[k] != 0.0f) {
+   985→                first = k;
+   986→                break;
+   987→            }
+   988→        addValue(c, "first_nonzero_sample", first);
+   989→        addValue(c, "nominal_latency", cfg.base_delay + cfg.grain * 0.5);
+   990→        check(c, first >= 250, "responds before base_delay");
+   991→        check(c, first <= 256 + 32 + 4400, "responds too late");
+   992→        finishCase(R, c);
+   993→    }
+   994→    {  // unity impulse: first nonzero exactly at d_park
+   995→        CaseResult c{"impulse_latency_unity"}; c.cpu_t0 = cpuNowMs();
+   996→        Config cfg;
+   997→        const auto in = gen::impulse(sr);
+   998→        const auto out = run(cfg, in);
+   999→        AlignedDelayLine e;
+  1000→        e.prepare(cfg);
+  1001→        const int d = e.voiceStats(0).parked_delay;
+  1002→        int first = -1;
+  1003→        for (int k = 0; k < (int)out.size(); ++k)
+  1004→            if (out[k] != 0.0f) {
+  1005→                first = k;
+  1006→                break;
+  1007→            }
+  1008→        addValue(c, "first_nonzero_sample", first);
+  1009→        addValue(c, "d_park", d);
+  1010→        check(c, first == d - 1, "unity impulse not at d_park-1");
+  1011→        finishCase(R, c);
+  1012→    }
+  1013→    {  // DC input: finite (guards div-by-zero in spacing/median paths)
+  1014→        CaseResult c{"dc_input_finite"}; c.cpu_t0 = cpuNowMs();
+  1015→        Config cfg;
+  1016→        cfg.ratio = semitoneRatio(400.0);
+  1017→        std::vector<float> in(10 * sr, 1.0f);
+  1018→        const auto out = run(cfg, in);
+  1019→        check(c, meas::allFinite(out.data(), out.size()), "non-finite on DC");
+  1020→        finishCase(R, c);
+  1021→    }
+  1022→    {  // clipping behaviour: hot input stays finite; WAV writer clips
+  1023→        CaseResult c{"clipping_behaviour"}; c.cpu_t0 = cpuNowMs();
+  1024→        Config cfg;
+  1025→        cfg.ratio = semitoneRatio(1200.0);
+  1026→        cfg.voices = 8;
+  1027→        std::vector<float> in(sr, 0.0f);
+  1028→        for (int i = 0; i < sr; ++i)
+  1029→            in[i] = (i % 480 < 240) ? 1.0f : -1.0f;  // full-scale square
+  1030→        const auto out = run(cfg, in);
+  1031→        const double pk = meas::peak(out.data(), out.size());
+  1032→        addValue(c, "float_domain_peak", pk);
+  1033→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+  1034→        check(c, pk < 8.0, "float peak beyond sane bound");
+  1035→        wav::writeWav("/tmp/octavox_clip.wav", out.data(), out.size(), 1, sr);
+  1036→        int sr2 = 0, ch2 = 0;
+  1037→        auto back = wav::readWav("/tmp/octavox_clip.wav", sr2, ch2);
+  1038→        const double pkq = meas::peak(back.data(), back.size());
+  1039→        addValue(c, "wav_peak_after_clip", pkq);
+  1040→        check(c, pkq <= 1.0, "WAV writer did not clip-guard");
+  1041→        finishCase(R, c);
+  1042→    }
+  1043→}
+  1044→
+  1045→// ---------------------------------------------------------------------------
+  1046→// Round 13, Priority 3: deterministic real-time preparation
+  1047→// ---------------------------------------------------------------------------
+  1048→void casesRealtimeSafety(std::vector<CaseResult>& R) {
+  1049→    {  // The interpolation tables must be initialised by prepare(), never on
+  1050→       // the audio path. This suite runs FIRST, so the first prepare() below
+  1051→       // is the process's first -- the count must go to exactly 1 here and
+  1052→       // stay there for the whole process (checked again at the end).
+  1053→        CaseResult c{"tables_init_at_prepare"}; c.cpu_t0 = cpuNowMs();
+  1054→        Config cfg;
+  1055→        AlignedDelayLine e;
+  1056→        const long before = diagnostics::interpTableInitCount();
+  1057→        e.prepare(cfg);
+  1058→        const long after = diagnostics::interpTableInitCount();
+  1059→        addValue(c, "init_count_before_prepare", static_cast<double>(before));
+  1060→        addValue(c, "init_count_after_prepare", static_cast<double>(after));
+  1061→        check(c, after == 1 && before == 0,
+  1062→              "tables not constructed exactly once at the first prepare()");
+  1063→        check(c, diagnostics::interpTablesReady(),
+  1064→              "tables not ready immediately after prepare()");
+  1065→        check(c, diagnostics::interpTableInitDuringProcess() == 0,
+  1066→              "table construction reported inside process()");
+  1067→        finishCase(R, c);
+  1068→    }
+  1069→    {  // First process() call: no initialisation spike, no allocation. Runs
+  1070→       // BEFORE any other processing in this process, so a reintroduced lazy
+  1071→       // init would show up as a second table construction here.
+  1072→        CaseResult c{"first_process_clean"}; c.cpu_t0 = cpuNowMs();
+  1073→        Config cfg;
+  1074→        cfg.ratio = semitoneRatio(400.0);
+  1075→        AlignedDelayLine e;
+  1076→        e.prepare(cfg);
+  1077→        const long ic0 = diagnostics::interpTableInitCount();
+  1078→        const int n = 32768;
+  1079→        const auto in = gen::tone(220.0, 48000, n, 0.5);
+  1080→        std::vector<float> out(n, 0.f);
+  1081→        allocs::reset();
+  1082→        allocs::arm(true);
+  1083→        const double t0 = cpuNowMs();
+  1084→        e.process(in.data(), out.data(), n);
+  1085→        const double firstMs = cpuNowMs() - t0;
+  1086→        allocs::arm(false);
+  1087→        const long ic1 = diagnostics::interpTableInitCount();
+  1088→        double medMs = 0.0;
+  1089→        for (int rep = 0; rep < 5; ++rep) {
+  1090→            const double a = cpuNowMs();
+  1091→            e.process(in.data(), out.data(), n);
+  1092→            medMs += (cpuNowMs() - a) / 5.0;
+  1093→        }
+  1094→        addValue(c, "init_count_before", static_cast<double>(ic0));
+  1095→        addValue(c, "init_count_after", static_cast<double>(ic1));
+  1096→        addValue(c, "first_call_ms", firstMs);
+  1097→        addValue(c, "steady_median_ms", medMs);
+  1098→        check(c, ic1 == ic0, "first process() constructed the tables");
+  1099→        check(c, allocs::count() == 0, "allocation during the FIRST process()");
+  1100→        check(c, firstMs <= 2.0 * medMs + 20.0, "first call much slower than steady");
+  1101→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+  1102→        finishCase(R, c);
+  1103→    }
+  1104→}
+  1105→
+  1106→// ---------------------------------------------------------------------------
+  1107→// Round 13, Priority 1: cold-start alignment
+  1108→// ---------------------------------------------------------------------------
+  1109→void casesColdStart(std::vector<CaseResult>& R) {
+  1110→    const int sr = 48000;
+  1111→    const double centsList[] = {0.0,  1.0,  -1.0,  10.0, -10.0, 50.0,  -50.0,
+  1112→                                100.0, -100.0, 500.0, -500.0, 1200.0, -1200.0};
+  1113→    for (double cents : centsList) {
+  1114→        CaseResult c{"coldstart"}; c.cpu_t0 = cpuNowMs();
+  1115→        char tag[32];
+  1116→        std::snprintf(tag, sizeof(tag), "%+gc", cents);
+  1117→        c.name = std::string("coldstart_") + tag;
+  1118→        Config cfg;
+  1119→        cfg.ratio = semitoneRatio(cents);
+  1120→        const int n = 3 * sr;
+  1121→        const auto in = gen::tone(220.0, sr, n, 0.5);
+  1122→        AlignedDelayLine e;
+  1123→        e.prepare(cfg);
+  1124→        std::vector<float> out(n, 0.f);
+  1125→        e.process(in.data(), out.data(), n);
+  1126→        const VoiceStats st = e.voiceStats(0);
+  1127→        // Onset-aware windows (round 13 revision): the honest startup
+  1128→        // latency is ratio-dependent (at -1200 cents the half-speed read
+  1129→        // point starts beyond the recorded data and the first valid output
+  1130→        // arrives ~87 ms in; at +1200 cents the first wrap guard re-anchors
+  1131→        // early). The artifact windows start after the output's first
+  1132→        // non-zero sample plus a 10 ms ramp margin.
+  1133→        int onset = 0;
+  1134→        while (onset < n && out[onset] == 0.0f) ++onset;
+  1135→        const int lat = std::max(onset + 480, e.latencySamples());
+  1136→        addValue(c, "output_onset_sample", onset);
+  1137→        const int w100 = sr / 10, w1s = sr;
+  1138→        const double ri100 = meas::rms(in.data() + lat + 480, w100);
+  1139→        const double ro100 = meas::rms(out.data() + lat + 480, w100);
+  1140→        const double ri1s = meas::rms(in.data() + lat, w1s);
+  1141→        const double ro1s = meas::rms(out.data() + lat, w1s);
+  1142→        const double riSt = meas::rms(in.data() + 2 * sr, sr);
+  1143→        const double roSt = meas::rms(out.data() + 2 * sr, sr);
+  1144→        addValue(c, "cents", cents);
+  1145→        addValue(c, "gain_db_postlat_100ms", 20.0 * std::log10(ro100 / ri100));
+  1146→        addValue(c, "gain_db_1s", 20.0 * std::log10(ro1s / ri1s));
+  1147→        addValue(c, "gain_db_steady", 20.0 * std::log10(roSt / riSt));
+  1148→        const double fm = meas::pitchFFT(out.data() + static_cast<int>(1.5 * sr),
+  1149→                                         static_cast<int>(1.5 * sr), sr, 50.0, 4000.0);
+  1150→        addValue(c, "pitch_error_cents", meas::centsBetween(fm, 220.0) - cents);
+  1151→        const int perW = std::max(2, (int)std::lround(sr / 220.0));
+  1152→        const double mod = meas::envModulationDb(out.data(), out.size(), sr,
+  1153→                                                 sr / 5, perW);
+  1154→        addValue(c, "env_mod_db", mod);
+  1155→        addValue(c, "first_commit_sample", static_cast<double>(st.last_commit_sample));
+  1156→        addValue(c, "first_commit_ms",
+  1157→                 st.last_commit_sample < 0 ? -1.0
+  1158→                                            : 1000.0 * st.last_commit_sample / sr);
+  1159→        addValue(c, "splices", static_cast<double>(st.splices));
+  1160→        addValue(c, "commits", static_cast<double>(st.commits));
+  1161→        addValue(c, "spacing", st.spacing);
+  1162→        // continuity: steps AFTER the onset ramp (the onset itself is the
+  1163→        // legitimate startup event, not a click)
+  1164→        const int stepFrom = std::min(n - 2, onset + 480);
+  1165→        addValue(c, "max_step_out", meas::maxStep(out.data(), sr, stepFrom));
+  1166→        addValue(c, "max_step_in", meas::maxStep(in.data(), sr));
+  1167→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+  1168→        check(c, std::abs(meas::centsBetween(fm, 220.0) - cents) <= 2.0,
+  1169→              "pitch error > 2 cents");
+  1170→        check(c, 20.0 * std::log10(roSt / riSt) >= -0.1 &&
+  1171→                  20.0 * std::log10(roSt / riSt) <= 0.1,
+  1172→              "steady gain outside +-0.1 dB");
+  1173→        check(c, 20.0 * std::log10(ro1s / ri1s) >= -0.75 &&
+  1174→                  20.0 * std::log10(ro1s / ri1s) <= 0.75,
+  1175→              "first-second gain outside +-0.75 dB");
+  1176→        check(c, 20.0 * std::log10(ro100 / ri100) >= -1.5,
+  1177→              "post-latency 100 ms gain below -1.5 dB (comb exposure)");
+  1178→        check(c, meas::maxStep(out.data(), sr, std::min(n - 2, onset + 480)) <=
+  1179→                      2.5 * meas::maxStep(in.data(), sr) + 1e-4,
+  1180→              "continuity: output step > 2.5x input step after the onset");
+  1181→        check(c, mod <= (std::abs(cents) <= 100.0 ? 0.75 : 2.0),
+  1182→              "envelope modulation too high");
+  1183→        if (cents == 0.0) {
+  1184→            check(c, st.parked == 1, "exact unity did not park");
+  1185→            check(c, st.commits == 0, "unity cold start should not need commits");
+  1186→        } else {
+  1187→            check(c, st.commits >= 1, "no alignment commit happened");
+  1188→            check(c, st.last_commit_sample >= 0 &&
+  1189→                      st.last_commit_sample <= 60 * (sr / 1000),
+  1190→                  "first spacing commit later than 60 ms");
+  1191→            check(c, st.splices <= 3, "more than 3 splice commits (churn)");
+  1192→        }
+  1193→        finishCase(R, c);
+  1194→    }
+  1195→
+  1196→    {  // reset/restart at each ratio: bit-identical to a fresh engine
+  1197→        CaseResult c{"coldstart_reset_restart"}; c.cpu_t0 = cpuNowMs();
+  1198→        int bad = 0;
+  1199→        for (double cents : centsList) {
+  1200→            if (cents == 0.0) continue;
+  1201→            Config cfg;
+  1202→            cfg.ratio = semitoneRatio(cents);
+  1203→            const auto in = gen::tone(220.0, sr, 2 * sr, 0.5);
+  1204→            AlignedDelayLine a, b;
+  1205→            a.prepare(cfg);
+  1206→            b.prepare(cfg);
+  1207→            std::vector<float> oa(2 * sr, 0.f), ob(2 * sr, 0.f), ob2(2 * sr, 0.f);
+  1208→            a.process(in.data(), oa.data(), 2 * sr);
+  1209→            b.process(in.data(), ob.data(), 2 * sr);
+  1210→            b.reset();
+  1211→            b.process(in.data(), ob2.data(), 2 * sr);
+  1212→            double d1 = 0.0, d2 = 0.0;
+  1213→            for (int i = 0; i < 2 * sr; ++i) {
+  1214→                d1 = std::max(d1, std::abs((double)oa[i] - ob[i]));
+  1215→                d2 = std::max(d2, std::abs((double)ob[i] - ob2[i]));
+  1216→            }
+  1217→            if (d1 != 0.0 || d2 != 0.0) ++bad;
+  1218→        }
+  1219→        addValue(c, "ratios_failing", bad);
+  1220→        check(c, bad == 0, "reset/restart output differs from fresh at some ratio");
+  1221→        finishCase(R, c);
+  1222→    }
+  1223→
+  1224→    {  // reset DURING the splice blend: deterministic restart mid-splice
+  1225→        CaseResult c{"coldstart_reset_midsplice"}; c.cpu_t0 = cpuNowMs();
+  1226→        Config cfg;
+  1227→        cfg.ratio = semitoneRatio(10.0);
+  1228→        const auto in = gen::tone(220.0, sr, 2 * sr, 0.5);
+  1229→        const int split = sr / 12;  // ~83 ms: inside/just after the splice blend
+  1230→        AlignedDelayLine a, b, fresh;
+  1231→        a.prepare(cfg);
+  1232→        b.prepare(cfg);
+  1233→        fresh.prepare(cfg);
+  1234→        std::vector<float> oa(2 * sr, 0.f), ob(2 * sr, 0.f), oc(2 * sr, 0.f);
+  1235→        a.process(in.data(), oa.data(), split);
+  1236→        a.process(in.data() + split, oa.data() + split, 2 * sr - split);
+  1237→        b.process(in.data(), ob.data(), split);
+  1238→        b.reset();
+  1239→        b.process(in.data() + split, ob.data() + split, 2 * sr - split);
+  1240→        // a fresh engine fed only the second segment: the ring starts zeroed
+  1241→        // exactly like the reset engine's, so the outputs must be identical
+  1242→        fresh.process(in.data() + split, oc.data() + split, 2 * sr - split);
+  1243→        double dReset = 0.0, dFresh = 0.0;
+  1244→        for (int i = split; i < 2 * sr; ++i) {
+  1245→            dReset = std::max(dReset, std::abs((double)ob[i] - oc[i]));
+  1246→            dFresh = std::max(dFresh, std::abs((double)ob[i] - oa[i]));
+  1247→        }
+  1248→        addValue(c, "reset_vs_fresh_second_segment", dReset);
+  1249→        addValue(c, "continuity_max_diff_vs_uninterrupted", dFresh);
+  1250→        check(c, dReset == 0.0, "mid-splice reset differs from a fresh restart");
+  1251→        check(c, meas::allFinite(ob.data(), ob.size()), "non-finite");
+  1252→        finishCase(R, c);
+  1253→    }
+  1254→
+  1255→    {  // signal-type safety at the worst cold case (+10 cents)
+  1256→        CaseResult c{"coldstart_types_+10c"}; c.cpu_t0 = cpuNowMs();
+  1257→        Config cfg;
+  1258→        cfg.ratio = semitoneRatio(10.0);
+  1259→        struct Sig { const char* name; std::vector<float> x; };
+  1260→        std::vector<Sig> sigs;
+  1261→        sigs.push_back({"chord", gen::chord({196.0, 294.0, 392.0, 494.0}, sr, 2 * sr, 0.6)});
+  1262→        sigs.push_back({"noise", gen::noise(31, 2 * sr, 0.5)});
+  1263→        {  // transient bursts: tone with 3 decaying bursts
+  1264→            std::vector<float> x(2 * sr, 0.0f);
+  1265→            const auto t = gen::tone(220.0, sr, 2 * sr, 0.4);
+  1266→            for (int i = 0; i < 2 * sr; ++i) x[i] = t[i];
+  1267→            for (int b = 0; b < 3; ++b) {
+  1268→                const int i0 = (b * 2 + 1) * sr / 3;
+  1269→                for (int i = 0; i < sr / 200 && i0 + i < 2 * sr; ++i)
+  1270→                    x[i0 + i] += (float)(2.0 * std::exp(-i / 200.0));
+  1271→            }
+  1272→            sigs.push_back({"transient", x});
+  1273→        }
+  1274→        sigs.push_back({"lowlevel_-60dB", gen::tone(220.0, sr, 2 * sr, 0.001)});
+  1275→        sigs.push_back({"silence", std::vector<float>(2 * sr, 0.0f)});
+  1276→        double statMod = 0.0, worstStep = 0.0, lowGainDb = 0.0, noiseGainDb = 0.0;
+  1277→        int finiteOk = 1, silenceOk = 0;
+  1278→        for (const auto& s : sigs) {
+  1279→            AlignedDelayLine e;
+  1280→            e.prepare(cfg);
+  1281→            std::vector<float> out(s.x.size(), 0.f);
+  1282→            e.process(s.x.data(), out.data(), static_cast<int>(s.x.size()));
+  1283→            if (!meas::allFinite(out.data(), out.size())) finiteOk = 0;
+  1284→            const double pk = meas::peak(out.data(), static_cast<int>(out.size()));
+  1285→            if (pk > 2.5) worstStep = 999.0;
+  1286→            const double so = meas::maxStep(out.data(), static_cast<int>(out.size()));
+  1287→            const double si = meas::maxStep(s.x.data(), static_cast<int>(s.x.size()));
+  1288→            worstStep = std::max(worstStep, so / std::max(si, 1e-9));
+  1289→            const std::string nm(s.name);
+  1290→            if (nm == "lowlevel_-60dB") {
+  1291→                // stationary single-period signal: the period-sync envelope
+  1292→                // metric is meaningful. (The chord's components are
+  1293→                // non-harmonic -- its envelope beats ~12 dB on its own, so
+  1294→                // the metric would measure the signal, not the engine.)
+  1295→                const int perW = std::max(2, (int)std::lround(sr / 220.0));
+  1296→                statMod = std::max(statMod, meas::envModulationDb(
+  1297→                    out.data(), static_cast<int>(out.size()), sr, sr / 2, perW));
+  1298→            }
+  1299→            if (nm == "noise") {
+  1300→                // noise: no envelope metric (stationarity), gate RMS instead
+  1301→                noiseGainDb = 20.0 * std::log10(
+  1302→                    meas::rms(out.data() + sr, sr) / meas::rms(s.x.data() + sr, sr));
+  1303→            }
+  1304→            if (nm == "silence" && pk == 0.0) silenceOk = 1;
+  1305→            if (nm == "lowlevel_-60dB") {
+  1306→                const double ro = meas::rms(out.data() + sr, sr);
+  1307→                const double ri = meas::rms(s.x.data() + sr, sr);
+  1308→                lowGainDb = 20.0 * std::log10(ro / ri);
+  1309→            }
+  1310→        }
+  1311→        addValue(c, "stationary_env_mod_db", statMod);
+  1312→        addValue(c, "worst_step_ratio", worstStep);
+  1313→        addValue(c, "lowlevel_gain_db", lowGainDb);
+  1314→        addValue(c, "noise_gain_db", noiseGainDb);
+  1315→        check(c, finiteOk == 1, "non-finite output for some signal type");
+  1316→        check(c, silenceOk == 1, "silence not passed through silently");
+  1317→        check(c, worstStep <= 3.5, "output step > 3.5x input step for some type");
+  1318→        check(c, statMod <= 3.5,
+  1319→              "stationary-signal envelope modulation > 3.5 dB");
+  1320→        // Noise through the dual-tap blend: the two taps are uncorrelated,
+  1321→        // so the power-complementary blend yields ~-3.0 dB RMS (plus
+  1322→        // interpolator loss) -- the design's documented behaviour, the same
+  1323→        // class as the Python v2 reference. Gate the documented class.
+  1324→        check(c, noiseGainDb >= -4.5 && noiseGainDb <= -1.5,
+  1325→              "noise RMS outside the documented dual-tap blend class "
+  1326→              "[-4.5, -1.5] dB");
+  1327→        check(c, lowGainDb >= -1.0 && lowGainDb <= 1.0,
+  1328→              "low-level tone gain outside +-1 dB");
+  1329→        finishCase(R, c);
+  1330→    }
+  1331→
+  1332→    {  // unity <-> non-unity round trip with continuity gates
+  1333→        CaseResult c{"coldstart_unity_roundtrip"}; c.cpu_t0 = cpuNowMs();
+  1334→        Config cfg;
+  1335→        cfg.ratio = semitoneRatio(50.0);
+  1336→        AlignedDelayLine e;
+  1337→        e.prepare(cfg);
+  1338→        const int seg = sr;  // 1 s each
+  1339→        const auto in = gen::tone(220.0, sr, 3 * seg, 0.5);
+  1340→        std::vector<float> out(3 * seg, 0.f);
+  1341→        e.process(in.data(), out.data(), seg);              // +50 c
+  1342→        e.setRatio(1.0);
+  1343→        e.process(in.data() + seg, out.data() + seg, seg);  // unity
+  1344→        e.setRatio(semitoneRatio(-50.0));
+  1345→        e.process(in.data() + 2 * seg, out.data() + 2 * seg, seg);  // -50 c
+  1346→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+  1347→        // continuity across both transitions (60 ms windows)
+  1348→        double worst = 0.0;
+  1349→        for (int t = 0; t < 2; ++t) {
+  1350→            const int i0 = (t + 1) * seg;
+  1351→            const int w = static_cast<int>(0.06 * sr);
+  1352→            const double step = meas::maxStep(out.data() + i0, w);
+  1353→            const double stepBefore = meas::maxStep(out.data() + i0 - w, w);
+  1354→            worst = std::max(worst, step / std::max(stepBefore, 1e-9));
+  1355→        }
+  1356→        addValue(c, "worst_transition_step_ratio", worst);
+  1357→        check(c, worst <= 2.5, "transition click (step > 2.5x pre-transition)");
+  1358→        // pitch sanity on the first segment
+  1359→        const double fm = meas::pitchFFT(out.data() + sr / 2, sr / 2, sr, 50.0, 4000.0);
+  1360→        addValue(c, "seg1_pitch_error_cents", meas::centsBetween(fm, 220.0) - 50.0);
+  1361→        check(c, std::abs(meas::centsBetween(fm, 220.0) - 50.0) <= 2.0,
+  1362→              "pitch error > 2 cents before the transitions");
+  1363→        finishCase(R, c);
+  1364→    }
+  1365→}
+  1366→
+  1367→// ---------------------------------------------------------------------------
+  1368→// Round 13, Priority 2: sample-rate robustness
+  1369→// ---------------------------------------------------------------------------
+  1370→void casesRates(std::vector<CaseResult>& R) {
+  1371→    const int rates[] = {44100, 48000, 96000, 192000};
+  1372→    const double freqs[] = {55.0, 60.0, 80.0, 110.0, 220.0, 440.0};
+  1373→
+  1374→    // detector capability report + gates
+  1375→    {
+  1376→        CaseResult c{"detector_info"}; c.cpu_t0 = cpuNowMs();
+  1377→        int rangeOk = 0;
+  1378→        for (int sr : rates) {
+  1379→            Config cfg;
+  1380→            cfg.sample_rate = sr;
+  1381→            AlignedDelayLine e;
+  1382→            e.prepare(cfg);
+  1383→            const DetectorInfo di = e.detectorInfo();
+  1384→            char key[32];
+  1385→            std::snprintf(key, sizeof(key), "sr%d", sr);
+  1386→            addValue(c, (std::string(key) + "_analysis_rate").c_str(), di.analysis_rate);
+  1387→            addValue(c, (std::string(key) + "_decimation").c_str(), di.decimation);
+  1388→            addValue(c, (std::string(key) + "_fmin_eff").c_str(), di.fmin_effective);
+  1389→            addValue(c, (std::string(key) + "_fmax_eff").c_str(), di.fmax_effective);
+  1390→            addValue(c, (std::string(key) + "_control_interval").c_str(), di.control_interval);
+  1391→            addValue(c, (std::string(key) + "_window").c_str(), di.window_samples);
+  1392→            const bool ok = di.fmin_effective <= 55.0 && di.fmax_effective >= 1200.0 &&
+  1393→                            di.control_interval == 64 && di.window_samples == 2048 &&
+  1394→                            (sr <= 48000 ? di.decimation == 1 : di.decimation > 1);
+  1395→            if (ok) ++rangeOk;
+  1396→        }
+  1397→        addValue(c, "rates_with_full_range", rangeOk);
+  1398→        check(c, rangeOk == 4, "detector range incomplete at some rate");
+  1399→        finishCase(R, c);
+  1400→    }
+  1401→
+  1402→    // frequency battery at +400 cents at every rate
+  1403→    for (int sr : rates) {
+  1404→        for (double f : freqs) {
+  1405→            CaseResult c{"rate"}; c.cpu_t0 = cpuNowMs();
+  1406→            char tag[64];
+  1407→            std::snprintf(tag, sizeof(tag), "rate_%d_%.0fHz_+400c", sr, f);
+  1408→            c.name = tag;
+  1409→            Config cfg;
+  1410→            cfg.sample_rate = sr;
+  1411→            cfg.ratio = semitoneRatio(400.0);
+  1412→            const int n = 3 * sr / 2;
+  1413→            const auto in = gen::tone(f, sr, n, 0.5);
+  1414→            AlignedDelayLine e;
+  1415→            e.prepare(cfg);
+  1416→            std::vector<float> out(n, 0.f);
+  1417→            e.process(in.data(), out.data(), n);
+  1418→            const double fm = meas::pitchFFT(out.data() + sr / 2, n - sr / 2,
+  1419→                                             sr, 30.0, 6000.0);
+  1420→            const double estErr = (e.lastEstimateHz() > 0.0)
+  1421→                ? meas::centsBetween(e.lastEstimateHz(), f) : 999.0;
+  1422→            addValue(c, "pitch_error_cents", meas::centsBetween(fm, f) - 400.0);
+  1423→            addValue(c, "estimate_error_cents", estErr);
+  1424→            addValue(c, "last_estimate_hz", e.lastEstimateHz());
+  1425→            addValue(c, "spacing", e.voiceStats(0).spacing);
+  1426→            check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+  1427→            check(c, std::abs(meas::centsBetween(fm, f) - 400.0) <= 2.0,
+  1428→                  "pitch error > 2 cents");
+  1429→            check(c, std::abs(estErr) <= 5.0, "detector estimate off by > 5 cents");
+  1430→            finishCase(R, c);
+  1431→        }
+  1432→    }
+  1433→
+  1434→    // negative shift at 96 kHz (349.23 Hz expected from 440 Hz input)
+  1435→    {
+  1436→        CaseResult c{"rate_96000_-400c_440Hz"}; c.cpu_t0 = cpuNowMs();
+  1437→        Config cfg;
+  1438→        cfg.sample_rate = 96000.0;
+  1439→        cfg.ratio = semitoneRatio(-400.0);
+  1440→        const int sr = 96000;
+  1441→        const int n = 3 * sr / 2;
+  1442→        const auto in = gen::tone(440.0, sr, n, 0.5);
+  1443→        AlignedDelayLine e;
+  1444→        e.prepare(cfg);
+  1445→        std::vector<float> out(n, 0.f);
+  1446→        e.process(in.data(), out.data(), n);
+  1447→        const double fm = meas::pitchFFT(out.data() + sr / 2, n - sr / 2, sr,
+  1448→                                         200.0, 900.0);
+  1449→        addValue(c, "pitch_error_cents", meas::centsBetween(fm, 440.0) + 400.0);
+  1450→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+  1451→        check(c, std::abs(meas::centsBetween(fm, 440.0) + 400.0) <= 2.0,
+  1452→              "pitch error > 2 cents");
+  1453→        finishCase(R, c);
+  1454→    }
+  1455→
+  1456→    // non-periodic input at every rate: safe, bounded, honest report
+  1457→    for (int sr : rates) {
+  1458→        CaseResult c{"rate"}; c.cpu_t0 = cpuNowMs();
+  1459→        char tag[64];
+  1460→        std::snprintf(tag, sizeof(tag), "rate_%d_noise", sr);
+  1461→        c.name = tag;
+  1462→        Config cfg;
+  1463→        cfg.sample_rate = sr;
+  1464→        cfg.ratio = semitoneRatio(400.0);
+  1465→        const int n = sr;
+  1466→        const auto in = gen::noise(9, n, 0.5);
+  1467→        AlignedDelayLine e;
+  1468→        e.prepare(cfg);
+  1469→        std::vector<float> out(n, 0.f);
+  1470→        e.process(in.data(), out.data(), n);
+  1471→        const double pk = meas::peak(out.data(), n);
+  1472→        addValue(c, "peak", pk);
+  1473→        addValue(c, "last_estimate_hz", e.lastEstimateHz());
+  1474→        addValue(c, "splices", static_cast<double>(e.voiceStats(0).splices));
+  1475→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+  1476→        check(c, pk < 2.0, "peak too high for noise input");
+  1477→        finishCase(R, c);
+  1478→    }
+  1479→
+  1480→    // per-rate processing cost (reported, not gated -- machine-dependent;
+  1481→    // the release benchmark is the canonical performance evidence)
+  1482→    for (int sr : rates) {
+  1483→        CaseResult c{"rate"}; c.cpu_t0 = cpuNowMs();
+  1484→        char tag[64];
+  1485→        std::snprintf(tag, sizeof(tag), "rate_%d_cost_220Hz_1voice", sr);
+  1486→        c.name = tag;
+  1487→        Config cfg;
+  1488→        cfg.sample_rate = sr;
+  1489→        cfg.ratio = semitoneRatio(400.0);
+  1490→        const int n = sr / 2;
+  1491→        const auto in = gen::tone(220.0, sr, n, 0.5);
+  1492→        AlignedDelayLine e;
+  1493→        e.prepare(cfg);
+  1494→        std::vector<float> out(n, 0.f);
+  1495→        const double t0 = cpuNowMs();
+  1496→        e.process(in.data(), out.data(), n);
+  1497→        const double ms = cpuNowMs() - t0;
+  1498→        addValue(c, "cpu_ms", ms);
+  1499→        addValue(c, "ns_per_sample", ms * 1e6 / n);
+  1500→        addValue(c, "realtime_factor", (n / (double)sr) / (ms / 1e3));
+  1501→        check(c, meas::allFinite(out.data(), out.size()), "non-finite");
+  1502→        finishCase(R, c);
+  1503→    }
+  1504→}
+  1505→
+  1506→// ---------------------------------------------------------------------------
+  1507→// JSON report
+  1508→// ---------------------------------------------------------------------------
+  1509→std::string jsonEscape(const std::string& s) {
+  1510→    std::string o;
+  1511→    for (char ch : s) {
+  1512→        if (ch == '"' || ch == '\\') {
+  1513→            o += '\\';
+  1514→            o += ch;
+  1515→        } else if (ch == '\n') {
+  1516→            o += "\\n";
+  1517→        } else {
+  1518→            o += ch;
+  1519→        }
+  1520→    }
+  1521→    return o;
+  1522→}
+  1523→
+  1524→void writeJson(const std::string& path) {
+  1525→    std::string j = "{\n  \"suite\": \"octavox_native_tests\",\n  \"version\": \"";
+  1526→    j += versionString();
+  1527→    j += "\",\n  \"cases\": [\n";
+  1528→    int idx = 0;
+  1529→    for (const auto& c : g_results) {
+  1530→        j += "    {\"name\": \"" + jsonEscape(c.name) + "\", \"pass\": " +
+  1531→             (c.pass ? "true" : "false") + ", \"duration_ms\": " +
+  1532→             [&]{ char b[32]; std::snprintf(b, sizeof(b), "%.3f", c.duration_ms);
+  1533→                  return std::string(b); }() + ", \"note\": \"" +
+  1534→             jsonEscape(c.note) + "\", \"values\": {";
+  1535→        for (size_t i = 0; i < c.values.size(); ++i) {
+  1536→            char buf[64];
+  1537→            std::snprintf(buf, sizeof(buf), "%.10g", c.values[i].second);
+  1538→            j += "\"" + jsonEscape(c.values[i].first) + "\": " + buf;
+  1539→            if (i + 1 < c.values.size()) j += ", ";
+  1540→        }
+  1541→        j += "}}";
+  1542→        if (++idx < (int)g_results.size()) j += ",";
+  1543→        j += "\n";
+  1544→    }
+  1545→    int passed = 0;
+  1546→    for (const auto& c : g_results) passed += c.pass ? 1 : 0;
+  1547→    double total_ms = 0.0;
+  1548→    for (const auto& c : g_results) total_ms += c.duration_ms;
+  1549→    char tbuf[32];
+  1550→    std::snprintf(tbuf, sizeof(tbuf), "%.3f", total_ms);
+  1551→    j += "  ],\n  \"summary\": {\"total\": " + std::to_string(g_results.size()) +
+  1552→         ", \"passed\": " + std::to_string(passed) + ", \"failed\": " +
+  1553→         std::to_string(g_results.size() - passed) + ", \"cpu_ms\": " + tbuf +
+  1554→         "}\n}\n";
+  1555→    FILE* f = std::fopen(path.c_str(), "wb");
+  1556→    if (f) {
+  1557→        std::fwrite(j.data(), 1, j.size(), f);
+  1558→        std::fclose(f);
+  1559→    }
+  1560→}
+  1561→
+  1562→// ---------------------------------------------------------------------------
+  1563→int main(int argc, char** argv) {
+  1564→    std::string jsonPath;
+  1565→    for (int i = 1; i < argc; ++i) {
+  1566→        if (std::strcmp(argv[i], "--json") == 0 && i + 1 < argc)
+  1567→            jsonPath = argv[++i];
+  1568→    }
+  1569→
+  1570→    // Round 13: the real-time-safety group runs FIRST so its first-call
+  1571→    // measurements are this process's actual first prepare()/process().
+  1572→    casesRealtimeSafety(g_results);
+  1573→    casesPrepareReset(g_results);
+  1574→    casesUnity(g_results);
+  1575→    casesVoices(g_results);
+  1576→    casesStereo(g_results);
+  1577→    casesRatesFormats(g_results);
+  1578→    casesStability(g_results);
+  1579→    casesColdStart(g_results);
+  1580→    casesRates(g_results);
+  1581→    {  // final tripwire: the tables were constructed exactly once for the
+  1582→       // whole process and never inside process()
+  1583→        CaseResult c{"tables_never_rebuilt"}; c.cpu_t0 = cpuNowMs();
+  1584→        addValue(c, "init_count", static_cast<double>(diagnostics::interpTableInitCount()));
+  1585→        addValue(c, "init_during_process",
+  1586→                 static_cast<double>(diagnostics::interpTableInitDuringProcess()));
+  1587→        check(c, diagnostics::interpTableInitCount() == 1,
+  1588→              "interpolation tables constructed more than once");
+  1589→        check(c, diagnostics::interpTableInitDuringProcess() == 0,
+  1590→              "table construction inside process()");
+  1591→        finishCase(g_results, c);
+  1592→    }
+  1593→
+  1594→    int passed = 0, failed = 0;
+  1595→    std::printf("%-46s %-6s %s\n", "CASE", "PASS", "MEASUREMENTS (selected)");
+  1596→    std::printf("%s\n", std::string(100, '-').c_str());
+  1597→    for (const auto& c : g_results) {
+  1598→        if (c.pass) ++passed; else ++failed;
+  1599→        std::printf("%-46s %-6s %s\n", c.name.c_str(), c.pass ? "ok" : "FAIL",
+  1600→                    c.note.c_str());
+  1601→        for (const auto& v : c.values)
+  1602→            std::printf("%-46s %-6s %s = %.10g\n", "", "", v.first.c_str(),
+  1603→                        v.second);
+  1604→    }
+  1605→    std::printf("%s\n%s: %d passed, %d failed, %d total\n",
+  1606→                std::string(100, '-').c_str(), versionString(), passed, failed,
+  1607→                (int)g_results.size());
+  1608→
+  1609→    if (!jsonPath.empty()) writeJson(jsonPath);
+  1610→
+  1611→    return failed == 0 ? 0 : 1;
+  1612→}
+  1613→

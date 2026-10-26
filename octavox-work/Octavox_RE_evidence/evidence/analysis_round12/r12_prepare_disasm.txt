@@ -1,0 +1,555 @@
+OCTAVOX round 12 scan B -- prepare disassembly 0x1800E2030..0x1800E2A20
+target sha256 7bb260f6... (verified); read-only
+
+0x1800E2030  push      rsi                                                 
+0x1800E2032  sub       rsp, 0x130                                          
+0x1800E2039  mov       r8, qword ptr [rcx + 0x41c0]                        
+0x1800E2040  mov       rsi, rcx                                            
+0x1800E2043  and       r8, qword ptr [rcx + 0x41b8]                        
+0x1800E204A  mov       rdx, qword ptr [rcx + 0x41a0]                       
+0x1800E2051  mov       rax, qword ptr [rcx + 0x60]                         
+0x1800E2055  mov       r10, qword ptr [rax]                                
+0x1800E2058  mov       eax, dword ptr [r10]                                
+0x1800E205B  mov       dword ptr [rdx + r8*4], eax                         
+0x1800E205F  mov       rdx, qword ptr [rcx + 0x41b8]                       
+0x1800E2066  mov       eax, dword ptr [r10 + 4]                            
+0x1800E206A  dec       rdx                                                 
+0x1800E206D  and       rdx, qword ptr [rcx + 0x41c0]                       
+0x1800E2074  mov       rcx, qword ptr [rcx + 0x41a0]                       
+0x1800E207B  mov       dword ptr [rcx + rdx*4], eax                        
+0x1800E207E  lea       rdx, [r10 + 4]                                      
+0x1800E2082  mov       r8, qword ptr [rsi + 0x41b8]                        
+0x1800E2089  mov       rcx, qword ptr [rsi + 0x41a0]                       
+0x1800E2090  sub       r8, 2                                               
+0x1800E2094  and       r8, qword ptr [rsi + 0x41c0]                        
+0x1800E209B  mov       eax, dword ptr [r10 + 8]                            
+0x1800E209F  mov       dword ptr [rcx + r8*4], eax                         
+0x1800E20A3  mov       r8, qword ptr [rsi + 0x41b8]                        
+0x1800E20AA  mov       rcx, qword ptr [rsi + 0x41a0]                       
+0x1800E20B1  sub       r8, 3                                               
+0x1800E20B5  and       r8, qword ptr [rsi + 0x41c0]                        
+0x1800E20BC  mov       eax, dword ptr [r10 + 0xc]                          
+0x1800E20C0  mov       dword ptr [rcx + r8*4], eax                         
+0x1800E20C4  lea       rcx, [rsi + 0x4518]                                 
+0x1800E20CB  mov       r8b, 1                                              
+0x1800E20CE  call      0x18013bbc0                                         
+0x1800E20D3  xor       eax, eax                                            
+0x1800E20D5  mov       r10d, eax                                           
+0x1800E20D8  mov       dword ptr [rsp + 0x140], eax                        
+0x1800E20DF  cmp       dword ptr [rsi + 0x54], eax                           ; engine+0x54 nvoices
+0x1800E20E2  jle       0x1800e2bc7                                           ; -> 0x1800E2BC7
+0x1800E20E8  mov       rdx, qword ptr [rsi + 0x4188]                         ; engine+0x4188 pos[nv]
+0x1800E20EF  mov       r8d, eax                                            
+0x1800E20F2  movss     xmm2, dword ptr [rip + 0x330b96]                    
+0x1800E20FA  xorps     xmm0, xmm0                                          
+0x1800E20FD  movss     xmm5, dword ptr [rip + 0x32fd3f]                    
+0x1800E2105  mov       qword ptr [rsp + 0x128], rbx                        
+0x1800E210D  mov       qword ptr [rsp + 0x120], rbp                        
+0x1800E2115  mov       qword ptr [rsp + 0x118], rdi                        
+0x1800E211D  mov       qword ptr [rsp + 0x110], r12                        
+0x1800E2125  mov       r12d, eax                                           
+0x1800E2128  mov       qword ptr [rsp + 0x108], r13                        
+0x1800E2130  mov       qword ptr [rsp + 0x100], r14                        
+0x1800E2138  mov       qword ptr [rsp + 0xf8], r15                         
+0x1800E2140  movaps    xmmword ptr [rsp + 0xe0], xmm6                      
+0x1800E2148  movss     xmm6, dword ptr [rip + 0x330538]                    
+0x1800E2150  movaps    xmmword ptr [rsp + 0xd0], xmm7                      
+0x1800E2158  movsd     xmm7, qword ptr [rip + 0x3302c8]                    
+0x1800E2160  movaps    xmmword ptr [rsp + 0xc0], xmm8                      
+0x1800E2169  movsd     xmm8, qword ptr [rip + 0x32fdd6]                    
+0x1800E2172  movaps    xmmword ptr [rsp + 0xb0], xmm9                      
+0x1800E217B  movss     xmm9, dword ptr [rip + 0x32fed4]                    
+0x1800E2184  movaps    xmmword ptr [rsp + 0xa0], xmm10                     
+0x1800E218D  movaps    xmmword ptr [rsp + 0x90], xmm11                     
+0x1800E2196  movaps    xmmword ptr [rsp + 0x80], xmm12                     
+0x1800E219F  movaps    xmmword ptr [rsp + 0x70], xmm13                     
+0x1800E21A5  movaps    xmmword ptr [rsp + 0x60], xmm14                     
+0x1800E21AB  movsd     xmm14, qword ptr [rip + 0x3303a4]                   
+0x1800E21B4  movaps    xmmword ptr [rsp + 0x50], xmm15                     
+0x1800E21BA  xorps     xmm15, xmm15                                        
+0x1800E21BE  mov       qword ptr [rsp + 0x48], rax                         
+0x1800E21C3  mov       qword ptr [rsp + 0x40], rax                         
+0x1800E21C8  mov       qword ptr [rsp + 0x20], rax                         
+0x1800E21CD  mov       qword ptr [rsp + 0x30], rax                         
+0x1800E21D2  mov       rcx, qword ptr [rsi + 0x4208]                       
+0x1800E21D9  mov       ebp, r10d                                           
+0x1800E21DC  mov       rbx, qword ptr [rsi + 0x40a0]                         ; engine+0x40a0 workring
+0x1800E21E3  mov       rax, qword ptr [rsi + 0x4230]                       
+0x1800E21EA  mov       rdi, qword ptr [rsi + 0x40c0]                       
+0x1800E21F1  mov       r14d, r10d                                          
+0x1800E21F4  movss     xmm1, dword ptr [rcx + r14*4]                       
+0x1800E21FA  subss     xmm1, dword ptr [rax + r14*4]                       
+0x1800E2200  mov       rax, qword ptr [rsi + 0x4258]                       
+0x1800E2207  maxss     xmm1, dword ptr [rip + 0x3305fd]                    
+0x1800E220F  minss     xmm1, xmm0                                          
+0x1800E2213  movss     dword ptr [rcx + r14*4], xmm1                       
+0x1800E2219  movaps    xmm0, xmm1                                          
+0x1800E221C  movsd     xmm12, qword ptr [rdx + r8]                         
+0x1800E2222  movsxd    r10, dword ptr [rax + r14*4]                        
+0x1800E2226  imul      ebp, dword ptr [rsi + 0x409c]                         ; engine+0x409c stride
+0x1800E222D  mov       rcx, r10                                            
+0x1800E2230  add       rcx, qword ptr [rsi + 0x41b8]                       
+0x1800E2237  and       rcx, qword ptr [rsi + 0x41c0]                       
+0x1800E223E  mov       r15d, dword ptr [rsi + 0x40b8]                        ; engine+0x40b8 wrmask
+0x1800E2245  lea       r11d, [r10 - 2]                                     
+0x1800E2249  mov       r8d, dword ptr [r12 + rdi]                          
+0x1800E224D  addsd     xmm12, qword ptr [rip + 0x330192]                   
+0x1800E2256  lea       eax, [r8 + rbp]                                     
+0x1800E225A  movsxd    rdx, eax                                            
+0x1800E225D  lea       r9d, [r8 - 1]                                       
+0x1800E2261  mov       rax, qword ptr [rsi + 0x41a0]                       
+0x1800E2268  and       r9d, r15d                                           
+0x1800E226B  mulss     xmm0, dword ptr [rax + rcx*4]                       
+0x1800E2270  lea       eax, [r9 + rbp]                                     
+0x1800E2274  movsxd    r8, eax                                             
+0x1800E2277  movsxd    rcx, r11d                                           
+0x1800E227A  xorps     xmm0, xmm2                                          
+0x1800E227D  movss     dword ptr [rbx + rdx*4], xmm0                       
+0x1800E2282  movaps    xmm0, xmm1                                          
+0x1800E2285  mov       rax, qword ptr [rsi + 0x41a0]                       
+0x1800E228C  mov       rdx, qword ptr [rsi + 0x41b8]                       
+0x1800E2293  dec       rdx                                                 
+0x1800E2296  add       rdx, r10                                            
+0x1800E2299  and       rdx, qword ptr [rsi + 0x41c0]                       
+0x1800E22A0  dec       r9d                                                 
+0x1800E22A3  and       r9d, r15d                                           
+0x1800E22A6  mulss     xmm0, dword ptr [rax + rdx*4]                       
+0x1800E22AB  lea       eax, [r9 + rbp]                                     
+0x1800E22AF  movsxd    rdx, eax                                            
+0x1800E22B2  xorps     xmm0, xmm2                                          
+0x1800E22B5  movss     dword ptr [rbx + r8*4], xmm0                        
+0x1800E22BB  movaps    xmm0, xmm1                                          
+0x1800E22BE  add       rcx, qword ptr [rsi + 0x41b8]                       
+0x1800E22C5  and       rcx, qword ptr [rsi + 0x41c0]                       
+0x1800E22CC  mov       rax, qword ptr [rsi + 0x41a0]                       
+0x1800E22D3  dec       r9d                                                 
+0x1800E22D6  and       r9d, r15d                                           
+0x1800E22D9  mulss     xmm0, dword ptr [rax + rcx*4]                       
+0x1800E22DE  movsxd    rcx, r11d                                           
+0x1800E22E1  lea       eax, [r9 + rbp]                                     
+0x1800E22E5  movsxd    r8, eax                                             
+0x1800E22E8  xorps     xmm0, xmm2                                          
+0x1800E22EB  movss     dword ptr [rbx + rdx*4], xmm0                       
+0x1800E22F0  mov       rax, qword ptr [rsi + 0x41a0]                       
+0x1800E22F7  mov       rdx, qword ptr [rsi + 0x41b8]                       
+0x1800E22FE  dec       rdx                                                 
+0x1800E2301  add       rdx, rcx                                            
+0x1800E2304  mov       rcx, qword ptr [rsp + 0x30]                         
+0x1800E2309  and       rdx, qword ptr [rsi + 0x41c0]                       
+0x1800E2310  mulss     xmm1, dword ptr [rax + rdx*4]                       
+0x1800E2315  lea       eax, [r9 - 1]                                       
+0x1800E2319  and       eax, r15d                                           
+0x1800E231C  xorps     xmm1, xmm2                                          
+0x1800E231F  movss     dword ptr [rbx + r8*4], xmm1                        
+0x1800E2325  lea       r13d, [rax + 1]                                     
+0x1800E2329  mov       dword ptr [r12 + rdi], eax                          
+0x1800E232D  and       r13d, r15d                                          
+0x1800E2330  mov       rax, qword ptr [rsi + 0x68]                         
+0x1800E2334  mov       rdx, qword ptr [rsi + 0x40f8]                         ; engine+0x40f8 vec
+0x1800E233B  mov       dword ptr [rsp + 0x148], r13d                       
+0x1800E2343  mov       rcx, qword ptr [rcx + rax + 8]                      
+0x1800E2348  movss     xmm0, dword ptr [r12 + rdx]                         
+0x1800E234E  mov       rax, qword ptr [rcx]                                
+0x1800E2351  movss     xmm4, dword ptr [rax]                               
+0x1800E2355  cvtps2pd  xmm4, xmm4                                          
+0x1800E2358  mov       rax, qword ptr [rsi + 0x4128]                         ; engine+0x4128 vec
+0x1800E235F  mov       r8d, r13d                                           
+0x1800E2362  imul      ecx, dword ptr [rsp + 0x140], 0x2c                  
+0x1800E236A  cvtps2pd  xmm0, xmm0                                          
+0x1800E236D  mulsd     xmm4, xmm0                                          
+0x1800E2371  movss     xmm0, dword ptr [rsi + 0x40e4]                      
+0x1800E2379  cvtps2pd  xmm0, xmm0                                          
+0x1800E237C  movaps    xmm2, xmm4                                          
+0x1800E237F  mulsd     xmm2, xmm4                                          
+0x1800E2383  movaps    xmm3, xmm2                                          
+0x1800E2386  movaps    xmm1, xmm2                                          
+0x1800E2389  mulsd     xmm1, xmm2                                          
+0x1800E238D  mulsd     xmm3, xmm4                                          
+0x1800E2391  mulsd     xmm3, xmm0                                          
+0x1800E2395  movss     xmm0, dword ptr [rsi + 0x40e8]                      
+0x1800E239D  cvtps2pd  xmm0, xmm0                                          
+0x1800E23A0  mulsd     xmm1, xmm0                                          
+0x1800E23A4  movss     xmm0, dword ptr [rsi + 0x40e0]                      
+0x1800E23AC  cvtps2pd  xmm0, xmm0                                          
+0x1800E23AF  addsd     xmm3, xmm1                                          
+0x1800E23B3  movss     xmm1, dword ptr [rsi + 0x40dc]                      
+0x1800E23BB  mulsd     xmm0, xmm2                                          
+0x1800E23BF  cvtps2pd  xmm1, xmm1                                          
+0x1800E23C2  addsd     xmm3, xmm0                                          
+0x1800E23C6  movss     xmm0, dword ptr [rsi + 0x40d8]                      
+0x1800E23CE  cvtps2pd  xmm0, xmm0                                          
+0x1800E23D1  mulsd     xmm1, xmm4                                          
+0x1800E23D5  addsd     xmm1, xmm0                                          
+0x1800E23D9  addsd     xmm3, xmm1                                          
+0x1800E23DD  movss     xmm1, dword ptr [r12 + rax]                         
+0x1800E23E3  mov       rax, qword ptr [rsi + 0x4170]                       
+0x1800E23EA  mov       qword ptr [rsp + 0x38], rax                         
+0x1800E23EF  cvtps2pd  xmm1, xmm1                                          
+0x1800E23F2  sub       r8d, dword ptr [r12 + rax]                          
+0x1800E23F6  mov       rax, qword ptr [rsi + 0x4110]                         ; engine+0x4110 vec
+0x1800E23FD  and       r8d, r15d                                           
+0x1800E2400  mov       dword ptr [rsp + 0x158], r8d                        
+0x1800E2408  cvtpd2ps  xmm0, xmm3                                          
+0x1800E240C  cvtps2pd  xmm13, xmm0                                         
+0x1800E2410  movss     xmm0, dword ptr [r12 + rax]                         
+0x1800E2416  mov       rax, qword ptr [rsi + 0x4280]                       
+0x1800E241D  mulsd     xmm13, xmm1                                         
+0x1800E2422  movss     dword ptr [rsp + 0x150], xmm0                       
+0x1800E242B  lea       r11, [rax + rcx*4]                                  
+0x1800E242F  mov       rax, qword ptr [rsi + 0x42d0]                       
+0x1800E2436  mov       qword ptr [rsp + 0x28], r11                         
+0x1800E243B  mulsd     xmm13, qword ptr [rip + 0x33004c]                   
+0x1800E2444  cmp       dword ptr [rax + r14*4], 1                          
+0x1800E2449  jne       0x1800e245b                                           ; -> 0x1800E245B
+0x1800E244B  mov       rax, qword ptr [rsi + 0x42a8]                       
+0x1800E2452  lea       r11, [rax + rcx*4]                                  
+0x1800E2456  mov       qword ptr [rsp + 0x28], r11                         
+0x1800E245B  mov       rdi, qword ptr [rsi + 0x4158]                         ; engine+0x4158 state[nv]
+0x1800E2462  mov       rbx, qword ptr [rsi + 0x80]                         
+0x1800E2469  mov       r14, qword ptr [rsi + 0x40a0]                         ; engine+0x40a0 workring
+0x1800E2470  cvttss2si eax, dword ptr [r12 + rdi]                          
+0x1800E2476  cmp       eax, -1                                             
+0x1800E2479  jne       0x1800e2812                                           ; -> 0x1800E2812
+0x1800E247F  mov       r12d, dword ptr [rsp + 0x148]                       
+0x1800E2487  xor       r13d, r13d                                          
+0x1800E248A  nop       word ptr [rax + rax]                                
+0x1800E2490  mov       eax, dword ptr [rsi + 0x4098]                         ; engine+0x4098 mask
+0x1800E2496  movaps    xmm0, xmm12                                         
+0x1800E249A  sar       eax, 3                                              
+0x1800E249D  movaps    xmm1, xmm12                                         
+0x1800E24A1  mulsd     xmm0, xmm14                                         
+0x1800E24A6  cvttsd2si ecx, xmm0                                           
+0x1800E24AA  sar       ecx, 3                                              
+0x1800E24AD  and       ecx, eax                                            
+0x1800E24AF  cvttsd2si eax, xmm12                                          
+0x1800E24B4  subsd     xmm12, xmm13                                        
+0x1800E24B9  comisd    xmm12, xmm15                                        
+0x1800E24BE  jae       0x1800e24c4                                           ; -> 0x1800E24C4
+0x1800E24C0  movaps    xmm12, xmm1                                         
+0x1800E24C4  mov       rdi, qword ptr [rsi + 0x40f0]                         ; engine+0x40f0
+0x1800E24CB  lea       edx, [rax + r12]                                    
+0x1800E24CF  movsxd    rax, ecx                                            
+0x1800E24D2  and       edx, r15d                                           
+0x1800E24D5  lea       rcx, [rax + rax*2]                                  
+0x1800E24D9  lea       rbx, [rcx + rcx]                                    
+0x1800E24DD  movss     xmm4, dword ptr [rdi + rbx*4 + 0x10]                
+0x1800E24E3  lea       eax, [rdx + rbp]                                    
+0x1800E24E6  movss     xmm2, dword ptr [rdi + rbx*4 + 0xc]                 
+0x1800E24EC  lea       ecx, [rdx + 1]                                      
+0x1800E24EF  and       ecx, r15d                                           
+0x1800E24F2  movsxd    r11, eax                                            
+0x1800E24F5  cvtps2pd  xmm4, xmm4                                          
+0x1800E24F8  lea       eax, [rcx + rbp]                                    
+0x1800E24FB  inc       ecx                                                 
+0x1800E24FD  movsxd    r9, eax                                             
+0x1800E2500  and       ecx, r15d                                           
+0x1800E2503  cvtps2pd  xmm2, xmm2                                          
+0x1800E2506  lea       eax, [rcx + rbp]                                    
+0x1800E2509  inc       ecx                                                 
+0x1800E250B  and       ecx, r15d                                           
+0x1800E250E  movsxd    r10, eax                                            
+0x1800E2511  movss     xmm3, dword ptr [r14 + r9*4]                        
+0x1800E2517  mov       r9, qword ptr [rsp + 0x20]                          
+0x1800E251C  lea       eax, [rcx + rbp]                                    
+0x1800E251F  movsxd    r8, eax                                             
+0x1800E2522  inc       ecx                                                 
+0x1800E2524  and       ecx, r15d                                           
+0x1800E2527  cvtps2pd  xmm3, xmm3                                          
+0x1800E252A  lea       eax, [rcx + rbp]                                    
+0x1800E252D  movsxd    rdx, eax                                            
+0x1800E2530  lea       eax, [rcx + 1]                                      
+0x1800E2533  and       eax, r15d                                           
+0x1800E2536  movss     xmm1, dword ptr [r14 + r8*4]                        
+0x1800E253C  add       eax, ebp                                            
+0x1800E253E  cvtps2pd  xmm1, xmm1                                          
+0x1800E2541  movsxd    rcx, eax                                            
+0x1800E2544  movss     xmm0, dword ptr [r14 + rdx*4]                       
+0x1800E254A  mulsd     xmm2, xmm1                                          
+0x1800E254E  movss     xmm1, dword ptr [rdi + rbx*4 + 0x14]                
+0x1800E2554  cvtps2pd  xmm0, xmm0                                          
+0x1800E2557  cvtps2pd  xmm1, xmm1                                          
+0x1800E255A  mulsd     xmm4, xmm0                                          
+0x1800E255E  movss     xmm0, dword ptr [r14 + rcx*4]                       
+0x1800E2564  cvtps2pd  xmm0, xmm0                                          
+0x1800E2567  addsd     xmm4, xmm2                                          
+0x1800E256B  movss     xmm2, dword ptr [r14 + r11*4]                       
+0x1800E2571  mulsd     xmm1, xmm0                                          
+0x1800E2575  movss     xmm0, dword ptr [rdi + rbx*4 + 4]                   
+0x1800E257B  cvtps2pd  xmm0, xmm0                                          
+0x1800E257E  addsd     xmm4, xmm1                                          
+0x1800E2582  movss     xmm1, dword ptr [rdi + rbx*4]                       
+0x1800E2587  mulsd     xmm3, xmm0                                          
+0x1800E258B  movss     xmm0, dword ptr [r14 + r10*4]                       
+0x1800E2591  cvtps2pd  xmm1, xmm1                                          
+0x1800E2594  cvtps2pd  xmm0, xmm0                                          
+0x1800E2597  cvtps2pd  xmm2, xmm2                                          
+0x1800E259A  mulsd     xmm2, xmm1                                          
+0x1800E259E  movss     xmm1, dword ptr [rdi + rbx*4 + 8]                   
+0x1800E25A4  mov       rbx, qword ptr [rsi + 0x80]                         
+0x1800E25AB  cvtps2pd  xmm1, xmm1                                          
+0x1800E25AE  mov       rax, qword ptr [r9 + rbx + 0x10]                    
+0x1800E25B3  addsd     xmm3, xmm2                                          
+0x1800E25B7  mulsd     xmm1, xmm0                                          
+0x1800E25BB  addsd     xmm3, xmm1                                          
+0x1800E25BF  addsd     xmm4, xmm3                                          
+0x1800E25C3  cvtpd2ps  xmm0, xmm4                                          
+0x1800E25C7  movss     dword ptr [rax + r13], xmm0                         
+0x1800E25CD  add       r13, 4                                              
+0x1800E25D1  cmp       r13, 0x10                                           
+0x1800E25D5  jl        0x1800e2490                                           ; -> 0x1800E2490
+0x1800E25DB  mov       rax, qword ptr [rsi + 0x42f8]                         ; engine+0x42f8 recidx
+0x1800E25E2  mov       r10d, dword ptr [rsp + 0x140]                       
+0x1800E25EA  mov       edx, dword ptr [rsi + 0x4510]                         ; engine+0x4510 tracking
+0x1800E25F0  mov       ecx, dword ptr [rax + r10*4]                        
+0x1800E25F4  add       ecx, dword ptr [rsi + 0xa4fc]                         ; engine+0xa4fc wdelta
+0x1800E25FA  and       ecx, 0xfff                                          
+0x1800E2600  movss     xmm3, dword ptr [rsi + rcx*4 + 0x98]                  ; engine+0x98 recring
+0x1800E2609  inc       ecx                                                 
+0x1800E260B  mulss     xmm3, dword ptr [rip + 0x32f881]                    
+0x1800E2613  and       ecx, 0xfff                                          
+0x1800E2619  comiss    xmm3, xmm5                                          
+0x1800E261C  jae       0x1800e2628                                           ; -> 0x1800E2628
+0x1800E261E  movss     xmm3, dword ptr [rip + 0x33010a]                    
+0x1800E2626  jmp       0x1800e2630                                           ; -> 0x1800E2630
+0x1800E2628  comiss    xmm3, xmm6                                          
+0x1800E262B  ja        0x1800e2630                                           ; -> 0x1800E2630
+0x1800E262D  movaps    xmm3, xmm6                                          
+0x1800E2630  cvttss2si r8d, dword ptr [rsi + rcx*4 + 0x98]                   ; engine+0x98 recring
+0x1800E263A  mov       r12, qword ptr [rsp + 0x40]                         
+0x1800E263F  lea       eax, [rcx + 1]                                      
+0x1800E2642  inc       rax                                                 
+0x1800E2645  and       eax, 0xfff                                          
+0x1800E264A  movss     xmm2, dword ptr [rsi + rax*4 + 0x98]                  ; engine+0x98 recring
+0x1800E2653  test      edx, edx                                            
+0x1800E2655  jne       0x1800e265f                                           ; -> 0x1800E265F
+0x1800E2657  movss     xmm2, dword ptr [rip + 0x32fadd]                    
+0x1800E265F  mov       r11, qword ptr [rsp + 0x28]                         
+0x1800E2664  xor       ebx, ebx                                            
+0x1800E2666  test      edx, edx                                            
+0x1800E2668  mov       eax, ebx                                            
+0x1800E266A  cmovne    eax, r8d                                            
+0x1800E266E  movss     xmm4, dword ptr [r11]                               
+0x1800E2673  movaps    xmm1, xmm4                                          
+0x1800E2676  cdqe                                                          
+0x1800E2678  mulss     xmm1, xmm2                                          
+0x1800E267C  movss     xmm0, dword ptr [r11 + rax*4 + 8]                   
+0x1800E2683  comiss    xmm1, xmm5                                          
+0x1800E2686  movss     dword ptr [r11 + 4], xmm0                           
+0x1800E268C  ja        0x1800e2691                                           ; -> 0x1800E2691
+0x1800E268E  movaps    xmm1, xmm4                                          
+0x1800E2691  mov       rax, qword ptr [rsi + 0x4128]                         ; engine+0x4128 vec
+0x1800E2698  movaps    xmm0, xmm3                                          
+0x1800E269B  subss     xmm0, xmm6                                          
+0x1800E269F  movss     dword ptr [r12 + rax], xmm1                         
+0x1800E26A5  mov       eax, 0x1f                                           
+0x1800E26AA  mulss     xmm0, dword ptr [rip + 0x32f8b6]                    
+0x1800E26B2  comiss    xmm0, dword ptr [rip + 0x32ffa7]                    
+0x1800E26B9  jae       0x1800e26bf                                           ; -> 0x1800E26BF
+0x1800E26BB  cvttss2si eax, xmm0                                           
+0x1800E26BF  movss     xmm0, dword ptr [r11 + 0x28]                        
+0x1800E26C5  mov       rdx, qword ptr [rsi + 0x40f8]                         ; engine+0x40f8 vec
+0x1800E26CC  cdqe                                                          
+0x1800E26CE  movss     dword ptr [r12 + rdx], xmm0                         
+0x1800E26D4  mov       edx, 1                                              
+0x1800E26D9  movss     xmm1, dword ptr [r11 + rax*4 + 0x30]                
+0x1800E26E0  mov       rax, qword ptr [rsi + 0x4110]                         ; engine+0x4110 vec
+0x1800E26E7  movaps    xmm0, xmm1                                          
+0x1800E26EA  mulss     xmm0, dword ptr [rip + 0x32f762]                    
+0x1800E26F2  movss     xmm4, dword ptr [r11 + 0x2c]                        
+0x1800E26F8  cvttss2si ecx, xmm1                                           
+0x1800E26FC  movss     dword ptr [r12 + rax], xmm0                         
+0x1800E2702  and       ecx, 0xf                                            
+0x1800E2705  shl       edx, cl                                             
+0x1800E2707  movd      xmm2, edx                                           
+0x1800E270B  cvtdq2ps  xmm2, xmm2                                          
+0x1800E270E  mulss     xmm2, xmm3                                          
+0x1800E2712  addss     xmm2, xmm9                                          
+0x1800E2717  cvttss2si ecx, xmm2                                           
+0x1800E271B  cmp       ecx, 0x80000000                                     
+0x1800E2721  je        0x1800e2741                                           ; -> 0x1800E2741
+0x1800E2723  movd      xmm0, ecx                                           
+0x1800E2727  cvtdq2ps  xmm0, xmm0                                          
+0x1800E272A  ucomiss   xmm0, xmm2                                          
+0x1800E272D  je        0x1800e2741                                           ; -> 0x1800E2741
+0x1800E272F  unpcklps  xmm2, xmm2                                          
+0x1800E2732  movmskps  eax, xmm2                                           
+0x1800E2735  and       eax, 1                                              
+0x1800E2738  sub       ecx, eax                                            
+0x1800E273A  movd      xmm2, ecx                                           
+0x1800E273E  cvtdq2ps  xmm2, xmm2                                          
+0x1800E2741  movd      xmm1, r15d                                          
+0x1800E2746  movaps    xmm0, xmm2                                          
+0x1800E2749  cvtdq2ps  xmm1, xmm1                                          
+0x1800E274C  subss     xmm1, xmm4                                          
+0x1800E2750  subss     xmm0, xmm1                                          
+0x1800E2754  comiss    xmm0, xmm5                                          
+0x1800E2757  jb        0x1800e275e                                           ; -> 0x1800E275E
+0x1800E2759  mulss     xmm2, xmm9                                          
+0x1800E275E  mov       rax, qword ptr [rsi + 0x4140]                         ; engine+0x4140 int[nv]
+0x1800E2765  movaps    xmm1, xmm12                                         
+0x1800E2769  movd      xmm0, dword ptr [r12 + rax]                         
+0x1800E276F  cvtdq2pd  xmm0, xmm0                                          
+0x1800E2773  subsd     xmm1, xmm0                                          
+0x1800E2777  comisd    xmm1, xmm7                                          
+0x1800E277B  jb        0x1800e27b6                                           ; -> 0x1800E27B6
+0x1800E277D  cvtps2pd  xmm0, xmm2                                          
+0x1800E2780  movaps    xmm3, xmm12                                         
+0x1800E2784  subsd     xmm3, xmm0                                          
+0x1800E2788  cvtps2pd  xmm1, xmm4                                          
+0x1800E278B  movaps    xmm0, xmm3                                          
+0x1800E278E  subsd     xmm0, xmm1                                          
+0x1800E2792  comisd    xmm0, xmm8                                          
+0x1800E2797  jb        0x1800e2aa7                                           ; -> 0x1800E2AA7
+0x1800E279D  mov       rcx, qword ptr [rsp + 0x38]                         
+0x1800E27A2  movaps    xmm12, xmm3                                         
+0x1800E27A6  cvttss2si eax, xmm2                                           
+0x1800E27AA  neg       eax                                                 
+0x1800E27AC  mov       dword ptr [r12 + rcx], eax                          
+0x1800E27B0  cvttsd2si ecx, xmm3                                           
+0x1800E27B4  jmp       0x1800e27f7                                           ; -> 0x1800E27F7
+0x1800E27B6  andps     xmm1, xmmword ptr [rip + 0x3304b3]                  
+0x1800E27BD  comisd    xmm1, xmm7                                          
+0x1800E27C1  jb        0x1800e2aa7                                           ; -> 0x1800E2AA7
+0x1800E27C7  cvtps2pd  xmm0, xmm4                                          
+0x1800E27CA  movaps    xmm1, xmm12                                         
+0x1800E27CE  subsd     xmm1, xmm0                                          
+0x1800E27D2  comisd    xmm1, xmm8                                          
+0x1800E27D7  jae       0x1800e2aa7                                           ; -> 0x1800E2AA7
+0x1800E27DD  mov       rcx, qword ptr [rsp + 0x38]                         
+0x1800E27E2  cvtps2pd  xmm0, xmm2                                          
+0x1800E27E5  cvttss2si eax, xmm2                                           
+0x1800E27E9  addsd     xmm12, xmm0                                         
+0x1800E27EE  mov       dword ptr [r12 + rcx], eax                          
+0x1800E27F2  cvttsd2si ecx, xmm12                                          
+0x1800E27F7  mov       rax, qword ptr [rsi + 0x4140]                         ; engine+0x4140 int[nv]
+0x1800E27FE  mov       dword ptr [r12 + rax], ecx                          
+0x1800E2802  mov       rax, qword ptr [rsi + 0x4158]                         ; engine+0x4158 state[nv]
+0x1800E2809  mov       dword ptr [r12 + rax], ebx                          
+0x1800E280D  jmp       0x1800e2aa7                                           ; -> 0x1800E2AA7
+0x1800E2812  mov       r11, qword ptr [rsp + 0x20]                         
+0x1800E2817  mov       qword ptr [rsp + 0x148], 0                          
+0x1800E2823  mov       eax, dword ptr [rsi + 0x4098]                         ; engine+0x4098 mask
+0x1800E2829  movaps    xmm0, xmm12                                         
+0x1800E282D  sar       eax, 3                                              
+0x1800E2830  movaps    xmm1, xmm12                                         
+0x1800E2834  mulsd     xmm0, xmm14                                         
+0x1800E2839  cvttsd2si ecx, xmm0                                           
+0x1800E283D  sar       ecx, 3                                              
+0x1800E2840  and       ecx, eax                                            
+0x1800E2842  cvttsd2si eax, xmm12                                          
+0x1800E2847  subsd     xmm12, xmm13                                        
+0x1800E284C  comisd    xmm12, xmm15                                        
+0x1800E2851  jae       0x1800e2857                                           ; -> 0x1800E2857
+0x1800E2853  movaps    xmm12, xmm1                                         
+0x1800E2857  mov       r10, qword ptr [rsi + 0x40f0]                         ; engine+0x40f0
+0x1800E285E  lea       edx, [rax + r13]                                    
+0x1800E2862  add       r8d, eax                                            
+0x1800E2865  and       edx, r15d                                           
+0x1800E2868  and       r8d, r15d                                           
+0x1800E286B  movsxd    rax, ecx                                            
+0x1800E286E  lea       rcx, [rax + rax*2]                                  
+0x1800E2872  lea       r9, [rcx + rcx]                                     
+0x1800E2876  movss     xmm0, dword ptr [r10 + r9*4]                        
+0x1800E287C  lea       eax, [rdx + rbp]                                    
+0x1800E287F  inc       edx                                                 
+0x1800E2881  movsxd    rcx, eax                                            
+0x1800E2884  and       edx, r15d                                           
+0x1800E2887  lea       eax, [r8 + rbp]                                     
+0x1800E288B  inc       r8d                                                 
+0x1800E288E  and       r8d, r15d                                           
+0x1800E2891  movss     xmm10, dword ptr [r14 + rcx*4]                      
+0x1800E2897  cvtps2pd  xmm0, xmm0                                          
+0x1800E289A  movsxd    rcx, eax                                            
+0x1800E289D  lea       eax, [rdx + rbp]                                    
+0x1800E28A0  inc       edx                                                 
+0x1800E28A2  and       edx, r15d                                           
+0x1800E28A5  movss     xmm11, dword ptr [r14 + rcx*4]                      
+0x1800E28AB  movsxd    rcx, eax                                            
+0x1800E28AE  lea       eax, [r8 + rbp]                                     
+0x1800E28B2  inc       r8d                                                 
+0x1800E28B5  and       r8d, r15d                                           
+0x1800E28B8  cvtps2pd  xmm10, xmm10                                        
+0x1800E28BC  movss     xmm8, dword ptr [r14 + rcx*4]                       
+0x1800E28C2  mulsd     xmm10, xmm0                                         
+0x1800E28C7  movsxd    rcx, eax                                            
+0x1800E28CA  lea       eax, [rdx + rbp]                                    
+0x1800E28CD  inc       edx                                                 
+0x1800E28CF  and       edx, r15d                                           
+0x1800E28D2  cvtps2pd  xmm11, xmm11                                        
+0x1800E28D6  movss     xmm9, dword ptr [r14 + rcx*4]                       
+0x1800E28DC  mulsd     xmm11, xmm0                                         
+0x1800E28E1  movsxd    rcx, eax                                            
+0x1800E28E4  lea       eax, [r8 + rbp]                                     
+0x1800E28E8  movss     xmm0, dword ptr [r10 + r9*4 + 4]                    
+0x1800E28EF  inc       r8d                                                 
+0x1800E28F2  cvtps2pd  xmm0, xmm0                                          
+0x1800E28F5  and       r8d, r15d                                           
+0x1800E28F8  movss     xmm6, dword ptr [r14 + rcx*4]                       
+0x1800E28FE  movsxd    rcx, eax                                            
+0x1800E2901  lea       eax, [rdx + rbp]                                    
+0x1800E2904  inc       edx                                                 
+0x1800E2906  and       edx, r15d                                           
+0x1800E2909  cvtps2pd  xmm8, xmm8                                          
+0x1800E290D  movss     xmm7, dword ptr [r14 + rcx*4]                       
+0x1800E2913  mulsd     xmm8, xmm0                                          
+0x1800E2918  movsxd    rcx, eax                                            
+0x1800E291B  lea       eax, [r8 + rbp]                                     
+0x1800E291F  inc       r8d                                                 
+0x1800E2922  cvtps2pd  xmm9, xmm9                                          
+0x1800E2926  and       r8d, r15d                                           
+0x1800E2929  movss     xmm3, dword ptr [r14 + rcx*4]                       
+0x1800E292F  mulsd     xmm9, xmm0                                          
+0x1800E2934  movsxd    rcx, eax                                            
+0x1800E2937  lea       eax, [rdx + rbp]                                    
+0x1800E293A  movss     xmm0, dword ptr [r10 + r9*4 + 8]                    
+0x1800E2941  inc       edx                                                 
+0x1800E2943  cvtps2pd  xmm0, xmm0                                          
+0x1800E2946  and       edx, r15d                                           
+0x1800E2949  movss     xmm5, dword ptr [r14 + rcx*4]                       
+0x1800E294F  cvtps2pd  xmm6, xmm6                                          
+0x1800E2952  movsxd    rcx, eax                                            
+0x1800E2955  movss     xmm1, dword ptr [r14 + rcx*4]                       
+0x1800E295B  mulsd     xmm6, xmm0                                          
+0x1800E295F  cvtps2pd  xmm7, xmm7                                          
+0x1800E2962  cvtps2pd  xmm5, xmm5                                          
+0x1800E2965  mulsd     xmm7, xmm0                                          
+0x1800E2969  movss     xmm0, dword ptr [r10 + r9*4 + 0xc]                  
+0x1800E2970  cvtps2pd  xmm0, xmm0                                          
+0x1800E2973  cvtps2pd  xmm3, xmm3                                          
+0x1800E2976  mulsd     xmm5, xmm0                                          
+0x1800E297A  mulsd     xmm3, xmm0                                          
+0x1800E297E  movss     xmm0, dword ptr [r10 + r9*4 + 0x10]                 
+0x1800E2985  cvtps2pd  xmm0, xmm0                                          
+0x1800E2988  cvtps2pd  xmm1, xmm1                                          
+0x1800E298B  mulsd     xmm1, xmm0                                          
+0x1800E298F  addsd     xmm1, xmm3                                          
+0x1800E2993  lea       eax, [r8 + rbp]                                     
+0x1800E2997  inc       r8d                                                 
+0x1800E299A  movsxd    rcx, eax                                            
+0x1800E299D  addsd     xmm9, xmm11                                         
+0x1800E29A2  lea       eax, [rdx + rbp]                                    
+0x1800E29A5  and       r8d, r15d                                           
+0x1800E29A8  mov       rdx, qword ptr [rsp + 0x148]                        
+0x1800E29B0  addsd     xmm8, xmm10                                         
+0x1800E29B5  movss     xmm2, dword ptr [r14 + rcx*4]                       
+0x1800E29BB  movsxd    rcx, eax                                            
+0x1800E29BE  addsd     xmm9, xmm7                                          
+0x1800E29C3  cvtps2pd  xmm2, xmm2                                          
+0x1800E29C6  lea       eax, [r8 + rbp]                                     
+0x1800E29CA  mov       r8d, dword ptr [rsp + 0x158]                        
+0x1800E29D2  movss     xmm4, dword ptr [r14 + rcx*4]                       
+0x1800E29D8  addsd     xmm8, xmm6                                          
+0x1800E29DD  mulsd     xmm2, xmm0                                          
+0x1800E29E1  movsxd    rcx, eax                                            
+0x1800E29E4  movss     xmm0, dword ptr [r10 + r9*4 + 0x14]                 
+0x1800E29EB  mov       rax, qword ptr [r11 + rbx + 0x10]                   
+0x1800E29F0  cvtps2pd  xmm0, xmm0                                          
+0x1800E29F3  movss     xmm3, dword ptr [r14 + rcx*4]                       
+0x1800E29F9  addsd     xmm5, xmm2                                          
+0x1800E29FD  movss     xmm2, dword ptr [r12 + rdi]                         
+0x1800E2A03  cvtps2pd  xmm3, xmm3                                          
+0x1800E2A06  cvtps2pd  xmm4, xmm4                                          
+0x1800E2A09  mulsd     xmm3, xmm0                                          
+0x1800E2A0D  mulsd     xmm4, xmm0                                          
+0x1800E2A11  cvtps2pd  xmm0, xmm2                                          
+0x1800E2A14  subss     xmm2, dword ptr [rsp + 0x150]                       

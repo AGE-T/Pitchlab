@@ -1,0 +1,1148 @@
+     1→// OCTAVOX 15.0.0 -- independent native DSP core (implementation).
+     2→// ============================================================================
+     3→// Rebuilt R15-REB1 from the round-12 12.0.0 base against the salvaged
+     4→// NORMATIVE header (include/octavox/dsp.hpp -- its comment blocks are the
+     5→// contract). See this file's history in the worklog (R15-R0 / R15-P1 /
+     6→// R15-P2P5 / R15-REB1): the 15.0.0 sources were lost to two environment
+     7→// resets; this file re-implements them. With the DEFAULT parameter surface
+     8→// (wet = 1, bypass off, no per-voice overrides, all gains 1) the engine is
+     9→// BIT-IDENTICAL to 12.0.0 at 44.1/48 kHz -- gated by the four FNV-1a-64
+    10→// reference hashes in native/r15_reference_hashes.txt (captured by
+    11→// cli/r15ref_capture.cpp against the 12.0.0 core before this rebuild).
+    12→//
+    13→// Deltas implemented here (12.0.0 -> 15.0.0):
+    14→//   * R13-a  cold-start alignment law: VERIFIED, not changed -- the 12.0.0
+    15→//     core already satisfies every clause (see the law restated below).
+    16→//   * R13-b  pitch-detector analysis window is SAMPLE-RATE RELATIVE:
+    17→//     win = max(2048, ceil(2.5*tau_max)) (implies win >= 2*tau_max + 128
+    18→//     with the 2048 floor, keeping the difference support
+    19→//     m = win/2 - tau_max >= tau_max/4 -- value-mirror lag immunity).
+    20→//     44.1/48 kHz behaviour is bit-identical to round 12 (win == 2048);
+    21→//     above ~49 kHz the window grows with the rate so the detector keeps
+    22→//     tracking (round 12 was blind, m < 32, above 59.5 kHz -- measured:
+    23→//     the r15ref_capture --probe96 run on the 12.0.0 core returns
+    24→//     estimate 0.000000 Hz for a steady 110 Hz sine at 96 kHz).
+    25→//   * R13-c  zero-allocation re-prepare: prepare() whose buffer-determining
+    26→//     fields (sample_rate, max_voices, f0_history, detection_interval)
+    27→//     match the live engine reconfigures IN PLACE (no allocation, no
+    28→//     locks, identical result to a fresh engine). Other prepare() calls
+    29→//     take the allocate-and-rebuild path. reset() is allocation-free.
+    30→//   * R14    VoiceStats::ratio exposes the current gliding ratio.
+    31→//   * R15-P1 per-voice parameter surface: per-voice ABSOLUTE ratio / gain /
+    32→//     mute / base-delay overrides, latency-aligned wet/dry mix and a
+    33→//     click-free bypass -- all audio-thread safe, allocation-free,
+    34→//     block-boundary applied (see the header's ROUND-15 contract for the
+    35→//     normative text; the implementation map is below).
+    36→//
+    37→// COLD-START ALIGNMENT LAW (R13-a; maintained as an invariant):
+    38→//   L = latencySamples() = base_delay + grain/2. Every voice starts at
+    39→//   grain phase frac = 0.5. A unity voice parks on d_park =
+    40→//   round(base + grain/2) and outputs the bit-exact delayed copy
+    41→//   out[k] == in[k - d_park + 1] (ring convention read(d) = the sample
+    42→//   pushed d-1 samples ago); with the default config d_park == L so the
+    43→//   first non-zero sample for an impulse at t=0 is exactly k = L-1, and
+    44→//   the output is exactly zero before the kernel can reach the input (the
+    45→//   rings are pre-zeroed = "silence before t = 0"). A voice with ratio
+    46→//   r != 1 initialises its gliding ratio AT its target (no cold-start
+    47→//   glide: v.ratio = v.ratio_t in reset()) and starts fully engaged
+    48→//   (e = 1, a = 0), so before the first grain wrap its read delay is
+    49→//   d(k) = L + (1 - r)*(k + 1) and output sample k interpolates the input
+    50→//   at time tau(k) = r*(k + 1) - L.
+    51→//
+    52→// ROUND-15 P1 IMPLEMENTATION MAP (where the contract lives in this file):
+    53→//   VoiceState        ratio_override / ratio_ov (setVoiceRatio),
+    54→//                     gain_t / gain / ramp_tgt / gain_rate (setVoiceGain,
+    55→//                     setVoiceMute; linear-in-amplitude ramp with exact
+    56→//                     snap, armed at the process() block start),
+    57→//                     mute, base_delay_ov / base_pending (setVoiceBaseDelay).
+    58→//   Impl              dry_ring + pushDry()/readDry() (raw-input ring; the
+    59→//                     dry tap reads delay latencySamples() through the
+    60→//                     read(d) = d-1 law -> dry[k] = in[k-(L-1)], bit-exact),
+    61→//                     wet (setWetDry, clamped [0,1]),
+    62→//                     bypass_on / bypass_b / b_step (setBypass blend),
+    63→//                     gain_ramp_n, dry_delay.
+    64→//   Impl::applyPendingSurface()   the process() block-start stage: pending
+    65→//                     base-delay application (voice-v-only re-align, parked
+    66→//                     voices re-park) + gain-ramp (re)arming.
+    67→//   Impl::slewGain()  per-sample gain ramp (0 rate = exact snap).
+    68→//   Impl::retargetVoice()  shared ratio re-target + unity-exit spacing
+    69→//                     commit (setRatio / setSpread / setVoiceRatio).
+    70→//   Impl::resetParamSurface()  prepare() = fresh-engine defaults;
+    71→//                     reset() preserves overrides and snaps ramps instead.
+    72→//   AlignedDelayLine::process()  per-voice gain multiplies AFTER the
+    73→//                     voice-count normalisation (gain==1 bit-neutral,
+    74→//                     gain==0 removes the voice exactly, sample not even
+    75→//                     added); feedback taps the PRE-MIX wet signal
+    76→//                     (wet-path-only -> wet state invariant under mix and
+    77→//                     bypass); the output stage special-cases
+    78→//                     wet == 1 && !bypass-blend as the BIT-EXACT legacy
+    79→//                     path (no dry read happens there).
+    80→//   MultichannelShifter  every new setter broadcasts to the per-channel
+    81→//                     engines; prepare() reuses the engine array when the
+    82→//                     channel count matches (per-engine in-place prepare).
+    83→//
+    84→// All code here is our own (provenance: see the header).
+    85→
+    86→#include "octavox/dsp.hpp"
+    87→
+    88→#include <algorithm>
+    89→#include <cmath>
+    90→#include <cstring>
+    91→#include <vector>
+    92→
+    93→#include "obs_kernel_table.h"  // OBS data table (see header comment)
+    94→
+    95→#ifndef M_PI
+    96→#define M_PI 3.14159265358979323846
+    97→#endif
+    98→
+    99→namespace octavox {
+   100→namespace {
+   101→
+   102→// ---------------------------------------------------------------------------
+   103→// Musical spread table (reference parity: poc/octavox_offline.py)
+   104→// ---------------------------------------------------------------------------
+   105→constexpr double kSpreadSemitones[8] = {0.0, 7.0, 4.0, 12.0, -5.0, -12.0, 3.0, -3.0};
+   106→
+   107→// ---------------------------------------------------------------------------
+   108→// Interpolator tables (built once, shared, immutable)
+   109→// ---------------------------------------------------------------------------
+   110→constexpr int kLag6Taps = 6;
+   111→
+   112→// 6-point Lagrange weights for phase mu, nodes -2,-1,0,1,2,3 (our own design;
+   113→// same formula as the Python reference).
+   114→void lagrange6Weights(double mu, double* w) {
+   115→    static const double xs[6] = {-2.0, -1.0, 0.0, 1.0, 2.0, 3.0};
+   116→    for (int i = 0; i < 6; ++i) {
+   117→        double v = 1.0;
+   118→        for (int j = 0; j < 6; ++j) {
+   119→            if (i != j) v *= (mu - xs[j]) / (xs[i] - xs[j]);
+   120→        }
+   121→        w[i] = v;
+   122→    }
+   123→}
+   124→
+   125→struct InterpTables {
+   126→    double lag2048[2048][6];
+   127→    double lag256[256][6];
+   128→
+   129→    InterpTables() {
+   130→        double w[6];
+   131→        for (int r = 0; r < 2048; ++r) {
+   132→            lagrange6Weights((r + 0.5) / 2048.0, w);  // bin centres (Python parity)
+   133→            for (int k = 0; k < 6; ++k) lag2048[r][k] = w[k];
+   134→        }
+   135→        for (int r = 0; r < 256; ++r) {
+   136→            lagrange6Weights((r + 0.5) / 256.0, w);
+   137→            for (int k = 0; k < 6; ++k) lag256[r][k] = w[k];
+   138→        }
+   139→    }
+   140→};
+   141→
+   142→const InterpTables& interpTables() {
+   143→    static const InterpTables t;  // thread-safe magic static
+   144→    return t;
+   145→}
+   146→
+   147→// ---------------------------------------------------------------------------
+   148→// YIN-style pitch detector (port of poc/octavox_poc.py PitchDetector).
+   149→// Detector defaults fmin 60 / fmax 1200 Hz (the v2 engine's detector
+   150→// defaults); the spacing gate in the engine uses the Config fmin/fmax
+   151→// (55/1200) exactly as the Python does.
+   152→//
+   153→// R13-b: the analysis window is SAMPLE-RATE RELATIVE:
+   154→//     win = max(2048, ceil(2.5 * tau_max)),  tau_max = int(sr / 60)
+   155→// which implies win >= 2*tau_max + 128 whenever the 2048 floor applies
+   156→// (tau_max <= 819.2 <=> sr <= 49152 Hz) and keeps the difference support
+   157→//     m = win/2 - tau_max >= tau_max/4
+   158→// (value-mirror lag immunity) at every rate. At 44.1/48 kHz win == 2048
+   159→// and every arithmetic step is identical to the round-12 fixed-window
+   160→// detector (bit-identical estimates); above ~49 kHz the window grows with
+   161→// the rate so the detector keeps tracking (round 12 was blind, m < 32,
+   162→// above 59.5 kHz).
+   163→// ---------------------------------------------------------------------------
+   164→class PitchDetector {
+   165→public:
+   166→    void configure(int sr) {
+   167→        sr_ = sr;
+   168→        tau_min_ = std::max(2, static_cast<int>(sr_ / 1200.0));
+   169→        const int tau_max = static_cast<int>(sr_ / 60.0);
+   170→        win_ = std::max(2048, static_cast<int>(std::ceil(2.5 * tau_max)));
+   171→        tau_max_ = std::min(win_ - 2, tau_max);
+   172→        buf_.assign(win_, 0.0);
+   173→        d_.assign(std::max(0, tau_max_ - tau_min_), 0.0);
+   174→        cmnd_.assign(d_.size(), 0.0);
+   175→        last_f0_ = 0.0;
+   176→    }
+   177→
+   178→    void reset() {
+   179→        std::fill(buf_.begin(), buf_.end(), 0.0);
+   180→        last_f0_ = 0.0;
+   181→    }
+   182→
+   183→    // Push a block into the sliding window (Python push_block semantics).
+   184→    void pushBlock(const float* x, int n) {
+   185→        if (n >= win_) {
+   186→            std::copy(x + n - win_, x + n, buf_.begin());
+   187→            return;
+   188→        }
+   189→        // roll left by n, append
+   190→        std::copy(buf_.begin() + n, buf_.end(), buf_.begin());
+   191→        for (int i = 0; i < n; ++i) buf_[win_ - n + i] = static_cast<double>(x[i]);
+   192→    }
+   193→
+   194→    double estimate() {
+   195→        const std::vector<double>& x = buf_;
+   196→        double peak = 0.0;
+   197→        for (int i = 0; i < win_; ++i) peak = std::max(peak, std::abs(x[i]));
+   198→        if (peak < 1e-6) {
+   199→            last_f0_ = 0.0;
+   200→            return 0.0;
+   201→        }
+   202→        if (tau_max_ <= tau_min_) {
+   203→            last_f0_ = 0.0;
+   204→            return 0.0;
+   205→        }
+   206→        // seg = second half of the window; m = len(seg) - tau_max
+   207→        const int seg0 = win_ / 2;
+   208→        const int m = (win_ - seg0) - tau_max_;
+   209→        if (m < 32) {
+   210→            last_f0_ = 0.0;
+   211→            return 0.0;
+   212→        }
+   213→        const int ntau = tau_max_ - tau_min_;
+   214→        for (int i = 0; i < ntau; ++i) {
+   215→            const int tau = tau_min_ + i;
+   216→            double s = 0.0;
+   217→            for (int j = 0; j < m; ++j) {
+   218→                const double a = x[seg0 + j] - x[seg0 + tau + j];
+   219→                s += a * a;
+   220→            }
+   221→            d_[i] = s;
+   222→        }
+   223→        // cumulative mean normalisation
+   224→        double run = 0.0;
+   225→        for (int i = 0; i < ntau; ++i) {
+   226→            run += d_[i];
+   227→            cmnd_[i] = (run > 0.0) ? d_[i] * static_cast<double>(i + 1) / run : 1.0;
+   228→        }
+   229→        // first minimum below threshold
+   230→        int idx = -1;
+   231→        const double thr = 0.20;
+   232→        for (int i = 1; i < ntau - 1; ++i) {
+   233→            if (cmnd_[i] < thr && cmnd_[i] <= cmnd_[i - 1] && cmnd_[i] <= cmnd_[i + 1]) {
+   234→                idx = i;
+   235→                break;
+   236→            }
+   237→        }
+   238→        if (idx < 0) {
+   239→            // argmin
+   240→            idx = 0;
+   241→            for (int i = 1; i < ntau; ++i)
+   242→                if (cmnd_[i] < cmnd_[idx]) idx = i;
+   243→        }
+   244→        double tau = static_cast<double>(tau_min_ + idx);
+   245→        // parabolic refinement
+   246→        if (idx > 0 && idx < ntau - 1) {
+   247→            const double y0 = cmnd_[idx - 1], y1 = cmnd_[idx], y2 = cmnd_[idx + 1];
+   248→            const double den = y0 - 2.0 * y1 + y2;
+   249→            if (std::abs(den) > 1e-15) tau += 0.5 * (y0 - y2) / den;
+   250→        }
+   251→        double f0 = static_cast<double>(sr_) / tau;
+   252→        if (!(60.0 <= f0 && f0 <= 1200.0)) f0 = 0.0;
+   253→        last_f0_ = f0;
+   254→        return f0;
+   255→    }
+   256→
+   257→    double lastF0() const { return last_f0_; }
+   258→
+   259→private:
+   260→    int sr_ = 48000;
+   261→    int win_ = 2048;  // R13-b: sample-rate-relative window (>= 2048)
+   262→    int tau_min_ = 2, tau_max_ = 800;
+   263→    std::vector<double> buf_, d_, cmnd_;
+   264→    double last_f0_ = 0.0;
+   265→};
+   266→
+   267→// ---------------------------------------------------------------------------
+   268→// Per-voice state
+   269→// ---------------------------------------------------------------------------
+   270→struct VoiceState {
+   271→    double ratio_t = 1.0;   // effective target ratio (override-aware)
+   272→    double ratio = 1.0;     // gliding ratio (initialised AT target: cold start)
+   273→    double base_delay = 256.0;
+   274→    double frac = 0.5;      // grain phase [0,1)
+   275→    double S = 4096.0;      // current tap spacing
+   276→    // unity engagement
+   277→    double e = 1.0;         // 1 = dual-tap, 0 = single-tap A
+   278→    double a = 0.0;         // parking blend: 1 = parked integer read
+   279→    int d_park = -1;        // parked integer delay
+   280→    // -- round-15 P1 per-voice parameter surface --------------------------------
+   281→    bool ratio_override = false;  // setVoiceRatio set an absolute target
+   282→    double ratio_ov = 1.0;        // the absolute target (when overridden)
+   283→    double gain_t = 1.0;          // user gain target (>= 0)
+   284→    double gain = 1.0;            // current ramped gain
+   285→    double ramp_tgt = 1.0;        // effective target the ramp runs toward
+   286→    double gain_rate = 0.0;       // linear amplitude step per sample (0 = snap)
+   287→    bool mute = false;            // effective gain target forced to 0
+   288→    double base_delay_ov = 0.0;   // base-delay override (<= 0 = none set)
+   289→    bool base_pending = false;    // override awaits the next process() start
+   290→    // diagnostics
+   291→    long wraps = 0;
+   292→    long commits = 0;
+   293→};
+   294→
+   295→}  // namespace
+   296→
+   297→// ---------------------------------------------------------------------------
+   298→// AlignedDelayLine::Impl
+   299→// ---------------------------------------------------------------------------
+   300→struct AlignedDelayLine::Impl {
+   301→    static constexpr int kRingBits = 18;
+   302→    static constexpr int kRingSize = 1 << kRingBits;  // 262144
+   303→    static constexpr int kRingMask = kRingSize - 1;
+   304→
+   305→    std::vector<double> ring;        // age-indexed delay line
+   306→    int w = 0;                       // newest sample index
+   307→    std::vector<double> dry_ring;    // R15-P1: raw-input ring (dry tap)
+   308→    int w_dry = 0;                   // newest dry sample index
+   309→    PitchDetector det;
+   310→    std::vector<VoiceState> vs;      // [max_voices]
+   311→    std::vector<double> f0_hist;     // circular, size f0_history
+   312→    std::vector<double> med_scratch; // preallocated median scratch (no alloc)
+   313→    std::vector<float> det_pending;  // control-rate accumulator (raw input)
+   314→    int det_n = 0;
+   315→    int f0_hist_n = 0, f0_hist_i = 0;
+   316→    bool have_estimate = false;
+   317→    double S_target = 4096.0;
+   318→    double fb_state = 0.0;
+   319→    double norm = 1.0;               // voice-count normalisation (ramped)
+   320→    double norm_target = 1.0;
+   321→    double last_f0 = 0.0;
+   322→    double e_step = 0.0;             // engagement slew per sample
+   323→    Config cfg{};
+   324→    // -- round-15 P1 surface state ---------------------------------------------
+   325→    double wet = 1.0;                // wet/dry mix, clamped [0,1] (1 = legacy)
+   326→    bool bypass_on = false;          // bypass target
+   327→    double bypass_b = 0.0;           // bypass blend (0 = normal, 1 = bypassed)
+   328→    double b_step = 1.0;             // bypass blend step per sample
+   329→    double gain_ramp_n = 0.0;        // gain ramp length in samples (0 = snap)
+   330→    int dry_delay = 0;               // dry tap delay == latencySamples()
+   331→
+   332→    // -- ring helpers -------------------------------------------------------
+   333→    inline void push(double x) {
+   334→        ring[w] = x;
+   335→        w = (w - 1) & kRingMask;
+   336→    }
+   337→
+   338→    inline double readRaw(int delay) const {
+   339→        return ring[(w + delay) & kRingMask];
+   340→    }
+   341→
+   342→    // Raw-input ring: pushDry(in[k]) then readDry(L) returns in[k-(L-1)]
+   343→    // (the read(d) = sample d-1 ago law) -- the bit-exact latency-aligned
+   344→    // dry tap. The dry ring carries the RAW input (never feedback).
+   345→    inline void pushDry(double x) {
+   346→        dry_ring[w_dry] = x;
+   347→        w_dry = (w_dry - 1) & kRingMask;
+   348→    }
+   349→
+   350→    inline double readDry(int delay) const {
+   351→        return dry_ring[(w_dry + delay) & kRingMask];
+   352→    }
+   353→
+   354→    // Interpolated read at `delay` (>= 0). Exact-integer delays take the
+   355→    // direct sample path (bit-exact; used by the parked unity state).
+   356→    double readInterp(double delay) const {
+   357→        if (delay < 0.0) delay = 0.0;
+   358→        const double d0 = std::floor(delay);
+   359→        const double mu = delay - d0;
+   360→        const int i0 = static_cast<int>(d0);
+   361→        if (mu == 0.0) {
+   362→            return ring[(w + i0) & kRingMask];  // exact integer delay
+   363→        }
+   364→        switch (cfg.interpolation) {
+   365→            case Interpolation::Linear: {
+   366→                const double a = ring[(w + i0) & kRingMask];
+   367→                const double b = ring[(w + i0 + 1) & kRingMask];
+   368→                return a + (b - a) * mu;
+   369→            }
+   370→            case Interpolation::Lagrange6: {
+   371→                int ph = static_cast<int>(mu * 2048.0);  // floor, mu < 1
+   372→                if (ph > 2047) ph = 2047;
+   373→                const double* wv = interpTables().lag2048[ph];
+   374→                double s = 0.0;
+   375→                for (int k = 0; k < 6; ++k)
+   376→                    s += wv[k] * ring[(w + i0 + k - 2) & kRingMask];
+   377→                return s;
+   378→            }
+   379→            case Interpolation::Lagrange6Q: {
+   380→                int ph = static_cast<int>(mu * 256.0);
+   381→                if (ph > 255) ph = 255;
+   382→                const double* wv = interpTables().lag256[ph];
+   383→                double s = 0.0;
+   384→                for (int k = 0; k < 6; ++k)
+   385→                    s += wv[k] * ring[(w + i0 + k - 2) & kRingMask];
+   386→                return s;
+   387→            }
+   388→            case Interpolation::ObsKernel6: {
+   389→                // OBS data mode: floor-indexed 256 phases (target phase law).
+   390→                int ph = static_cast<int>(mu * 256.0);
+   391→                if (ph > 255) ph = 255;
+   392→                const float* wv = obs_kernel::kTable[ph];
+   393→                double s = 0.0;
+   394→                for (int k = 0; k < 6; ++k)
+   395→                    s += static_cast<double>(wv[k]) *
+   396→                         ring[(w + i0 + k - 2) & kRingMask];
+   397→                return s;
+   398→            }
+   399→        }
+   400→        return 0.0;
+   401→    }
+   402→
+   403→    // -- spacing management (v2 parity) --------------------------------------
+   404→    void updateSpacingTarget(double f0) {
+   405→        if (f0 != 0.0 && cfg.fmin <= f0 && f0 <= cfg.fmax) {
+   406→            f0_hist[f0_hist_i] = static_cast<double>(cfg.sample_rate) / f0;
+   407→            f0_hist_i = (f0_hist_i + 1) % static_cast<int>(f0_hist.size());
+   408→            if (f0_hist_n < static_cast<int>(f0_hist.size())) ++f0_hist_n;
+   409→            have_estimate = true;
+   410→        }
+   411→        if (f0_hist_n == 0) {
+   412→            S_target = cfg.grain;
+   413→            return;
+   414→        }
+   415→        // median of the history (np.median parity: even count averages the
+   416→        // middle two). Uses the preallocated scratch -- NO allocation here
+   417→        // (steady-state guarantee).
+   418→        med_scratch.assign(f0_hist.begin(), f0_hist.begin() + f0_hist_n);
+   419→        std::sort(med_scratch.begin(), med_scratch.end());
+   420→        const int n = static_cast<int>(med_scratch.size());
+   421→        double t_hat = (n % 2 == 1)
+   422→                           ? med_scratch[n / 2]
+   423→                           : 0.5 * (med_scratch[n / 2 - 1] + med_scratch[n / 2]);
+   424→        // Python round() = round-half-to-even = nearbyint with default env
+   425→        const double k = std::nearbyint(cfg.grain / t_hat);
+   426→        const double kk = std::max(1.0, k);
+   427→        const double S = kk * t_hat;
+   428→        S_target = std::min(std::max(S, 0.5 * cfg.grain), 1.5 * cfg.grain);
+   429→    }
+   430→
+   431→    // Wrap-time commit (v2 parity, hysteresis gated).
+   432→    inline void commitSpacing(VoiceState& v) {
+   433→        if (!have_estimate) return;
+   434→        if (std::abs(S_target / v.S - 1.0) > cfg.s_hysteresis) {
+   435→            v.S = S_target;
+   436→            ++v.commits;
+   437→        }
+   438→    }
+   439→
+   440→    // Unity-exit commit: refresh S while B's weight is ~0, preserving the
+   441→    // read point exactly (frac_new = frac*S_old/S_new in [0,1)).
+   442→    void exitCommitSpacing(VoiceState& v) {
+   443→        if (!have_estimate) return;
+   444→        if (std::abs(S_target / v.S - 1.0) <= cfg.s_hysteresis) return;
+   445→        const double frac_new = v.frac * v.S / S_target;
+   446→        if (frac_new >= 0.0 && frac_new < 1.0) {
+   447→            v.S = S_target;
+   448→            v.frac = frac_new;
+   449→            ++v.commits;
+   450→        }
+   451→        // else: keep S; the next natural wrap will commit it (v2 rule)
+   452→    }
+   453→
+   454→    // Park on the nearest integer delay inside [base, base+S).
+   455→    void parkVoice(VoiceState& v) {
+   456→        const double d = v.base_delay + v.frac * v.S;
+   457→        int d_int = static_cast<int>(std::floor(d + 0.5));
+   458→        const double lo = std::ceil(v.base_delay);
+   459→        const double hi = std::floor(v.base_delay + v.S) - 1.0;
+   460→        if (static_cast<double>(d_int) > hi) d_int = static_cast<int>(hi);
+   461→        if (static_cast<double>(d_int) < lo) d_int = static_cast<int>(lo);
+   462→        v.d_park = d_int;
+   463→    }
+   464→
+   465→    // -- per-sample voice processing -----------------------------------------
+   466→    // Returns this voice's output sample.
+   467→    inline double processVoiceSample(VoiceState& v) {
+   468→        // ratio glide (geometric, reference parity)
+   469→        v.ratio = v.ratio_t + (v.ratio - v.ratio_t) * Config::kGlideMult;
+   470→        const double r = v.ratio;
+   471→
+   472→        // grain phase ramp + wrap/commit (v2 parity)
+   473→        double frac = v.frac + (1.0 - r) / v.S;
+   474→        if (r > 1.0) {
+   475→            if (frac < 0.0) {
+   476→                const double S_old = v.S;
+   477→                commitSpacing(v);
+   478→                frac = (frac + 1.0) * S_old / v.S;
+   479→                while (frac >= 1.0) frac -= 1.0;
+   480→                ++v.wraps;
+   481→            }
+   482→        } else {
+   483→            if (frac >= 1.0) {
+   484→                const double S_old = v.S;
+   485→                commitSpacing(v);
+   486→                frac = (frac - 1.0) * S_old / v.S;
+   487→                while (frac < 0.0) frac += 1.0;
+   488→                ++v.wraps;
+   489→            }
+   490→        }
+   491→        v.frac = frac;
+   492→
+   493→        const double e = v.e;
+   494→        const double a = v.a;
+   495→
+   496→        if (e <= 0.0 && a >= 1.0) {
+   497→            // Fully parked: bit-exact single integer-tap read.
+   498→            return readRaw(v.d_park);
+   499→        }
+   500→
+   501→        const double d = v.base_delay + frac * v.S;
+   502→        const double A = readInterp(d);
+   503→
+   504→        double dual;
+   505→        if (e >= 1.0) {
+   506→            const double B = readInterp(d + v.S);
+   507→            const double w = 0.5 - 0.5 * std::cos(M_PI * frac);
+   508→            dual = w * A + (1.0 - w) * B;
+   509→        } else if (e <= 0.0) {
+   510→            dual = A;  // single-tap A (wA_eff = 1, wB_eff = 0)
+   511→        } else {
+   512→            const double B = readInterp(d + v.S);
+   513→            const double w = 0.5 - 0.5 * std::cos(M_PI * frac);
+   514→            const double wA = e * w + (1.0 - e);
+   515→            const double wB = e * (1.0 - w);
+   516→            dual = wA * A + wB * B;
+   517→        }
+   518→
+   519→        if (a > 0.0) {
+   520→            const double park = readInterp(static_cast<double>(v.d_park));
+   521→            return (1.0 - a) * dual + a * park;
+   522→        }
+   523→        return dual;
+   524→    }
+   525→
+   526→    // -- engagement slew ------------------------------------------------------
+   527→    inline void slewEngagement(VoiceState& v) {
+   528→        const bool unity = (v.ratio_t == 1.0);  // bit-exact double compare
+   529→        const double e_target = unity ? 0.0 : 1.0;
+   530→        // 'a' parks only once e has fully reached 0
+   531→        const double a_target = (unity && v.e <= 0.0) ? 1.0 : 0.0;
+   532→        if (v.e < e_target) v.e = std::min(e_target, v.e + e_step);
+   533→        else if (v.e > e_target) v.e = std::max(e_target, v.e - e_step);
+   534→        if (v.a < a_target) {
+   535→            if (v.a <= 0.0) parkVoice(v);  // (re)compute the parked delay
+   536→            v.a = std::min(a_target, v.a + e_step);
+   537→        } else if (v.a > a_target) {
+   538→            v.a = std::max(a_target, v.a - e_step);
+   539→        }
+   540→    }
+   541→
+   542→    // -- R15-P1: per-voice gain slew ------------------------------------------
+   543→    // Linear-in-amplitude ramp with EXACT snap: the step size was armed at
+   544→    // the block start (gain_rate = |target - start| / gain_ramp_n), so a
+   545→    // change of size D completes in exactly gain_ramp_seconds; the ramp
+   546→    // restarts from the current gain whenever the target changes (armed in
+   547→    // applyPendingSurface()). gain_rate <= 0 = snap (ramp length 0).
+   548→    inline void slewGain(VoiceState& v) {
+   549→        const double tgt = v.ramp_tgt;
+   550→        if (v.gain == tgt) return;
+   551→        if (!(v.gain_rate > 0.0)) {
+   552→            v.gain = tgt;  // exact snap
+   553→            return;
+   554→        }
+   555→        if (v.gain < tgt) v.gain = std::min(tgt, v.gain + v.gain_rate);
+   556→        else              v.gain = std::max(tgt, v.gain - v.gain_rate);
+   557→    }
+   558→
+   559→    // -- R15-P1: ratio re-target (shared by the three re-deriving entries) ---
+   560→    // Handles the unity-exit spacing commit while tap B carries ~0 weight.
+   561→    inline void retargetVoice(VoiceState& v, double new_t) {
+   562→        const bool was_unity = (v.ratio_t == 1.0);
+   563→        v.ratio_t = new_t;
+   564→        if (was_unity && new_t != 1.0) {
+   565→            // Unity exit: refresh the spacing (read point preserved).
+   566→            exitCommitSpacing(v);
+   567→        }
+   568→    }
+   569→
+   570→    // -- R15-P1: process() block-start stage ----------------------------------
+   571→    // (a) apply the pending per-voice base delays: ONLY voice v is
+   572→    //     re-aligned -- the fractional grain phase and tap spacing are
+   573→    //     preserved, so the read point translates by (new - old) base
+   574→    //     delay; a parked (or parking) voice re-parks on the nearest
+   575→    //     integer of its new range.
+   576→    // (b) (re)arm the gain ramps for voices whose EFFECTIVE target
+   577→    //     (mute ? 0 : user gain) changed since the last block -- the rate
+   578→    //     restarts from the current gain (|target - start| / ramp length).
+   579→    void applyPendingSurface() {
+   580→        for (VoiceState& v : vs) {
+   581→            if (v.base_pending) {
+   582→                v.base_pending = false;
+   583→                v.base_delay = v.base_delay_ov;  // validated at set time
+   584→                if (v.a > 0.0) parkVoice(v);      // parked/parking: re-park
+   585→            }
+   586→            const double tgt = v.mute ? 0.0 : v.gain_t;
+   587→            if (tgt != v.ramp_tgt) {
+   588→                v.ramp_tgt = tgt;
+   589→                v.gain_rate = (gain_ramp_n > 0.0)
+   590→                                  ? std::abs(tgt - v.gain) / gain_ramp_n
+   591→                                  : 0.0;
+   592→            }
+   593→        }
+   594→    }
+   595→
+   596→    // -- R15-P1: prepare() restores the fresh-engine surface defaults --------
+   597→    // (reset() deliberately does NOT call this: it preserves the overrides
+   598→    // and only snaps the ramps.)
+   599→    void resetParamSurface() {
+   600→        wet = 1.0;
+   601→        bypass_on = false;
+   602→        bypass_b = 0.0;
+   603→        for (VoiceState& v : vs) {
+   604→            v.ratio_override = false;
+   605→            v.ratio_ov = 1.0;
+   606→            v.gain_t = 1.0;
+   607→            v.gain = 1.0;
+   608→            v.ramp_tgt = 1.0;
+   609→            v.gain_rate = 0.0;
+   610→            v.mute = false;
+   611→            v.base_delay_ov = 0.0;
+   612→            v.base_pending = false;
+   613→        }
+   614→    }
+   615→};
+   616→
+   617→// ---------------------------------------------------------------------------
+   618→// AlignedDelayLine
+   619→// ---------------------------------------------------------------------------
+   620→AlignedDelayLine::AlignedDelayLine() = default;
+   621→AlignedDelayLine::~AlignedDelayLine() { delete impl_; }
+   622→
+   623→bool AlignedDelayLine::prepare(const Config& cfg) {
+   624→    // -- validation (NaN-safe forms; the new fields reject negatives exactly
+   625→    // like engagement_seconds, plus non-finite values) -----------------------
+   626→    auto fail = [this]() {
+   627→        delete impl_;
+   628→        impl_ = nullptr;
+   629→        ready_ = false;
+   630→        active_voices_ = 1;
+   631→        return false;
+   632→    };
+   633→    // sample_rate additionally bounded so the detector's int casts stay
+   634→    // defined (win <= ~2.5*sr/60 doubles; no real host exceeds 1 MHz).
+   635→    if (!(cfg.sample_rate > 0.0) || !std::isfinite(cfg.sample_rate) ||
+   636→        cfg.sample_rate > 1.0e6)
+   637→        return fail();
+   638→    if (cfg.max_voices < 1 || cfg.max_voices > 64) return fail();
+   639→    if (cfg.voices < 1 || cfg.voices > cfg.max_voices) return fail();
+   640→    if (!(cfg.grain > 0.0) || !std::isfinite(cfg.grain)) return fail();
+   641→    if (!(cfg.base_delay >= 8.0) || !std::isfinite(cfg.base_delay)) return fail();
+   642→    // Maximum read delay: B tap at d + S with d < base + 32*(mv-1) + S and
+   643→    // S <= 1.5*grain, plus 3 extra taps beyond the anchor -> require the whole
+   644→    // range to stay inside the 2^18 ring.
+   645→    if (!(cfg.base_delay + 32.0 * (cfg.max_voices - 1) + 3.0 * cfg.grain + 8.0 <
+   646→          static_cast<double>(Impl::kRingSize)))
+   647→        return fail();
+   648→    if (!(cfg.fmin > 0.0) || !(cfg.fmax > cfg.fmin)) return fail();
+   649→    if (!(cfg.s_hysteresis >= 0.0)) return fail();
+   650→    if (cfg.f0_history < 1 || cfg.f0_history > 64) return fail();
+   651→    if (cfg.detection_interval < 1) return fail();
+   652→    if (!(cfg.engagement_seconds >= 0.0)) return fail();
+   653→    if (!(cfg.gain_ramp_seconds >= 0.0) || !std::isfinite(cfg.gain_ramp_seconds))
+   654→        return fail();
+   655→    if (!(cfg.bypass_seconds >= 0.0) || !std::isfinite(cfg.bypass_seconds))
+   656→        return fail();
+   657→    if (!(cfg.feedback > -1.0 && cfg.feedback < 1.0)) return fail();
+   658→
+   659→    // -- R13-c in-place re-prepare: matching buffer-determining fields reuse
+   660→    // the existing allocations (zero allocations, zero locks, identical
+   661→    // result to a fresh engine; param-only fields are picked up here) -------
+   662→    if (impl_ && ready_ &&
+   663→        impl_->cfg.sample_rate == cfg.sample_rate &&
+   664→        impl_->cfg.max_voices == cfg.max_voices &&
+   665→        impl_->cfg.f0_history == cfg.f0_history &&
+   666→        impl_->cfg.detection_interval == cfg.detection_interval) {
+   667→        Impl& m = *impl_;
+   668→        m.cfg = cfg;
+   669→        m.e_step = cfg.engagement_seconds > 0.0
+   670→                       ? 1.0 / (cfg.engagement_seconds * cfg.sample_rate)
+   671→                       : 1.0;
+   672→        m.gain_ramp_n = cfg.gain_ramp_seconds * cfg.sample_rate;
+   673→        m.b_step = cfg.bypass_seconds > 0.0
+   674→                       ? 1.0 / (cfg.bypass_seconds * cfg.sample_rate)
+   675→                       : 1.0;
+   676→        m.dry_delay = static_cast<int>(cfg.base_delay + cfg.grain * 0.5);
+   677→        m.det.configure(static_cast<int>(cfg.sample_rate));  // same sizes: no realloc
+   678→        m.resetParamSurface();  // prepare = fresh-engine defaults
+   679→        cfg_ = cfg;
+   680→        active_voices_ = cfg.voices;
+   681→        ready_ = true;
+   682→        reset();  // allocation-free
+   683→        return true;
+   684→    }
+   685→
+   686→    // -- allocate-and-rebuild path (mismatched buffer-determining fields) ----
+   687→    delete impl_;
+   688→    impl_ = nullptr;
+   689→    ready_ = false;
+   690→    try {
+   691→        impl_ = new Impl();
+   692→        impl_->cfg = cfg;
+   693→        impl_->ring.assign(Impl::kRingSize, 0.0);
+   694→        impl_->dry_ring.assign(Impl::kRingSize, 0.0);
+   695→        impl_->vs.resize(cfg.max_voices);
+   696→        impl_->f0_hist.assign(cfg.f0_history, 0.0);
+   697→        impl_->med_scratch.assign(cfg.f0_history, 0.0);
+   698→        impl_->det_pending.assign(cfg.detection_interval, 0.0f);
+   699→        impl_->det_n = 0;
+   700→        impl_->det.configure(static_cast<int>(cfg.sample_rate));
+   701→        impl_->e_step = cfg.engagement_seconds > 0.0
+   702→                            ? 1.0 / (cfg.engagement_seconds * cfg.sample_rate)
+   703→                            : 1.0;
+   704→        impl_->gain_ramp_n = cfg.gain_ramp_seconds * cfg.sample_rate;
+   705→        impl_->b_step = cfg.bypass_seconds > 0.0
+   706→                            ? 1.0 / (cfg.bypass_seconds * cfg.sample_rate)
+   707→                            : 1.0;
+   708→        impl_->dry_delay = static_cast<int>(cfg.base_delay + cfg.grain * 0.5);
+   709→    } catch (...) {
+   710→        delete impl_;
+   711→        impl_ = nullptr;
+   712→        return false;  // allocation failure: engine unusable, no exception
+   713→    }
+   714→    cfg_ = cfg;
+   715→    active_voices_ = cfg.voices;
+   716→    ready_ = true;
+   717→    impl_->resetParamSurface();
+   718→    reset();
+   719→    return true;
+   720→}
+   721→
+   722→void AlignedDelayLine::reset() {
+   723→    if (!impl_) return;
+   724→    Impl& m = *impl_;
+   725→    std::fill(m.ring.begin(), m.ring.end(), 0.0);
+   726→    std::fill(m.dry_ring.begin(), m.dry_ring.end(), 0.0);
+   727→    m.w = 0;
+   728→    m.w_dry = 0;
+   729→    m.det.reset();
+   730→    const double st = (m.cfg.ratio > 0.0) ? 12.0 * std::log2(m.cfg.ratio) : 0.0;
+   731→    for (int i = 0; i < m.cfg.max_voices; ++i) {
+   732→        VoiceState& v = m.vs[i];
+   733→        // Per-voice ratio target: a live override SURVIVES reset() (header
+   734→        // law); otherwise the target is re-derived from (ratio, spread).
+   735→        if (v.ratio_override && v.ratio_ov > 0.0) {
+   736→            v.ratio_t = v.ratio_ov;
+   737→        } else {
+   738→            const double off = (m.cfg.spread && i < 8) ? kSpreadSemitones[i] : 0.0;
+   739→            v.ratio_t = std::pow(2.0, (st + off) / 12.0);
+   740→        }
+   741→        v.ratio = v.ratio_t;  // cold-start law: gliding ratio AT its target
+   742→        // Base delay: a live override (incl. a pending one) SURVIVES reset().
+   743→        if (v.base_delay_ov > 0.0) {
+   744→            v.base_delay = v.base_delay_ov;
+   745→        } else {
+   746→            v.base_delay = m.cfg.base_delay + 32.0 * i;
+   747→        }
+   748→        v.base_pending = false;  // folded in above
+   749→        v.frac = 0.5;            // cold-start law: grain phase 0.5
+   750→        v.S = m.cfg.grain;
+   751→        v.wraps = 0;
+   752→        v.commits = 0;
+   753→        // Unity engagement: start parked if this voice is at exact unity.
+   754→        if (v.ratio_t == 1.0) {
+   755→            v.e = 0.0;
+   756→            v.a = 1.0;
+   757→            m.parkVoice(v);
+   758→        } else {
+   759→            v.e = 1.0;  // cold-start law: shifted starts fully engaged
+   760→            v.a = 0.0;
+   761→            v.d_park = -1;
+   762→        }
+   763→        // Gain surface: preserved, RAMP SNAPPED to the effective target
+   764→        // (mute ? 0 : user gain) -- reset() is allocation-free.
+   765→        const double tgt = v.mute ? 0.0 : v.gain_t;
+   766→        v.gain = tgt;
+   767→        v.ramp_tgt = tgt;
+   768→        v.gain_rate = 0.0;
+   769→    }
+   770→    std::fill(m.f0_hist.begin(), m.f0_hist.end(), 0.0);
+   771→    m.f0_hist_n = 0;
+   772→    m.f0_hist_i = 0;
+   773→    m.have_estimate = false;
+   774→    m.S_target = m.cfg.grain;
+   775→    m.fb_state = 0.0;
+   776→    m.norm = 1.0 / active_voices_;
+   777→    m.norm_target = m.norm;
+   778→    m.det_n = 0;
+   779→    m.last_f0 = 0.0;
+   780→    m.bypass_b = m.bypass_on ? 1.0 : 0.0;  // bypass blend snapped (no ramp)
+   781→}
+   782→
+   783→void AlignedDelayLine::setRatio(double ratio) {
+   784→    if (!impl_ || !(ratio > 0.0)) return;
+   785→    Impl& m = *impl_;
+   786→    const double st = 12.0 * std::log2(ratio);
+   787→    for (int i = 0; i < m.cfg.max_voices; ++i) {
+   788→        VoiceState& v = m.vs[i];
+   789→        v.ratio_override = false;  // re-derivation clears every override
+   790→        const double off = (m.cfg.spread && i < 8) ? kSpreadSemitones[i] : 0.0;
+   791→        m.retargetVoice(v, std::pow(2.0, (st + off) / 12.0));
+   792→    }
+   793→    m.cfg.ratio = ratio;
+   794→    cfg_.ratio = ratio;
+   795→}
+   796→
+   797→void AlignedDelayLine::setVoices(int n) {
+   798→    if (!impl_) return;
+   799→    if (n < 1 || n > impl_->cfg.max_voices) return;
+   800→    active_voices_ = n;
+   801→    impl_->norm_target = 1.0 / n;
+   802→}
+   803→
+   804→void AlignedDelayLine::setSpread(bool on) {
+   805→    if (!impl_) return;
+   806→    Impl& m = *impl_;
+   807→    m.cfg.spread = on;
+   808→    cfg_.spread = on;
+   809→    // Re-derive voice targets from the current ratio (audio-thread update);
+   810→    // like setRatio(), this CLEARS every per-voice ratio override.
+   811→    const double st = 12.0 * std::log2(m.cfg.ratio > 0.0 ? m.cfg.ratio : 1.0);
+   812→    for (int i = 0; i < m.cfg.max_voices; ++i) {
+   813→        VoiceState& v = m.vs[i];
+   814→        v.ratio_override = false;  // re-derivation clears every override
+   815→        const double off = (on && i < 8) ? kSpreadSemitones[i] : 0.0;
+   816→        m.retargetVoice(v, std::pow(2.0, (st + off) / 12.0));
+   817→    }
+   818→}
+   819→
+   820→void AlignedDelayLine::setFeedback(double fb) {
+   821→    if (!impl_) return;
+   822→    impl_->cfg.feedback = std::min(0.999999, std::max(-0.999999, fb));
+   823→    cfg_.feedback = impl_->cfg.feedback;
+   824→}
+   825→
+   826→// -- round-15 P1 parameter surface -------------------------------------------
+   827→void AlignedDelayLine::setVoiceRatio(int v_i, double ratio) {
+   828→    if (!impl_ || v_i < 0 || v_i >= impl_->cfg.max_voices) return;
+   829→    if (!std::isfinite(ratio) || !(ratio > 0.0)) return;  // no-op on invalid
+   830→    VoiceState& v = impl_->vs[v_i];
+   831→    v.ratio_override = true;
+   832→    v.ratio_ov = ratio;
+   833→    // The geometric glide applies per voice exactly as for the global
+   834→    // ratio (no special-casing); a target of exactly 1.0 engages this
+   835→    // voice's unity parking via the existing engagement machinery.
+   836→    impl_->retargetVoice(v, ratio);
+   837→}
+   838→
+   839→void AlignedDelayLine::setVoiceGain(int v_i, double gain) {
+   840→    if (!impl_ || v_i < 0 || v_i >= impl_->cfg.max_voices) return;
+   841→    if (!std::isfinite(gain) || gain < 0.0) return;  // no-op on invalid
+   842→    impl_->vs[v_i].gain_t = gain;
+   843→    // The ramp (re)arms at the next process() block start.
+   844→}
+   845→
+   846→void AlignedDelayLine::setVoiceMute(int v_i, bool mute) {
+   847→    if (!impl_ || v_i < 0 || v_i >= impl_->cfg.max_voices) return;
+   848→    impl_->vs[v_i].mute = mute;
+   849→    // Forces the EFFECTIVE gain target to 0 through the SAME ramp
+   850→    // (unmute ramps back to the user gain); armed at the block start.
+   851→}
+   852→
+   853→void AlignedDelayLine::setVoiceBaseDelay(int v_i, double delay) {
+   854→    if (!impl_ || v_i < 0 || v_i >= impl_->cfg.max_voices) return;
+   855→    if (!std::isfinite(delay) || !(delay > 0.0)) return;  // no-op on invalid
+   856→    // The voice's whole read range (B tap at d + S, S <= 1.5*grain, plus
+   857→    // the 6-tap kernel margin) must stay inside the 2^18 ring -- the same
+   858→    // law prepare() applies to the last voice's base delay.
+   859→    if (!(delay + 3.0 * impl_->cfg.grain + 8.0 <
+   860→          static_cast<double>(Impl::kRingSize)))
+   861→        return;
+   862→    VoiceState& v = impl_->vs[v_i];
+   863→    v.base_delay_ov = delay;
+   864→    v.base_pending = true;  // applied at the START of the next process()
+   865→}
+   866→
+   867→void AlignedDelayLine::setWetDry(double wet) {
+   868→    if (!impl_ || std::isnan(wet)) return;  // non-numbers: no-op
+   869→    // Clamped to [0, 1] per the header contract (the mix law is linear in
+   870→    // amplitude; endpoints are the bit-exact legacy / dry-copy paths).
+   871→    impl_->wet = std::min(1.0, std::max(0.0, wet));
+   872→}
+   873→
+   874→void AlignedDelayLine::setBypass(bool on) {
+   875→    if (!impl_) return;
+   876→    impl_->bypass_on = on;
+   877→    // The blend ramps inside process() over bypass_seconds, in BOTH
+   878→    // directions; the engine keeps processing while bypassed.
+   879→}
+   880→
+   881→int AlignedDelayLine::latencySamples() const {
+   882→    if (!impl_) return 0;
+   883→    return static_cast<int>(impl_->cfg.base_delay + impl_->cfg.grain * 0.5);
+   884→}
+   885→
+   886→void AlignedDelayLine::process(const float* in, float* out, int n) {
+   887→    if (!impl_ || n <= 0) return;
+   888→    Impl& m = *impl_;
+   889→
+   890→    // -- block-start parameter pickup (block-boundary application) ----------
+   891→    // Pending per-voice base delays + gain-ramp (re)arming. All setters
+   892→    // called since the last process() take effect HERE, atomically.
+   893→    m.applyPendingSurface();
+   894→
+   895→    const bool fb_on = (m.cfg.feedback != 0.0);
+   896→    const double fb = m.cfg.feedback;
+   897→    const int nv = active_voices_;
+   898→    const int interval = m.cfg.detection_interval;
+   899→    const double b_tgt = m.bypass_on ? 1.0 : 0.0;
+   900→
+   901→    for (int k = 0; k < n; ++k) {
+   902→        // Control rate, stream-aligned: accumulate the RAW input (pre-feedback,
+   903→        // as the Python pushes xb = x) and fire push+estimate when the interval
+   904→        // boundary is crossed. The estimate applies from the boundary sample
+   905→        // onward. NOTE (documented delta): the Python reference estimates with
+   906→        // the full 64-sample block in the window BEFORE processing that block,
+   907→        // which is impossible in a streaming API that writes every output on
+   908→        // arrival; with 64-sample-aligned calls the native control timing
+   909→        // lags the Python's by at most one interval.
+   910→        m.det_pending[m.det_n++] = in[k];
+   911→        if (m.det_n >= interval) {
+   912→            m.det.pushBlock(m.det_pending.data(), m.det_n);
+   913→            m.det_n = 0;
+   914→            m.last_f0 = m.det.estimate();
+   915→            m.updateSpacingTarget(m.last_f0);
+   916→        }
+   917→
+   918→        const double xin = static_cast<double>(in[k]) + (fb_on ? fb * m.fb_state : 0.0);
+   919→        m.push(xin);
+   920→        // Raw input (never feedback) into the dry ring -- the dry tap is the
+   921→        // latency-aligned bit-exact copy; at wet == 1 && !bypass it is never
+   922→        // read (the legacy path below).
+   923→        m.pushDry(static_cast<double>(in[k]));
+   924→
+   925→        double acc = 0.0;
+   926→        for (int i = 0; i < nv; ++i) {
+   927→            VoiceState& v = m.vs[i];
+   928→            m.slewEngagement(v);  // engagement/parking slews (per sample)
+   929→            m.slewGain(v);        // R15-P1: per-voice gain ramp
+   930→            // The per-voice gain multiplies AFTER the voice-count
+   931→            // normalisation (final voice gain = norm * user gain; gain == 1
+   932→            // is bit-neutral: x*1.0 == x). A voice whose ramped gain is
+   933→            // exactly 0 contributes exactly nothing -- its sample is not
+   934→            // even added -- while its DSP state keeps running (the
+   935→            // processVoiceSample call below advances phase/glide/spacing).
+   936→            if (v.gain != 0.0) {
+   937→                acc += m.processVoiceSample(v) * v.gain;
+   938→            } else {
+   939→                (void)m.processVoiceSample(v);
+   940→            }
+   941→        }
+   942→        // voice-count normalisation (ramped)
+   943→        if (m.norm != m.norm_target) {
+   944→            const double step = m.e_step;
+   945→            if (m.norm < m.norm_target)
+   946→                m.norm = std::min(m.norm_target, m.norm + step);
+   947→            else
+   948→                m.norm = std::max(m.norm_target, m.norm - step);
+   949→        }
+   950→        // y = the PRE-MIX WET signal. The global feedback taps it HERE
+   951→        // (wet-path-only): the wet path's state evolves identically at every
+   952→        // mix/bypass setting, and the dry path never carries feedback.
+   953→        const double y = acc * m.norm;
+   954→        m.fb_state = fb_on ? y : 0.0;
+   955→
+   956→        // bypass blend slew (fixed slope, full range = exactly
+   957→        // bypass_seconds, exact snap; only touches the final output sample)
+   958→        if (m.bypass_b != b_tgt) {
+   959→            if (m.bypass_b < b_tgt)
+   960→                m.bypass_b = std::min(b_tgt, m.bypass_b + m.b_step);
+   961→            else
+   962→                m.bypass_b = std::max(b_tgt, m.bypass_b - m.b_step);
+   963→        }
+   964→
+   965→        // -- output stage -----------------------------------------------------
+   966→        double o;
+   967→        if (m.wet == 1.0 && m.bypass_b == 0.0) {
+   968→            // BIT-EXACT legacy path (the 12.0.0/14.0.0 output): no dry read
+   969→            // happens, the sample is exactly the pre-mix wet signal.
+   970→            o = y;
+   971→        } else {
+   972→            // dry = the RAW input delayed to align with the wet path's
+   973→            // intrinsic latency: dry[k] = in[k - (latencySamples() - 1)]
+   974→            // (read(d) = sample d-1 ago), a bit-exact masked integer read.
+   975→            const double dry = m.readDry(m.dry_delay);
+   976→            const double mix = (m.wet == 1.0) ? y
+   977→                             : (m.wet == 0.0) ? dry
+   978→                                              : m.wet * y + (1.0 - m.wet) * dry;
+   979→            if (m.bypass_b == 0.0) {
+   980→                o = mix;
+   981→            } else if (m.bypass_b == 1.0) {
+   982→                o = dry;  // fully bypassed: the dry delayed signal
+   983→            } else {
+   984→                o = (1.0 - m.bypass_b) * mix + m.bypass_b * dry;
+   985→            }
+   986→        }
+   987→        out[k] = static_cast<float>(o);
+   988→    }
+   989→}
+   990→
+   991→const VoiceStats& AlignedDelayLine::voiceStats(int v) const {
+   992→    static VoiceStats empty;
+   993→    if (!impl_ || v < 0 || v >= impl_->cfg.max_voices) return empty;
+   994→    const VoiceState& s = impl_->vs[v];
+   995→    static thread_local VoiceStats out;  // diagnostics scratch (copy if kept)
+   996→    out.wraps = s.wraps;
+   997→    out.commits = s.commits;
+   998→    out.engaged = (s.e >= 1.0) ? 1 : 0;
+   999→    out.parked = (s.e <= 0.0 && s.a >= 1.0) ? 1 : 0;
+  1000→    out.spacing = s.S;
+  1001→    out.phase = s.frac;
+  1002→    out.parked_delay = out.parked ? s.d_park : -1;
+  1003→    out.ratio = s.ratio;  // R14: current gliding ratio (diagnostics)
+  1004→    return out;
+  1005→}
+  1006→
+  1007→// ---------------------------------------------------------------------------
+  1008→// MultichannelShifter
+  1009→// ---------------------------------------------------------------------------
+  1010→struct MultichannelShifter::MImpl {
+  1011→    std::vector<AlignedDelayLine*> engines;
+  1012→    Config cfg{};
+  1013→    int channels = 0;
+  1014→};
+  1015→
+  1016→MultichannelShifter::MultichannelShifter() = default;
+  1017→MultichannelShifter::~MultichannelShifter() {
+  1018→    if (mimpl_) {
+  1019→        for (auto* e : mimpl_->engines) delete e;
+  1020→        delete mimpl_;
+  1021→    }
+  1022→}
+  1023→
+  1024→bool MultichannelShifter::prepare(const Config& cfg, int channels) {
+  1025→    if (channels < 1 || channels > 64) return false;
+  1026→    // R13-c in-place re-prepare: same channel count -> every engine
+  1027→    // reconfigures itself (zero allocation when its buffer-determining
+  1028→    // fields match; the engine array and channel isolation are reused).
+  1029→    if (mimpl_ && mimpl_->channels == channels &&
+  1030→        static_cast<int>(mimpl_->engines.size()) == channels) {
+  1031→        for (auto* e : mimpl_->engines) {
+  1032→            if (!e->prepare(cfg)) {
+  1033→                for (auto* x : mimpl_->engines) delete x;
+  1034→                delete mimpl_;
+  1035→                mimpl_ = nullptr;
+  1036→                return false;
+  1037→            }
+  1038→        }
+  1039→        mimpl_->cfg = cfg;
+  1040→        return true;
+  1041→    }
+  1042→    if (mimpl_) {
+  1043→        for (auto* e : mimpl_->engines) delete e;
+  1044→        delete mimpl_;
+  1045→        mimpl_ = nullptr;
+  1046→    }
+  1047→    try {
+  1048→        mimpl_ = new MImpl();
+  1049→        mimpl_->cfg = cfg;
+  1050→        mimpl_->channels = channels;
+  1051→        for (int c = 0; c < channels; ++c) {
+  1052→            auto* e = new AlignedDelayLine();
+  1053→            if (!e->prepare(cfg)) {
+  1054→                delete e;
+  1055→                for (auto* x : mimpl_->engines) delete x;
+  1056→                delete mimpl_;
+  1057→                mimpl_ = nullptr;
+  1058→                return false;
+  1059→            }
+  1060→            mimpl_->engines.push_back(e);
+  1061→        }
+  1062→    } catch (...) {
+  1063→        if (mimpl_) {
+  1064→            for (auto* e : mimpl_->engines) delete e;
+  1065→            delete mimpl_;
+  1066→            mimpl_ = nullptr;
+  1067→        }
+  1068→        return false;  // allocation failure: unusable, no exception escapes
+  1069→    }
+  1070→    return true;
+  1071→}
+  1072→
+  1073→void MultichannelShifter::reset() {
+  1074→    if (!mimpl_) return;
+  1075→    for (auto* e : mimpl_->engines) e->reset();
+  1076→}
+  1077→
+  1078→void MultichannelShifter::setRatio(double r) {
+  1079→    if (!mimpl_) return;
+  1080→    for (auto* e : mimpl_->engines) e->setRatio(r);
+  1081→}
+  1082→void MultichannelShifter::setVoices(int n) {
+  1083→    if (!mimpl_) return;
+  1084→    for (auto* e : mimpl_->engines) e->setVoices(n);
+  1085→}
+  1086→void MultichannelShifter::setSpread(bool on) {
+  1087→    if (!mimpl_) return;
+  1088→    for (auto* e : mimpl_->engines) e->setSpread(on);
+  1089→}
+  1090→void MultichannelShifter::setFeedback(double fb) {
+  1091→    if (!mimpl_) return;
+  1092→    for (auto* e : mimpl_->engines) e->setFeedback(fb);
+  1093→}
+  1094→
+  1095→// -- round-15 P1 surface: broadcast to every channel engine ------------------
+  1096→void MultichannelShifter::setVoiceRatio(int v, double ratio) {
+  1097→    if (!mimpl_) return;
+  1098→    for (auto* e : mimpl_->engines) e->setVoiceRatio(v, ratio);
+  1099→}
+  1100→void MultichannelShifter::setVoiceGain(int v, double gain) {
+  1101→    if (!mimpl_) return;
+  1102→    for (auto* e : mimpl_->engines) e->setVoiceGain(v, gain);
+  1103→}
+  1104→void MultichannelShifter::setVoiceMute(int v, bool mute) {
+  1105→    if (!mimpl_) return;
+  1106→    for (auto* e : mimpl_->engines) e->setVoiceMute(v, mute);
+  1107→}
+  1108→void MultichannelShifter::setVoiceBaseDelay(int v, double delay) {
+  1109→    if (!mimpl_) return;
+  1110→    for (auto* e : mimpl_->engines) e->setVoiceBaseDelay(v, delay);
+  1111→}
+  1112→void MultichannelShifter::setWetDry(double wet) {
+  1113→    if (!mimpl_) return;
+  1114→    for (auto* e : mimpl_->engines) e->setWetDry(wet);
+  1115→}
+  1116→void MultichannelShifter::setBypass(bool on) {
+  1117→    if (!mimpl_) return;
+  1118→    for (auto* e : mimpl_->engines) e->setBypass(on);
+  1119→}
+  1120→
+  1121→bool MultichannelShifter::ready() const { return mimpl_ != nullptr; }
+  1122→int MultichannelShifter::channels() const { return mimpl_ ? mimpl_->channels : 0; }
+  1123→int MultichannelShifter::latencySamples() const {
+  1124→    return mimpl_ && !mimpl_->engines.empty() ? mimpl_->engines[0]->latencySamples() : 0;
+  1125→}
+  1126→
+  1127→void MultichannelShifter::process(const float* const* in, float* const* out,
+  1128→                                  int channels, int n) {
+  1129→    if (!mimpl_ || channels != mimpl_->channels) return;
+  1130→    for (int c = 0; c < channels; ++c) {
+  1131→        mimpl_->engines[c]->process(in[c], out[c], n);
+  1132→    }
+  1133→}
+  1134→
+  1135→const VoiceStats& MultichannelShifter::voiceStats(int channel, int voice) const {
+  1136→    static VoiceStats empty;
+  1137→    if (!mimpl_ || channel < 0 || channel >= mimpl_->channels) return empty;
+  1138→    return mimpl_->engines[channel]->voiceStats(voice);
+  1139→}
+  1140→
+  1141→double AlignedDelayLine::lastEstimateHz() const {
+  1142→    return impl_ ? impl_->last_f0 : 0.0;
+  1143→}
+  1144→
+  1145→const char* versionString() { return "octavox-native 15.0.0"; }
+  1146→
+  1147→}  // namespace octavox
+  1148→

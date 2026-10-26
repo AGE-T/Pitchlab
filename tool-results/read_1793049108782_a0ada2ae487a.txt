@@ -1,0 +1,716 @@
+     1→     1→// OCTAVOX round 12 -- independent native DSP core (implementation)
+     2→     2→// See include/octavox/dsp.hpp for provenance, architecture and the unity
+     3→     3→// behaviour note. All code here is our own.
+     4→     4→
+     5→     5→#include "octavox/dsp.hpp"
+     6→     6→
+     7→     7→#include <algorithm>
+     8→     8→#include <cmath>
+     9→     9→#include <cstring>
+    10→    10→#include <new>
+    11→    11→#include <vector>
+    12→    12→
+    13→    13→#include "obs_kernel_table.h"  // OBS data table (see header comment)
+    14→    14→
+    15→    15→#ifndef M_PI
+    16→    16→#define M_PI 3.14159265358979323846
+    17→    17→#endif
+    18→    18→
+    19→    19→namespace octavox {
+    20→    20→namespace {
+    21→    21→
+    22→    22→// ---------------------------------------------------------------------------
+    23→    23→// Musical spread table (reference parity: poc/octavox_offline.py)
+    24→    24→// ---------------------------------------------------------------------------
+    25→    25→constexpr double kSpreadSemitones[8] = {0.0, 7.0, 4.0, 12.0, -5.0, -12.0, 3.0, -3.0};
+    26→    26→
+    27→    27→// ---------------------------------------------------------------------------
+    28→    28→// Interpolator tables (built once, shared, immutable)
+    29→    29→// ---------------------------------------------------------------------------
+    30→    30→constexpr int kLag6Taps = 6;
+    31→    31→
+    32→    32→// 6-point Lagrange weights for phase mu, nodes -2,-1,0,1,2,3 (our own design;
+    33→    33→// same formula as the Python reference).
+    34→    34→void lagrange6Weights(double mu, double* w) {
+    35→    35→    static const double xs[6] = {-2.0, -1.0, 0.0, 1.0, 2.0, 3.0};
+    36→    36→    for (int i = 0; i < 6; ++i) {
+    37→    37→        double v = 1.0;
+    38→    38→        for (int j = 0; j < 6; ++j) {
+    39→    39→            if (i != j) v *= (mu - xs[j]) / (xs[i] - xs[j]);
+    40→    40→        }
+    41→    41→        w[i] = v;
+    42→    42→    }
+    43→    43→}
+    44→    44→
+    45→    45→struct InterpTables {
+    46→    46→    double lag2048[2048][6];
+    47→    47→    double lag256[256][6];
+    48→    48→
+    49→    49→    InterpTables() {
+    50→    50→        double w[6];
+    51→    51→        for (int r = 0; r < 2048; ++r) {
+    52→    52→            lagrange6Weights((r + 0.5) / 2048.0, w);  // bin centres (Python parity)
+    53→    53→            for (int k = 0; k < 6; ++k) lag2048[r][k] = w[k];
+    54→    54→        }
+    55→    55→        for (int r = 0; r < 256; ++r) {
+    56→    56→            lagrange6Weights((r + 0.5) / 256.0, w);
+    57→    57→            for (int k = 0; k < 6; ++k) lag256[r][k] = w[k];
+    58→    58→        }
+    59→    59→    }
+    60→    60→};
+    61→    61→
+    62→    62→const InterpTables& interpTables() {
+    63→    63→    static const InterpTables t;  // thread-safe magic static
+    64→    64→    return t;
+    65→    65→}
+    66→    66→
+    67→    67→// ---------------------------------------------------------------------------
+    68→    68→// YIN-style pitch detector (port of poc/octavox_poc.py PitchDetector)
+    69→    69→// Window 2048, fmin 60, fmax 1200 (the v2 engine's detector defaults); the
+    70→    70→// spacing gate in the engine uses the Config fmin/fmax (55/1200) exactly as
+    71→    71→// the Python does.
+    72→    72→// ---------------------------------------------------------------------------
+    73→    73→class PitchDetector {
+    74→    74→public:
+    75→    75→    static constexpr int kWin = 2048;
+    76→    76→
+    77→    77→    void configure(int sr) {
+    78→    78→        sr_ = sr;
+    79→    79→        tau_min_ = std::max(2, static_cast<int>(sr_ / 1200.0));
+    80→    80→        tau_max_ = std::min(kWin - 2, static_cast<int>(sr_ / 60.0));
+    81→    81→        buf_.assign(kWin, 0.0);
+    82→    82→        d_.assign(std::max(0, tau_max_ - tau_min_), 0.0);
+    83→    83→        cmnd_.assign(d_.size(), 0.0);
+    84→    84→        last_f0_ = 0.0;
+    85→    85→    }
+    86→    86→
+    87→    87→    void reset() {
+    88→    88→        std::fill(buf_.begin(), buf_.end(), 0.0);
+    89→    89→        last_f0_ = 0.0;
+    90→    90→    }
+    91→    91→
+    92→    92→    // Push a block into the sliding window (Python push_block semantics).
+    93→    93→    void pushBlock(const float* x, int n) {
+    94→    94→        if (n >= kWin) {
+    95→    95→            std::copy(x + n - kWin, x + n, buf_.begin());
+    96→    96→            return;
+    97→    97→        }
+    98→    98→        // roll left by n, append
+    99→    99→        std::copy(buf_.begin() + n, buf_.end(), buf_.begin());
+   100→   100→        for (int i = 0; i < n; ++i) buf_[kWin - n + i] = static_cast<double>(x[i]);
+   101→   101→    }
+   102→   102→
+   103→   103→    double estimate() {
+   104→   104→        const std::vector<double>& x = buf_;
+   105→   105→        double peak = 0.0;
+   106→   106→        for (int i = 0; i < kWin; ++i) peak = std::max(peak, std::abs(x[i]));
+   107→   107→        if (peak < 1e-6) {
+   108→   108→            last_f0_ = 0.0;
+   109→   109→            return 0.0;
+   110→   110→        }
+   111→   111→        if (tau_max_ <= tau_min_) {
+   112→   112→            last_f0_ = 0.0;
+   113→   113→            return 0.0;
+   114→   114→        }
+   115→   115→        // seg = second half of the window; m = len(seg) - tau_max
+   116→   116→        const int seg0 = kWin / 2;
+   117→   117→        const int m = (kWin - seg0) - tau_max_;
+   118→   118→        if (m < 32) {
+   119→   119→            last_f0_ = 0.0;
+   120→   120→            return 0.0;
+   121→   121→        }
+   122→   122→        const int ntau = tau_max_ - tau_min_;
+   123→   123→        for (int i = 0; i < ntau; ++i) {
+   124→   124→            const int tau = tau_min_ + i;
+   125→   125→            double s = 0.0;
+   126→   126→            for (int j = 0; j < m; ++j) {
+   127→   127→                const double a = x[seg0 + j] - x[seg0 + tau + j];
+   128→   128→                s += a * a;
+   129→   129→            }
+   130→   130→            d_[i] = s;
+   131→   131→        }
+   132→   132→        // cumulative mean normalisation
+   133→   133→        double run = 0.0;
+   134→   134→        for (int i = 0; i < ntau; ++i) {
+   135→   135→            run += d_[i];
+   136→   136→            cmnd_[i] = (run > 0.0) ? d_[i] * static_cast<double>(i + 1) / run : 1.0;
+   137→   137→        }
+   138→   138→        // first minimum below threshold
+   139→   139→        int idx = -1;
+   140→   140→        const double thr = 0.20;
+   141→   141→        for (int i = 1; i < ntau - 1; ++i) {
+   142→   142→            if (cmnd_[i] < thr && cmnd_[i] <= cmnd_[i - 1] && cmnd_[i] <= cmnd_[i + 1]) {
+   143→   143→                idx = i;
+   144→   144→                break;
+   145→   145→            }
+   146→   146→        }
+   147→   147→        if (idx < 0) {
+   148→   148→            // argmin
+   149→   149→            idx = 0;
+   150→   150→            for (int i = 1; i < ntau; ++i)
+   151→   151→                if (cmnd_[i] < cmnd_[idx]) idx = i;
+   152→   152→        }
+   153→   153→        double tau = static_cast<double>(tau_min_ + idx);
+   154→   154→        // parabolic refinement
+   155→   155→        if (idx > 0 && idx < ntau - 1) {
+   156→   156→            const double y0 = cmnd_[idx - 1], y1 = cmnd_[idx], y2 = cmnd_[idx + 1];
+   157→   157→            const double den = y0 - 2.0 * y1 + y2;
+   158→   158→            if (std::abs(den) > 1e-15) tau += 0.5 * (y0 - y2) / den;
+   159→   159→        }
+   160→   160→        double f0 = static_cast<double>(sr_) / tau;
+   161→   161→        if (!(60.0 <= f0 && f0 <= 1200.0)) f0 = 0.0;
+   162→   162→        last_f0_ = f0;
+   163→   163→        return f0;
+   164→   164→    }
+   165→   165→
+   166→   166→    double lastF0() const { return last_f0_; }
+   167→   167→
+   168→   168→private:
+   169→   169→    int sr_ = 48000;
+   170→   170→    int tau_min_ = 2, tau_max_ = 800;
+   171→   171→    std::vector<double> buf_, d_, cmnd_;
+   172→   172→    double last_f0_ = 0.0;
+   173→   173→};
+   174→   174→
+   175→   175→// ---------------------------------------------------------------------------
+   176→   176→// Per-voice state
+   177→   177→// ---------------------------------------------------------------------------
+   178→   178→struct VoiceState {
+   179→   179→    double ratio_t = 1.0;   // target ratio (2^(st/12))
+   180→   180→    double ratio = 1.0;     // gliding ratio
+   181→   181→    double base_delay = 256.0;
+   182→   182→    double frac = 0.5;      // grain phase [0,1)
+   183→   183→    double S = 4096.0;      // current tap spacing
+   184→   184→    // unity engagement
+   185→   185→    double e = 1.0;         // 1 = dual-tap, 0 = single-tap A
+   186→   186→    double a = 0.0;         // parking blend: 1 = parked integer read
+   187→   187→    int d_park = -1;        // parked integer delay
+   188→   188→    // diagnostics
+   189→   189→    long wraps = 0;
+   190→   190→    long commits = 0;
+   191→   191→};
+   192→   192→
+   193→   193→}  // namespace
+   194→   194→
+   195→   195→// ---------------------------------------------------------------------------
+   196→   196→// AlignedDelayLine::Impl
+   197→   197→// ---------------------------------------------------------------------------
+   198→   198→struct AlignedDelayLine::Impl {
+   199→   199→    static constexpr int kRingBits = 18;
+   200→   200→    static constexpr int kRingSize = 1 << kRingBits;  // 262144
+   201→   201→    static constexpr int kRingMask = kRingSize - 1;
+   202→   202→
+   203→   203→    std::vector<double> ring;        // age-indexed delay line
+   204→   204→    int w = 0;                       // newest sample index
+   205→   205→    PitchDetector det;
+   206→   206→    std::vector<VoiceState> vs;      // [max_voices]
+   207→   207→    std::vector<double> f0_hist;     // circular, size f0_history
+   208→   208→    std::vector<double> med_scratch; // preallocated median scratch (no alloc)
+   209→   209→    std::vector<float> det_pending;  // control-rate accumulator (raw input)
+   210→   210→    int det_n = 0;
+   211→   211→    int f0_hist_n = 0, f0_hist_i = 0;
+   212→   212→    bool have_estimate = false;
+   213→   213→    double S_target = 4096.0;
+   214→   214→    double fb_state = 0.0;
+   215→   215→    double norm = 1.0;               // voice-count normalisation (ramped)
+   216→   216→    double norm_target = 1.0;
+   217→   217→    double last_f0 = 0.0;
+   218→   218→    double e_step = 0.0;             // engagement slew per sample
+   219→   219→    Config cfg{};
+   220→   220→
+   221→   221→    // -- ring helpers -------------------------------------------------------
+   222→   222→    inline void push(double x) {
+   223→   223→        ring[w] = x;
+   224→   224→        w = (w - 1) & kRingMask;
+   225→   225→    }
+   226→   226→
+   227→   227→    inline double readRaw(int delay) const {
+   228→   228→        return ring[(w + delay) & kRingMask];
+   229→   229→    }
+   230→   230→
+   231→   231→    // Interpolated read at `delay` (>= 0). Exact-integer delays take the
+   232→   232→    // direct sample path (bit-exact; used by the parked unity state).
+   233→   233→    double readInterp(double delay) const {
+   234→   234→        if (delay < 0.0) delay = 0.0;
+   235→   235→        const double d0 = std::floor(delay);
+   236→   236→        const double mu = delay - d0;
+   237→   237→        const int i0 = static_cast<int>(d0);
+   238→   238→        if (mu == 0.0) {
+   239→   239→            return ring[(w + i0) & kRingMask];  // exact integer delay
+   240→   240→        }
+   241→   241→        switch (cfg.interpolation) {
+   242→   242→            case Interpolation::Linear: {
+   243→   243→                const double a = ring[(w + i0) & kRingMask];
+   244→   244→                const double b = ring[(w + i0 + 1) & kRingMask];
+   245→   245→                return a + (b - a) * mu;
+   246→   246→            }
+   247→   247→            case Interpolation::Lagrange6: {
+   248→   248→                int ph = static_cast<int>(mu * 2048.0);  // floor, mu < 1
+   249→   249→                if (ph > 2047) ph = 2047;
+   250→   250→                const double* wv = interpTables().lag2048[ph];
+   251→   251→                double s = 0.0;
+   252→   252→                for (int k = 0; k < 6; ++k)
+   253→   253→                    s += wv[k] * ring[(w + i0 + k - 2) & kRingMask];
+   254→   254→                return s;
+   255→   255→            }
+   256→   256→            case Interpolation::Lagrange6Q: {
+   257→   257→                int ph = static_cast<int>(mu * 256.0);
+   258→   258→                if (ph > 255) ph = 255;
+   259→   259→                const double* wv = interpTables().lag256[ph];
+   260→   260→                double s = 0.0;
+   261→   261→                for (int k = 0; k < 6; ++k)
+   262→   262→                    s += wv[k] * ring[(w + i0 + k - 2) & kRingMask];
+   263→   263→                return s;
+   264→   264→            }
+   265→   265→            case Interpolation::ObsKernel6: {
+   266→   266→                // OBS data mode: floor-indexed 256 phases (target phase law).
+   267→   267→                int ph = static_cast<int>(mu * 256.0);
+   268→   268→                if (ph > 255) ph = 255;
+   269→   269→                const float* wv = obs_kernel::kTable[ph];
+   270→   270→                double s = 0.0;
+   271→   271→                for (int k = 0; k < 6; ++k)
+   272→   272→                    s += static_cast<double>(wv[k]) *
+   273→   273→                         ring[(w + i0 + k - 2) & kRingMask];
+   274→   274→                return s;
+   275→   275→            }
+   276→   276→        }
+   277→   277→        return 0.0;
+   278→   278→    }
+   279→   279→
+   280→   280→    // -- spacing management (v2 parity) --------------------------------------
+   281→   281→    void updateSpacingTarget(double f0) {
+   282→   282→        if (f0 != 0.0 && cfg.fmin <= f0 && f0 <= cfg.fmax) {
+   283→   283→            f0_hist[f0_hist_i] = static_cast<double>(cfg.sample_rate) / f0;
+   284→   284→            f0_hist_i = (f0_hist_i + 1) % static_cast<int>(f0_hist.size());
+   285→   285→            if (f0_hist_n < static_cast<int>(f0_hist.size())) ++f0_hist_n;
+   286→   286→            have_estimate = true;
+   287→   287→        }
+   288→   288→        if (f0_hist_n == 0) {
+   289→   289→            S_target = cfg.grain;
+   290→   290→            return;
+   291→   291→        }
+   292→   292→        // median of the history (np.median parity: even count averages the
+   293→   293→        // middle two). Uses the preallocated scratch -- NO allocation here
+   294→   294→        // (steady-state guarantee).
+   295→   295→        med_scratch.assign(f0_hist.begin(), f0_hist.begin() + f0_hist_n);
+   296→   296→        std::sort(med_scratch.begin(), med_scratch.end());
+   297→   297→        const int n = static_cast<int>(med_scratch.size());
+   298→   298→        double t_hat = (n % 2 == 1)
+   299→   299→                           ? med_scratch[n / 2]
+   300→   300→                           : 0.5 * (med_scratch[n / 2 - 1] + med_scratch[n / 2]);
+   301→   301→        // Python round() = round-half-to-even = nearbyint with default env
+   302→   302→        const double k = std::nearbyint(cfg.grain / t_hat);
+   303→   303→        const double kk = std::max(1.0, k);
+   304→   304→        const double S = kk * t_hat;
+   305→   305→        S_target = std::min(std::max(S, 0.5 * cfg.grain), 1.5 * cfg.grain);
+   306→   306→    }
+   307→   307→
+   308→   308→    // Wrap-time commit (v2 parity, hysteresis gated).
+   309→   309→    inline void commitSpacing(VoiceState& v) {
+   310→   310→        if (!have_estimate) return;
+   311→   311→        if (std::abs(S_target / v.S - 1.0) > cfg.s_hysteresis) {
+   312→   312→            v.S = S_target;
+   313→   313→            ++v.commits;
+   314→   314→        }
+   315→   315→    }
+   316→   316→
+   317→   317→    // Unity-exit commit: refresh S while B's weight is ~0, preserving the
+   318→   318→    // read point exactly (frac_new = frac*S_old/S_new in [0,1)).
+   319→   319→    void exitCommitSpacing(VoiceState& v) {
+   320→   320→        if (!have_estimate) return;
+   321→   321→        if (std::abs(S_target / v.S - 1.0) <= cfg.s_hysteresis) return;
+   322→   322→        const double frac_new = v.frac * v.S / S_target;
+   323→   323→        if (frac_new >= 0.0 && frac_new < 1.0) {
+   324→   324→            v.S = S_target;
+   325→   325→            v.frac = frac_new;
+   326→   326→            ++v.commits;
+   327→   327→        }
+   328→   328→        // else: keep S; the next natural wrap will commit it (v2 rule)
+   329→   329→    }
+   330→   330→
+   331→   331→    // Park on the nearest integer delay inside [base, base+S).
+   332→   332→    void parkVoice(VoiceState& v) {
+   333→   333→        const double d = v.base_delay + v.frac * v.S;
+   334→   334→        int d_int = static_cast<int>(std::floor(d + 0.5));
+   335→   335→        const double lo = std::ceil(v.base_delay);
+   336→   336→        const double hi = std::floor(v.base_delay + v.S) - 1.0;
+   337→   337→        if (static_cast<double>(d_int) > hi) d_int = static_cast<int>(hi);
+   338→   338→        if (static_cast<double>(d_int) < lo) d_int = static_cast<int>(lo);
+   339→   339→        v.d_park = d_int;
+   340→   340→    }
+   341→   341→
+   342→   342→    // -- per-sample voice processing -----------------------------------------
+   343→   343→    // Returns this voice's output sample.
+   344→   344→    inline double processVoiceSample(VoiceState& v) {
+   345→   345→        // ratio glide (geometric, reference parity)
+   346→   346→        v.ratio = v.ratio_t + (v.ratio - v.ratio_t) * Config::kGlideMult;
+   347→   347→        const double r = v.ratio;
+   348→   348→
+   349→   349→        // grain phase ramp + wrap/commit (v2 parity)
+   350→   350→        double frac = v.frac + (1.0 - r) / v.S;
+   351→   351→        if (r > 1.0) {
+   352→   352→            if (frac < 0.0) {
+   353→   353→                const double S_old = v.S;
+   354→   354→                commitSpacing(v);
+   355→   355→                frac = (frac + 1.0) * S_old / v.S;
+   356→   356→                while (frac >= 1.0) frac -= 1.0;
+   357→   357→                ++v.wraps;
+   358→   358→            }
+   359→   359→        } else {
+   360→   360→            if (frac >= 1.0) {
+   361→   361→                const double S_old = v.S;
+   362→   362→                commitSpacing(v);
+   363→   363→                frac = (frac - 1.0) * S_old / v.S;
+   364→   364→                while (frac < 0.0) frac += 1.0;
+   365→   365→                ++v.wraps;
+   366→   366→            }
+   367→   367→        }
+   368→   368→        v.frac = frac;
+   369→   369→
+   370→   370→        const double e = v.e;
+   371→   371→        const double a = v.a;
+   372→   372→
+   373→   373→        if (e <= 0.0 && a >= 1.0) {
+   374→   374→            // Fully parked: bit-exact single integer-tap read.
+   375→   375→            return readRaw(v.d_park);
+   376→   376→        }
+   377→   377→
+   378→   378→        const double d = v.base_delay + frac * v.S;
+   379→   379→        const double A = readInterp(d);
+   380→   380→
+   381→   381→        double dual;
+   382→   382→        if (e >= 1.0) {
+   383→   383→            const double B = readInterp(d + v.S);
+   384→   384→            const double w = 0.5 - 0.5 * std::cos(M_PI * frac);
+   385→   385→            dual = w * A + (1.0 - w) * B;
+   386→   386→        } else if (e <= 0.0) {
+   387→   387→            dual = A;  // single-tap A (wA_eff = 1, wB_eff = 0)
+   388→   388→        } else {
+   389→   389→            const double B = readInterp(d + v.S);
+   390→   390→            const double w = 0.5 - 0.5 * std::cos(M_PI * frac);
+   391→   391→            const double wA = e * w + (1.0 - e);
+   392→   392→            const double wB = e * (1.0 - w);
+   393→   393→            dual = wA * A + wB * B;
+   394→   394→        }
+   395→   395→
+   396→   396→        if (a > 0.0) {
+   397→   397→            const double park = readInterp(static_cast<double>(v.d_park));
+   398→   398→            return (1.0 - a) * dual + a * park;
+   399→   399→        }
+   400→   400→        return dual;
+   401→   401→    }
+   402→   402→
+   403→   403→    // -- engagement slew ------------------------------------------------------
+   404→   404→    inline void slewEngagement(VoiceState& v) {
+   405→   405→        const bool unity = (v.ratio_t == 1.0);  // bit-exact double compare
+   406→   406→        const double e_target = unity ? 0.0 : 1.0;
+   407→   407→        // 'a' parks only once e has fully reached 0
+   408→   408→        const double a_target = (unity && v.e <= 0.0) ? 1.0 : 0.0;
+   409→   409→        if (v.e < e_target) v.e = std::min(e_target, v.e + e_step);
+   410→   410→        else if (v.e > e_target) v.e = std::max(e_target, v.e - e_step);
+   411→   411→        if (v.a < a_target) {
+   412→   412→            if (v.a <= 0.0) parkVoice(v);  // (re)compute the parked delay
+   413→   413→            v.a = std::min(a_target, v.a + e_step);
+   414→   414→        } else if (v.a > a_target) {
+   415→   415→            v.a = std::max(a_target, v.a - e_step);
+   416→   416→        }
+   417→   417→    }
+   418→   418→};
+   419→   419→
+   420→   420→// ---------------------------------------------------------------------------
+   421→   421→// AlignedDelayLine
+   422→   422→// ---------------------------------------------------------------------------
+   423→   423→AlignedDelayLine::AlignedDelayLine() = default;
+   424→   424→AlignedDelayLine::~AlignedDelayLine() { delete impl_; }
+   425→   425→
+   426→   426→bool AlignedDelayLine::prepare(const Config& cfg) {
+   427→   427→    delete impl_;
+   428→   428→    impl_ = nullptr;
+   429→   429→    ready_ = false;
+   430→   430→    if (!(cfg.sample_rate > 0.0)) return false;
+   431→   431→    if (cfg.max_voices < 1 || cfg.max_voices > 64) return false;
+   432→   432→    if (cfg.voices < 1 || cfg.voices > cfg.max_voices) return false;
+   433→   433→    if (!(cfg.grain > 0.0)) return false;
+   434→   434→    if (cfg.base_delay < 8.0) return false;
+   435→   435→    // Maximum read delay: B tap at d + S with d < base + 32*(mv-1) + S and
+   436→   436→    // S <= 1.5*grain, plus 3 extra taps beyond the anchor -> require the whole
+   437→   437→    // range to stay inside the 2^18 ring.
+   438→   438→    if (cfg.base_delay + 32.0 * (cfg.max_voices - 1) + 3.0 * cfg.grain + 8.0 >=
+   439→   439→        static_cast<double>(1 << 18)) {
+   440→   440→        return false;
+   441→   441→    }
+   442→   442→    if (cfg.fmin <= 0.0 || cfg.fmax <= cfg.fmin) return false;
+   443→   443→    if (cfg.s_hysteresis < 0.0) return false;
+   444→   444→    if (cfg.f0_history < 1 || cfg.f0_history > 64) return false;
+   445→   445→    if (cfg.detection_interval < 1) return false;
+   446→   446→    if (cfg.engagement_seconds < 0.0) return false;
+   447→   447→    if (!(cfg.feedback > -1.0 && cfg.feedback < 1.0)) return false;
+   448→   448→
+   449→   449→    impl_ = new Impl();
+   450→   450→    impl_->cfg = cfg;
+   451→   451→    impl_->ring.assign(Impl::kRingSize, 0.0);
+   452→   452→    impl_->vs.resize(cfg.max_voices);
+   453→   453→    impl_->f0_hist.assign(cfg.f0_history, 0.0);
+   454→   454→    impl_->med_scratch.assign(cfg.f0_history, 0.0);
+   455→   455→    impl_->det_pending.assign(cfg.detection_interval, 0.0f);
+   456→   456→    impl_->det_n = 0;
+   457→   457→    impl_->det.configure(static_cast<int>(cfg.sample_rate));
+   458→   458→    impl_->e_step =
+   459→   459→        cfg.engagement_seconds > 0.0
+   460→   460→            ? 1.0 / (cfg.engagement_seconds * cfg.sample_rate)
+   461→   461→            : 1.0;
+   462→   462→    cfg_ = cfg;
+   463→   463→    active_voices_ = cfg.voices;
+   464→   464→    ready_ = true;
+   465→   465→    reset();
+   466→   466→    return true;
+   467→   467→}
+   468→   468→
+   469→   469→void AlignedDelayLine::reset() {
+   470→   470→    if (!impl_) return;
+   471→   471→    Impl& m = *impl_;
+   472→   472→    std::fill(m.ring.begin(), m.ring.end(), 0.0);
+   473→   473→    m.w = 0;
+   474→   474→    m.det.reset();
+   475→   475→    const double st = (m.cfg.ratio > 0.0) ? 12.0 * std::log2(m.cfg.ratio) : 0.0;
+   476→   476→    for (int i = 0; i < m.cfg.max_voices; ++i) {
+   477→   477→        VoiceState& v = m.vs[i];
+   478→   478→        const double off = (m.cfg.spread && i < 8) ? kSpreadSemitones[i] : 0.0;
+   479→   479→        v.ratio_t = std::pow(2.0, (st + off) / 12.0);
+   480→   480→        v.ratio = v.ratio_t;
+   481→   481→        v.base_delay = m.cfg.base_delay + 32.0 * i;
+   482→   482→        v.frac = 0.5;
+   483→   483→        v.S = m.cfg.grain;
+   484→   484→        v.wraps = 0;
+   485→   485→        v.commits = 0;
+   486→   486→        // Unity engagement: start parked if this voice is at exact unity.
+   487→   487→        if (v.ratio_t == 1.0) {
+   488→   488→            v.e = 0.0;
+   489→   489→            v.a = 1.0;
+   490→   490→            m.parkVoice(v);
+   491→   491→        } else {
+   492→   492→            v.e = 1.0;
+   493→   493→            v.a = 0.0;
+   494→   494→            v.d_park = -1;
+   495→   495→        }
+   496→   496→    }
+   497→   497→    std::fill(m.f0_hist.begin(), m.f0_hist.end(), 0.0);
+   498→   498→    m.f0_hist_n = 0;
+   499→   499→    m.f0_hist_i = 0;
+   500→   500→    m.have_estimate = false;
+   501→   501→    m.S_target = m.cfg.grain;
+   502→   502→    m.fb_state = 0.0;
+   503→   503→    m.norm = 1.0 / active_voices_;
+   504→   504→    m.norm_target = m.norm;
+   505→   505→    m.det_n = 0;
+   506→   506→    m.last_f0 = 0.0;
+   507→   507→}
+   508→   508→
+   509→   509→void AlignedDelayLine::setRatio(double ratio) {
+   510→   510→    if (!impl_ || !(ratio > 0.0)) return;
+   511→   511→    Impl& m = *impl_;
+   512→   512→    const double st = 12.0 * std::log2(ratio);
+   513→   513→    for (int i = 0; i < m.cfg.max_voices; ++i) {
+   514→   514→        VoiceState& v = m.vs[i];
+   515→   515→        const double off = (m.cfg.spread && i < 8) ? kSpreadSemitones[i] : 0.0;
+   516→   516→        const double new_t = std::pow(2.0, (st + off) / 12.0);
+   517→   517→        const bool was_unity = (v.ratio_t == 1.0);
+   518→   518→        v.ratio_t = new_t;
+   519→   519→        if (was_unity && new_t != 1.0) {
+   520→   520→            // Unity exit: refresh the spacing while tap B carries ~0 weight.
+   521→   521→            m.exitCommitSpacing(v);
+   522→   522→        }
+   523→   523→    }
+   524→   524→    m.cfg.ratio = ratio;
+   525→   525→    cfg_.ratio = ratio;
+   526→   526→}
+   527→   527→
+   528→   528→void AlignedDelayLine::setVoices(int n) {
+   529→   529→    if (!impl_) return;
+   530→   530→    if (n < 1 || n > impl_->cfg.max_voices) return;
+   531→   531→    active_voices_ = n;
+   532→   532→    impl_->norm_target = 1.0 / n;
+   533→   533→}
+   534→   534→
+   535→   535→void AlignedDelayLine::setSpread(bool on) {
+   536→   536→    if (!impl_) return;
+   537→   537→    if (impl_->cfg.spread == on) return;
+   538→   538→    impl_->cfg.spread = on;
+   539→   539→    cfg_.spread = on;
+   540→   540→    // Re-derive voice targets from the current ratio (audio-thread update).
+   541→   541→    const double st = 12.0 * std::log2(impl_->cfg.ratio > 0.0 ? impl_->cfg.ratio : 1.0);
+   542→   542→    for (int i = 0; i < impl_->cfg.max_voices; ++i) {
+   543→   543→        VoiceState& v = impl_->vs[i];
+   544→   544→        const double off = (on && i < 8) ? kSpreadSemitones[i] : 0.0;
+   545→   545→        const double new_t = std::pow(2.0, (st + off) / 12.0);
+   546→   546→        const bool was_unity = (v.ratio_t == 1.0);
+   547→   547→        v.ratio_t = new_t;
+   548→   548→        if (was_unity && new_t != 1.0) impl_->exitCommitSpacing(v);
+   549→   549→    }
+   550→   550→}
+   551→   551→
+   552→   552→void AlignedDelayLine::setFeedback(double fb) {
+   553→   553→    if (!impl_) return;
+   554→   554→    impl_->cfg.feedback = std::min(0.999999, std::max(-0.999999, fb));
+   555→   555→    cfg_.feedback = impl_->cfg.feedback;
+   556→   556→}
+   557→   557→
+   558→   558→int AlignedDelayLine::latencySamples() const {
+   559→   559→    if (!impl_) return 0;
+   560→   560→    return static_cast<int>(impl_->cfg.base_delay + impl_->cfg.grain * 0.5);
+   561→   561→}
+   562→   562→
+   563→   563→void AlignedDelayLine::process(const float* in, float* out, int n) {
+   564→   564→    if (!impl_ || n <= 0) return;
+   565→   565→    Impl& m = *impl_;
+   566→   566→    const bool fb_on = (m.cfg.feedback != 0.0);
+   567→   567→    const double fb = m.cfg.feedback;
+   568→   568→    const int nv = active_voices_;
+   569→   569→    const int interval = m.cfg.detection_interval;
+   570→   570→
+   571→   571→    for (int k = 0; k < n; ++k) {
+   572→   572→        // Control rate, stream-aligned: accumulate the RAW input (pre-feedback,
+   573→   573→        // as the Python pushes xb = x) and fire push+estimate when the interval
+   574→   574→        // boundary is crossed. The estimate applies from the boundary sample
+   575→   575→        // onward. NOTE (documented delta): the Python reference estimates with
+   576→   576→        // the full 64-sample block in the window BEFORE processing that block,
+   577→   577→        // which is impossible in a streaming API that writes every output on
+   578→   578→        // arrival; with 64-sample-aligned calls the native control timing
+   579→   579→        // lags the Python's by at most one interval.
+   580→   580→        m.det_pending[m.det_n++] = in[k];
+   581→   581→        if (m.det_n >= interval) {
+   582→   582→            m.det.pushBlock(m.det_pending.data(), m.det_n);
+   583→   583→            m.det_n = 0;
+   584→   584→            m.last_f0 = m.det.estimate();
+   585→   585→            m.updateSpacingTarget(m.last_f0);
+   586→   586→        }
+   587→   587→
+   588→   588→        const double xin = static_cast<double>(in[k]) + (fb_on ? fb * m.fb_state : 0.0);
+   589→   589→        m.push(xin);
+   590→   590→
+   591→   591→        double acc = 0.0;
+   592→   592→        for (int i = 0; i < nv; ++i) {
+   593→   593→            VoiceState& v = m.vs[i];
+   594→   594→            m.slewEngagement(v);  // engagement/parking slews (per sample)
+   595→   595→            acc += m.processVoiceSample(v);
+   596→   596→        }
+   597→   597→        // voice-count normalisation (ramped)
+   598→   598→        if (m.norm != m.norm_target) {
+   599→   599→            const double step = m.e_step;
+   600→   600→            if (m.norm < m.norm_target)
+   601→   601→                m.norm = std::min(m.norm_target, m.norm + step);
+   602→   602→            else
+   603→   603→                m.norm = std::max(m.norm_target, m.norm - step);
+   604→   604→        }
+   605→   605→        const double y = acc * m.norm;
+   606→   606→        out[k] = static_cast<float>(y);
+   607→   607→        m.fb_state = fb_on ? y : 0.0;
+   608→   608→    }
+   609→   609→}
+   610→   610→
+   611→   611→const VoiceStats& AlignedDelayLine::voiceStats(int v) const {
+   612→   612→    static VoiceStats empty;
+   613→   613→    if (!impl_ || v < 0 || v >= impl_->cfg.max_voices) return empty;
+   614→   614→    const VoiceState& s = impl_->vs[v];
+   615→   615→    static thread_local VoiceStats out;  // diagnostics scratch (copy if kept)
+   616→   616→    out.wraps = s.wraps;
+   617→   617→    out.commits = s.commits;
+   618→   618→    out.engaged = (s.e >= 1.0) ? 1 : 0;
+   619→   619→    out.parked = (s.e <= 0.0 && s.a >= 1.0) ? 1 : 0;
+   620→   620→    out.spacing = s.S;
+   621→   621→    out.phase = s.frac;
+   622→   622→    out.parked_delay = out.parked ? s.d_park : -1;
+   623→   623→    return out;
+   624→   624→}
+   625→   625→
+   626→   626→// ---------------------------------------------------------------------------
+   627→   627→// MultichannelShifter
+   628→   628→// ---------------------------------------------------------------------------
+   629→   629→struct MultichannelShifter::MImpl {
+   630→   630→    std::vector<AlignedDelayLine*> engines;
+   631→   631→    Config cfg{};
+   632→   632→    int channels = 0;
+   633→   633→};
+   634→   634→
+   635→   635→MultichannelShifter::MultichannelShifter() = default;
+   636→   636→MultichannelShifter::~MultichannelShifter() {
+   637→   637→    if (mimpl_) {
+   638→   638→        for (auto* e : mimpl_->engines) delete e;
+   639→   639→        delete mimpl_;
+   640→   640→    }
+   641→   641→}
+   642→   642→
+   643→   643→bool MultichannelShifter::prepare(const Config& cfg, int channels) {
+   644→   644→    if (channels < 1 || channels > 64) return false;
+   645→   645→    if (mimpl_) {
+   646→   646→        for (auto* e : mimpl_->engines) delete e;
+   647→   647→        delete mimpl_;
+   648→   648→        mimpl_ = nullptr;
+   649→   649→    }
+   650→   650→    mimpl_ = new MImpl();
+   651→   651→    mimpl_->cfg = cfg;
+   652→   652→    mimpl_->channels = channels;
+   653→   653→    for (int c = 0; c < channels; ++c) {
+   654→   654→        auto* e = new AlignedDelayLine();
+   655→   655→        if (!e->prepare(cfg)) {
+   656→   656→            delete e;
+   657→   657→            for (auto* x : mimpl_->engines) delete x;
+   658→   658→            delete mimpl_;
+   659→   659→            mimpl_ = nullptr;
+   660→   660→            return false;
+   661→   661→        }
+   662→   662→        mimpl_->engines.push_back(e);
+   663→   663→    }
+   664→   664→    return true;
+   665→   665→}
+   666→   666→
+   667→   667→void MultichannelShifter::reset() {
+   668→   668→    if (!mimpl_) return;
+   669→   669→    for (auto* e : mimpl_->engines) e->reset();
+   670→   670→}
+   671→   671→
+   672→   672→void MultichannelShifter::setRatio(double r) {
+   673→   673→    if (!mimpl_) return;
+   674→   674→    for (auto* e : mimpl_->engines) e->setRatio(r);
+   675→   675→}
+   676→   676→void MultichannelShifter::setVoices(int n) {
+   677→   677→    if (!mimpl_) return;
+   678→   678→    for (auto* e : mimpl_->engines) e->setVoices(n);
+   679→   679→}
+   680→   680→void MultichannelShifter::setSpread(bool on) {
+   681→   681→    if (!mimpl_) return;
+   682→   682→    for (auto* e : mimpl_->engines) e->setSpread(on);
+   683→   683→}
+   684→   684→void MultichannelShifter::setFeedback(double fb) {
+   685→   685→    if (!mimpl_) return;
+   686→   686→    for (auto* e : mimpl_->engines) e->setFeedback(fb);
+   687→   687→}
+   688→   688→
+   689→   689→bool MultichannelShifter::ready() const { return mimpl_ != nullptr; }
+   690→   690→int MultichannelShifter::channels() const { return mimpl_ ? mimpl_->channels : 0; }
+   691→   691→int MultichannelShifter::latencySamples() const {
+   692→   692→    return mimpl_ && !mimpl_->engines.empty() ? mimpl_->engines[0]->latencySamples() : 0;
+   693→   693→}
+   694→   694→
+   695→   695→void MultichannelShifter::process(const float* const* in, float* const* out,
+   696→   696→                                  int channels, int n) {
+   697→   697→    if (!mimpl_ || channels != mimpl_->channels) return;
+   698→   698→    for (int c = 0; c < channels; ++c) {
+   699→   699→        mimpl_->engines[c]->process(in[c], out[c], n);
+   700→   700→    }
+   701→   701→}
+   702→   702→
+   703→   703→const VoiceStats& MultichannelShifter::voiceStats(int channel, int voice) const {
+   704→   704→    static VoiceStats empty;
+   705→   705→    if (!mimpl_ || channel < 0 || channel >= mimpl_->channels) return empty;
+   706→   706→    return mimpl_->engines[channel]->voiceStats(voice);
+   707→   707→}
+   708→   708→
+   709→   709→double AlignedDelayLine::lastEstimateHz() const {
+   710→   710→    return impl_ ? impl_->last_f0 : 0.0;
+   711→   711→}
+   712→   712→
+   713→   713→const char* versionString() { return "octavox-native 12.0.0"; }
+   714→   714→
+   715→   715→}  // namespace octavox
+   716→   716→

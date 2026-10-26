@@ -1,0 +1,578 @@
+     1→#!/usr/bin/env python3
+     2→# -*- coding: utf-8 -*-
+     3→"""
+     4→OCTAVOX round 14 (v3) -- exact whole-.text scan of the tracker's
+     5→ratio-limiter / correction / period fields and of the tracker-function call
+     6→graph.
+     7→
+     8→METHOD (v2 -- replaces the interrupted first version whose needle+back-search
+     9→could accept a mis-aligned decode and thereby MISS real references):
+    10→  * every .pdata chunk is disassembled LINEARLY from its start (exact,
+    11→    complete inside the chunk; .pdata is verified: 13116 real entries,
+    12→    zero padding only at the end, monotonic);
+    13→  * the gaps BETWEEN .pdata chunks are swept linearly too (best-effort --
+    14→    functions without SEH scopes live there, e.g. the recorder
+    15→    FUN_1800E0190..0x1800E0355 has NO .pdata entry);
+    16→  * every memory operand with base != RIP and displacement in
+    17→    0x5F00..0x6090 (tracker fields) is collected, with the access span
+    18→    (4/8/16 bytes) so vector stores covering several fields are caught;
+    19→  * read/write classification from the operand order;
+    20→  * additionally: all rel32 call/jmp sites targeting the tracker functions
+    21→    (0x1800DFE80 tracker top, 0x1800E0190 recorder, 0x18013E160 parabolic
+    22→    refinement, 0x18013BBC0 state machine), and all lea/access sites with
+    23→    displacement 0x4518 (engine->tracker base) / 0x4510 (tracking flag) /
+    24→    0xA4FC (wdelta = tracker+0x5FE4) for the engine<->tracker boundary.
+    25→
+    26→v3 ADDITIONS (round-14 residues):
+    27→  * ENGINE-ALIAS WINDOW: the same tracker fields are also reachable through
+    28→    the engine base as engine+0x4518+field -- displacement window
+    29→    0xA3C0..0xA5A0.  This is how m01/m02 (FUN_1800E10B0/FUN_1800E1520)
+    30→    touch them (e.g. tracker+0x6044 = engine+0xA55C); a tracker-only
+    31→    displacement scan cannot see those.  Section 5 lists every such alias
+    32→    access with the tracker-field name resolved.
+    33→  * RECORD-RING SCAN: every operand of the form [base + index*4 + 0x98]
+    34→    (the record ring lives at engine+0x98 and is only ever indexed) is
+    35→    collected -> Section 6: the complete reader list for the ring fields.
+    36→  * DEDICATED WINDOWS (Section 7): m01 case 0x10/0x11 (the writers of
+    37→    +0x6044/+0x6048/+0x604C/+0x6050), m02 case 0xc/0xd (the consumers of
+    38→    +0x6074/+0x6070), the prepare's record reader 0x1800E25DB..0x1800E2662
+    39→    (the consumer of the clamped gain -> rate slot), and the CRT exp
+    40→    prologue (identification of FUN_180351F50).
+    41→
+    42→v4 (final round-14 version) FIXES/EXTENSIONS:
+    43→  * Section 6 CORRECTED: of the 9 [base+index*4+0x98] sites, only the 3
+    44→    with base=rsi=engine at 0x1800E26xx are the RECORD RING; the other 6
+    45→    (0x180213C25/0x180214180/0x180214403/0x1802198B8/0x1802199C4/
+    46→    0x180219ADD) belong to a DIFFERENT structure (an int table at +0x98
+    47→    paired with a byte table at +0x498, guarded by `cmp N, 8` bit-ladder
+    48→    selection, used by the stream readers FUN_180219DC0/0x180219CB0) --
+    49→    they are NOT the engine record ring and are now listed separately.
+    50→    The recorder's 7 ring WRITES go through the pointer loaded from
+    51→    T+0x5FD8 (no displacement) and are listed explicitly.
+    52→  * Section 7 EXTENDED: the prepare record-reader window now runs to
+    53→    0x1800E2762 (rate slot / fade / re-arm jump); ADDED the tracker state
+    54→    machine dispatch + cases 7/8/9 (WHEN the limiter runs) and the m01/m02
+    55→    dispatch heads (edx = message id).
+    56→
+    57→Read-only. Target never executed. SHA-256 verified before and after.
+    58→Output: r14_scan_limiter.txt
+    59→"""
+    60→
+    61→import hashlib
+    62→import struct
+    63→import sys
+    64→
+    65→import capstone
+    66→
+    67→TARGET = "/home/z/octavox/original/Ox.vst3"
+    68→OUT = ("/home/z/octavox/work/Octavox_RE_evidence/evidence/"
+    69→       "analysis_round14/r14_scan_limiter.txt")
+    70→SHA_EXPECT = "7bb260f66bb9c1b21b27f64f29e6fdd2865c34f8a31ad1c0ef21a1db7f32f1f2"
+    71→
+    72→TRACKER_LO, TRACKER_HI = 0x5F00, 0x6090   # tracker field displacement window
+    73→ENG_LO, ENG_HI = 0xA3C0, 0xA5A0           # engine-alias window (tracker+0x5EA8..0x6088)
+    74→TRACKER_BASE_OFF = 0x4518                 # engine -> tracker
+    75→RING_DISP = 0x98                          # record ring at engine+0x98 (indexed)
+    76→ENGINE_OFFS = {0x4518: "engine+0x4518 = TRACKER BASE",
+    77→               0x4510: "engine+0x4510 = tracking flag (port 30)",
+    78→               0xA4FC: "engine+0xa4fc = wdelta (= tracker+0x5FE4)"}
+    79→CALL_TARGETS = {
+    80→    0x1800DFE80: "FUN_1800DFE80 tracker top (omega, candidate search, +0x6074)",
+    81→    0x1800E0190: "FUN_1800E0190 recorder (ratio limiter + ring writer)",
+    82→    0x18013E160: "FUN_18013E160 parabolic peak refinement",
+    83→    0x18013BBC0: "FUN_18013BBC0 tracker state machine",
+    84→}
+    85→
+    86→FLD = {
+    87→    0x5F14: "cfg (==4 -> x2, ==8 -> x4 in case 6)",
+    88→    0x5F30: "reject-hold flag (>=0 keeps old estimate)",
+    89→    0x5F58: "history buffer begin ptr (== tracker+0)",
+    90→    0x5F60: "history buffer base ptr (== tracker+4)",
+    91→    0x5F90: "tracker state (case5/6 scalar)",
+    92→    0x5F98: "position ptr A",
+    93→    0x5FA0: "last peak value",
+    94→    0x5FA8: "position ptr B",
+    95→    0x5FB0: "counter A",
+    96→    0x5FB4: "counter B",
+    97→    0x5FB8: "position ptr C",
+    98→    0x5FC0: "glide state",
+    99→    0x5FC8: "ptr to 2-float (magnitude, level)",
+   100→    0x5FD0: "gatelevel",
+   101→    0x5FD4: "PERIOD ESTIMATE x 2^11 (input samples)",
+   102→    0x5FD8: "record ring base (engine+0x98)",
+   103→    0x5FE0: "ring mask 0xFFF",
+   104→    0x5FE4: "ring write index (wdelta)",
+   105→    0x5FE8: "tracking flag",
+   106→    0x5FEC: "confidence/magnitude",
+   107→    0x5FF4: "scalar state",
+   108→    0x5FF8: "state machine id",
+   109→    0x6008: "2048.0 = 2^11",
+   110→    0x6018: "cand table ptr 1",
+   111→    0x6020: "cand table ptr 2",
+   112→    0x6028: "cand table ptr 3 (6-float rows)",
+   113→    0x6030: "cand table ptr 4",
+   114→    0x6038: "ptr (bitmask word + int threshold at +4)",
+   115→    0x6040: "cand table row count",
+   116→    0x6044: "ratio clamp HI",
+   117→    0x6048: "ratio clamp LO",
+   118→    0x604C: "dead-band HI edge",
+   119→    0x6050: "dead-band LO edge",
+   120→    0x6058: "selected cand row ptr",
+   121→    0x6060: "selected cand row value",
+   122→    0x6064: "acceptance band LO (omega units)",
+   123→    0x6068: "acceptance band HI (omega units)",
+   124→    0x606C: "raw angular frequency omega = 2048*2pi/[0x5FD4]",
+   125→    0x6070: "running correction gain (ratio-limited)",
+   126→    0x6074: "instantaneous correction target",
+   127→    0x6078: "stability counter",
+   128→}
+   129→
+   130→# already documented in r14_disas_tracker_full.txt or in Section 7 below
+   131→KNOWN = [(0x1800DFE80, 0x1800E0356), (0x18013CEC0, 0x18013D131),
+   132→         (0x18013E160, 0x18013E1F6), (0x1800E0C90, 0x1800E0F00),
+   133→         (0x1800E13FD, 0x1800E14B3),   # m01 cases 0x10/0x11 (Section 7)
+   134→         (0x1800E1751, 0x1800E1871),   # m02 cases 0xc/0xd  (Section 7)
+   135→         (0x1800E25DB, 0x1800E2762),   # prepare record reader (Section 7)
+   136→         (0x180351F50, 0x180351FB0),   # exp prologue (Section 7)
+   137→         (0x18013BBC0, 0x18013BE73),   # state machine head (disas file)
+   138→         (0x18013BE40, 0x18013BE73),   # state dispatch (Section 7)
+   139→         (0x18013D127, 0x18013D1FB),   # cases 7/8/9 (Section 7)
+   140→         (0x1800E10B0, 0x1800E10E1),   # m01 head (Section 7)
+   141→         (0x1800E1520, 0x1800E1560)]   # m02 head (Section 7)
+   142→
+   143→STORE_MNEMONICS = {"mov", "movss", "movsd", "movaps", "movups", "movdqa",
+   144→                   "movdqu", "movd", "movq", "add", "sub", "mul", "imul",
+   145→                   "xor", "or", "and", "pop", "inc", "dec"}
+   146→
+   147→
+   148→def main():
+   149→    sha_before = hashlib.sha256(open(TARGET, "rb").read()).hexdigest()
+   150→
+   151→    with open(TARGET, "rb") as f:
+   152→        data = f.read()
+   153→    e_lfanew = struct.unpack_from("<I", data, 0x3C)[0]
+   154→    coff = e_lfanew + 4
+   155→    machine, nsec = struct.unpack_from("<HH", data, coff)
+   156→    opt_sz = struct.unpack_from("<H", data, e_lfanew + 20)[0]
+   157→    opt = coff + 20
+   158→    image_base = struct.unpack_from("<Q", data, opt + 24)[0]
+   159→    sec_off = e_lfanew + 24 + opt_sz
+   160→    sections = {}
+   161→    for i in range(nsec):
+   162→        o = sec_off + 40 * i
+   163→        name = data[o:o + 8].rstrip(b"\x00").decode("ascii", "replace")
+   164→        vsize, vaddr, rsize, roff = struct.unpack_from("<IIII", data, o + 8)
+   165→        sections[name] = (vaddr, vsize, roff, rsize)
+   166→
+   167→    def va2fo(va):
+   168→        rva = va - image_base
+   169→        for name, (vaddr, vsize, roff, rsize) in sections.items():
+   170→            if vaddr <= rva < vaddr + vsize:
+   171→                return roff + (rva - vaddr)
+   172→        return None
+   173→
+   174→    def section_of(va):
+   175→        rva = va - image_base
+   176→        for name, (vaddr, vsize, roff, rsize) in sections.items():
+   177→            if vaddr <= rva < vaddr + vsize:
+   178→                return name
+   179→        return None
+   180→
+   181→    # ---- .pdata (verified: zeros only at the very end, monotonic) --------
+   182→    pdata = sections[".pdata"]
+   183→    raw = data[pdata[2]:pdata[2] + pdata[3]]
+   184→    chunks = []
+   185→    n_zero = 0
+   186→    for i in range(0, len(raw) - 11, 12):
+   187→        s, e, _u = struct.unpack_from("<III", raw, i)
+   188→        if s == 0 and e == 0:
+   189→            n_zero += 1
+   190→            continue
+   191→        chunks.append((image_base + s, image_base + e))
+   192→    chunks.sort()
+   193→
+   194→    tv, _ts, t_off, t_rsz = sections[".text"]
+   195→    TVA = image_base + tv
+   196→    blob = data[t_off:t_off + t_rsz]
+   197→
+   198→    # sweep ranges = chunks + inter-chunk gaps
+   199→    ranges = []
+   200→    cur = TVA
+   201→    for fs, fe in chunks:
+   202→        if fs > cur:
+   203→            ranges.append((cur, fs, "gap"))
+   204→        ranges.append((fs, fe, "chunk"))
+   205→        cur = max(cur, fe)
+   206→    if cur < TVA + t_rsz:
+   207→        ranges.append((cur, TVA + t_rsz, "gap"))
+   208→
+   209→    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+   210→    md.detail = True
+   211→
+   212→    def resolve_ann(insn):
+   213→        out = ""
+   214→        for op in insn.operands:
+   215→            if op.type == capstone.x86.X86_OP_MEM:
+   216→                if op.mem.base == capstone.x86.X86_REG_RIP:
+   217→                    tgt = insn.address + insn.size + op.mem.disp
+   218→                    sec = section_of(tgt)
+   219→                    val = ""
+   220→                    fo = va2fo(tgt)
+   221→                    if fo is not None and sec not in (".text", None):
+   222→                        f32 = struct.unpack_from("<f", data, fo)[0]
+   223→                        f64 = struct.unpack_from("<d", data, fo)[0]
+   224→                        val = f" [f32={f32!r} f64={f64!r}]"
+   225→                    out += f" -> {tgt:#x} ({sec}){val}"
+   226→        return out
+   227→
+   228→    hits = []          # (va, mnemonic, op_str, disp, span, kind, where)
+   229→    callhits = []      # (va, mnemonic, target, where)
+   230→    ringhits = []      # (va, mnemonic, op_str, base, index, w, where)
+   231→    for lo, hi, where in ranges:
+   232→        for insn in md.disasm(blob[lo - TVA:hi - TVA], lo):
+   233→            # rel32 call/jmp to tracker functions
+   234→            if insn.mnemonic in ("call", "jmp") and insn.operands:
+   235→                op = insn.operands[0]
+   236→                if op.type == capstone.x86.X86_OP_IMM:
+   237→                    if op.imm in CALL_TARGETS:
+   238→                        callhits.append((insn.address, insn.mnemonic,
+   239→                                         op.imm, where))
+   240→            for op in insn.operands:
+   241→                if op.type != capstone.x86.X86_OP_MEM:
+   242→                    continue
+   243→                if op.mem.base == capstone.x86.X86_REG_RIP:
+   244→                    continue
+   245→                # stack-frame operands are noise for object-field scanning
+   246→                if op.mem.base in (capstone.x86.X86_REG_RSP,
+   247→                                   capstone.x86.X86_REG_RBP):
+   248→                    continue
+   249→                # record-ring access: [base + index*4 + 0x98]
+   250→                if (op.mem.index != 0 and op.mem.scale == 4
+   251→                        and op.mem.disp == RING_DISP
+   252→                        and op.mem.base not in (capstone.x86.X86_REG_RSP,
+   253→                                                capstone.x86.X86_REG_RBP)):
+   254→                    w = "read"
+   255→                    if insn.mnemonic in STORE_MNEMONICS and op is insn.operands[0] \
+   256→                            and insn.op_str.split(",")[0].strip().find("[") >= 0:
+   257→                        w = "WRITE"
+   258→                    ringhits.append((insn.address, insn.mnemonic, insn.op_str,
+   259→                                     insn.reg_name(op.mem.base) if op.mem.base else "",
+   260→                                     insn.reg_name(op.mem.index), w, where))
+   261→                d = op.mem.disp
+   262→                # access span
+   263→                span = 4
+   264→                if "xmmword" in insn.op_str or insn.mnemonic in (
+   265→                        "movaps", "movups", "movdqa", "movdqu", "andps",
+   266→                        "xorps", "movntps"):
+   267→                    span = 16
+   268→                elif "qword" in insn.op_str or insn.mnemonic in (
+   269→                        "movq", "movsd"):
+   270→                    span = 8
+   271→                elif "word ptr" in insn.op_str:
+   272→                    span = 2
+   273→                covered = set(range(d, d + span))
+   274→                is_t = any(TRACKER_LO <= x < TRACKER_HI for x in covered)
+   275→                is_e = any(x in ENGINE_OFFS for x in covered)
+   276→                is_a = any(ENG_LO <= x < ENG_HI for x in covered)
+   277→                if not (is_t or is_e or is_a):
+   278→                    continue
+   279→                # write?
+   280→                w = "read"
+   281→                if insn.mnemonic in STORE_MNEMONICS and op is insn.operands[0] \
+   282→                        and insn.op_str.split(",")[0].strip().find("[") >= 0:
+   283→                    w = "WRITE"
+   284→                for x in sorted(covered):
+   285→                    if TRACKER_LO <= x < TRACKER_HI or x in ENGINE_OFFS \
+   286→                            or ENG_LO <= x < ENG_HI:
+   287→                        hits.append((insn.address, insn.mnemonic, insn.op_str,
+   288→                                     x, span, w, where))
+   289→
+   290→    # ---- output ----------------------------------------------------------
+   291→    out = []
+   292→    out.append("OCTAVOX round 14 (v3, exact linear sweep) -- tracker "
+   293→               "limiter/correction/period field scan")
+   294→    out.append(f"target: {TARGET}  (read-only; never executed)")
+   295→    out.append(f"sha256 (before): {sha_before} "
+   296→               f"({'MATCH' if sha_before == SHA_EXPECT else 'MISMATCH!'})")
+   297→    out.append("method: linear disassembly of every .pdata chunk plus the "
+   298→               "inter-chunk gaps (best-effort),")
+   299→    out.append("        collecting every memory operand with displacement "
+   300→               "in 0x5F00..0x6090 (tracker")
+   301→    out.append("        fields, span-aware for vector accesses), the "
+   302→               "ENGINE-ALIAS window 0xA3C0..0xA5A0 (the")
+   303→    out.append("        same tracker fields via engine+0x4518+field), and "
+   304→               "0x4518/0x4510/0xA4FC (engine boundary);")
+   305→    out.append("        rsp/rbp-based (stack) operands excluded.  Also: every "
+   306→               "[base+index*4+0x98] operand")
+   307→    out.append("        (the record ring at engine+0x98).")
+   308→    out.append(f".pdata: {len(chunks)} chunks, {n_zero} zero-pad entries "
+   309→               "(all at the end); gaps swept: "
+   310→               f"{sum(1 for r in ranges if r[2] == 'gap')}")
+   311→    out.append("")
+   312→    out.append("=" * 78)
+   313→    out.append("SECTION 1: TRACKER FIELD SUMMARY "
+   314→               "(displacement -> every reference site)")
+   315→    out.append("=" * 78)
+   316→
+   317→    from collections import defaultdict
+   318→    per = defaultdict(list)
+   319→    for va, m, o, d, span, w, where in hits:
+   320→        if TRACKER_LO <= d < TRACKER_HI:
+   321→            per[d].append((va, m, o, span, w, where))
+   322→    for d in sorted(per):
+   323→        name = FLD.get(d, "")
+   324→        refs = sorted(set(per[d]))
+   325→        wr = [r for r in refs if r[4] == "WRITE"]
+   326→        out.append(f"+{d:#06x} {name}: {len(refs)} refs "
+   327→                   f"({len(wr)} WRITE, {len(refs)-len(wr)} read)")
+   328→        for va, m, o, span, w, where in refs:
+   329→            tag = ("  <== WRITE" if w == "WRITE" else "")
+   330→            g = " [gap sweep]" if where == "gap" else ""
+   331→            out.append(f"    {va:#x}  {m} {o}   {tag}{g}")
+   332→        out.append("")
+   333→
+   334→    out.append("=" * 78)
+   335→    out.append("SECTION 2: ENGINE<->TRACKER BOUNDARY "
+   336→               "(engine offsets 0x4518 / 0x4510 / 0xA4FC / 0x98)")
+   337→    out.append("=" * 78)
+   338→    for d in sorted(ENGINE_OFFS):
+   339→        sel = [h for h in hits if h[3] == d]
+   340→        if not sel:
+   341→            out.append(f"{ENGINE_OFFS[d]}: no hits")
+   342→            continue
+   343→        out.append(f"{ENGINE_OFFS[d]}: {len(sel)} refs")
+   344→        for va, m, o, d2, span, w, where in sorted(set(sel)):
+   345→            g = " [gap sweep]" if where == "gap" else ""
+   346→            tag = ("  <== WRITE" if w == "WRITE" else "")
+   347→            out.append(f"    {va:#x}  {m} {o}{tag}{g}")
+   348→        out.append("")
+   349→
+   350→    out.append("=" * 78)
+   351→    out.append("SECTION 3: CALLERS of the tracker functions (rel32 "
+   352→               "call/jmp sites)")
+   353→    out.append("=" * 78)
+   354→    for tgt in sorted(CALL_TARGETS):
+   355→        sel = [c for c in callhits if c[2] == tgt]
+   356→        out.append(f"{CALL_TARGETS[tgt]}:")
+   357→        if not sel:
+   358→            out.append("    (no rel32 call/jmp site found in .text)")
+   359→        for va, m, t, where in sorted(set(sel)):
+   360→            g = " [gap sweep]" if where == "gap" else ""
+   361→            out.append(f"    {va:#x}  {m} {t:#x}{g}")
+   362→        out.append("")
+   363→
+   364→    out.append("=" * 78)
+   365→    out.append("SECTION 5: ENGINE-ALIAS ACCESSES to the tracker fields "
+   366→               "(displacements 0xA3C0..0xA5A0)")
+   367→    out.append("  (the field is engine+0x4518+tracker_offset -- this is "
+   368→               "how m01/m02 reach the)")
+   369→    out.append("   limiter fields; a tracker-displacement-only scan CANNOT "
+   370→               "see these accesses)")
+   371→    out.append("=" * 78)
+   372→    alias = defaultdict(list)
+   373→    for va, m, o, d, span, w, where in hits:
+   374→        if ENG_LO <= d < ENG_HI:
+   375→            alias[d].append((va, m, o, span, w, where))
+   376→    if not alias:
+   377→        out.append("(no engine-alias accesses found)")
+   378→    for d in sorted(alias):
+   379→        tf = d - TRACKER_BASE_OFF
+   380→        name = FLD.get(tf, "")
+   381→        refs = sorted(set(alias[d]))
+   382→        wr = [r for r in refs if r[4] == "WRITE"]
+   383→        out.append(f"engine+{d:#06x} = tracker+{tf:#06x} {name}: "
+   384→                   f"{len(refs)} refs ({len(wr)} WRITE)")
+   385→        for va, m, o, span, w, where in refs:
+   386→            tag = ("  <== WRITE" if w == "WRITE" else "")
+   387→            g = " [gap sweep]" if where == "gap" else ""
+   388→            out.append(f"    {va:#x}  {m} {o}{tag}{g}")
+   389→        out.append("")
+   390→
+   391→    out.append("=" * 78)
+   392→    out.append("SECTION 6: RECORD-RING ACCESSES")
+   393→    out.append("  the record ring at engine+0x98 (4096 floats, mask 0xFFF) is "
+   394→               "read via")
+   395→    out.append("  [engine + index*4 + 0x98] and WRITTEN through the pointer "
+   396→               "loaded from")
+   397→    out.append("  T+0x5FD8 (no displacement on the stores).  Records are 4 "
+   398→               "consecutive floats in")
+   399→    out.append("  ASCENDING index order [period*2^11 | interval | spare | "
+   400→               "clamped gain],")
+   401→    out.append("  written DESCENDING (gain at wdelta-1 ... period at "
+   402→               "wdelta-4; wdelta -= 4).")
+   403→    out.append("=" * 78)
+   404→    out.append("readers ([base+index*4+0x98] with base = rsi = engine, all in "
+   405→               "FUN_1800E2030 prepare):")
+   406→    ringreads = [r for r in sorted(set(ringhits)) if r[3] == "rsi"]
+   407→    for va, m, o, b, i, w, where in ringreads:
+   408→        g = " [gap sweep]" if where == "gap" else ""
+   409→        tag = ("  <== WRITE" if w == "WRITE" else "")
+   410→        out.append(f"    {va:#x}  {m:8s} {o}   base={b} index={i}{tag}{g}")
+   411→    out.append("")
+   412→    out.append("writers (recorder FUN_1800E0190 stores through the pointer "
+   413→               "from T+0x5FD8;")
+   414→    out.append("            displacement-free, hence invisible to the "
+   415→               "displacement scan):")
+   416→    for va, what in (
+   417→            (0x1800E0276, "ring[(wdelta-1)&0xFFF] = clamped new gain "
+   418→                          "(tracking branch)"),
+   419→            (0x1800E028E, "ring[(wdelta-2)&0xFFF] = (float)r10d"),
+   420→            (0x1800E02B0, "ring[(wdelta-3)&0xFFF] = (float)r11d"),
+   421→            (0x1800E02DB, "ring[...] = clamped new gain (non-tracking "
+   422→                          "branch; T+0x5FE8 is ctor-const 1 -> dead)"),
+   423→            (0x1800E0302, "ring[...] = (float)r10d (non-tracking branch)"),
+   424→            (0x1800E0329, "ring[...] = (float)r11d (non-tracking branch)"),
+   425→            (0x1800E034B, "ring[(wdelta-4)&0xFFF] = period estimate (raw "
+   426→                          "f32 bits of T+0x5FD4); then wdelta -= 4")):
+   427→        out.append(f"    {va:#x}  movss/mov [ring + idx*4]   ; {what}")
+   428→    out.append("")
+   429→    out.append("NOT the record ring (same [base+index*4+0x98] operand shape, "
+   430→               "different object: an")
+   431→    out.append("int table at +0x98 paired with a byte table at +0x498, "
+   432→               "`cmp N, 8`-guarded")
+   433→    out.append("bit-ladder selection used by the stream readers "
+   434→               "FUN_180219DC0/0x180219CB0;")
+   435→    out.append("bases r8/r12/rbx/r14 are NOT the engine -- kept here only "
+   436→               "to document the")
+   437→    out.append("disambiguation):")
+   438→    for va, m, o, b, i, w, where in sorted(set(ringhits)):
+   439→        if b != "rsi":
+   440→            g = " [gap sweep]" if where == "gap" else ""
+   441→            out.append(f"    {va:#x}  {m:8s} {o}   base={b} index={i}{g}")
+   442→    out.append("")
+   443→
+   444→    out.append("=" * 78)
+   445→    out.append("SECTION 7: DEDICATED EVIDENCE WINDOWS (fully annotated)")
+   446→    out.append("=" * 78)
+   447→
+   448→    def field_ann(insn):
+   449→        """annotation for tracker fields reached directly or via engine"""
+   450→        tags = []
+   451→        for op in insn.operands:
+   452→            if op.type != capstone.x86.X86_OP_MEM:
+   453→                continue
+   454→            if op.mem.base == capstone.x86.X86_REG_RIP:
+   455→                continue
+   456→            dd = op.mem.disp
+   457→            if TRACKER_LO <= dd < TRACKER_HI:
+   458→                tags.append(f"T+{dd:#x}={FLD.get(dd, '')}")
+   459→            elif dd in ENGINE_OFFS:
+   460→                tags.append(ENGINE_OFFS[dd])
+   461→            elif ENG_LO <= dd < ENG_HI:
+   462→                tf = dd - TRACKER_BASE_OFF
+   463→                tags.append(f"engine+{dd:#x}=T+{tf:#x} {FLD.get(tf, '')}")
+   464→        return ("   ; <" + " | ".join(tags) + ">") if tags else ""
+   465→
+   466→    DEDICATED = [
+   467→        ("m01 = FUN_1800E10B0 case 0x10 (id 16) -- WRITES the dead-band "
+   468→         "edges: T+0x604C = 2^(+x/1200), T+0x6050 = 2^(-x/1200) via "
+   469→         "exp(FUN_180351F50) and ln2/1200 = 0.00057762265 @0x1804120C0",
+   470→         0x1800E13FD, 0x1800E1460),
+   471→        ("m01 case 0x11 (id 17) -- WRITES the ratio clamps: T+0x6044 = "
+   472→         "2^(+1/(12x)), T+0x6048 = 2^(-1/(12x)) via exp and ln2/12 = "
+   473→         "0.057762265 @0x1804121A8 / -0.057762265 @0x180412818",
+   474→         0x1800E1460, 0x1800E14B3),
+   475→        ("m02 = FUN_1800E1520 case 0xc -- READS T+0x6074 (correction "
+   476→         "target): gated -1731.234*log|target| (cents)",
+   477→         0x1800E1751, 0x1800E17E1),
+   478→        ("m02 case 0xd -- READS T+0x6070 (running correction gain): gated "
+   479→         "+1731.234*log(gain) (cents)",
+   480→         0x1800E17E1, 0x1800E1871),
+   481→        ("prepare = FUN_1800E2030 record reader -- the CONSUMER of the "
+   482→         "clamped gain: rate_slot[v] = page[0] * ring[base+3](gain); "
+   483→         "also the period clamp (480.0 if < 2^-47 else max(v, 48.0) -- NO "
+   484→         "upper clamp), the fade decrement page[12+idx]*2^-23 and the "
+   485→         "re-arm jump 2^(page[12+idx]&0xF)*v",
+   486→         0x1800E25DB, 0x1800E2762),
+   487→        ("tracker state machine FUN_18013BBC0 -- the STATE DISPATCH on "
+   488→         "T+0x5FF8 (jump table 0x18013D22C, states 0..9; one state per "
+   489→         "call; called once per prepare() at 0x1800E20CE).  State 7 = "
+   490→         "tracker top, state 8 = RECORDER (the ratio limiter), state 9 = "
+   491→         "confidence/gate",
+   492→         0x18013BE40, 0x18013BE73),
+   493→        ("tracker state machine cases 7/8/9 bodies: state 7 calls "
+   494→         "0x1800DFE80 (tracker top) -> state 8; state 8 calls 0x1800E0190 "
+   495→         "(recorder: ratio limiter + record write) -> state 9; state 9 "
+   496→         "updates T+0x5FEC (one-pole confidence, rates 0.99/0.7, min 1.0) "
+   497→         "and T+0x5FF0 = min(T+0x5FF4/sqrt(conf), 1)*32 and returns to "
+   498→         "state 0 (see also r14_disas_tracker_full.txt)",
+   499→         0x18013D127, 0x18013D1FB),
+   500→        ("m01 = FUN_1800E10B0 head -- the parameter-message dispatch "
+   501→         "(edx = id; cmp edx, 0x11 / jump table); case 0x10 = dead-band "
+   502→         "edges, case 0x11 = ratio clamps (windows above)",
+   503→         0x1800E10B0, 0x1800E10E1),
+   504→        ("m02 = FUN_1800E1520 head -- the meter/message dispatch "
+   505→         "(edx = id); case 0xc = target cents, case 0xd = gain cents "
+   506→         "(windows above)",
+   507→         0x1800E1520, 0x1800E1560),
+   508→        ("FUN_180351F50 prologue -- the CRT double exp (range guards "
+   509→         "+-709.782712893384 = ln(2^+-1024))",
+   510→         0x180351F50, 0x180351FB0),
+   511→    ]
+   512→    for label, lo, hi in DEDICATED:
+   513→        out.append("")
+   514→        out.append("-" * 78)
+   515→        out.append(f"### {label}")
+   516→        out.append("-" * 78)
+   517→        for insn in md.disasm(blob[lo - TVA:hi - TVA], lo):
+   518→            out.append(f"  {insn.address:#x}  {insn.mnemonic:10s} "
+   519→                       f"{insn.op_str}   {resolve_ann(insn)}"
+   520→                       f"{field_ann(insn)}")
+   521→
+   522→    out.append("=" * 78)
+   523→    out.append("SECTION 8: ANNOTATED WINDOWS around NEW reference sites "
+   524→               "(not already in r14_disas_tracker_full.txt or Section 7)")
+   525→    out.append("=" * 78)
+   526→    shown = set()
+   527→    for va, m, o, d, span, w, where in sorted(set(hits)):
+   528→        if any(lo <= va < hi for lo, hi in KNOWN):
+   529→            continue
+   530→        if va in shown:
+   531→            continue
+   532→        lo, hi = va - 0x30, va + 0x18
+   533→        lo = max(TVA, lo)
+   534→        hi = min(TVA + len(blob), hi)
+   535→        key = (lo, hi)
+   536→        if key in shown:
+   537→            continue
+   538→        shown.add(key)
+   539→        shown.update(range(lo, hi))
+   540→        out.append("")
+   541→        out.append("-" * 78)
+   542→        out.append(f"### window {lo:#x}..{hi:#x} "
+   543→                   f"(first hit {va:#x}: {m} {o}"
+   544→                   f"{' WRITE' if w == 'WRITE' else ''})")
+   545→        for insn in md.disasm(blob[lo - TVA:hi - TVA], lo):
+   546→            dtag = ""
+   547→            for op in insn.operands:
+   548→                if (op.type == capstone.x86.X86_OP_MEM
+   549→                        and op.mem.base != capstone.x86.X86_REG_RIP):
+   550→                    dd = op.mem.disp
+   551→                    if TRACKER_LO <= dd < TRACKER_HI:
+   552→                        dtag = f"   ; <+{dd:#x} {FLD.get(dd, '')}>"
+   553→                        break
+   554→                    if dd in ENGINE_OFFS:
+   555→                        dtag = f"   ; <{ENGINE_OFFS[dd]}>"
+   556→                        break
+   557→            out.append(f"  {insn.address:#x}  {insn.mnemonic:10s} "
+   558→                       f"{insn.op_str}   {resolve_ann(insn)}{dtag}")
+   559→
+   560→    sha_after = hashlib.sha256(open(TARGET, "rb").read()).hexdigest()
+   561→    out.append("")
+   562→    out.append(f"sha256 (after): {sha_after} "
+   563→               f"({'MATCH' if sha_after == SHA_EXPECT else 'MISMATCH!'})")
+   564→    out.append("target was read only; never executed")
+   565→
+   566→    text = "\n".join(out)
+   567→    with open(OUT, "w", encoding="utf-8") as f:
+   568→        f.write(text + "\n")
+   569→    print(f"wrote {OUT} ({len(out)} lines)")
+   570→    print(f"field hits: {len(set(hits))}, call sites: {len(set(callhits))}, "
+   571→          f"ring accesses: {len(set(ringhits))}")
+   572→    print(f"sha before/after: {sha_before} / {sha_after}")
+   573→    return 0
+   574→
+   575→
+   576→if __name__ == "__main__":
+   577→    sys.exit(main())
+   578→

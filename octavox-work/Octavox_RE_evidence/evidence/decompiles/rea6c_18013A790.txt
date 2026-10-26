@@ -1,0 +1,82 @@
+
+void FUN_18013a790(longlong param_1)
+
+{
+  float *pfVar1;
+  undefined8 *puVar2;
+  ulonglong uVar3;
+  ulonglong uVar4;
+  float *pfVar5;
+  undefined8 *puVar6;
+  int iVar7;
+  bool bVar8;
+  float fVar9;
+  float local_res8 [4];
+  float local_res18 [2];
+  float local_res20 [2];
+  float local_18 [6];
+  
+  uVar3 = *(ulonglong *)(param_1 + 8);
+  do {
+    LOCK();
+    uVar4 = *(ulonglong *)(param_1 + 8);
+    bVar8 = uVar3 == uVar4;
+    if (bVar8) {
+      *(ulonglong *)(param_1 + 8) = uVar3 & 0xfffffffffffffffe;
+      uVar4 = uVar3;
+    }
+    UNLOCK();
+    uVar3 = uVar4;
+  } while (!bVar8);
+  if ((uVar4 & 1) != 0) {
+    if (*(float **)(param_1 + 0x38) == (float *)0x0) {
+      local_res8[0] = *(float *)(param_1 + 0x40);
+    }
+    else {
+      local_res8[0] = **(float **)(param_1 + 0x38);
+    }
+    local_res18[0] = *(float *)(param_1 + 0x18);
+    pfVar5 = local_res8;
+    if (local_res8[0] <= *(float *)(param_1 + 0x18)) {
+      pfVar5 = local_res18;
+    }
+    pfVar1 = *(float **)(param_1 + 0x48);
+    fVar9 = *pfVar5;
+    if (*(float *)(param_1 + 0x1c) <= *pfVar5) {
+      fVar9 = *(float *)(param_1 + 0x1c);
+    }
+    iVar7 = (int)fVar9;
+    if (iVar7 < 0) {
+      local_res20[0] = *pfVar1;
+    }
+    else if (iVar7 < *(int *)(param_1 + 0x10) + -1) {
+      local_res20[0] =
+           (1.0 - (fVar9 - (float)iVar7)) * pfVar1[iVar7] +
+           (fVar9 - (float)iVar7) * pfVar1[(longlong)iVar7 + 1];
+    }
+    else {
+      local_res20[0] = pfVar1[(longlong)*(int *)(param_1 + 0x10) + -1];
+    }
+    local_18[0] = -2.1474836e+09;
+    pfVar5 = local_res20;
+    if (local_res20[0] <= -2.1474836e+09) {
+      pfVar5 = local_18;
+    }
+    fVar9 = *pfVar5;
+    if (2.1474836e+09 <= fVar9) {
+      fVar9 = 2.1474836e+09;
+    }
+    if (fVar9 != *(float *)(param_1 + 0x60)) {
+      *(float *)(param_1 + 0x60) = fVar9;
+      puVar2 = *(undefined8 **)(param_1 + 0x70);
+      for (puVar6 = *(undefined8 **)(param_1 + 0x68); puVar6 != puVar2; puVar6 = puVar6 + 2) {
+        LOCK();
+        *(ulonglong *)*puVar6 =
+             *(ulonglong *)*puVar6 | 1L << ((byte)*(undefined4 *)(puVar6 + 1) & 0x3f);
+        UNLOCK();
+      }
+    }
+  }
+  return;
+}
+

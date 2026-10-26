@@ -1,0 +1,903 @@
++0x5f58 history buffer begin ptr (== tracker+0): 4 refs (1 WRITE, 3 read)
+    0x1800e0d26  mov qword ptr [rdi + 0x5f58], rdi     <== WRITE
+    0x18013cd15  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013cdce  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013d03d  mov rdx, qword ptr [r15 + 0x5f58]   
+
++0x5f59 : 4 refs (1 WRITE, 3 read)
+    0x1800e0d26  mov qword ptr [rdi + 0x5f58], rdi     <== WRITE
+    0x18013cd15  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013cdce  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013d03d  mov rdx, qword ptr [r15 + 0x5f58]   
+
++0x5f5a : 4 refs (1 WRITE, 3 read)
+    0x1800e0d26  mov qword ptr [rdi + 0x5f58], rdi     <== WRITE
+    0x18013cd15  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013cdce  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013d03d  mov rdx, qword ptr [r15 + 0x5f58]   
+
++0x5f5b : 4 refs (1 WRITE, 3 read)
+    0x1800e0d26  mov qword ptr [rdi + 0x5f58], rdi     <== WRITE
+    0x18013cd15  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013cdce  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013d03d  mov rdx, qword ptr [r15 + 0x5f58]   
+
++0x5f5c : 4 refs (1 WRITE, 3 read)
+    0x1800e0d26  mov qword ptr [rdi + 0x5f58], rdi     <== WRITE
+    0x18013cd15  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013cdce  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013d03d  mov rdx, qword ptr [r15 + 0x5f58]   
+
++0x5f5d : 4 refs (1 WRITE, 3 read)
+    0x1800e0d26  mov qword ptr [rdi + 0x5f58], rdi     <== WRITE
+    0x18013cd15  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013cdce  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013d03d  mov rdx, qword ptr [r15 + 0x5f58]   
+
++0x5f5e : 4 refs (1 WRITE, 3 read)
+    0x1800e0d26  mov qword ptr [rdi + 0x5f58], rdi     <== WRITE
+    0x18013cd15  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013cdce  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013d03d  mov rdx, qword ptr [r15 + 0x5f58]   
+
++0x5f5f : 4 refs (1 WRITE, 3 read)
+    0x1800e0d26  mov qword ptr [rdi + 0x5f58], rdi     <== WRITE
+    0x18013cd15  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013cdce  sub rax, qword ptr [r15 + 0x5f58]   
+    0x18013d03d  mov rdx, qword ptr [r15 + 0x5f58]   
+
++0x5f60 history buffer base ptr (== tracker+4): 3 refs (1 WRITE, 2 read)
+    0x1800e0d31  mov qword ptr [rdi + 0x5f60], rax     <== WRITE
+    0x18013c85e  mov rbx, qword ptr [r15 + 0x5f60]   
+    0x18013d05b  sub r8, qword ptr [r15 + 0x5f60]   
+
++0x5f61 : 3 refs (1 WRITE, 2 read)
+    0x1800e0d31  mov qword ptr [rdi + 0x5f60], rax     <== WRITE
+    0x18013c85e  mov rbx, qword ptr [r15 + 0x5f60]   
+    0x18013d05b  sub r8, qword ptr [r15 + 0x5f60]   
+
++0x5f62 : 3 refs (1 WRITE, 2 read)
+    0x1800e0d31  mov qword ptr [rdi + 0x5f60], rax     <== WRITE
+    0x18013c85e  mov rbx, qword ptr [r15 + 0x5f60]   
+    0x18013d05b  sub r8, qword ptr [r15 + 0x5f60]   
+
++0x5f63 : 3 refs (1 WRITE, 2 read)
+    0x1800e0d31  mov qword ptr [rdi + 0x5f60], rax     <== WRITE
+    0x18013c85e  mov rbx, qword ptr [r15 + 0x5f60]   
+    0x18013d05b  sub r8, qword ptr [r15 + 0x5f60]   
+
++0x5f64 : 3 refs (1 WRITE, 2 read)
+    0x1800e0d31  mov qword ptr [rdi + 0x5f60], rax     <== WRITE
+    0x18013c85e  mov rbx, qword ptr [r15 + 0x5f60]   
+    0x18013d05b  sub r8, qword ptr [r15 + 0x5f60]   
+
++0x5f65 : 3 refs (1 WRITE, 2 read)
+    0x1800e0d31  mov qword ptr [rdi + 0x5f60], rax     <== WRITE
+    0x18013c85e  mov rbx, qword ptr [r15 + 0x5f60]   
+    0x18013d05b  sub r8, qword ptr [r15 + 0x5f60]   
+
++0x5f66 : 3 refs (1 WRITE, 2 read)
+    0x1800e0d31  mov qword ptr [rdi + 0x5f60], rax     <== WRITE
+    0x18013c85e  mov rbx, qword ptr [r15 + 0x5f60]   
+    0x18013d05b  sub r8, qword ptr [r15 + 0x5f60]   
+
++0x5f67 : 3 refs (1 WRITE, 2 read)
+    0x1800e0d31  mov qword ptr [rdi + 0x5f60], rax     <== WRITE
+    0x18013c85e  mov rbx, qword ptr [r15 + 0x5f60]   
+    0x18013d05b  sub r8, qword ptr [r15 + 0x5f60]   
+
++0x5f68 : 2 refs (1 WRITE, 1 read)
+    0x18013c9f0  mov dword ptr [r15 + 0x5f68], eax     <== WRITE
+    0x18013ca12  mov r11d, dword ptr [r15 + 0x5f68]   
+
++0x5f69 : 2 refs (1 WRITE, 1 read)
+    0x18013c9f0  mov dword ptr [r15 + 0x5f68], eax     <== WRITE
+    0x18013ca12  mov r11d, dword ptr [r15 + 0x5f68]   
+
++0x5f6c : 1 refs (0 WRITE, 1 read)
+    0x18013c868  mov r9d, dword ptr [r15 + 0x5f6c]   
+
++0x5f6d : 1 refs (0 WRITE, 1 read)
+    0x18013c868  mov r9d, dword ptr [r15 + 0x5f6c]   
+
++0x5f70 : 4 refs (0 WRITE, 4 read)
+    0x1801088c9  lea rcx, [rsi + 0x5f70]   
+    0x180122479  lea rcx, [rsi + 0x5f70]   
+    0x18013c97c  mov eax, dword ptr [r15 + 0x5f70]   
+    0x18013cf3c  cmp dword ptr [r15 + 0x5f70], 0xd2   
+
++0x5f71 : 4 refs (0 WRITE, 4 read)
+    0x1801088c9  lea rcx, [rsi + 0x5f70]   
+    0x180122479  lea rcx, [rsi + 0x5f70]   
+    0x18013c97c  mov eax, dword ptr [r15 + 0x5f70]   
+    0x18013cf3c  cmp dword ptr [r15 + 0x5f70], 0xd2   
+
++0x5f72 : 2 refs (0 WRITE, 2 read)
+    0x1801088c9  lea rcx, [rsi + 0x5f70]   
+    0x180122479  lea rcx, [rsi + 0x5f70]   
+
++0x5f73 : 2 refs (0 WRITE, 2 read)
+    0x1801088c9  lea rcx, [rsi + 0x5f70]   
+    0x180122479  lea rcx, [rsi + 0x5f70]   
+
++0x5f74 : 2 refs (0 WRITE, 2 read)
+    0x18013cd20  cmp eax, dword ptr [r15 + 0x5f74]   
+    0x18013cdd9  cmp eax, dword ptr [r15 + 0x5f74]   
+
++0x5f75 : 2 refs (0 WRITE, 2 read)
+    0x18013cd20  cmp eax, dword ptr [r15 + 0x5f74]   
+    0x18013cdd9  cmp eax, dword ptr [r15 + 0x5f74]   
+
++0x5f78 : 2 refs (1 WRITE, 1 read)
+    0x18013c9d0  mov qword ptr [r15 + 0x5f78], rdx     <== WRITE
+    0x18013cdbe  cmp rcx, qword ptr [r15 + 0x5f78]   
+
++0x5f79 : 2 refs (1 WRITE, 1 read)
+    0x18013c9d0  mov qword ptr [r15 + 0x5f78], rdx     <== WRITE
+    0x18013cdbe  cmp rcx, qword ptr [r15 + 0x5f78]   
+
++0x5f7a : 2 refs (1 WRITE, 1 read)
+    0x18013c9d0  mov qword ptr [r15 + 0x5f78], rdx     <== WRITE
+    0x18013cdbe  cmp rcx, qword ptr [r15 + 0x5f78]   
+
++0x5f7b : 2 refs (1 WRITE, 1 read)
+    0x18013c9d0  mov qword ptr [r15 + 0x5f78], rdx     <== WRITE
+    0x18013cdbe  cmp rcx, qword ptr [r15 + 0x5f78]   
+
++0x5f7c : 2 refs (1 WRITE, 1 read)
+    0x18013c9d0  mov qword ptr [r15 + 0x5f78], rdx     <== WRITE
+    0x18013cdbe  cmp rcx, qword ptr [r15 + 0x5f78]   
+
++0x5f7d : 2 refs (1 WRITE, 1 read)
+    0x18013c9d0  mov qword ptr [r15 + 0x5f78], rdx     <== WRITE
+    0x18013cdbe  cmp rcx, qword ptr [r15 + 0x5f78]   
+
++0x5f7e : 2 refs (1 WRITE, 1 read)
+    0x18013c9d0  mov qword ptr [r15 + 0x5f78], rdx     <== WRITE
+    0x18013cdbe  cmp rcx, qword ptr [r15 + 0x5f78]   
+
++0x5f7f : 2 refs (1 WRITE, 1 read)
+    0x18013c9d0  mov qword ptr [r15 + 0x5f78], rdx     <== WRITE
+    0x18013cdbe  cmp rcx, qword ptr [r15 + 0x5f78]   
+
++0x5f80 : 3 refs (1 WRITE, 2 read)
+    0x18013c886  movss dword ptr [r15 + 0x5f80], xmm0     <== WRITE
+    0x18013cde6  movss xmm0, dword ptr [r15 + 0x5f80]   
+    0x18013cec0  movss xmm0, dword ptr [r15 + 0x5f80]   
+
++0x5f81 : 3 refs (1 WRITE, 2 read)
+    0x18013c886  movss dword ptr [r15 + 0x5f80], xmm0     <== WRITE
+    0x18013cde6  movss xmm0, dword ptr [r15 + 0x5f80]   
+    0x18013cec0  movss xmm0, dword ptr [r15 + 0x5f80]   
+
++0x5f84 : 4 refs (2 WRITE, 2 read)
+    0x18013c8a8  movss dword ptr [r15 + 0x5f84], xmm1     <== WRITE
+    0x18013ca1c  movss xmm1, dword ptr [r15 + 0x5f84]   
+    0x18013cc9d  movss dword ptr [r15 + 0x5f84], xmm1     <== WRITE
+    0x18013cd30  movss xmm2, dword ptr [r15 + 0x5f84]   
+
++0x5f85 : 4 refs (2 WRITE, 2 read)
+    0x18013c8a8  movss dword ptr [r15 + 0x5f84], xmm1     <== WRITE
+    0x18013ca1c  movss xmm1, dword ptr [r15 + 0x5f84]   
+    0x18013cc9d  movss dword ptr [r15 + 0x5f84], xmm1     <== WRITE
+    0x18013cd30  movss xmm2, dword ptr [r15 + 0x5f84]   
+
++0x5f88 : 4 refs (2 WRITE, 2 read)
+    0x18013c9d7  mov qword ptr [r15 + 0x5f88], r12     <== WRITE
+    0x18013ca25  mov rdx, qword ptr [r15 + 0x5f88]   
+    0x18013ccbe  mov qword ptr [r15 + 0x5f88], rdx     <== WRITE
+    0x18013cd29  mov rcx, qword ptr [r15 + 0x5f88]   
+
++0x5f89 : 4 refs (2 WRITE, 2 read)
+    0x18013c9d7  mov qword ptr [r15 + 0x5f88], r12     <== WRITE
+    0x18013ca25  mov rdx, qword ptr [r15 + 0x5f88]   
+    0x18013ccbe  mov qword ptr [r15 + 0x5f88], rdx     <== WRITE
+    0x18013cd29  mov rcx, qword ptr [r15 + 0x5f88]   
+
++0x5f8a : 4 refs (2 WRITE, 2 read)
+    0x18013c9d7  mov qword ptr [r15 + 0x5f88], r12     <== WRITE
+    0x18013ca25  mov rdx, qword ptr [r15 + 0x5f88]   
+    0x18013ccbe  mov qword ptr [r15 + 0x5f88], rdx     <== WRITE
+    0x18013cd29  mov rcx, qword ptr [r15 + 0x5f88]   
+
++0x5f8b : 4 refs (2 WRITE, 2 read)
+    0x18013c9d7  mov qword ptr [r15 + 0x5f88], r12     <== WRITE
+    0x18013ca25  mov rdx, qword ptr [r15 + 0x5f88]   
+    0x18013ccbe  mov qword ptr [r15 + 0x5f88], rdx     <== WRITE
+    0x18013cd29  mov rcx, qword ptr [r15 + 0x5f88]   
+
++0x5f8c : 4 refs (2 WRITE, 2 read)
+    0x18013c9d7  mov qword ptr [r15 + 0x5f88], r12     <== WRITE
+    0x18013ca25  mov rdx, qword ptr [r15 + 0x5f88]   
+    0x18013ccbe  mov qword ptr [r15 + 0x5f88], rdx     <== WRITE
+    0x18013cd29  mov rcx, qword ptr [r15 + 0x5f88]   
+
++0x5f8d : 4 refs (2 WRITE, 2 read)
+    0x18013c9d7  mov qword ptr [r15 + 0x5f88], r12     <== WRITE
+    0x18013ca25  mov rdx, qword ptr [r15 + 0x5f88]   
+    0x18013ccbe  mov qword ptr [r15 + 0x5f88], rdx     <== WRITE
+    0x18013cd29  mov rcx, qword ptr [r15 + 0x5f88]   
+
++0x5f8e : 4 refs (2 WRITE, 2 read)
+    0x18013c9d7  mov qword ptr [r15 + 0x5f88], r12     <== WRITE
+    0x18013ca25  mov rdx, qword ptr [r15 + 0x5f88]   
+    0x18013ccbe  mov qword ptr [r15 + 0x5f88], rdx     <== WRITE
+    0x18013cd29  mov rcx, qword ptr [r15 + 0x5f88]   
+
++0x5f8f : 4 refs (2 WRITE, 2 read)
+    0x18013c9d7  mov qword ptr [r15 + 0x5f88], r12     <== WRITE
+    0x18013ca25  mov rdx, qword ptr [r15 + 0x5f88]   
+    0x18013ccbe  mov qword ptr [r15 + 0x5f88], rdx     <== WRITE
+    0x18013cd29  mov rcx, qword ptr [r15 + 0x5f88]   
+
++0x5f90 tracker state (case5/6 scalar): 15 refs (4 WRITE, 11 read)
+    0x1800e0dd9  mov dword ptr [rdi + 0x5f90], r8d     <== WRITE
+    0x1800f3c79  lea rcx, [r14 + 0x5f90]   
+    0x1800fbc4c  lea rcx, [rdi + 0x5f90]   
+    0x1801065b8  lea rcx, [rbx + 0x5f90]   
+    0x18010d919  lea rcx, [r14 + 0x5f90]   
+    0x18011588c  lea rcx, [rdi + 0x5f90]   
+    0x180120178  lea rcx, [rbx + 0x5f90]   
+    0x1801269d9  lea rcx, [r14 + 0x5f90]   
+    0x18012e94c  lea rcx, [rdi + 0x5f90]   
+    0x18013c997  movss dword ptr [r15 + 0x5f90], xmm5     <== WRITE
+    0x18013ca34  movss xmm0, dword ptr [r15 + 0x5f90]   
+    0x18013ccaa  movss dword ptr [r15 + 0x5f90], xmm0     <== WRITE
+    0x18013cd39  movss dword ptr [r15 + 0x5f90], xmm2     <== WRITE
+    0x18013cef5  movss xmm0, dword ptr [r15 + 0x5f90]   
+    0x18013cfcd  movss xmm1, dword ptr [r15 + 0x5f90]   
+
++0x5f91 : 15 refs (4 WRITE, 11 read)
+    0x1800e0dd9  mov dword ptr [rdi + 0x5f90], r8d     <== WRITE
+    0x1800f3c79  lea rcx, [r14 + 0x5f90]   
+    0x1800fbc4c  lea rcx, [rdi + 0x5f90]   
+    0x1801065b8  lea rcx, [rbx + 0x5f90]   
+    0x18010d919  lea rcx, [r14 + 0x5f90]   
+    0x18011588c  lea rcx, [rdi + 0x5f90]   
+    0x180120178  lea rcx, [rbx + 0x5f90]   
+    0x1801269d9  lea rcx, [r14 + 0x5f90]   
+    0x18012e94c  lea rcx, [rdi + 0x5f90]   
+    0x18013c997  movss dword ptr [r15 + 0x5f90], xmm5     <== WRITE
+    0x18013ca34  movss xmm0, dword ptr [r15 + 0x5f90]   
+    0x18013ccaa  movss dword ptr [r15 + 0x5f90], xmm0     <== WRITE
+    0x18013cd39  movss dword ptr [r15 + 0x5f90], xmm2     <== WRITE
+    0x18013cef5  movss xmm0, dword ptr [r15 + 0x5f90]   
+    0x18013cfcd  movss xmm1, dword ptr [r15 + 0x5f90]   
+
++0x5f92 : 8 refs (0 WRITE, 8 read)
+    0x1800f3c79  lea rcx, [r14 + 0x5f90]   
+    0x1800fbc4c  lea rcx, [rdi + 0x5f90]   
+    0x1801065b8  lea rcx, [rbx + 0x5f90]   
+    0x18010d919  lea rcx, [r14 + 0x5f90]   
+    0x18011588c  lea rcx, [rdi + 0x5f90]   
+    0x180120178  lea rcx, [rbx + 0x5f90]   
+    0x1801269d9  lea rcx, [r14 + 0x5f90]   
+    0x18012e94c  lea rcx, [rdi + 0x5f90]   
+
++0x5f93 : 8 refs (0 WRITE, 8 read)
+    0x1800f3c79  lea rcx, [r14 + 0x5f90]   
+    0x1800fbc4c  lea rcx, [rdi + 0x5f90]   
+    0x1801065b8  lea rcx, [rbx + 0x5f90]   
+    0x18010d919  lea rcx, [r14 + 0x5f90]   
+    0x18011588c  lea rcx, [rdi + 0x5f90]   
+    0x180120178  lea rcx, [rbx + 0x5f90]   
+    0x1801269d9  lea rcx, [r14 + 0x5f90]   
+    0x18012e94c  lea rcx, [rdi + 0x5f90]   
+
++0x5f98 position ptr A: 7 refs (3 WRITE, 4 read)
+    0x18013c9de  mov qword ptr [r15 + 0x5f98], r12     <== WRITE
+    0x18013ca3d  mov r8, qword ptr [r15 + 0x5f98]   
+    0x18013ccc5  mov qword ptr [r15 + 0x5f98], r8     <== WRITE
+    0x18013ccd1  mov rax, qword ptr [r15 + 0x5f98]   
+    0x18013cd42  mov qword ptr [r15 + 0x5f98], rcx     <== WRITE
+    0x18013ceab  mov rcx, qword ptr [r15 + 0x5f98]   
+    0x18013cf5c  mov r8, qword ptr [r15 + 0x5f98]   
+
++0x5f99 : 7 refs (3 WRITE, 4 read)
+    0x18013c9de  mov qword ptr [r15 + 0x5f98], r12     <== WRITE
+    0x18013ca3d  mov r8, qword ptr [r15 + 0x5f98]   
+    0x18013ccc5  mov qword ptr [r15 + 0x5f98], r8     <== WRITE
+    0x18013ccd1  mov rax, qword ptr [r15 + 0x5f98]   
+    0x18013cd42  mov qword ptr [r15 + 0x5f98], rcx     <== WRITE
+    0x18013ceab  mov rcx, qword ptr [r15 + 0x5f98]   
+    0x18013cf5c  mov r8, qword ptr [r15 + 0x5f98]   
+
++0x5f9a : 7 refs (3 WRITE, 4 read)
+    0x18013c9de  mov qword ptr [r15 + 0x5f98], r12     <== WRITE
+    0x18013ca3d  mov r8, qword ptr [r15 + 0x5f98]   
+    0x18013ccc5  mov qword ptr [r15 + 0x5f98], r8     <== WRITE
+    0x18013ccd1  mov rax, qword ptr [r15 + 0x5f98]   
+    0x18013cd42  mov qword ptr [r15 + 0x5f98], rcx     <== WRITE
+    0x18013ceab  mov rcx, qword ptr [r15 + 0x5f98]   
+    0x18013cf5c  mov r8, qword ptr [r15 + 0x5f98]   
+
++0x5f9b : 7 refs (3 WRITE, 4 read)
+    0x18013c9de  mov qword ptr [r15 + 0x5f98], r12     <== WRITE
+    0x18013ca3d  mov r8, qword ptr [r15 + 0x5f98]   
+    0x18013ccc5  mov qword ptr [r15 + 0x5f98], r8     <== WRITE
+    0x18013ccd1  mov rax, qword ptr [r15 + 0x5f98]   
+    0x18013cd42  mov qword ptr [r15 + 0x5f98], rcx     <== WRITE
+    0x18013ceab  mov rcx, qword ptr [r15 + 0x5f98]   
+    0x18013cf5c  mov r8, qword ptr [r15 + 0x5f98]   
+
++0x5f9c : 7 refs (3 WRITE, 4 read)
+    0x18013c9de  mov qword ptr [r15 + 0x5f98], r12     <== WRITE
+    0x18013ca3d  mov r8, qword ptr [r15 + 0x5f98]   
+    0x18013ccc5  mov qword ptr [r15 + 0x5f98], r8     <== WRITE
+    0x18013ccd1  mov rax, qword ptr [r15 + 0x5f98]   
+    0x18013cd42  mov qword ptr [r15 + 0x5f98], rcx     <== WRITE
+    0x18013ceab  mov rcx, qword ptr [r15 + 0x5f98]   
+    0x18013cf5c  mov r8, qword ptr [r15 + 0x5f98]   
+
++0x5f9d : 7 refs (3 WRITE, 4 read)
+    0x18013c9de  mov qword ptr [r15 + 0x5f98], r12     <== WRITE
+    0x18013ca3d  mov r8, qword ptr [r15 + 0x5f98]   
+    0x18013ccc5  mov qword ptr [r15 + 0x5f98], r8     <== WRITE
+    0x18013ccd1  mov rax, qword ptr [r15 + 0x5f98]   
+    0x18013cd42  mov qword ptr [r15 + 0x5f98], rcx     <== WRITE
+    0x18013ceab  mov rcx, qword ptr [r15 + 0x5f98]   
+    0x18013cf5c  mov r8, qword ptr [r15 + 0x5f98]   
+
++0x5f9e : 7 refs (3 WRITE, 4 read)
+    0x18013c9de  mov qword ptr [r15 + 0x5f98], r12     <== WRITE
+    0x18013ca3d  mov r8, qword ptr [r15 + 0x5f98]   
+    0x18013ccc5  mov qword ptr [r15 + 0x5f98], r8     <== WRITE
+    0x18013ccd1  mov rax, qword ptr [r15 + 0x5f98]   
+    0x18013cd42  mov qword ptr [r15 + 0x5f98], rcx     <== WRITE
+    0x18013ceab  mov rcx, qword ptr [r15 + 0x5f98]   
+    0x18013cf5c  mov r8, qword ptr [r15 + 0x5f98]   
+
++0x5f9f : 7 refs (3 WRITE, 4 read)
+    0x18013c9de  mov qword ptr [r15 + 0x5f98], r12     <== WRITE
+    0x18013ca3d  mov r8, qword ptr [r15 + 0x5f98]   
+    0x18013ccc5  mov qword ptr [r15 + 0x5f98], r8     <== WRITE
+    0x18013ccd1  mov rax, qword ptr [r15 + 0x5f98]   
+    0x18013cd42  mov qword ptr [r15 + 0x5f98], rcx     <== WRITE
+    0x18013ceab  mov rcx, qword ptr [r15 + 0x5f98]   
+    0x18013cf5c  mov r8, qword ptr [r15 + 0x5f98]   
+
++0x5fa0 last peak value: 4 refs (3 WRITE, 1 read)
+    0x1800e0de0  mov dword ptr [rdi + 0x5fa0], r8d     <== WRITE
+    0x18013ce0c  movss dword ptr [r15 + 0x5fa0], xmm1     <== WRITE
+    0x18013ce8f  mov dword ptr [r15 + 0x5fa0], r12d     <== WRITE
+    0x18013cf6c  movss xmm3, dword ptr [r15 + 0x5fa0]   
+
++0x5fa1 : 4 refs (3 WRITE, 1 read)
+    0x1800e0de0  mov dword ptr [rdi + 0x5fa0], r8d     <== WRITE
+    0x18013ce0c  movss dword ptr [r15 + 0x5fa0], xmm1     <== WRITE
+    0x18013ce8f  mov dword ptr [r15 + 0x5fa0], r12d     <== WRITE
+    0x18013cf6c  movss xmm3, dword ptr [r15 + 0x5fa0]   
+
++0x5fa8 position ptr B: 6 refs (4 WRITE, 2 read)
+    0x1800e0de7  mov qword ptr [rdi + 0x5fa8], r8     <== WRITE
+    0x18013cd59  mov rax, qword ptr [r15 + 0x5fa8]   
+    0x18013ce15  mov qword ptr [r15 + 0x5fa8], rax     <== WRITE
+    0x18013ce96  mov qword ptr [r15 + 0x5fa8], r12     <== WRITE
+    0x18013cf90  mov r9, qword ptr [r15 + 0x5fa8]   
+    0x18013d01a  mov qword ptr [r15 + 0x5fa8], r8     <== WRITE
+
++0x5fa9 : 6 refs (4 WRITE, 2 read)
+    0x1800e0de7  mov qword ptr [rdi + 0x5fa8], r8     <== WRITE
+    0x18013cd59  mov rax, qword ptr [r15 + 0x5fa8]   
+    0x18013ce15  mov qword ptr [r15 + 0x5fa8], rax     <== WRITE
+    0x18013ce96  mov qword ptr [r15 + 0x5fa8], r12     <== WRITE
+    0x18013cf90  mov r9, qword ptr [r15 + 0x5fa8]   
+    0x18013d01a  mov qword ptr [r15 + 0x5fa8], r8     <== WRITE
+
++0x5faa : 6 refs (4 WRITE, 2 read)
+    0x1800e0de7  mov qword ptr [rdi + 0x5fa8], r8     <== WRITE
+    0x18013cd59  mov rax, qword ptr [r15 + 0x5fa8]   
+    0x18013ce15  mov qword ptr [r15 + 0x5fa8], rax     <== WRITE
+    0x18013ce96  mov qword ptr [r15 + 0x5fa8], r12     <== WRITE
+    0x18013cf90  mov r9, qword ptr [r15 + 0x5fa8]   
+    0x18013d01a  mov qword ptr [r15 + 0x5fa8], r8     <== WRITE
+
++0x5fab : 6 refs (4 WRITE, 2 read)
+    0x1800e0de7  mov qword ptr [rdi + 0x5fa8], r8     <== WRITE
+    0x18013cd59  mov rax, qword ptr [r15 + 0x5fa8]   
+    0x18013ce15  mov qword ptr [r15 + 0x5fa8], rax     <== WRITE
+    0x18013ce96  mov qword ptr [r15 + 0x5fa8], r12     <== WRITE
+    0x18013cf90  mov r9, qword ptr [r15 + 0x5fa8]   
+    0x18013d01a  mov qword ptr [r15 + 0x5fa8], r8     <== WRITE
+
++0x5fac : 6 refs (4 WRITE, 2 read)
+    0x1800e0de7  mov qword ptr [rdi + 0x5fa8], r8     <== WRITE
+    0x18013cd59  mov rax, qword ptr [r15 + 0x5fa8]   
+    0x18013ce15  mov qword ptr [r15 + 0x5fa8], rax     <== WRITE
+    0x18013ce96  mov qword ptr [r15 + 0x5fa8], r12     <== WRITE
+    0x18013cf90  mov r9, qword ptr [r15 + 0x5fa8]   
+    0x18013d01a  mov qword ptr [r15 + 0x5fa8], r8     <== WRITE
+
++0x5fad : 6 refs (4 WRITE, 2 read)
+    0x1800e0de7  mov qword ptr [rdi + 0x5fa8], r8     <== WRITE
+    0x18013cd59  mov rax, qword ptr [r15 + 0x5fa8]   
+    0x18013ce15  mov qword ptr [r15 + 0x5fa8], rax     <== WRITE
+    0x18013ce96  mov qword ptr [r15 + 0x5fa8], r12     <== WRITE
+    0x18013cf90  mov r9, qword ptr [r15 + 0x5fa8]   
+    0x18013d01a  mov qword ptr [r15 + 0x5fa8], r8     <== WRITE
+
++0x5fae : 6 refs (4 WRITE, 2 read)
+    0x1800e0de7  mov qword ptr [rdi + 0x5fa8], r8     <== WRITE
+    0x18013cd59  mov rax, qword ptr [r15 + 0x5fa8]   
+    0x18013ce15  mov qword ptr [r15 + 0x5fa8], rax     <== WRITE
+    0x18013ce96  mov qword ptr [r15 + 0x5fa8], r12     <== WRITE
+    0x18013cf90  mov r9, qword ptr [r15 + 0x5fa8]   
+    0x18013d01a  mov qword ptr [r15 + 0x5fa8], r8     <== WRITE
+
++0x5faf : 6 refs (4 WRITE, 2 read)
+    0x1800e0de7  mov qword ptr [rdi + 0x5fa8], r8     <== WRITE
+    0x18013cd59  mov rax, qword ptr [r15 + 0x5fa8]   
+    0x18013ce15  mov qword ptr [r15 + 0x5fa8], rax     <== WRITE
+    0x18013ce96  mov qword ptr [r15 + 0x5fa8], r12     <== WRITE
+    0x18013cf90  mov r9, qword ptr [r15 + 0x5fa8]   
+    0x18013d01a  mov qword ptr [r15 + 0x5fa8], r8     <== WRITE
+
++0x5fb0 counter A: 5 refs (3 WRITE, 2 read)
+    0x1800e0dee  mov qword ptr [rdi + 0x5fb0], r8     <== WRITE
+    0x18013ceed  cmovle r12d, dword ptr [r15 + 0x5fb0]   
+    0x18013cf25  mov dword ptr [r15 + 0x5fb0], r12d     <== WRITE
+    0x18013d008  mov eax, dword ptr [r15 + 0x5fb0]   
+    0x18013d028  mov dword ptr [r15 + 0x5fb0], r12d     <== WRITE
+
++0x5fb1 : 5 refs (3 WRITE, 2 read)
+    0x1800e0dee  mov qword ptr [rdi + 0x5fb0], r8     <== WRITE
+    0x18013ceed  cmovle r12d, dword ptr [r15 + 0x5fb0]   
+    0x18013cf25  mov dword ptr [r15 + 0x5fb0], r12d     <== WRITE
+    0x18013d008  mov eax, dword ptr [r15 + 0x5fb0]   
+    0x18013d028  mov dword ptr [r15 + 0x5fb0], r12d     <== WRITE
+
++0x5fb2 : 1 refs (1 WRITE, 0 read)
+    0x1800e0dee  mov qword ptr [rdi + 0x5fb0], r8     <== WRITE
+
++0x5fb3 : 1 refs (1 WRITE, 0 read)
+    0x1800e0dee  mov qword ptr [rdi + 0x5fb0], r8     <== WRITE
+
++0x5fb4 counter B: 6 refs (5 WRITE, 1 read)
+    0x1800e0dee  mov qword ptr [rdi + 0x5fb0], r8     <== WRITE
+    0x18013ce1c  mov eax, dword ptr [r15 + 0x5fb4]   
+    0x18013ce2a  mov dword ptr [r15 + 0x5fb4], r8d     <== WRITE
+    0x18013ce33  mov dword ptr [r15 + 0x5fb4], eax     <== WRITE
+    0x18013ce9d  mov dword ptr [r15 + 0x5fb4], r12d     <== WRITE
+    0x18013d021  mov dword ptr [r15 + 0x5fb4], eax     <== WRITE
+
++0x5fb5 : 6 refs (5 WRITE, 1 read)
+    0x1800e0dee  mov qword ptr [rdi + 0x5fb0], r8     <== WRITE
+    0x18013ce1c  mov eax, dword ptr [r15 + 0x5fb4]   
+    0x18013ce2a  mov dword ptr [r15 + 0x5fb4], r8d     <== WRITE
+    0x18013ce33  mov dword ptr [r15 + 0x5fb4], eax     <== WRITE
+    0x18013ce9d  mov dword ptr [r15 + 0x5fb4], r12d     <== WRITE
+    0x18013d021  mov dword ptr [r15 + 0x5fb4], eax     <== WRITE
+
++0x5fb6 : 1 refs (1 WRITE, 0 read)
+    0x1800e0dee  mov qword ptr [rdi + 0x5fb0], r8     <== WRITE
+
++0x5fb7 : 1 refs (1 WRITE, 0 read)
+    0x1800e0dee  mov qword ptr [rdi + 0x5fb0], r8     <== WRITE
+
++0x5fb8 position ptr C: 4 refs (3 WRITE, 1 read)
+    0x1800e0dfc  mov qword ptr [rdi + 0x5fb8], r8     <== WRITE
+    0x18013ceb7  mov qword ptr [r15 + 0x5fb8], r12     <== WRITE
+    0x18013cec9  mov rax, qword ptr [r15 + 0x5fb8]   
+    0x18013cedc  mov qword ptr [r15 + 0x5fb8], rcx     <== WRITE
+
++0x5fb9 : 4 refs (3 WRITE, 1 read)
+    0x1800e0dfc  mov qword ptr [rdi + 0x5fb8], r8     <== WRITE
+    0x18013ceb7  mov qword ptr [r15 + 0x5fb8], r12     <== WRITE
+    0x18013cec9  mov rax, qword ptr [r15 + 0x5fb8]   
+    0x18013cedc  mov qword ptr [r15 + 0x5fb8], rcx     <== WRITE
+
++0x5fba : 4 refs (3 WRITE, 1 read)
+    0x1800e0dfc  mov qword ptr [rdi + 0x5fb8], r8     <== WRITE
+    0x18013ceb7  mov qword ptr [r15 + 0x5fb8], r12     <== WRITE
+    0x18013cec9  mov rax, qword ptr [r15 + 0x5fb8]   
+    0x18013cedc  mov qword ptr [r15 + 0x5fb8], rcx     <== WRITE
+
++0x5fbb : 4 refs (3 WRITE, 1 read)
+    0x1800e0dfc  mov qword ptr [rdi + 0x5fb8], r8     <== WRITE
+    0x18013ceb7  mov qword ptr [r15 + 0x5fb8], r12     <== WRITE
+    0x18013cec9  mov rax, qword ptr [r15 + 0x5fb8]   
+    0x18013cedc  mov qword ptr [r15 + 0x5fb8], rcx     <== WRITE
+
++0x5fbc : 4 refs (3 WRITE, 1 read)
+    0x1800e0dfc  mov qword ptr [rdi + 0x5fb8], r8     <== WRITE
+    0x18013ceb7  mov qword ptr [r15 + 0x5fb8], r12     <== WRITE
+    0x18013cec9  mov rax, qword ptr [r15 + 0x5fb8]   
+    0x18013cedc  mov qword ptr [r15 + 0x5fb8], rcx     <== WRITE
+
++0x5fbd : 4 refs (3 WRITE, 1 read)
+    0x1800e0dfc  mov qword ptr [rdi + 0x5fb8], r8     <== WRITE
+    0x18013ceb7  mov qword ptr [r15 + 0x5fb8], r12     <== WRITE
+    0x18013cec9  mov rax, qword ptr [r15 + 0x5fb8]   
+    0x18013cedc  mov qword ptr [r15 + 0x5fb8], rcx     <== WRITE
+
++0x5fbe : 4 refs (3 WRITE, 1 read)
+    0x1800e0dfc  mov qword ptr [rdi + 0x5fb8], r8     <== WRITE
+    0x18013ceb7  mov qword ptr [r15 + 0x5fb8], r12     <== WRITE
+    0x18013cec9  mov rax, qword ptr [r15 + 0x5fb8]   
+    0x18013cedc  mov qword ptr [r15 + 0x5fb8], rcx     <== WRITE
+
++0x5fbf : 4 refs (3 WRITE, 1 read)
+    0x1800e0dfc  mov qword ptr [rdi + 0x5fb8], r8     <== WRITE
+    0x18013ceb7  mov qword ptr [r15 + 0x5fb8], r12     <== WRITE
+    0x18013cec9  mov rax, qword ptr [r15 + 0x5fb8]   
+    0x18013cedc  mov qword ptr [r15 + 0x5fb8], rcx     <== WRITE
+
++0x5fc0 glide state: 8 refs (5 WRITE, 3 read)
+    0x1800e0df5  mov dword ptr [rdi + 0x5fc0], r8d     <== WRITE
+    0x18013ce61  movss xmm3, dword ptr [r15 + 0x5fc0]   
+    0x18013ce84  movss dword ptr [r15 + 0x5fc0], xmm1     <== WRITE
+    0x18013cea4  mov dword ptr [r15 + 0x5fc0], r12d     <== WRITE
+    0x18013cf85  movss xmm2, dword ptr [r15 + 0x5fc0]   
+    0x18013cfb8  movss xmm2, dword ptr [r15 + 0x5fc0]   
+    0x18013cfe4  movss dword ptr [r15 + 0x5fc0], xmm2     <== WRITE
+    0x18013d02f  movss dword ptr [r15 + 0x5fc0], xmm2     <== WRITE
+
++0x5fc1 : 8 refs (5 WRITE, 3 read)
+    0x1800e0df5  mov dword ptr [rdi + 0x5fc0], r8d     <== WRITE
+    0x18013ce61  movss xmm3, dword ptr [r15 + 0x5fc0]   
+    0x18013ce84  movss dword ptr [r15 + 0x5fc0], xmm1     <== WRITE
+    0x18013cea4  mov dword ptr [r15 + 0x5fc0], r12d     <== WRITE
+    0x18013cf85  movss xmm2, dword ptr [r15 + 0x5fc0]   
+    0x18013cfb8  movss xmm2, dword ptr [r15 + 0x5fc0]   
+    0x18013cfe4  movss dword ptr [r15 + 0x5fc0], xmm2     <== WRITE
+    0x18013d02f  movss dword ptr [r15 + 0x5fc0], xmm2     <== WRITE
+
++0x5fc8 ptr to 2-float (magnitude, level): 5 refs (1 WRITE, 4 read)
+    0x1800e0d3c  mov qword ptr [rdi + 0x5fc8], rax     <== WRITE
+    0x18013bd01  mov rcx, qword ptr [r15 + 0x5fc8]   
+    0x18013bd69  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d0d3  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d157  mov rax, qword ptr [r15 + 0x5fc8]   
+
++0x5fc9 : 5 refs (1 WRITE, 4 read)
+    0x1800e0d3c  mov qword ptr [rdi + 0x5fc8], rax     <== WRITE
+    0x18013bd01  mov rcx, qword ptr [r15 + 0x5fc8]   
+    0x18013bd69  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d0d3  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d157  mov rax, qword ptr [r15 + 0x5fc8]   
+
++0x5fca : 5 refs (1 WRITE, 4 read)
+    0x1800e0d3c  mov qword ptr [rdi + 0x5fc8], rax     <== WRITE
+    0x18013bd01  mov rcx, qword ptr [r15 + 0x5fc8]   
+    0x18013bd69  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d0d3  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d157  mov rax, qword ptr [r15 + 0x5fc8]   
+
++0x5fcb : 5 refs (1 WRITE, 4 read)
+    0x1800e0d3c  mov qword ptr [rdi + 0x5fc8], rax     <== WRITE
+    0x18013bd01  mov rcx, qword ptr [r15 + 0x5fc8]   
+    0x18013bd69  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d0d3  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d157  mov rax, qword ptr [r15 + 0x5fc8]   
+
++0x5fcc : 5 refs (1 WRITE, 4 read)
+    0x1800e0d3c  mov qword ptr [rdi + 0x5fc8], rax     <== WRITE
+    0x18013bd01  mov rcx, qword ptr [r15 + 0x5fc8]   
+    0x18013bd69  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d0d3  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d157  mov rax, qword ptr [r15 + 0x5fc8]   
+
++0x5fcd : 5 refs (1 WRITE, 4 read)
+    0x1800e0d3c  mov qword ptr [rdi + 0x5fc8], rax     <== WRITE
+    0x18013bd01  mov rcx, qword ptr [r15 + 0x5fc8]   
+    0x18013bd69  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d0d3  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d157  mov rax, qword ptr [r15 + 0x5fc8]   
+
++0x5fce : 5 refs (1 WRITE, 4 read)
+    0x1800e0d3c  mov qword ptr [rdi + 0x5fc8], rax     <== WRITE
+    0x18013bd01  mov rcx, qword ptr [r15 + 0x5fc8]   
+    0x18013bd69  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d0d3  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d157  mov rax, qword ptr [r15 + 0x5fc8]   
+
++0x5fcf : 5 refs (1 WRITE, 4 read)
+    0x1800e0d3c  mov qword ptr [rdi + 0x5fc8], rax     <== WRITE
+    0x18013bd01  mov rcx, qword ptr [r15 + 0x5fc8]   
+    0x18013bd69  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d0d3  mov rax, qword ptr [r15 + 0x5fc8]   
+    0x18013d157  mov rax, qword ptr [r15 + 0x5fc8]   
+
++0x5fd0 gatelevel: 1 refs (0 WRITE, 1 read)
+    0x18013d0da  movss xmm0, dword ptr [r15 + 0x5fd0]   
+
++0x5fd1 : 1 refs (0 WRITE, 1 read)
+    0x18013d0da  movss xmm0, dword ptr [r15 + 0x5fd0]   
+
++0x5fd4 PERIOD ESTIMATE x 2^11 (input samples): 5 refs (2 WRITE, 3 read)
+    0x1800dfe86  movss xmm1, dword ptr [rcx + 0x5fd4]   
+    0x1800e0341  mov eax, dword ptr [r9 + 0x5fd4]    [gap sweep]
+    0x1800e0e4c  movss dword ptr [rdi + 0x5fd4], xmm0     <== WRITE
+    0x18013d0ca  movss xmm8, dword ptr [r15 + 0x5fd4]   
+    0x18013d10e  movss dword ptr [r15 + 0x5fd4], xmm8     <== WRITE
+
++0x5fd5 : 5 refs (2 WRITE, 3 read)
+    0x1800dfe86  movss xmm1, dword ptr [rcx + 0x5fd4]   
+    0x1800e0341  mov eax, dword ptr [r9 + 0x5fd4]    [gap sweep]
+    0x1800e0e4c  movss dword ptr [rdi + 0x5fd4], xmm0     <== WRITE
+    0x18013d0ca  movss xmm8, dword ptr [r15 + 0x5fd4]   
+    0x18013d10e  movss dword ptr [r15 + 0x5fd4], xmm8     <== WRITE
+
++0x5fd8 record ring base (engine+0x98): 8 refs (1 WRITE, 7 read)
+    0x1800e0260  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0282  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e029a  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02cd  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02ec  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0313  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e033a  mov rcx, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0d4a  mov qword ptr [rdi + 0x5fd8], rax     <== WRITE
+
++0x5fd9 : 8 refs (1 WRITE, 7 read)
+    0x1800e0260  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0282  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e029a  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02cd  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02ec  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0313  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e033a  mov rcx, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0d4a  mov qword ptr [rdi + 0x5fd8], rax     <== WRITE
+
++0x5fda : 8 refs (1 WRITE, 7 read)
+    0x1800e0260  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0282  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e029a  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02cd  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02ec  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0313  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e033a  mov rcx, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0d4a  mov qword ptr [rdi + 0x5fd8], rax     <== WRITE
+
++0x5fdb : 8 refs (1 WRITE, 7 read)
+    0x1800e0260  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0282  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e029a  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02cd  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02ec  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0313  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e033a  mov rcx, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0d4a  mov qword ptr [rdi + 0x5fd8], rax     <== WRITE
+
++0x5fdc : 8 refs (1 WRITE, 7 read)
+    0x1800e0260  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0282  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e029a  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02cd  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02ec  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0313  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e033a  mov rcx, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0d4a  mov qword ptr [rdi + 0x5fd8], rax     <== WRITE
+
++0x5fdd : 8 refs (1 WRITE, 7 read)
+    0x1800e0260  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0282  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e029a  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02cd  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02ec  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0313  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e033a  mov rcx, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0d4a  mov qword ptr [rdi + 0x5fd8], rax     <== WRITE
+
++0x5fde : 8 refs (1 WRITE, 7 read)
+    0x1800e0260  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0282  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e029a  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02cd  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02ec  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0313  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e033a  mov rcx, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0d4a  mov qword ptr [rdi + 0x5fd8], rax     <== WRITE
+
++0x5fdf : 8 refs (1 WRITE, 7 read)
+    0x1800e0260  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0282  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e029a  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02cd  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e02ec  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0313  mov rax, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e033a  mov rcx, qword ptr [r9 + 0x5fd8]    [gap sweep]
+    0x1800e0d4a  mov qword ptr [rdi + 0x5fd8], rax     <== WRITE
+
++0x5fe0 ring mask 0xFFF: 9 refs (1 WRITE, 8 read)
+    0x1800e0259  and r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e027b  and edx, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e0293  and edx, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e02b5  and r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e02c3  mov r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e02e2  mov r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e0309  mov r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e0330  mov r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e0d51  mov dword ptr [rdi + 0x5fe0], 0xfff     <== WRITE
+
++0x5fe1 : 9 refs (1 WRITE, 8 read)
+    0x1800e0259  and r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e027b  and edx, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e0293  and edx, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e02b5  and r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e02c3  mov r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e02e2  mov r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e0309  mov r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e0330  mov r8d, dword ptr [r9 + 0x5fe0]    [gap sweep]
+    0x1800e0d51  mov dword ptr [rdi + 0x5fe0], 0xfff     <== WRITE
+
++0x5fe4 ring write index (wdelta): 3 refs (2 WRITE, 1 read)
+    0x1800e0238  mov r8d, dword ptr [r9 + 0x5fe4]    [gap sweep]
+    0x1800e034e  mov dword ptr [r9 + 0x5fe4], r8d     <== WRITE [gap sweep]
+    0x1800e0d9e  mov dword ptr [rdi + 0x5fe4], r8d     <== WRITE
+
++0x5fe5 : 3 refs (2 WRITE, 1 read)
+    0x1800e0238  mov r8d, dword ptr [r9 + 0x5fe4]    [gap sweep]
+    0x1800e034e  mov dword ptr [r9 + 0x5fe4], r8d     <== WRITE [gap sweep]
+    0x1800e0d9e  mov dword ptr [rdi + 0x5fe4], r8d     <== WRITE
+
++0x5fe8 tracking flag: 2 refs (1 WRITE, 1 read)
+    0x1800e0246  cmp byte ptr [r9 + 0x5fe8], 0    [gap sweep]
+    0x1800e0d65  mov byte ptr [rdi + 0x5fe8], 1     <== WRITE
+
++0x5fe9 : 2 refs (1 WRITE, 1 read)
+    0x1800e0246  cmp byte ptr [r9 + 0x5fe8], 0    [gap sweep]
+    0x1800e0d65  mov byte ptr [rdi + 0x5fe8], 1     <== WRITE
+
++0x5fea : 2 refs (1 WRITE, 1 read)
+    0x1800e0246  cmp byte ptr [r9 + 0x5fe8], 0    [gap sweep]
+    0x1800e0d65  mov byte ptr [rdi + 0x5fe8], 1     <== WRITE
+
++0x5feb : 2 refs (1 WRITE, 1 read)
+    0x1800e0246  cmp byte ptr [r9 + 0x5fe8], 0    [gap sweep]
+    0x1800e0d65  mov byte ptr [rdi + 0x5fe8], 1     <== WRITE
+
++0x5fec confidence/magnitude: 5 refs (2 WRITE, 3 read)
+    0x1800e0133  movss xmm0, dword ptr [rdi + 0x5fec]   
+    0x1800e0dc8  mov qword ptr [rdi + 0x5fec], r8     <== WRITE
+    0x18013ce47  comiss xmm0, dword ptr [r15 + 0x5fec]   
+    0x18013d15e  movss xmm2, dword ptr [r15 + 0x5fec]   
+    0x18013d1ad  movss dword ptr [r15 + 0x5fec], xmm2     <== WRITE
+
++0x5fed : 5 refs (2 WRITE, 3 read)
+    0x1800e0133  movss xmm0, dword ptr [rdi + 0x5fec]   
+    0x1800e0dc8  mov qword ptr [rdi + 0x5fec], r8     <== WRITE
+    0x18013ce47  comiss xmm0, dword ptr [r15 + 0x5fec]   
+    0x18013d15e  movss xmm2, dword ptr [r15 + 0x5fec]   
+    0x18013d1ad  movss dword ptr [r15 + 0x5fec], xmm2     <== WRITE
+
++0x5fee : 1 refs (1 WRITE, 0 read)
+    0x1800e0dc8  mov qword ptr [rdi + 0x5fec], r8     <== WRITE
+
++0x5fef : 1 refs (1 WRITE, 0 read)
+    0x1800e0dc8  mov qword ptr [rdi + 0x5fec], r8     <== WRITE
+
++0x5ff0 : 3 refs (2 WRITE, 1 read)
+    0x1800e0dc8  mov qword ptr [rdi + 0x5fec], r8     <== WRITE
+    0x18013bde7  mulss xmm11, dword ptr [r15 + 0x5ff0]   
+    0x18013d1db  movss dword ptr [r15 + 0x5ff0], xmm0     <== WRITE
+
++0x5ff1 : 3 refs (2 WRITE, 1 read)
+    0x1800e0dc8  mov qword ptr [rdi + 0x5fec], r8     <== WRITE
+    0x18013bde7  mulss xmm11, dword ptr [r15 + 0x5ff0]   
+    0x18013d1db  movss dword ptr [r15 + 0x5ff0], xmm0     <== WRITE
+
++0x5ff2 : 1 refs (1 WRITE, 0 read)
+    0x1800e0dc8  mov qword ptr [rdi + 0x5fec], r8     <== WRITE
+
++0x5ff3 : 1 refs (1 WRITE, 0 read)
+    0x1800e0dc8  mov qword ptr [rdi + 0x5fec], r8     <== WRITE
+
++0x5ff4 scalar state: 2 refs (1 WRITE, 1 read)
+    0x1800e0dcf  mov dword ptr [rdi + 0x5ff4], 0x3c000000     <== WRITE
+    0x18013d1bf  movss xmm0, dword ptr [r15 + 0x5ff4]   
+
++0x5ff5 : 2 refs (1 WRITE, 1 read)
+    0x1800e0dcf  mov dword ptr [rdi + 0x5ff4], 0x3c000000     <== WRITE
+    0x18013d1bf  movss xmm0, dword ptr [r15 + 0x5ff4]   
+
++0x5ff8 state machine id: 11 refs (10 WRITE, 1 read)
+    0x1800e0dc1  mov qword ptr [rdi + 0x5ff8], r8     <== WRITE
+    0x18013be40  movsxd rax, dword ptr [r15 + 0x5ff8]   
+    0x18013c1e7  mov dword ptr [r15 + 0x5ff8], eax     <== WRITE
+    0x18013c82a  mov dword ptr [r15 + 0x5ff8], r12d     <== WRITE
+    0x18013c9fc  mov dword ptr [r15 + 0x5ff8], eax     <== WRITE
+    0x18013cd49  mov dword ptr [r15 + 0x5ff8], 5     <== WRITE
+    0x18013cf2c  mov dword ptr [r15 + 0x5ff8], 6     <== WRITE
+    0x18013d117  mov dword ptr [r15 + 0x5ff8], 7     <== WRITE
+    0x18013d12f  mov dword ptr [r15 + 0x5ff8], 8     <== WRITE
+    0x18013d147  mov dword ptr [r15 + 0x5ff8], 9     <== WRITE
+    0x18013d1e4  mov dword ptr [r15 + 0x5ff8], r12d     <== WRITE
+
++0x5ff9 : 11 refs (10 WRITE, 1 read)
+    0x1800e0dc1  mov qword ptr [rdi + 0x5ff8], r8     <== WRITE
+    0x18013be40  movsxd rax, dword ptr [r15 + 0x5ff8]   
+    0x18013c1e7  mov dword ptr [r15 + 0x5ff8], eax     <== WRITE
+    0x18013c82a  mov dword ptr [r15 + 0x5ff8], r12d     <== WRITE
+    0x18013c9fc  mov dword ptr [r15 + 0x5ff8], eax     <== WRITE
+    0x18013cd49  mov dword ptr [r15 + 0x5ff8], 5     <== WRITE
+    0x18013cf2c  mov dword ptr [r15 + 0x5ff8], 6     <== WRITE
+    0x18013d117  mov dword ptr [r15 + 0x5ff8], 7     <== WRITE
+    0x18013d12f  mov dword ptr [r15 + 0x5ff8], 8     <== WRITE
+    0x18013d147  mov dword ptr [r15 + 0x5ff8], 9     <== WRITE
+    0x18013d1e4  mov dword ptr [r15 + 0x5ff8], r12d     <== WRITE
+
++0x5ffa : 1 refs (1 WRITE, 0 read)
+    0x1800e0dc1  mov qword ptr [rdi + 0x5ff8], r8     <== WRITE
+
++0x5ffb : 1 refs (1 WRITE, 0 read)
+    0x1800e0dc1  mov qword ptr [rdi + 0x5ff8], r8     <== WRITE
+
++0x5ffc : 7 refs (5 WRITE, 2 read)
+    0x1800e0dc1  mov qword ptr [rdi + 0x5ff8], r8     <== WRITE
+    0x18013c1c1  mov dword ptr [r15 + 0x5ffc], 0x51     <== WRITE
+    0x18013c7f9  dec dword ptr [r15 + 0x5ffc]     <== WRITE
+    0x18013c800  cmp dword ptr [r15 + 0x5ffc], r12d   
+    0x18013c9e5  mov dword ptr [r15 + 0x5ffc], 7     <== WRITE
+    0x18013cc8b  dec dword ptr [r15 + 0x5ffc]     <== WRITE
+    0x18013cc96  cmp dword ptr [r15 + 0x5ffc], r12d   
+
++0x5ffd : 7 refs (5 WRITE, 2 read)
+    0x1800e0dc1  mov qword ptr [rdi + 0x5ff8], r8     <== WRITE
+    0x18013c1c1  mov dword ptr [r15 + 0x5ffc], 0x51     <== WRITE
+    0x18013c7f9  dec dword ptr [r15 + 0x5ffc]     <== WRITE
+    0x18013c800  cmp dword ptr [r15 + 0x5ffc], r12d   
+    0x18013c9e5  mov dword ptr [r15 + 0x5ffc], 7     <== WRITE
+    0x18013cc8b  dec dword ptr [r15 + 0x5ffc]     <== WRITE
+    0x18013cc96  cmp dword ptr [r15 + 0x5ffc], r12d   
+
++0x5ffe : 1 refs (1 WRITE, 0 read)
+    0x1800e0dc1  mov qword ptr [rdi + 0x5ff8], r8     <== WRITE
+
++0x5fff : 1 refs (1 WRITE, 0 read)
+    0x1800e0dc1  mov qword ptr [rdi + 0x5ff8], r8     <== WRITE
+
++0x6000 : 2 refs (1 WRITE, 1 read)
+    0x1800e0e03  mov dword ptr [rdi + 0x6000], 0x3d924925     <== WRITE
+    0x18013c9a7  mulss xmm0, dword ptr [r15 + 0x6000]   
+
++0x6001 : 2 refs (1 WRITE, 1 read)
+    0x1800e0e03  mov dword ptr [rdi + 0x6000], 0x3d924925     <== WRITE
+    0x18013c9a7  mulss xmm0, dword ptr [r15 + 0x6000]   
+
++0x6004 : 4 refs (2 WRITE, 2 read)
+    0x1800e0d86  mov dword ptr [rdi + 0x6004], 1     <== WRITE
+    0x18013bdf0  movsxd rax, dword ptr [r15 + 0x6004]   
+    0x18013be1b  mov eax, dword ptr [r15 + 0x6004]   
+    0x18013be29  mov dword ptr [r15 + 0x6004], eax     <== WRITE
+
++0x6005 : 4 refs (2 WRITE, 2 read)
+    0x1800e0d86  mov dword ptr [rdi + 0x6004], 1     <== WRITE
+    0x18013bdf0  movsxd rax, dword ptr [r15 + 0x6004]   
+    0x18013be1b  mov eax, dword ptr [r15 + 0x6004]   
+    0x18013be29  mov dword ptr [r15 + 0x6004], eax     <== WRITE
+
++0x6008 2048.0 = 2^11: 8 refs (1 WRITE, 7 read)
+    0x1800dfeb7  movss xmm0, dword ptr [rcx + 0x6008]   
+    0x1800e0d5b  mov dword ptr [rdi + 0x6008], 0x45000000     <== WRITE
+    0x1800e0e3c  movss xmm0, dword ptr [rdi + 0x6008]   
+    0x1801088bd  lea rcx, [rsi + 0x6008]   
+    0x18012246d  lea rcx, [rsi + 0x6008]   
+    0x18013d066  movss xmm0, dword ptr [r15 + 0x6008]   
+    0x18013d0f2  movss xmm0, dword ptr [r15 + 0x6008]   
+    0x18013e19a  movss xmm3, dword ptr [rcx + 0x6008]    [gap sweep]
+
++0x6009 : 8 refs (1 WRITE, 7 read)
+    0x1800dfeb7  movss xmm0, dword ptr [rcx + 0x6008]   
+    0x1800e0d5b  mov dword ptr [rdi + 0x6008], 0x45000000     <== WRITE
+    0x1800e0e3c  movss xmm0, dword ptr [rdi + 0x6008]   
+    0x1801088bd  lea rcx, [rsi + 0x6008]   
+    0x18012246d  lea rcx, [rsi + 0x6008]   
+    0x18013d066  movss xmm0, dword ptr [r15 + 0x6008]   
+    0x18013d0f2  movss xmm0, dword ptr [r15 + 0x6008]   
+    0x18013e19a  movss xmm3, dword ptr [rcx + 0x6008]    [gap sweep]
+
++0x600a : 2 refs (0 WRITE, 2 read)
+    0x1801088bd  lea rcx, [rsi + 0x6008]   
+    0x18012246d  lea rcx, [rsi + 0x6008]   
+
++0x600b : 2 refs (0 WRITE, 2 read)
+    0x1801088bd  lea rcx, [rsi + 0x6008]   
+    0x18012246d  lea rcx, [rsi + 0x6008]   
+
++0x6010 : 1 refs (1 WRITE, 0 read)
+    0x1800e0e0d  mov dword ptr [rdi + 0x6010], r8d     <== WRITE
+
++0x6011 : 1 refs (1 WRITE, 0 read)
+    0x1800e0e0d  mov dword ptr [rdi + 0x6010], r8d     <== WRITE
+
++0x6018 cand table ptr 1: 2 refs (1 WRITE, 1 read)

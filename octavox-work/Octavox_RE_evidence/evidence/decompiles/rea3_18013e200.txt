@@ -1,0 +1,34 @@
+
+void FUN_18013e200(undefined8 *param_1,uint param_2)
+
+{
+  byte bVar1;
+  uint uVar2;
+  uint uVar3;
+  undefined4 local_res10 [6];
+  
+  uVar3 = 0x10;
+  if (0x10 < param_2) {
+    uVar3 = param_2;
+  }
+  uVar2 = 0;
+  do {
+    bVar1 = (byte)uVar2;
+    if (1 << (bVar1 & 0x1f) == uVar3) goto LAB_18013e24b;
+    uVar2 = uVar2 + 1;
+    if (uVar3 >> (bVar1 & 0x1f) == 1) {
+      uVar3 = 1 << ((byte)uVar2 & 0x1f);
+      goto LAB_18013e24b;
+    }
+  } while (uVar2 < 0x20);
+  uVar3 = 0x20000;
+LAB_18013e24b:
+  param_1[1] = *param_1;
+  FUN_18013d410(param_1,uVar3);
+  local_res10[0] = 0;
+  FUN_18013f0f0(*param_1,param_1[1],local_res10);
+  param_1[3] = (ulonglong)(uVar3 - 4);
+  param_1[4] = (ulonglong)(uVar3 - 1);
+  return;
+}
+
