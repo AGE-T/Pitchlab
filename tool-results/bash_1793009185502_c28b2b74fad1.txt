@@ -1,0 +1,405 @@
+wrote /home/z/octavox/static-r15/r15_scan_qa_ring.txt (903 lines)
+ownership-field hits: 23, engine+0x98 operands: 9
+sha before/after: 7bb260f66bb9c1b21b27f64f29e6fdd2865c34f8a31ad1c0ef21a1db7f32f1f2 / 7bb260f66bb9c1b21b27f64f29e6fdd2865c34f8a31ad1c0ef21a1db7f32f1f2
+SECTION 2b: EVERY non-RIP, non-stack operand with displacement 0x98 (ANY form,
+            indexed or not -- so a lea-computed ring base or an unindexed
+            ring[0] access cannot hide from the audit)
+==============================================================================
+402 distinct sites; 391 without an index register:
+    0x1800074bf  mov      rax, qword ptr [rcx + 0x98]   .pdata 0x1800074b0..0x1800075a6
+    0x18000793f  mov      rcx, qword ptr [rax + 0x98]   .pdata 0x180007920..0x1800079e3
+    0x180007a0d  mov      rcx, qword ptr [rax + 0x98]   .pdata 0x1800079f0..0x180007a48
+    0x180008729  mov      r9, qword ptr [rdi + 0x98]   .pdata 0x1800086f4..0x180008790
+    0x180008f46  mov      rax, qword ptr [rcx + 0x98]   .pdata 0x180008cb0..0x180008f80
+    0x180008fc1  mov      rcx, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x180008fc8  mov      qword ptr [r13 + 0x98], rbx   .pdata 0x180008f80..0x1800097b0
+    0x180008fda  mov      rbx, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x180009028  mov      rax, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x180009069  mov      r8, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x18000918c  mov      r8, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x1800091b0  mov      r8, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x1800093a5  mov      rcx, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x18000942d  mov      rcx, qword ptr [rax + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x1800094ec  mov      r8, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x180009609  mov      rcx, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x180009735  mov      rax, qword ptr [r13 + 0x98]   .pdata 0x180008f80..0x1800097b0
+    0x18000b49f  mov      rbx, qword ptr [rax + 0x98]   .pdata 0x18000b3d0..0x18000b621
+    0x18000c0d9  mov      qword ptr [rbx + 0x98], rbp   .pdata 0x18000bef0..0x18000c1e2
+    0x18000c17e  movups   xmmword ptr [rdi + 0x98], xmm0   .pdata 0x18000bef0..0x18000c1e2
+    0x18000c51c  cmp      qword ptr [rsi + 0x98], rbx   .pdata 0x18000c470..0x18000c568
+    0x18000cb1e  call     qword ptr [rax + 0x98]   .pdata 0x18000c8e0..0x18000cbd8
+    0x18000f889  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x18000f810..0x18000f8ce
+    0x180010294  mov      qword ptr [rax + 0x98], rdi   .pdata 0x1800101e0..0x1800104e4
+    0x18001f2f3  mov      eax, dword ptr [r12 + 0x98]   .pdata 0x18001f270..0x18001fe8f
+    0x18001f305  mov      dword ptr [r12 + 0x98], eax   .pdata 0x18001f270..0x18001fe8f
+    0x18001f943  cmp      dword ptr [r12 + 0x98], 0   .pdata 0x18001f270..0x18001fe8f
+    0x18001fe41  mov      dword ptr [r12 + 0x98], eax   .pdata 0x18001f270..0x18001fe8f
+    0x180027695  mov      dword ptr [rsi + 0x98], 5   .pdata 0x1800275b0..0x1800276fa
+    0x18005fb5a  mov      rax, qword ptr [r9 + 0x98]   .pdata 0x18005f8bc..0x18005fe5f
+    0x18005fb7e  mov      rax, qword ptr [r9 + 0x98]   .pdata 0x18005f8bc..0x18005fe5f
+    0x180064f4a  lea      rdi, [rcx + 0x98]   .pdata 0x180064f40..0x180064fbe
+    0x180065086  lea      rsi, [rbx + 0x98]   .pdata 0x180065000..0x1800650c5
+    0x180069f18  call     qword ptr [rax + 0x98]   .pdata 0x180069df0..0x18006a027
+    0x180069f85  call     qword ptr [rax + 0x98]   .pdata 0x180069df0..0x18006a027
+    0x18006adb9  call     qword ptr [rax + 0x98]   .pdata 0x18006ad80..0x18006aebc
+    0x18006ae58  call     qword ptr [rax + 0x98]   .pdata 0x18006ad80..0x18006aebc
+    0x18006df4e  mov      rax, qword ptr [r9 + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180071941  call     qword ptr [rax + 0x98]   .pdata 0x1800718f0..0x180071959
+    0x180072183  inc      dword ptr [rax + 0x98]   .pdata 0x180071fe0..0x18007238c
+    0x180074abb  call     qword ptr [rax + 0x98]   .pdata 0x180074960..0x180074cdb
+    0x18007d929  call     qword ptr [rax + 0x98]   .pdata 0x18007cf30..0x18007de97
+    0x18008303f  mov      qword ptr [rdi + 0x98], r12   .pdata 0x180082f50..0x180083230
+    0x180083336  mov      qword ptr [rbx + 0x98], rsi   .pdata 0x180083230..0x1800833de
+    0x18008333f  mov      r8, qword ptr [rbx + 0x98]   .pdata 0x180083230..0x1800833de
+    0x180083349  mov      qword ptr [rbx + 0x98], rsi   .pdata 0x180083230..0x1800833de
+    0x180083362  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x180083230..0x1800833de
+    0x1800834bc  cmp      qword ptr [rbx + 0x98], 0   .pdata 0x180083450..0x18008359f
+    0x180083531  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x180083450..0x18008359f
+    0x180083538  mov      qword ptr [rbx + 0x98], rsi   .pdata 0x180083450..0x18008359f
+    0x1800835a9  mov      rcx, qword ptr [rcx + 0x98]   .pdata 0x1800835a0..0x180083605
+    0x1800835c7  mov      qword ptr [rbx + 0x98], 0   .pdata 0x1800835a0..0x180083605
+    0x1800835d8  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x1800835a0..0x180083605
+    0x1800835df  mov      qword ptr [rbx + 0x98], 0   .pdata 0x1800835a0..0x180083605
+    0x1800836c8  mov      rax, qword ptr [rdi + 0x98]   .pdata 0x18008363d..0x180083714
+    0x180083833  mov      rax, qword ptr [rsi + 0x98]   .pdata 0x180083750..0x18008393c
+    0x1800896b0  mov      qword ptr [rsi + 0x98], rbx   .pdata 0x180088c10..0x1800899a4
+    0x18009039a  mov      qword ptr [rax + 0x98], rbx   .pdata 0x1800902d8..0x18009058e
+    0x1800909eb  mov      qword ptr [rsi + 0x98], rbx   .pdata 0x180090970..0x180090b80
+    0x180090c9b  lea      rcx, [rdi + 0x98]   .pdata 0x180090b80..0x180090d10
+    0x180090ea2  mov      qword ptr [rbx + 0x98], rcx   .pdata 0x180090e50..0x180090f94
+    0x180091c67  movsd    xmm1, qword ptr [rdx + 0x98]   .pdata 0x180091c40..0x180091d1f
+    0x180091c98  movsd    xmm2, qword ptr [rdx + 0x98]   .pdata 0x180091c40..0x180091d1f
+    0x180091d31  movsd    xmm2, qword ptr [rcx + 0x98]   .pdata 0x180091d20..0x180091dc1
+    0x1800936d4  comisd   xmm0, xmmword ptr [rsi + 0x98]   .pdata 0x1800935d0..0x18009395e
+    0x180093706  movsd    xmm0, qword ptr [rsi + 0x98]   .pdata 0x1800935d0..0x18009395e
+    0x1800939a1  movsd    xmm3, qword ptr [rcx + 0x98]   .pdata 0x180093960..0x180093d06
+    0x180093ac5  movsd    xmm1, qword ptr [rbx + 0x98]   .pdata 0x180093960..0x180093d06
+    0x180093d6b  movsd    xmm0, qword ptr [rbx + 0x98]   .pdata 0x180093d10..0x180093f01
+    0x1800941c0  comisd   xmm0, xmmword ptr [rcx + 0x98]   .pdata 0x1800941a0..0x18009420a
+    0x18009427c  movsd    xmm0, qword ptr [rcx + 0x98]   .pdata 0x180094210..0x180094495
+    0x180094648  movsd    xmm0, qword ptr [rsi + 0x98]   .pdata 0x1800944a0..0x180094a01
+    0x1800952fa  movsd    xmm2, qword ptr [rcx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18009cdd0  call     qword ptr [rax + 0x98]   .pdata 0x18009cc20..0x18009cfc9
+    0x1800a3578  mov      qword ptr [rsi + 0x98], r13   .pdata 0x1800a3450..0x1800a3aca
+    0x1800a3b4a  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x1800a3ad0..0x1800a3cf5
+    0x1800a3b53  mov      qword ptr [rbx + 0x98], rbp   .pdata 0x1800a3ad0..0x1800a3cf5
+    0x1800a3cad  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x1800a3ad0..0x1800a3cf5
+    0x1800a4f4f  cmp      qword ptr [rdi + 0x98], 0   .pdata 0x1800a4f00..0x1800a4f75
+    0x1800a6d39  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x1800a6c80..0x1800a6d79
+    0x1800a6d40  mov      qword ptr [rbx + 0x98], rax   .pdata 0x1800a6c80..0x1800a6d79
+    0x1800a6d56  mov      rax, qword ptr [rbx + 0x98]   .pdata 0x1800a6c80..0x1800a6d79
+    0x1800aa1e0  mov      qword ptr [rcx + 0x98], rdx   GAP (no .pdata) [gap sweep]
+    0x1800aa1f0  mov      qword ptr [rcx + 0x98], 0   GAP (no .pdata) [gap sweep]
+    0x1800adc3c  mov      dword ptr [rdi + 0x98], r15d   .pdata 0x1800adb70..0x1800adc7a
+    0x1800adcfe  mov      r8d, dword ptr [rsi + 0x98]   .pdata 0x1800adc80..0x1800add65
+    0x1800b1a74  mov      qword ptr [rax + 0x98], rbx   .pdata 0x1800b19b0..0x1800b1cc6
+    0x1800c1962  call     qword ptr [rax + 0x98]   .pdata 0x1800c1940..0x1800c1a79
+    0x1800c1993  mov      r8, qword ptr [rax + 0x98]   .pdata 0x1800c1940..0x1800c1a79
+    0x1800c1ab8  call     qword ptr [rax + 0x98]   .pdata 0x1800c1a80..0x1800c1b09
+    0x1800c7a03  lea      rcx, [rbx + 0x98]   .pdata 0x1800c76c0..0x1800c7be4
+    0x1800c82da  mov      r8, qword ptr [rcx + 0x98]   .pdata 0x1800c8130..0x1800c82f0
+    0x1800c8b30  mov      qword ptr [rdi + 0x98], rcx   .pdata 0x1800c8550..0x1800c8e62
+    0x1800c8f3a  mov      rax, qword ptr [rbx + 0x98]   .pdata 0x1800c8eab..0x1800c9026
+    0x1800c9a4a  lea      r8, [rsi + 0x98]   .pdata 0x1800c9990..0x1800c9c4f
+    0x1800ca2f4  mov      qword ptr [rcx + 0x98], rax   .pdata 0x1800ca2e0..0x1800ca340
+    0x1800ca411  mov      qword ptr [rsi + 0x98], r13   .pdata 0x1800ca340..0x1800ca4eb
+    0x1800cd058  mov      qword ptr [rsi + 0x98], rcx   .pdata 0x1800ccfc0..0x1800cd3d9
+    0x1800cd754  mov      r8, qword ptr [rdi + 0x98]   .pdata 0x1800cd3e0..0x1800cd8b0
+    0x1800cda5f  mov      r9, qword ptr [r8 + 0x98]   .pdata 0x1800cd8b0..0x1800cddd5
+    0x1800ce396  lea      rbx, [r12 + 0x98]   .pdata 0x1800ce0f0..0x1800ce782
+    0x1800cec97  mov      rdi, qword ptr [rcx + 0x98]   .pdata 0x1800cec80..0x1800cecad
+    0x1800ceeef  mov      rdi, qword ptr [rbx + 0x98]   .pdata 0x1800ced10..0x1800cf046
+    0x1800cfd61  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfd7c  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfd96  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfdb1  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfdcc  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfdeb  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfe0a  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfe25  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfe44  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfe63  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfe82  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfea1  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800cfebc  call     qword ptr [rax + 0x98]   .pdata 0x1800cf080..0x1800cffa8
+    0x1800d0267  call     qword ptr [rax + 0x98]   .pdata 0x1800d00b6..0x1800d0422
+    0x1800d0281  call     qword ptr [rax + 0x98]   .pdata 0x1800d00b6..0x1800d0422
+    0x1800d02a0  call     qword ptr [rax + 0x98]   .pdata 0x1800d00b6..0x1800d0422
+    0x1800d02ba  call     qword ptr [rax + 0x98]   .pdata 0x1800d00b6..0x1800d0422
+    0x1800d02da  call     qword ptr [rax + 0x98]   .pdata 0x1800d00b6..0x1800d0422
+    0x1800d02fb  call     qword ptr [r10 + 0x98]   .pdata 0x1800d00b6..0x1800d0422
+    0x1800d031a  call     qword ptr [r10 + 0x98]   .pdata 0x1800d00b6..0x1800d0422
+    0x1800d03c5  call     qword ptr [r10 + 0x98]   .pdata 0x1800d00b6..0x1800d0422
+    0x1800d3158  movss    dword ptr [rdi + 0x98], xmm3   .pdata 0x1800d2e70..0x1800d3372
+    0x1800d39f6  movss    xmm1, dword ptr [rdi + 0x98]   .pdata 0x1800d3924..0x1800d3c75
+    0x1800d3cc7  movss    xmm0, dword ptr [rdi + 0x98]   .pdata 0x1800d3c75..0x1800d3e1a
+    0x1800d49bb  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x1800d49a0..0x1800d4aa9
+    0x1800d80ad  mov      rax, qword ptr [rdx + 0x98]   .pdata 0x1800d7f10..0x1800d8222
+    0x1800d81df  mov      rax, qword ptr [rdx + 0x98]   .pdata 0x1800d7f10..0x1800d8222
+    0x1800d9026  cmp      qword ptr [rcx + 0x98], 0x10   .pdata 0x1800d8fc0..0x1800d9b1b
+    0x1800da2fe  movss    dword ptr [rsi + 0x98], xmm0   .pdata 0x1800da1c0..0x1800da442
+    0x1800da511  mov      qword ptr [r14 + 0x98], r12   .pdata 0x1800da450..0x1800da5ac
+    0x1800da532  mov      qword ptr [r14 + 0x98], rax   .pdata 0x1800da450..0x1800da5ac
+    0x1800dbd46  lea      rbx, [rdi + 0x98]   .pdata 0x1800dbad0..0x1800dbeeb
+    0x1800dc465  mov      rax, qword ptr [rcx + 0x98]   .pdata 0x1800dc430..0x1800dc761
+    0x1800dc5ea  mov      r10, qword ptr [rbx + 0x98]   .pdata 0x1800dc430..0x1800dc761
+    0x1800dc721  sub      rax, qword ptr [rbx + 0x98]   .pdata 0x1800dc430..0x1800dc761
+    0x1800de5ef  mov      eax, dword ptr [rdi + 0x98]   .pdata 0x1800de515..0x1800de604
+    0x1800df2eb  mov      qword ptr [rdi + 0x98], rcx   .pdata 0x1800ded00..0x1800df68d
+    0x1800dfa89  mov      rax, qword ptr [rbx + 0x98]   .pdata 0x1800dfa5a..0x1800dfb6b
+    0x1800e0d43  lea      rax, [r15 + 0x98]   .pdata 0x1800e0360..0x1800e10ac
+    0x1800e1f5f  lea      rcx, [rsi + 0x98]   .pdata 0x1800e18b0..0x1800e2026
+    0x1800e58c6  call     qword ptr [r10 + 0x98]   .pdata 0x1800e5160..0x1800e5999
+    0x1800e5c81  call     qword ptr [r10 + 0x98]   .pdata 0x1800e5999..0x1800e78fe
+    0x1800e6c42  movss    xmm1, dword ptr [rsi + 0x98]   .pdata 0x1800e5999..0x1800e78fe
+    0x1800e6e97  call     qword ptr [rax + 0x98]   .pdata 0x1800e5999..0x1800e78fe
+    0x1800e785c  mov      r10, qword ptr [rax + 0x98]   .pdata 0x1800e5999..0x1800e78fe
+    0x1800e800b  lea      r15, [rsi + 0x98]   .pdata 0x1800e7f70..0x1800e83b0
+    0x1800e9454  movss    dword ptr [rdi + 0x98], xmm0   .pdata 0x1800e9020..0x1800e97ff
+    0x1800e9883  movss    xmm0, dword ptr [rbx + 0x98]   .pdata 0x1800e9873..0x1800e99af
+    0x1800e98ed  movss    xmm0, dword ptr [rbx + 0x98]   .pdata 0x1800e9873..0x1800e99af
+    0x1800ebe1a  lea      rsi, [rbx + 0x98]   .pdata 0x1800ebaf0..0x1800ec0a9
+    0x1800ec580  movss    dword ptr [rdi + 0x98], xmm0   .pdata 0x1800ec120..0x1800ec5f9
+    0x1800ec657  movss    xmm1, dword ptr [rcx + 0x98]   .pdata 0x1800ec600..0x1800ec691
+    0x1800efd8c  lea      r8, [rsi + 0x98]   .pdata 0x1800efce0..0x1800efe71
+    0x1800f0054  mov      qword ptr [rcx + 0x98], rax   .pdata 0x1800f0040..0x1800f00a0
+    0x1800fa2ac  mov      dword ptr [rbx + 0x98], 0   .pdata 0x1800fa000..0x180103a08
+    0x1801093e9  lea      rcx, [rbx + 0x98]   .pdata 0x1801093b0..0x180109403
+    0x180109612  lea      rcx, [rbx + 0x98]   .pdata 0x1801095d0..0x18010963c
+    0x18010975e  lea      rcx, [rbx + 0x98]   .pdata 0x180109700..0x180109778
+    0x180109a0d  lea      rcx, [rbx + 0x98]   .pdata 0x1801099d0..0x180109a37
+    0x180109a55  lea      rcx, [rbx + 0x98]   .pdata 0x180109a40..0x180109a78
+    0x180113eec  mov      dword ptr [rbx + 0x98], 0   .pdata 0x180113c40..0x18011d5e5
+    0x18012cfac  mov      dword ptr [rbx + 0x98], 0   .pdata 0x18012cd00..0x1801366a5
+    0x1801376b1  mov      qword ptr [rbx + 0x98], rcx   .pdata 0x180137630..0x1801376df
+    0x180137974  mov      qword ptr [rbx + 0x98], rcx   .pdata 0x180137930..0x1801379e3
+    0x180137b4b  mov      dword ptr [rbx + 0x98], 7   .pdata 0x180137ac0..0x180137bf2
+    0x1801380fc  mov      qword ptr [rbx + 0x98], rcx   .pdata 0x1801380c0..0x180138169
+    0x1801381a5  mov      rcx, qword ptr [r8 + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180138244  mov      qword ptr [rbx + 0x98], rcx   .pdata 0x180138200..0x1801382e8
+    0x18013a32c  ucomiss  xmm0, dword ptr [rcx + 0x98]   .pdata 0x18013a250..0x18013a371
+    0x18013a335  movss    dword ptr [rcx + 0x98], xmm0   .pdata 0x18013a250..0x18013a371
+    0x18013a437  lea      r9, [r14 + 0x98]   .pdata 0x18013a390..0x18013a4f1
+    0x18013aaae  mov      dword ptr [rbx + 0x98], 0   .pdata 0x18013aaa0..0x18013aabe
+    0x180141498  mov      qword ptr [rcx + 0x98], 0xf   .pdata 0x180141420..0x180141c28
+    0x1801438de  mov      qword ptr [rdi + 0x98], rax   .pdata 0x180143820..0x180143b5e
+    0x180143a3b  mov      qword ptr [rdi + 0x98], rax   .pdata 0x180143820..0x180143b5e
+    0x18014488c  mov      qword ptr [rcx + 0x98], rax   GAP (no .pdata) [gap sweep]
+    0x180145acc  mov      rax, qword ptr [rbx + 0x98]   .pdata 0x180145a90..0x180145b8e
+    0x180147a5a  lea      rdi, [rcx + 0x98]   .pdata 0x180147a50..0x180147b49
+    0x180148169  mov      qword ptr [rcx + 0x98], rax   .pdata 0x180148110..0x18014824d
+    0x180150f80  mov      qword ptr [rcx + 0x98], 0xf   .pdata 0x180150ed0..0x180151d5d
+    0x180151302  mov      rbx, qword ptr [rsi + 0x98]   .pdata 0x180150ed0..0x180151d5d
+    0x18015137c  mov      qword ptr [rsi + 0x98], r15   .pdata 0x180150ed0..0x180151d5d
+    0x180152636  call     qword ptr [rax + 0x98]   .pdata 0x1801525f0..0x180152735
+    0x1801599fa  mov      qword ptr [rdi + 0x98], rax   .pdata 0x1801598f0..0x180159b6c
+    0x180164d40  mov      rcx, qword ptr [rcx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18018bc2a  lea      rbx, [rax + 0x98]   .pdata 0x18018bbf0..0x18018beda
+    0x18018bf13  lea      rbx, [rax + 0x98]   .pdata 0x18018bedc..0x18018bfc6
+    0x18018c1c5  lea      rbx, [rax + 0x98]   .pdata 0x18018c194..0x18018c3f7
+    0x18018c4fb  lea      rdx, [rax + 0x98]   .pdata 0x18018c4e0..0x18018c5ad
+    0x18018c5cb  mov      rdx, qword ptr [rax + 0x98]   .pdata 0x18018c5b0..0x18018c646
+    0x18018c677  lea      rsi, [rax + 0x98]   .pdata 0x18018c648..0x18018c892
+    0x18018c90f  mov      rcx, qword ptr [rsi + 0x98]   .pdata 0x18018c894..0x18018c99c
+    0x18018c93f  mov      rcx, qword ptr [rsi + 0x98]   .pdata 0x18018c894..0x18018c99c
+    0x18018caea  mov      r9, qword ptr [rdi + 0x98]   .pdata 0x18018ca9c..0x18018cb47
+    0x18018cc23  mov      qword ptr [rsi + 0x98], r14   .pdata 0x18018cbc8..0x18018ce46
+    0x18018cc53  mov      rax, qword ptr [rsi + 0x98]   .pdata 0x18018cbc8..0x18018ce46
+    0x18018cc97  lea      r8, [rsi + 0x98]   .pdata 0x18018cbc8..0x18018ce46
+    0x180194a6c  mov      qword ptr [rsi + 0x98], rbp   .pdata 0x1801949b0..0x180194b27
+    0x18019c3d8  mov      qword ptr [rdi + 0x98], rbp   .pdata 0x18019c2d0..0x18019c401
+    0x18019c960  call     qword ptr [rdx + 0x98]   .pdata 0x18019c930..0x18019c983
+    0x1801a98b4  mov      dword ptr [rax + 0x98], edx   GAP (no .pdata) [gap sweep]
+    0x1801a9b65  mov      dword ptr [rsi + 0x98], 5   .pdata 0x1801a9a90..0x1801a9bc8
+    0x1801aa918  mov      dword ptr [rax + 0x98], ecx   .pdata 0x1801aa820..0x1801aa96c
+    0x1801b6974  mov      eax, dword ptr [rbx + 0x98]   .pdata 0x1801b6890..0x1801b6d8c
+    0x1801b6a05  sub      eax, dword ptr [rbx + 0x98]   .pdata 0x1801b6890..0x1801b6d8c
+    0x1801b6ef4  sub      dx, word ptr [rbx + 0x98]   .pdata 0x1801b6da0..0x1801b71ec
+    0x1801b74e9  sub      dword ptr [rsi + 0x98], ebx   .pdata 0x1801b7480..0x1801b7655
+    0x1801b772a  mov      dword ptr [rcx + 0x98], edx   GAP (no .pdata) [gap sweep]
+    0x1801bf5ff  call     qword ptr [rax + 0x98]   .pdata 0x1801bf550..0x1801bf643
+    0x1801c0a3b  call     qword ptr [rax + 0x98]   .pdata 0x1801c0a20..0x1801c0a7f
+    0x1801c3e54  mov      rcx, qword ptr [rcx + 0x98]   .pdata 0x1801c3e50..0x1801c3e73
+    0x1801c3f44  mov      rcx, qword ptr [rcx + 0x98]   .pdata 0x1801c3f40..0x1801c3f61
+    0x1801f7380  mov      eax, dword ptr [rdx + 0x98]   .pdata 0x1801f7340..0x1801f77ab
+    0x1801f740f  mov      dword ptr [r13 + 0x98], ebx   .pdata 0x1801f7340..0x1801f77ab
+    0x180209ca2  mov      qword ptr [rax + 0x98], rcx   .pdata 0x1802099f0..0x18020a6f4
+    0x18020a8f0  movups   xmmword ptr [rcx + 0x98], xmm0   GAP (no .pdata) [gap sweep]
+    0x180211c77  mov      dword ptr [rax + 0x98], r8d   .pdata 0x180211670..0x180211d63
+    0x180215f49  mov      qword ptr [rax + 0x98], rcx   .pdata 0x180215e90..0x180215fa4
+    0x18021a117  lea      rcx, [r15 + 0x98]   .pdata 0x180219f20..0x18021a243
+    0x18021a17a  lea      r8, [r15 + 0x98]   .pdata 0x180219f20..0x18021a243
+    0x18021c900  cmp      dword ptr [rbx + 0x98], eax   .pdata 0x18021c8e0..0x18021c9df
+    0x18021cff5  mov      qword ptr [rax + 0x98], rcx   .pdata 0x18021cea0..0x18021d0a8
+    0x18021d0e7  mov      eax, dword ptr [rbx + 0x98]   .pdata 0x18021d0b0..0x18021d16e
+    0x18021d15d  add      dword ptr [rbx + 0x98], eax   .pdata 0x18021d0b0..0x18021d16e
+    0x18021d1a1  mov      dword ptr [rbx + 0x98], ebp   .pdata 0x18021d180..0x18021d281
+    0x18021d1c9  mov      ecx, dword ptr [rbx + 0x98]   .pdata 0x18021d180..0x18021d281
+    0x18021d1f6  mov      edi, dword ptr [rbx + 0x98]   .pdata 0x18021d180..0x18021d281
+    0x18021d203  lea      r8, [rbx + 0x98]   .pdata 0x18021d180..0x18021d281
+    0x18021d215  mov      ecx, dword ptr [rbx + 0x98]   .pdata 0x18021d180..0x18021d281
+    0x18021d23d  mov      dword ptr [rbx + 0x98], ebp   .pdata 0x18021d180..0x18021d281
+    0x18021edf0  mov      qword ptr [rax + 0x98], rcx   .pdata 0x18021edb0..0x18021ee1d
+    0x180223989  mov      qword ptr [rax + 0x98], rcx   .pdata 0x180223950..0x1802239dc
+    0x18022522c  mov      rax, qword ptr [rdi + 0x98]   .pdata 0x18022517b..0x1802252c4
+    0x180225250  mov      qword ptr [rdi + 0x98], rax   .pdata 0x18022517b..0x1802252c4
+    0x180227a42  mov      rax, qword ptr [rcx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180227b32  mov      qword ptr [rsi + 0x98], rax   .pdata 0x180227ab0..0x180227b67
+    0x18022a325  call     qword ptr [rax + 0x98]   .pdata 0x18022a250..0x18022a401
+    0x18022da26  jmp      qword ptr [rax + 0x98]   .pdata 0x18022d9f0..0x18022da2d
+    0x1802415ca  ucomisd  xmm1, qword ptr [rcx + 0x98]   .pdata 0x1802415b0..0x180241643
+    0x1802415f5  movsd    qword ptr [rdi + 0x98], xmm6   .pdata 0x1802415b0..0x180241643
+    0x180251b5b  mov      r8, qword ptr [rax + 0x98]   .pdata 0x180251b00..0x180251b8f
+    0x180251e73  mov      r8, qword ptr [rax + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18025241b  mov      r8, qword ptr [rax + 0x98]   .pdata 0x1802523c0..0x18025244f
+    0x1802528eb  mov      rdx, qword ptr [rax + 0x98]   .pdata 0x180252890..0x180252918
+    0x18025a555  call     qword ptr [rax + 0x98]   .pdata 0x18025a540..0x18025a58c
+    0x1802679ae  mov      dword ptr [rsi + 0x98], eax   .pdata 0x180267840..0x180267a18
+    0x180274717  mov      r8, qword ptr [rcx + 0x98]   .pdata 0x180274370..0x180274a74
+    0x1802748b8  call     qword ptr [rax + 0x98]   .pdata 0x180274370..0x180274a74
+    0x180278de2  mov      r14, qword ptr [rsi + 0x98]   .pdata 0x180278d40..0x180278e9f
+    0x180278f0e  mov      rsi, qword ptr [rdi + 0x98]   .pdata 0x180278eb0..0x180279057
+    0x18027e7ea  call     qword ptr [rax + 0x98]   .pdata 0x18027e790..0x18027e840
+    0x18027e8d2  call     qword ptr [rax + 0x98]   .pdata 0x18027e850..0x18027e913
+    0x18028d265  lea      rbp, [rdx + 0x98]   .pdata 0x18028d220..0x18028d4ad
+    0x18028f2f7  movsd    xmm0, qword ptr [rax + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18028f337  movsd    xmm1, qword ptr [rax + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18029e703  mov      qword ptr [rax + 0x98], r15   .pdata 0x18029e620..0x18029e80b
+    0x18029fafa  call     qword ptr [rax + 0x98]   .pdata 0x18029faa4..0x18029fb46
+    0x1802a99f0  mov      qword ptr [rcx + 0x98], rax   GAP (no .pdata) [gap sweep]
+    0x1802a9b73  mov      qword ptr [rbx + 0x98], rax   .pdata 0x1802a9a80..0x1802a9c44
+    0x1802aee49  mov      qword ptr [rcx + 0x98], rax   .pdata 0x1802aed60..0x1802aef00
+    0x1802af01e  mov      qword ptr [rdi + 0x98], rax   .pdata 0x1802aef10..0x1802af261
+    0x1802b2f60  mov      qword ptr [rcx + 0x98], rax   GAP (no .pdata) [gap sweep]
+    0x1802b310d  mov      qword ptr [rbx + 0x98], rax   .pdata 0x1802b3000..0x1802b335b
+    0x1802c8119  mov      qword ptr [rcx + 0x98], rax   .pdata 0x1802c8030..0x1802c81d7
+    0x1802c832c  mov      qword ptr [rcx + 0x98], rax   .pdata 0x1802c81e0..0x1802c85c5
+    0x1802c8f6d  mov      qword ptr [rcx + 0x98], rax   .pdata 0x1802c8e80..0x1802c90de
+    0x1802c91e3  mov      qword ptr [rcx + 0x98], rax   GAP (no .pdata) [gap sweep]
+    0x1802d7f62  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x1802d7f00..0x1802d8059
+    0x1802d7f69  mov      qword ptr [rbx + 0x98], rsi   .pdata 0x1802d7f00..0x1802d8059
+    0x1802daac2  mov      rax, qword ptr [rdi + 0x98]   .pdata 0x1802daa90..0x1802dab3e
+    0x1802dad36  mov      rax, qword ptr [rsi + 0x98]   .pdata 0x1802dad00..0x1802dadc8
+    0x1802dafb2  mov      rax, qword ptr [rdi + 0x98]   .pdata 0x1802daf40..0x1802db0d0
+    0x1802e1105  mov      rax, qword ptr [r13 + 0x98]   .pdata 0x1802e0fa0..0x1802e11ff
+    0x1802e1139  lea      rdi, [r13 + 0x98]   .pdata 0x1802e0fa0..0x1802e11ff
+    0x1802e16d8  mov      rax, qword ptr [rsi + 0x98]   .pdata 0x1802e16a0..0x1802e1724
+    0x1802e1762  mov      rax, qword ptr [rbx + 0x98]   .pdata 0x1802e1730..0x1802e17fb
+    0x1802e18bb  lea      rcx, [rsi + 0x98]   .pdata 0x1802e1850..0x1802e1a66
+    0x1802e18d0  mov      rcx, qword ptr [rsi + 0x98]   .pdata 0x1802e1850..0x1802e1a66
+    0x1802e18dc  mov      qword ptr [rsi + 0x98], r14   .pdata 0x1802e1850..0x1802e1a66
+    0x1802e1ad8  lea      rcx, [rbx + 0x98]   .pdata 0x1802e1a70..0x1802e1b44
+    0x1802e1aec  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x1802e1a70..0x1802e1b44
+    0x1802e1af8  mov      qword ptr [rbx + 0x98], rsi   .pdata 0x1802e1a70..0x1802e1b44
+    0x1802e1c7b  lea      rcx, [rbx + 0x98]   .pdata 0x1802e1c29..0x1802e1ce8
+    0x1802e1c8f  mov      rcx, qword ptr [rbx + 0x98]   .pdata 0x1802e1c29..0x1802e1ce8
+    0x1802e1c9b  mov      qword ptr [rbx + 0x98], rsi   .pdata 0x1802e1c29..0x1802e1ce8
+    0x1802e1edd  lea      rcx, [rsi + 0x98]   .pdata 0x1802e1de0..0x1802e1f47
+    0x1802e1ee9  mov      rcx, qword ptr [rsi + 0x98]   .pdata 0x1802e1de0..0x1802e1f47
+    0x1802e1fe1  mov      qword ptr [r14 + 0x98], rbp   .pdata 0x1802e1f50..0x1802e201e
+    0x1802e9ef8  mov      rsi, qword ptr [rax + 0x98]   .pdata 0x1802e9eca..0x1802ea064
+    0x1802effb0  inc      dword ptr [rcx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1802effc0  mov      eax, dword ptr [rcx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1802f053c  mov      qword ptr [rdi + 0x98], r14   .pdata 0x1802f0450..0x1802f07be
+    0x1802f2c46  mov      rbx, qword ptr [rcx + 0x98]   .pdata 0x1802f2c40..0x1802f2c5d
+    0x1802f2cfa  mov      rbx, qword ptr [rcx + 0x98]   .pdata 0x1802f2cf0..0x1802f2d04
+    0x1802f2d2a  mov      r14, qword ptr [rsi + 0x98]   .pdata 0x1802f2d14..0x1802f2d62
+    0x1802f2d31  mov      qword ptr [rsi + 0x98], rbx   .pdata 0x1802f2d14..0x1802f2d62
+    0x1802f2d56  mov      rbx, qword ptr [rsi + 0x98]   .pdata 0x1802f2d14..0x1802f2d62
+    0x1802f9a08  mov      qword ptr [rcx + 0x98], rax   GAP (no .pdata) [gap sweep]
+    0x1802ff92a  mov      r8, qword ptr [rcx + 0x98]   .pdata 0x1802ff8b0..0x1802ffb5d
+    0x180304bbf  mov      rbx, qword ptr [rdi + 0x98]   .pdata 0x180304a40..0x180304d6b
+    0x180304de4  mov      qword ptr [rcx + 0x98], rax   GAP (no .pdata) [gap sweep]
+    0x1803050b3  mov      rdi, qword ptr [rax + 0x98]   .pdata 0x180305040..0x180305176
+    0x1803050ef  mov      rdi, qword ptr [rax + 0x98]   .pdata 0x180305040..0x180305176
+    0x180306e6a  call     qword ptr [rax + 0x98]   .pdata 0x180306ce0..0x180307001
+    0x180309d62  call     qword ptr [rax + 0x98]   .pdata 0x180309d30..0x180309db3
+    0x18030bc6f  mov      qword ptr [rdi + 0x98], rsi   .pdata 0x18030ba60..0x18030bcdf
+    0x1803104c1  call     qword ptr [rax + 0x98]   .pdata 0x180310430..0x1803105d3
+    0x18031b259  cmp      dword ptr [rax + 0x98], ecx   .pdata 0x18031b1d0..0x18031b294
+    0x18031c3c6  mov      qword ptr [rax + 0x98], rdi   .pdata 0x18031c2f6..0x18031c54a
+    0x18031cffb  cmp      dword ptr [rax + 0x98], ecx   .pdata 0x18031cfc0..0x18031d0a0
+    0x18031f876  mov      eax, dword ptr [rcx + 0x98]   .pdata 0x18031f840..0x1803202d8
+    0x180331c40  mov      qword ptr [rbx + 0x98], rax   .pdata 0x180331680..0x1803351f0
+    0x180331e74  mov      qword ptr [rbx + 0x98], rax   .pdata 0x180331680..0x1803351f0
+    0x180332489  mov      qword ptr [rcx + 0x98], r14   .pdata 0x180331680..0x1803351f0
+    0x18033c65a  mov      rdx, qword ptr [rsi + 0x98]   .pdata 0x18033c61b..0x18033c693
+    0x18033c666  mov      rcx, qword ptr [rsi + 0x98]   .pdata 0x18033c61b..0x18033c693
+    0x18033ca6b  mov      rcx, qword ptr [rcx + 0x98]   .pdata 0x18033ca50..0x18033cac4
+    0x18033cad4  mov      r9, qword ptr [rcx + 0x98]   .pdata 0x18033cad0..0x18033cb0e
+    0x180341d0e  lea      rcx, [rdi + 0x98]   .pdata 0x180341ce0..0x180341e98
+    0x180341ef6  lea      rcx, [rdi + 0x98]   .pdata 0x180341ea0..0x180342066
+    0x18034239d  lea      r14, [r13 + 0x98]   .pdata 0x180342070..0x1803429a5
+    0x18034282b  lea      r14, [r13 + 0x98]   .pdata 0x180342070..0x1803429a5
+    0x180342fb6  mov      qword ptr [rbx + 0x98], rax   .pdata 0x180342ec0..0x180343140
+    0x180343246  mov      qword ptr [rbx + 0x98], rax   .pdata 0x180343150..0x180343358
+    0x1803448d8  mov      qword ptr [rsi + 0x98], rbp   .pdata 0x1803447d0..0x180344aa3
+    0x1803560e0  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180356120  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180356450  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180357670  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803583a0  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180358800  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180358950  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180359110  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180359fd0  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18035a5b0  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18035a8f0  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18035aad0  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18035afd0  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803685ba  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180369120  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803691b5  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036a3a4  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036a77f  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036aceb  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036af8b  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036b419  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036b517  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036c058  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036d769  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036d7d5  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036d874  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036dca7  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036dcb3  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036e1b8  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036ec30  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036ed3f  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036f04d  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036f059  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036f7e2  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036f9f7  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18036fa27  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803700bd  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180371022  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803710d0  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180371777  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18037182b  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803718ab  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803721d0  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180372e52  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180373524  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18037397a  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180373b9a  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180374c0c  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180374c30  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180374fe9  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180375216  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803759e5  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180375a09  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18037607e  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x18037634e  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803768dc  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803769b4  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180376abc  mov      rcx, qword ptr [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180376ac8  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180377835  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180378550  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x180378cb0  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+    0x1803793c9  lea      rcx, [rdx + 0x98]   GAP (no .pdata) [gap sweep]
+(the indexed sites are exactly those of SECTION 2; the unindexed sites above
+ are candidate ring[0]/lea-base accesses -- each is classified in
+ r15_static_findings.md Q-A by its containing function's object provenance)
+
+==============================================================================
+SECTION 3: the m02 read-out FUN_1800E1520 -- FULL disassembly, ring audit
