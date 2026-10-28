@@ -67,12 +67,11 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 15 · per-voice harmonizer API + statikus lezárások" },
-  { label: "Statika", value: "+0x40f0: 256×6 .rdata kernel · NEM Lagrange" },
-  { label: "Q-14", value: "egység = egyetlen tap · nincs két-tapú fésű" },
-  { label: "Unity fix", value: "bitespontos késleltetett másolat · 0.0000 dB fésű" },
-  { label: "Natív mag", value: "51/51 teszt · ASan tiszta · ~35–55× Python" },
-  { label: "Benchmark", value: "15.5× realtime (1 hang) · 51× (ctrl 512)" },
+  { label: "Kör", value: "Round 16 · egyeztetés + validáció + VST3" },
+  { label: "Egyeztetés", value: "16 javítás · történet megőrzve" },
+  { label: "Validáció", value: "85/85 · 41 s · ASan 6,2 perc" },
+  { label: "96 kHz", value: "detektor 83–95 % · no-change" },
+  { label: "VST3", value: "OctavoxNative.vst3 · 47/47 · 8/8" },
 ];
 
 export function ReportViewer({
@@ -123,7 +122,7 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 15. kör
+                Octavox Research — 16. kör
               </h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
                 Statikus rekonstrukció előrehaladás + a független natív C++17 DSP mag, az egységhangzás-javítással · Eventide Octavox RE projekt
@@ -162,11 +161,14 @@ export function ReportViewer({
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                    A 15. körre frissített teljes kutatási csomag: a round-15 megállapítások, a natív
-                    C++17 DSP mag 15.0.0 (85/85 elfogadási teszt, ASan-tiszta, alapértelmezett útvonal
-                    bitteljesen azonos a 12.0.0-s maggal), a teljes per-voice harmonizer
-                    paraméterfelület, a Q-A/Q-B/Q-C statikus lezárások, a VST3-készültségi értékelés
-                    és a frissített kanonikus dokumentumok — önegyértő manifesttel.
+                    A 16. körre frissített teljes kutatási csomag: a round-16 megállapítások, a
+                    kijavított és egyeztetett dokumentáció (16 dátumozott korrekció, az előzmények
+                    megőrzésével), a reprodukálható validációs munkafolyamat (per-teszt időtartamok,
+                    szűrők/csoportok, gépi olvasható JSON — release 85/85 41 másodperc alatt, ASan
+                    85/85 6,2 perc alatt), a 96 kHz-es profilozás — és a VALÓDI VST3 wrapper:
+                    az OctavoxNative.vst3 modul (a mag változatlan) a hivatalos validator 47/47
+                    eredményével és 8/8 wrapper-teszttel, bitespontos mintapontos-automatizálási
+                    és állapotmentés-egyenértékűségi bizonyítékokkal.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
@@ -176,7 +178,7 @@ export function ReportViewer({
                       {formatBytes(delivery.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      297 fájl · sha256sum -c
+                      326 fájl · sha256sum -c
                     </Badge>
                   </div>
                   {delivery.sha256 ? (
@@ -363,9 +365,9 @@ export function ReportViewer({
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            Octavox RE — 15. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
-            forrásfájl: <code className="font-mono">OCTAVOX_ROUND15_FINDINGS.md</code> · csomag:{" "}
-            <code className="font-mono">Octavox_RE_evidence_round15.zip</code>
+            Octavox RE — 16. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
+            forrásfájl: <code className="font-mono">OCTAVOX_ROUND16_FINDINGS.md</code> · csomag:{" "}
+            <code className="font-mono">Octavox_RE_evidence_round16.zip</code>
           </p>
         </div>
       </footer>

@@ -42,7 +42,10 @@ export PATH=/home/z/.local/bin:$PATH   # cmake 4.x
 cd native
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j2
 ./build/octavox_tests                  # 85 passed, 0 failed
-./build/octavox_bench                  # 11 cases, 0 allocations
+./build/octavox_bench                  # 12 cases, 0 allocations
+# [R16-P1 correction, 2026-10-28: previously "11 cases" — the delivered
+# bench has 12 rows (9 round-12 + 2 96 kHz + 1 surface; see
+# r15_bench_15.txt); superseded.]
 ./build/octavox_r15refcap              # 4/4 hashes match r15_reference_hashes.txt
 cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZERS=ON && cmake --build build-asan -j2
 ./build-asan/octavox_tests             # 85/85, zero sanitizer reports

@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Octavox Research — Round 15 Findings",
+  title: "Octavox Research — Round 16 Findings",
   description:
-    "Eight-voice harmonizer API completed: per-voice pitch/gain/mute/delay, wet-dry mix and click-free bypass (85/85 acceptance tests, bit-neutral default path) plus three static questions closed (dead record field, cadence selector, the kernel table's second consumer) — Eventide Octavox reverse engineering, round 15.",
+    "Round-15 status reconciled (16 tagged corrections), the validation workflow made reproducible (release 85/85 in 41 s, ASan 6.2 min, per-test durations and filters), the 96 kHz path profiled, and the real VST3 wrapper delivered: the module OctavoxNative.vst3 passes the SDK validator 47/47 with sample-accurate automation proven bit-exact — Eventide Octavox reverse engineering, round 16.",
   keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting"],
   authors: [{ name: "Z.ai Team" }],
   icons: {

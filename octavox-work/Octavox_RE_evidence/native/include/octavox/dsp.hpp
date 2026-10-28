@@ -1,5 +1,8 @@
-// OCTAVOX rounds 13/14 recovery -- independent native DSP core (public API)
+// OCTAVOX independent native DSP core (public API) -- version 15.0.0
 // ============================================================================
+// [R16-P1 note, 2026-10-28: the title line previously read "rounds 13/14
+// recovery"; superseded — this header is the normative 15.0.0 contract. The
+// version-history block below records the recovery lineage.]
 // Version 15.0.0 = round-15 P1 per-voice harmonizer parameter surface:
 //   * per-voice ABSOLUTE ratio / gain / mute / base-delay overrides
 //     (setVoiceRatio / setVoiceGain / setVoiceMute / setVoiceBaseDelay),
@@ -26,12 +29,22 @@
 //     buffers (zero-allocation re-prepare) instead of delete/new.
 // ============================================================================
 //
-// NOTE (R15-P2 salvage, 2026-10-26 ~21:00 UTC): the live tree at
-// /home/z/octavox/work/Octavox_RE_evidence was wiped by a second
-// environment reset DURING the round-15 P2 session (the first minutes of
-// the session verified 78/78 green at 15.0.0 on the intact tree; the reset
-// followed). This header is restored VERBATIM from the session's read of
-// the intact 15.0.0 file. See evidence/analysis_round15/NOTES_R15P2.md.
+// HISTORICAL SALVAGE NOTE (R15-P2, 2026-10-26 ~21:00 UTC — incident record,
+// kept unchanged): the live tree at /home/z/octavox/work/Octavox_RE_evidence
+// was wiped by a second environment reset DURING the round-15 P2 session
+// (the first minutes of the session verified 78/78 green at 15.0.0 on the
+// intact tree; the reset followed). This header is restored VERBATIM from
+// the session's read of the intact 15.0.0 file. See
+// evidence/analysis_round15/NOTES_R15P2.md.
+//
+// [R16-P1 note, 2026-10-28 — final implementation status, distinguishing the
+// incident record above: the header text above is the ORIGINAL 15.0.0
+// contract (verbatim restore, unchanged since); the IMPLEMENTATION it
+// specifies was subsequently re-built (worklog R15-REB1) and verified
+// bit-neutral vs 12.0.0 by the four reference hashes
+// (native/r15_reference_hashes.txt); the delivered acceptance suite is
+// 85/85 (release + ASan/UBSan). The salvage note is therefore HISTORY, not
+// a statement about the current tree.]
 //
 // PROVENANCE
 // ----------

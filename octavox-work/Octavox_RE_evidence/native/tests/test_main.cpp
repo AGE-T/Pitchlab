@@ -10,18 +10,26 @@
 // the cross-language benchmark: evidence/analysis_round12/r12_native_metrics.py).
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <limits>
 #include <string>
 #include <vector>
+
+#include <unistd.h>
 
 #include "octavox/dsp.hpp"
 #include "wav_io.hpp"
 
 using namespace octavox;
+
+// JSON string escaper (defined in the JSON-report section; needed earlier by
+// the R16-P2 environment record).
+std::string jsonEscape(const std::string& s);
 
 // ---------------------------------------------------------------------------
 // Allocation counter interface (defined in alloc_counter.cpp)
@@ -261,9 +269,280 @@ struct CaseResult {
     bool pass = false;
     std::string note;
     std::vector<std::pair<std::string, double>> values;
+    // R16-P2 reproducible-harness extensions (set by pushCase; never a gate):
+    std::string group = "";       // owning battery (registry lookup)
+    std::string category = "unit"; // "unit" | "long" (registry lookup)
+    double duration_ms = 0.0;     // wall time of the case (since previous push)
 };
 
 static std::vector<CaseResult> g_results;
+
+// ---------------------------------------------------------------------------
+// R16-P2: reproducible workflow extensions.
+//  * static registry: every case name -> group id + design-intent category
+//    (deterministic labels, fixed before any run; "long" = long-duration
+//    robustness: the stability long-run streams, the R13 cold-start
+//    batteries, the detector batteries at 96/44.1 kHz + estimate tracking
+//    and stability, and the r15acc battery/replay cases; everything else
+//    "unit").  Selection NEVER changes a gate -- it only decides whether a
+//    case body runs.
+//  * selection: --filter <substr> (repeatable, OR, case-insensitive name
+//    substring), --group <id> (repeatable, OR), --category unit|long
+//    (repeatable, OR); different kinds AND together.  Unknown group or
+//    category, or an empty selection, is a usage error (exit 2).
+//  * per-case wall duration + live progress line per case, group headers.
+// ---------------------------------------------------------------------------
+struct CaseMeta {
+    const char* name;
+    const char* group;
+    const char* category;
+};
+
+static const CaseMeta kAllCases[] = {
+    {"prepare_default", "prepare_reset", "unit"},
+    {"prepare_invalid_rejected", "prepare_reset", "unit"},
+    {"reset_determinism", "prepare_reset", "unit"},
+    {"repeated_prepare", "prepare_reset", "unit"},
+    {"block_size_invariance", "prepare_reset", "unit"},
+    {"steady_state_no_allocation", "prepare_reset", "unit"},
+    {"unity_tone_220_bitexact", "unity", "unit"},
+    {"unity_tone_1100_bitexact", "unity", "unit"},
+    {"unity_noise_bitexact", "unity", "unit"},
+    {"unity_chord_bitexact", "unity", "unit"},
+    {"unity_silence_bitexact", "unity", "unit"},
+    {"unity_lowlevel_bitexact", "unity", "unit"},
+    {"unity_enter_from_+400c_bitexact", "unity", "unit"},
+    {"unity_gain_exact", "unity", "unit"},
+    {"unity_entry_continuity", "unity", "unit"},
+    {"near_unity_+1c_fresh", "unity", "unit"},
+    {"near_unity_-1c_fresh", "unity", "unit"},
+    {"near_unity_+10c_fresh", "unity", "unit"},
+    {"near_unity_-10c_fresh", "unity", "unit"},
+    {"near_unity_+50c_fresh", "unity", "unit"},
+    {"near_unity_-50c_fresh", "unity", "unit"},
+    {"near_unity_+100c_fresh", "unity", "unit"},
+    {"near_unity_-100c_fresh", "unity", "unit"},
+    {"near_unity_+500c_fresh", "unity", "unit"},
+    {"near_unity_-500c_fresh", "unity", "unit"},
+    {"near_unity_+1200c_fresh", "unity", "unit"},
+    {"near_unity_-1200c_fresh", "unity", "unit"},
+    {"near_unity_+1c_via_unity", "unity", "unit"},
+    {"near_unity_-1c_via_unity", "unity", "unit"},
+    {"near_unity_+10c_via_unity", "unity", "unit"},
+    {"near_unity_-10c_via_unity", "unity", "unit"},
+    {"near_unity_+50c_via_unity", "unity", "unit"},
+    {"near_unity_-50c_via_unity", "unity", "unit"},
+    {"no_bypass_region", "unity", "unit"},
+    {"unity_feedback_stability", "unity", "unit"},
+    {"unity_8voice_unison_exact_mix", "unity", "unit"},
+    {"voices_8_spread_+700c", "voices", "unit"},
+    {"setvoices_midstream", "voices", "unit"},
+    {"stereo_isolation_unity", "stereo", "unit"},
+    {"stereo_isolation_shifted", "stereo", "unit"},
+    {"stereo_independence", "stereo", "unit"},
+    {"rate_44100_+400c", "rates_formats", "unit"},
+    {"rate_96000_+400c", "rates_formats", "unit"},
+    {"wav_roundtrip_example_input", "rates_formats", "unit"},
+    {"wav_24bit_read", "rates_formats", "unit"},
+    {"longrun_60s_8voice_feedback", "stability", "long"},
+    {"chirp_30s_+700c", "stability", "long"},
+    {"impulse_latency", "stability", "unit"},
+    {"impulse_latency_unity", "stability", "unit"},
+    {"dc_input_finite", "stability", "long"},
+    {"clipping_behaviour", "stability", "unit"},
+    {"cold_start_impulse_alignment_unity_1v", "r13", "long"},
+    {"cold_start_impulse_alignment_unity_8v", "r13", "long"},
+    {"cold_start_impulse_alignment_up_1v", "r13", "long"},
+    {"cold_start_impulse_alignment_up_8v", "r13", "long"},
+    {"cold_start_impulse_alignment_down_1v", "r13", "long"},
+    {"cold_start_impulse_alignment_down_8v", "r13", "long"},
+    {"cold_start_no_spurious_transient", "r13", "long"},
+    {"detector_96000hz_sine_battery", "r13", "long"},
+    {"detector_44100hz_sine_battery", "r13", "long"},
+    {"detector_estimate_tracking_44100", "r13", "long"},
+    {"detector_estimate_tracking_48000", "r13", "long"},
+    {"detector_estimate_tracking_96000", "r13", "long"},
+    {"detector_96k_estimate_stability", "r13", "long"},
+    {"rt_reprepare_zero_allocation", "r13", "unit"},
+    {"rt_reprepare_param_change_zero_allocation", "r13", "unit"},
+    {"rt_reprepare_multichannel_zero_allocation", "r13", "unit"},
+    {"rt_reset_no_allocation", "r13", "unit"},
+    {"rt_setters_and_process_no_allocation", "r13", "unit"},
+    {"rt_reprepare_result_identity", "r13", "unit"},
+    {"voicestats_ratio_diagnostics", "r13", "unit"},
+    {"per_voice_ratios_independent", "r15p1", "unit"},
+    {"per_voice_gain_ramp_and_mute", "r15p1", "unit"},
+    {"per_voice_delay_isolation", "r15p1", "unit"},
+    {"wetdry_endpoints", "r15p1", "unit"},
+    {"bypass_clickfree_and_transparent", "r15p1", "unit"},
+    {"new_setters_no_allocation", "r15p1", "unit"},
+    {"default_neutrality", "r15p1", "unit"},
+    {"r15acc_ratio_change_isolation", "r15acc", "unit"},
+    {"r15acc_level_accuracy", "r15acc", "unit"},
+    {"r15acc_block_boundary_semantics", "r15acc", "unit"},
+    {"r15acc_reset_reprepare_determinism", "r15acc", "long"},
+    {"r15acc_stereo_surface", "r15acc", "unit"},
+    {"r15acc_robustness_battery", "r15acc", "long"},
+    {"r15acc_invalid_args", "r15acc", "unit"},
+// total: 85 cases, long: 18, unit: 67
+};
+
+static const int kAllCaseCount =
+    static_cast<int>(sizeof(kAllCases) / sizeof(kAllCases[0]));
+
+static const char* kGroupIds[] = {"prepare_reset", "unity",     "voices",
+                                  "stereo",        "rates_formats",
+                                  "stability",     "r13",       "r15p1",
+                                  "r15acc"};
+static const int kGroupCount =
+    static_cast<int>(sizeof(kGroupIds) / sizeof(kGroupIds[0]));
+static const char* kCategories[] = {"unit", "long"};
+
+// selection state (filled by main() before any case runs)
+static std::vector<std::string> g_filterSubs;  // OR of substrings
+static std::vector<std::string> g_selGroups;   // OR of group ids
+static std::vector<std::string> g_selCats;     // OR of categories
+static std::string g_currentGroup;             // group currently running
+static int g_progDone = 0;                     // cases pushed so far
+static int g_progTotal = 0;                    // cases selected this run
+
+static std::chrono::steady_clock::time_point g_lastMark;  // duration epoch
+
+static std::string toLowerStr(const std::string& s) {
+    std::string o = s;
+    for (char& ch : o)
+        if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+    return o;
+}
+
+static const CaseMeta* findMeta(const std::string& name) {
+    for (int i = 0; i < kAllCaseCount; ++i)
+        if (name == kAllCases[i].name) return &kAllCases[i];
+    return nullptr;
+}
+
+static bool harnSelected(const std::string& name) {
+    const CaseMeta* m = findMeta(name);
+    if (!m) return true;  // unregistered name: run it (visible in the report)
+    if (!g_selGroups.empty() &&
+        std::find(g_selGroups.begin(), g_selGroups.end(),
+                  std::string(m->group)) == g_selGroups.end())
+        return false;
+    if (!g_selCats.empty() &&
+        std::find(g_selCats.begin(), g_selCats.end(),
+                  std::string(m->category)) == g_selCats.end())
+        return false;
+    if (!g_filterSubs.empty()) {
+        const std::string ln = toLowerStr(name);
+        bool hit = false;
+        for (const auto& f : g_filterSubs)
+            if (ln.find(toLowerStr(f)) != std::string::npos) {
+                hit = true;
+                break;
+            }
+        if (!hit) return false;
+    }
+    return true;
+}
+
+// Intercept for R.push_back(std::move(c)): stamps group/category/duration,
+// pushes, and prints the live progress line.  Harness bookkeeping only --
+// it never touches a gate.
+static void pushCase(std::vector<CaseResult>& R, CaseResult&& c) {
+    const auto now = std::chrono::steady_clock::now();
+    c.duration_ms =
+        std::chrono::duration<double, std::milli>(now - g_lastMark).count();
+    const CaseMeta* m = findMeta(c.name);
+    if (m) {
+        c.group = m->group;
+        c.category = m->category;
+    } else {
+        c.group = g_currentGroup;  // fallback, plus the loud warning below
+        c.category = "unit";
+        std::fprintf(stderr,
+                     "WARNING: case '%s' is not in the static registry\n",
+                     c.name.c_str());
+    }
+    g_lastMark = now;
+    ++g_progDone;
+    R.push_back(std::move(c));
+    const CaseResult& pushed = R.back();
+    std::printf("[%3d/%3d] %-46s %-4s %10.1f ms\n", g_progDone, g_progTotal,
+                pushed.name.c_str(), pushed.pass ? "ok" : "FAIL",
+                pushed.duration_ms);
+    std::fflush(stdout);
+}
+
+// ---- environment record (R16-P2; same fragment shape in bench_main.cpp) --
+static std::string readProcFile(const char* path) {
+    FILE* f = std::fopen(path, "rb");
+    if (!f) return "";
+    std::string s;
+    char buf[512];
+    size_t n;
+    while ((n = std::fread(buf, 1, sizeof(buf), f)) > 0) s.append(buf, n);
+    std::fclose(f);
+    while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) s.pop_back();
+    return s;
+}
+
+#ifndef OCTAVOX_BUILD_TYPE
+#define OCTAVOX_BUILD_TYPE "unknown"
+#endif
+#ifndef OCTAVOX_SANITIZERS
+#define OCTAVOX_SANITIZERS 0
+#endif
+
+static std::string envJsonFragment() {
+    char ts[48];
+    std::time_t t = std::time(nullptr);
+    std::tm tmv{};
+    gmtime_r(&t, &tmv);
+    std::strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", &tmv);
+    std::string os = readProcFile("/proc/sys/kernel/ostype");
+    const std::string osrel = readProcFile("/proc/sys/kernel/osrelease");
+    if (!os.empty() && !osrel.empty()) os += " " + osrel;
+    std::string cpu;
+    {
+        FILE* f = std::fopen("/proc/cpuinfo", "rb");
+        if (f) {
+            char line[1024];
+            while (std::fgets(line, sizeof(line), f)) {
+                if (std::strncmp(line, "model name", 10) == 0) {
+                    const char* colon = std::strchr(line, ':');
+                    if (colon) {
+                        cpu = colon + 1;
+                        // trim trailing newline and leading spaces
+                        while (!cpu.empty() &&
+                               (cpu.back() == '\n' || cpu.back() == '\r'))
+                            cpu.pop_back();
+                        size_t b = cpu.find_first_not_of(' ');
+                        cpu = (b == std::string::npos) ? "" : cpu.substr(b);
+                    }
+                    break;
+                }
+            }
+            std::fclose(f);
+        }
+    }
+    long cores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (cores <= 0) cores = 0;
+    std::string j = "\"timestamp_utc\": \"";
+    j += ts;
+    j += "\", \"compiler\": \"";
+    j += jsonEscape(__VERSION__);
+    j += "\", \"build_type\": \"";
+    j += jsonEscape(OCTAVOX_BUILD_TYPE);
+    j += "\", \"sanitizers\": ";
+    j += (OCTAVOX_SANITIZERS != 0) ? "true" : "false";
+    j += ", \"os\": \"";
+    j += jsonEscape(os);
+    j += "\", \"cpu\": \"";
+    j += jsonEscape(cpu);
+    j += "\", \"cores\": ";
+    j += std::to_string(cores);
+    return j;
+}
 
 void addValue(CaseResult& c, const std::string& k, double v) {
     c.values.emplace_back(k, v);
@@ -298,7 +577,7 @@ std::vector<float> run(const Config& cfg, const std::vector<float>& in,
 // The cases
 // ---------------------------------------------------------------------------
 void casesPrepareReset(std::vector<CaseResult>& R) {
-    {  // 1. default prepare
+    if (harnSelected("prepare_default")) {  // 1. default prepare
         CaseResult c{"prepare_default"};
         Config cfg;
         AlignedDelayLine e;
@@ -307,9 +586,9 @@ void casesPrepareReset(std::vector<CaseResult>& R) {
         check(c, e.latencySamples() == 2304, "latency != 2304");
         check(c, e.ready(), "not ready");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // 2. invalid configs rejected
+    if (harnSelected("prepare_invalid_rejected")) {  // 2. invalid configs rejected
         CaseResult c{"prepare_invalid_rejected"};
         int rejected = 0, total = 0;
         Config bad;
@@ -337,9 +616,9 @@ void casesPrepareReset(std::vector<CaseResult>& R) {
         addValue(c, "total", total);
         check(c, rejected == total, "some invalid configs accepted");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // 3. reset determinism
+    if (harnSelected("reset_determinism")) {  // 3. reset determinism
         CaseResult c{"reset_determinism"};
         Config cfg;
         cfg.ratio = semitoneRatio(400.0);
@@ -363,9 +642,9 @@ void casesPrepareReset(std::vector<CaseResult>& R) {
         check(c, d1 == 0.0, "two fresh engines differ");
         check(c, d2 == 0.0, "reset engine differs from fresh");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // 4. repeated prepare
+    if (harnSelected("repeated_prepare")) {  // 4. repeated prepare
         CaseResult c{"repeated_prepare"};
         Config cfg;
         cfg.ratio = semitoneRatio(500.0);
@@ -385,9 +664,9 @@ void casesPrepareReset(std::vector<CaseResult>& R) {
         addValue(c, "reprepared_vs_fresh", d);
         check(c, d == 0.0, "re-prepared engine differs from fresh");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // 5. block-size invariance
+    if (harnSelected("block_size_invariance")) {  // 5. block-size invariance
         CaseResult c{"block_size_invariance"};
         Config cfg;
         cfg.ratio = semitoneRatio(700.0);
@@ -424,9 +703,9 @@ void casesPrepareReset(std::vector<CaseResult>& R) {
         addValue(c, "worst_split_diff", worst);
         check(c, worst == 0.0, "block split changed the output");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // 6. steady-state allocation-free
+    if (harnSelected("steady_state_no_allocation")) {  // 6. steady-state allocation-free
         CaseResult c{"steady_state_no_allocation"};
         Config cfg;
         cfg.ratio = semitoneRatio(400.0);
@@ -446,7 +725,7 @@ void casesPrepareReset(std::vector<CaseResult>& R) {
         addValue(c, "allocations_during_process", static_cast<double>(n));
         check(c, n == 0, "allocations during steady-state process()");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 }
 
@@ -456,6 +735,7 @@ void casesUnity(std::vector<CaseResult>& R) {
     // bit-exact delayed-copy gate used by the unity battery
     auto unityExact = [&](const std::string& name, const std::vector<float>& in,
                           bool arrive_from_shift = false) {
+        if (!harnSelected(name)) return;  // R16-P2 selection (no gate touched)
         CaseResult c{name};
         Config cfg;  // ratio exactly 1.0, 1 voice, neutral
         AlignedDelayLine e;
@@ -508,7 +788,7 @@ void casesUnity(std::vector<CaseResult>& R) {
             check(c, pre_max == 0.0, "output before d_park not silent");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     };
 
     unityExact("unity_tone_220_bitexact", gen::tone(220.0, sr, 48000, 0.5));
@@ -524,7 +804,7 @@ void casesUnity(std::vector<CaseResult>& R) {
     unityExact("unity_enter_from_+400c_bitexact",
                gen::tone(220.0, sr, 96000, 0.5), true);
 
-    {  // unity gain exactly 1 (follows from bit-exactness, measured anyway)
+    if (harnSelected("unity_gain_exact")) {  // unity gain exactly 1 (follows from bit-exactness, measured anyway)
         CaseResult c{"unity_gain_exact"};
         const auto in = gen::tone(220.0, sr, 48000, 0.5);
         Config cfg;
@@ -539,10 +819,10 @@ void casesUnity(std::vector<CaseResult>& R) {
         addValue(c, "gain_db", 20.0 * std::log10(ro / ri));
         check(c, ro == ri, "unity RMS changed");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // entry continuity (from +400 cents into unity): no click
+    if (harnSelected("unity_entry_continuity")) {  // entry continuity (from +400 cents into unity): no click
         CaseResult c{"unity_entry_continuity"};
         Config cfg;
         AlignedDelayLine e;
@@ -565,13 +845,15 @@ void casesUnity(std::vector<CaseResult>& R) {
               "transition click");
         check(c, meas::allFinite(out.data(), out.size()), "non-finite");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
     // near-unity battery: fresh-start vs via-unity-exit
     auto nearUnity = [&](const std::string& tag, double cents, bool viaUnity) {
-        CaseResult c{"near_unity_" + tag + "_" +
-                     (viaUnity ? "via_unity" : "fresh")};
+        const std::string caseName =
+            "near_unity_" + tag + "_" + (viaUnity ? "via_unity" : "fresh");
+        if (!harnSelected(caseName)) return;  // R16-P2 selection
+        CaseResult c{caseName};
         const double ratio = semitoneRatio(cents);
         Config cfg;
         cfg.ratio = viaUnity ? 1.0 : ratio;
@@ -616,7 +898,7 @@ void casesUnity(std::vector<CaseResult>& R) {
                   "fresh gain outside [-4, +2] dB (static comb expected)");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     };
 
     const double centsList[] = {1.0,  -1.0, 10.0, -10.0, 50.0,  -50.0,
@@ -634,7 +916,7 @@ void casesUnity(std::vector<CaseResult>& R) {
     nearUnity("+50c", 50.0, true);
     nearUnity("-50c", -50.0, true);
 
-    {  // no-bypass: +-1 cent really shifts (measured change in pitch)
+    if (harnSelected("no_bypass_region")) {  // no-bypass: +-1 cent really shifts (measured change in pitch)
         CaseResult c{"no_bypass_region"};
         const auto in = gen::tone(220.0, sr, 3 * sr, 0.5);
         Config cfg;
@@ -652,10 +934,10 @@ void casesUnity(std::vector<CaseResult>& R) {
         check(c, cn < -0.5, "-1 cent did not shift (bypass?)");
         check(c, cp - cn > 1.0, "+/-1 cent outputs indistinguishable");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // unity with feedback: bounded + finite (comb is expected behaviour)
+    if (harnSelected("unity_feedback_stability")) {  // unity with feedback: bounded + finite (comb is expected behaviour)
         CaseResult c{"unity_feedback_stability"};
         Config cfg;
         cfg.feedback = 0.35;
@@ -669,10 +951,10 @@ void casesUnity(std::vector<CaseResult>& R) {
         check(c, meas::allFinite(out.data(), out.size()), "non-finite");
         check(c, pk < 4.0, "unstable growth with feedback 0.35 at unity");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // 8 voices, spread off, all at unity: exact mean of the parked delays
+    if (harnSelected("unity_8voice_unison_exact_mix")) {  // 8 voices, spread off, all at unity: exact mean of the parked delays
         CaseResult c{"unity_8voice_unison_exact_mix"};
         Config cfg;
         cfg.voices = 8;
@@ -700,13 +982,13 @@ void casesUnity(std::vector<CaseResult>& R) {
         addValue(c, "max_abs_diff_vs_exact_mean", worst);
         check(c, worst == 0.0, "8-voice unison mix is not the exact mean");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 }
 
 void casesVoices(std::vector<CaseResult>& R) {
     const int sr = 48000;
-    {  // 8 voices spread +700c: finite, bounded, dominant pitch present
+    if (harnSelected("voices_8_spread_+700c")) {  // 8 voices spread +700c: finite, bounded, dominant pitch present
         CaseResult c{"voices_8_spread_+700c"};
         Config cfg;
         cfg.ratio = semitoneRatio(700.0);
@@ -722,9 +1004,9 @@ void casesVoices(std::vector<CaseResult>& R) {
         addValue(c, "dominant_f0", f);
         check(c, f > 150.0 && f < 800.0, "no dominant pitch found");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // setVoices mid-stream: ramped normalisation, no NaN
+    if (harnSelected("setvoices_midstream")) {  // setVoices mid-stream: ramped normalisation, no NaN
         CaseResult c{"setvoices_midstream"};
         Config cfg;
         cfg.ratio = semitoneRatio(400.0);
@@ -742,13 +1024,13 @@ void casesVoices(std::vector<CaseResult>& R) {
         addValue(c, "max_step_after_voice_change", step);
         check(c, step < 0.5, "click on voice-count change");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 }
 
 void casesStereo(std::vector<CaseResult>& R) {
     const int sr = 48000;
-    {  // L tone / R silence at unity: R exactly zero, L bit-exact
+    if (harnSelected("stereo_isolation_unity")) {  // L tone / R silence at unity: R exactly zero, L bit-exact
         CaseResult c{"stereo_isolation_unity"};
         Config cfg;
         MultichannelShifter m;
@@ -769,9 +1051,9 @@ void casesStereo(std::vector<CaseResult>& R) {
         addValue(c, "L_bitexact_diff", worst);
         check(c, worst == 0.0, "left channel not bit-exact at unity");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // L tone / R silence at +700c: R exactly zero
+    if (harnSelected("stereo_isolation_shifted")) {  // L tone / R silence at +700c: R exactly zero
         CaseResult c{"stereo_isolation_shifted"};
         Config cfg;
         cfg.ratio = semitoneRatio(700.0);
@@ -787,9 +1069,9 @@ void casesStereo(std::vector<CaseResult>& R) {
         addValue(c, "R_peak", rmax);
         check(c, rmax == 0.0, "right channel contaminated while shifting");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // independence: R output identical whether L is processed or not
+    if (harnSelected("stereo_independence")) {  // independence: R output identical whether L is processed or not
         CaseResult c{"stereo_independence"};
         Config cfg;
         cfg.ratio = semitoneRatio(400.0);
@@ -812,12 +1094,12 @@ void casesStereo(std::vector<CaseResult>& R) {
         addValue(c, "R_diff_vs_solo", worst);
         check(c, worst == 0.0, "R output depends on L processing");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 }
 
 void casesRatesFormats(std::vector<CaseResult>& R) {
-    {  // 44.1 kHz
+    if (harnSelected("rate_44100_+400c")) {  // 44.1 kHz
         CaseResult c{"rate_44100_+400c"};
         Config cfg;
         cfg.sample_rate = 44100.0;
@@ -831,9 +1113,9 @@ void casesRatesFormats(std::vector<CaseResult>& R) {
         check(c, meas::allFinite(out.data(), out.size()), "non-finite");
         check(c, std::abs(err) <= 2.0, "pitch error > 2 cents at 44.1 kHz");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // 96 kHz (detector window too short for 60 Hz: spacing falls back to
+    if (harnSelected("rate_96000_+400c")) {  // 96 kHz (detector window too short for 60 Hz: spacing falls back to
        // G -- the Python reference has the same behaviour; gate is looser)
         CaseResult c{"rate_96000_+400c"};
         Config cfg;
@@ -848,9 +1130,9 @@ void casesRatesFormats(std::vector<CaseResult>& R) {
         check(c, meas::allFinite(out.data(), out.size()), "non-finite");
         check(c, std::abs(err) <= 25.0, "pitch error > 25 cents at 96 kHz");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // WAV round trip on the shipped example input (if present)
+    if (harnSelected("wav_roundtrip_example_input")) {  // WAV round trip on the shipped example input (if present)
         CaseResult c{"wav_roundtrip_example_input"};
         const char* candidates[] = {"../poc/example_input.wav",
                                     "../../poc/example_input.wav",
@@ -890,9 +1172,9 @@ void casesRatesFormats(std::vector<CaseResult>& R) {
                   "reference parity: round(y*32767) then /32768)");
             c.pass = c.note.empty();
         }
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // 24-bit WAV read
+    if (harnSelected("wav_24bit_read")) {  // 24-bit WAV read
         CaseResult c{"wav_24bit_read"};
         // write a minimal 24-bit WAV by hand
         const int sr = 48000, n = 256;
@@ -936,13 +1218,13 @@ void casesRatesFormats(std::vector<CaseResult>& R) {
         addValue(c, "max_read_error", worst);
         check(c, worst == 0.0, "24-bit values wrong");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 }
 
 void casesStability(std::vector<CaseResult>& R) {
     const int sr = 48000;
-    {  // long run: 60 s noise, 8 voices, feedback
+    if (harnSelected("longrun_60s_8voice_feedback")) {  // long run: 60 s noise, 8 voices, feedback
         CaseResult c{"longrun_60s_8voice_feedback"};
         Config cfg;
         cfg.ratio = semitoneRatio(1200.0);
@@ -961,9 +1243,9 @@ void casesStability(std::vector<CaseResult>& R) {
         addValue(c, "tail_rms", rt);
         check(c, rt < 4.0 * rh + 1e-9, "diverging tail");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // 30 s chirp +700c
+    if (harnSelected("chirp_30s_+700c")) {  // 30 s chirp +700c
         CaseResult c{"chirp_30s_+700c"};
         Config cfg;
         cfg.ratio = semitoneRatio(700.0);
@@ -974,9 +1256,9 @@ void casesStability(std::vector<CaseResult>& R) {
         addValue(c, "peak", pk);
         check(c, pk < 3.0, "peak too high on chirp");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // impulse latency
+    if (harnSelected("impulse_latency")) {  // impulse latency
         CaseResult c{"impulse_latency"};
         Config cfg;
         cfg.ratio = semitoneRatio(400.0);
@@ -993,9 +1275,9 @@ void casesStability(std::vector<CaseResult>& R) {
         check(c, first >= 250, "responds before base_delay");
         check(c, first <= 256 + 32 + 4400, "responds too late");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // unity impulse: first nonzero exactly at d_park
+    if (harnSelected("impulse_latency_unity")) {  // unity impulse: first nonzero exactly at d_park
         CaseResult c{"impulse_latency_unity"};
         Config cfg;
         const auto in = gen::impulse(sr);
@@ -1013,9 +1295,9 @@ void casesStability(std::vector<CaseResult>& R) {
         addValue(c, "d_park", d);
         check(c, first == d - 1, "unity impulse not at d_park-1");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // DC input: finite (guards div-by-zero in spacing/median paths)
+    if (harnSelected("dc_input_finite")) {  // DC input: finite (guards div-by-zero in spacing/median paths)
         CaseResult c{"dc_input_finite"};
         Config cfg;
         cfg.ratio = semitoneRatio(400.0);
@@ -1023,9 +1305,9 @@ void casesStability(std::vector<CaseResult>& R) {
         const auto out = run(cfg, in);
         check(c, meas::allFinite(out.data(), out.size()), "non-finite on DC");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {  // clipping behaviour: hot input stays finite; WAV writer clips
+    if (harnSelected("clipping_behaviour")) {  // clipping behaviour: hot input stays finite; WAV writer clips
         CaseResult c{"clipping_behaviour"};
         Config cfg;
         cfg.ratio = semitoneRatio(1200.0);
@@ -1045,7 +1327,7 @@ void casesStability(std::vector<CaseResult>& R) {
         addValue(c, "wav_peak_after_clip", pkq);
         check(c, pkq <= 1.0, "WAV writer did not clip-guard");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 }
 
@@ -1142,6 +1424,7 @@ void casesR13(std::vector<CaseResult>& R) {
     // first non-zero is exactly at d_park(0)-1 == latencySamples()-1, the
     // output is exactly zero before it, and block sizes 1/64/512 agree.
     auto coldStartUnity = [&](const char* name, int nv) {
+        if (!harnSelected(name)) return;  // R16-P2 selection (no gate touched)
         CaseResult c{name};
         Config cfg;
         cfg.voices = nv;
@@ -1201,13 +1484,14 @@ void casesR13(std::vector<CaseResult>& R) {
         check(c, worstStream == 0.0,
               "unity impulse stream != parked delayed-copy sum (bit-exact)");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     };
 
     // ---- cold start, SHIFTED: first non-zero exactly at the analytic ----
     // contact point, exactly zero before it, the analytic value at k0, and
     // block sizes 1/64/512 agree bit-exactly.
     auto coldStartShift = [&](const char* name, int nv, double ratio) {
+        if (!harnSelected(name)) return;  // R16-P2 selection (no gate touched)
         CaseResult c{name};
         Config cfg;
         cfg.ratio = ratio;
@@ -1284,7 +1568,7 @@ void casesR13(std::vector<CaseResult>& R) {
               "value at k0 differs from the analytic re-derivation");
         check(c, worstCross == 0.0, "block size changed the cold-start output");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     };
 
     coldStartUnity("cold_start_impulse_alignment_unity_1v", 1);
@@ -1298,7 +1582,7 @@ void casesR13(std::vector<CaseResult>& R) {
     coldStartShift("cold_start_impulse_alignment_down_8v", 8,
                    std::pow(2.0, -5.0 / 12.0));
 
-    {  // no spurious transient: max|out| == 0 before the contact point on
+    if (harnSelected("cold_start_no_spurious_transient")) {  // no spurious transient: max|out| == 0 before the contact point on
        // step and sine onsets, 1 and 8 voices, unity and +-5 semitones
         CaseResult c{"cold_start_no_spurious_transient"};
         const double ratios[3] = {1.0, std::pow(2.0, 5.0 / 12.0),
@@ -1339,10 +1623,10 @@ void casesR13(std::vector<CaseResult>& R) {
         addValue(c, "worst_pre_contact_max_abs", worst);
         check(c, worst == 0.0, "spurious transient before the contact point");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // detector 96 kHz sine battery (R13-b): 110/220/440/880 Hz at
+    if (harnSelected("detector_96000hz_sine_battery")) {  // detector 96 kHz sine battery (R13-b): 110/220/440/880 Hz at
        // ratio 2^(5/12), rate-scaled config grain 8192 / base 512 --
        // SAMPLE-DOMAIN BY DESIGN: the acceptance configs hold the
        // TIME-domain grain (85.3 ms) and base (5.3 ms) constant across
@@ -1375,10 +1659,10 @@ void casesR13(std::vector<CaseResult>& R) {
         addValue(c, "worst_cents", worst);
         check(c, worst <= 1.0, "96 kHz battery pitch error > 1.0 cent");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // detector 44.1 kHz sine battery (R13-b boundary of the 2048 floor):
+    if (harnSelected("detector_44100hz_sine_battery")) {  // detector 44.1 kHz sine battery (R13-b boundary of the 2048 floor):
        // 440/880 Hz, rate-scaled grain/base = round(4096*sr/48000) = 3763 /
        // round(256*sr/48000) = 235 (time-domain-equivalent).  tau_max = 735
        // <= 819.2, so win == 2048 and the detector arithmetic is
@@ -1409,13 +1693,13 @@ void casesR13(std::vector<CaseResult>& R) {
         addValue(c, "worst_cents", worst);
         check(c, worst <= 1.0, "44.1 kHz battery pitch error > 1.0 cent");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
     // estimate tracking at three rates: lastEstimateHz() within +-5 cents
     // of the true f0, sampled at every 1024-sample block boundary after
     // 1 s of warm-up (the detector needs ~win + a few periods to lock).
-    {
+    if (harnSelected("detector_estimate_tracking_44100")) {
         CaseResult c{"detector_estimate_tracking_44100"};
         const int srL = 44100;
         const double f0 = 220.0;
@@ -1441,9 +1725,9 @@ void casesR13(std::vector<CaseResult>& R) {
         addValue(c, "last_estimate_hz", e.lastEstimateHz());
         check(c, worst <= 5.0, "estimate outside +/-5 cents at 44.1 kHz");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {
+    if (harnSelected("detector_estimate_tracking_48000")) {
         CaseResult c{"detector_estimate_tracking_48000"};
         const double f0 = 220.0;
         Config cfg;  // all defaults (grain 4096 / base 256)
@@ -1465,9 +1749,9 @@ void casesR13(std::vector<CaseResult>& R) {
         addValue(c, "last_estimate_hz", e.lastEstimateHz());
         check(c, worst <= 5.0, "estimate outside +/-5 cents at 48 kHz");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
-    {
+    if (harnSelected("detector_estimate_tracking_96000")) {
         CaseResult c{"detector_estimate_tracking_96000"};
         const int srH = 96000;
         const double f0 = 110.0;  // mirrors the recorded r15refcap --probe96
@@ -1493,10 +1777,10 @@ void casesR13(std::vector<CaseResult>& R) {
         addValue(c, "last_estimate_hz", e.lastEstimateHz());
         check(c, worst <= 5.0, "estimate outside +/-5 cents at 96 kHz");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // estimate STABILITY at 96 kHz (the R13-b mirror-dip concern: a
+    if (harnSelected("detector_96k_estimate_stability")) {  // estimate STABILITY at 96 kHz (the R13-b mirror-dip concern: a
        // merely-restored m << period is unstable; the law keeps
        // m = win/2 - tau_max >= tau_max/4).  Sampled at every 1024-sample
        // boundary after 1 s.  GATE: max-min <= 0.01 Hz (~0.16 cent at
@@ -1534,11 +1818,11 @@ void casesR13(std::vector<CaseResult>& R) {
         addValue(c, "estimate_spread_hz", spread);
         check(c, spread <= 0.01, "96 kHz estimate unstable (spread > 0.01 Hz)");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
     // ---- R13-c: zero-allocation re-prepare (global new counter) ----------
-    {  // identical-config re-prepare: 0 allocations, engine keeps working
+    if (harnSelected("rt_reprepare_zero_allocation")) {  // identical-config re-prepare: 0 allocations, engine keeps working
         CaseResult c{"rt_reprepare_zero_allocation"};
         Config cfg;
         cfg.ratio = semitoneRatio(400.0);
@@ -1563,10 +1847,10 @@ void casesR13(std::vector<CaseResult>& R) {
         check(c, meas::allFinite(out.data(), out.size()), "non-finite");
         check(c, meas::peak(out.data() + sr / 2, sr / 2) > 0.0, "silent");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // param-only re-prepare (buffer-determining fields unchanged:
+    if (harnSelected("rt_reprepare_param_change_zero_allocation")) {  // param-only re-prepare (buffer-determining fields unchanged:
        // sample_rate / max_voices / f0_history / detection_interval; ratio,
        // voices, spread, feedback, grain, base_delay all change): 0
        // allocations, the new parameters take effect.
@@ -1603,10 +1887,10 @@ void casesR13(std::vector<CaseResult>& R) {
         check(c, meas::allFinite(out.data(), out.size()), "non-finite");
         check(c, meas::peak(out.data() + sr / 2, sr / 2) > 0.0, "silent");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // multichannel re-prepare (same channel count): every engine
+    if (harnSelected("rt_reprepare_multichannel_zero_allocation")) {  // multichannel re-prepare (same channel count): every engine
        // reconfigures itself in place -- 0 allocations for BOTH the
        // identical-config and the param-only re-prepare.
         CaseResult c{"rt_reprepare_multichannel_zero_allocation"};
@@ -1639,10 +1923,10 @@ void casesR13(std::vector<CaseResult>& R) {
         check(c, n == 0, "multichannel re-prepare allocated");
         check(c, meas::allFinite(o1.data(), o1.size()), "non-finite");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // reset() is allocation-free mid-stream
+    if (harnSelected("rt_reset_no_allocation")) {  // reset() is allocation-free mid-stream
         CaseResult c{"rt_reset_no_allocation"};
         Config cfg;
         cfg.ratio = semitoneRatio(400.0);
@@ -1664,10 +1948,10 @@ void casesR13(std::vector<CaseResult>& R) {
         check(c, n == 0, "reset() allocated");
         check(c, meas::allFinite(out.data(), out.size()), "non-finite");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // every setter (the NEW surface included) + process() are
+    if (harnSelected("rt_setters_and_process_no_allocation")) {  // every setter (the NEW surface included) + process() are
        // allocation-free, including setters issued MID-RAMP (a gain ramp
        // still slewing) and MID-BYPASS-BLEND (the bypass crossfade still
        // slewing).  Mono + multichannel.
@@ -1774,10 +2058,10 @@ void casesR13(std::vector<CaseResult>& R) {
             check(c, nmc == 0, "multichannel setters/process allocated");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // in-place re-prepare result identity: after an identical-config OR
+    if (harnSelected("rt_reprepare_result_identity")) {  // in-place re-prepare result identity: after an identical-config OR
        // a param-only re-prepare, the engine is bit-identical to a FRESH
        // engine prepared with the same config (R13-c: "identical result to
        // a fresh engine").  Mono (both variants) + multichannel.
@@ -1862,10 +2146,10 @@ void casesR13(std::vector<CaseResult>& R) {
             check(c, d == 0.0, "multichannel re-prepare != fresh engines");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // R14: VoiceStats::ratio -- the geometric glide (kGlideMult =
+    if (harnSelected("voicestats_ratio_diagnostics")) {  // R14: VoiceStats::ratio -- the geometric glide (kGlideMult =
        // 0.9995/sample), exposed as a diagnostic.  Cold-start law: the
        // glide is initialised AT its target (bit-exact).  setRatio()
        // mid-stream: the glide stays inside (r0, r1), is monotone, and
@@ -1909,7 +2193,7 @@ void casesR13(std::vector<CaseResult>& R) {
         check(c, std::abs(last - r1) <= expect + 1e-9,
               "glide did not converge per the geometric law");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 }
 
@@ -1923,7 +2207,7 @@ void casesR13(std::vector<CaseResult>& R) {
 void casesR15P1(std::vector<CaseResult>& R) {
     const int sr = 48000;
 
-    {  // per-voice ABSOLUTE ratios: 8 voices, spread OFF (the spread table
+    if (harnSelected("per_voice_ratios_independent")) {  // per-voice ABSOLUTE ratios: 8 voices, spread OFF (the spread table
        // would re-derive targets), ratios 2^(k/12), k in
        // {-12,-9,-6,-3,0,3,6,12}.  Each voice is measured ALONE (the other
        // seven muted -- their ramped gain reaches exactly 0, removing them
@@ -1966,10 +2250,10 @@ void casesR15P1(std::vector<CaseResult>& R) {
         check(c, std::abs(worst) <= 1.0,
               "per-voice ratio off by > 1.0 cent (voice isolation broken)");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // per-voice gain ramp and mute: (a) steady gain 0.5 within
+    if (harnSelected("per_voice_gain_ramp_and_mute")) {  // per-voice gain ramp and mute: (a) steady gain 0.5 within
        // +/- 0.1 dB; (b) gain-ramp transition steps bounded by the
        // implementation-independent formulation
        //         step <= 2*(natural_step + ramp_slope*amplitude)
@@ -2085,10 +2369,10 @@ void casesR15P1(std::vector<CaseResult>& R) {
                   "mute/unmute cycle not bit-transparent after the ramps");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // per-voice base-delay isolation: a mid-stream setVoiceBaseDelay on
+    if (harnSelected("per_voice_delay_isolation")) {  // per-voice base-delay isolation: a mid-stream setVoiceBaseDelay on
        // voice 1 touches ONLY voice 1 (structural per-voice state).
        // Measurement feedback-free (the global feedback is wet-path-only
        // and would legitimately couple the voices).  Voice 0 measured alone
@@ -2144,10 +2428,10 @@ void casesR15P1(std::vector<CaseResult>& R) {
                   "voice 1 output above 2x input peak");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // wet/dry endpoints: w=1 is the bit-identical legacy path (equal to
+    if (harnSelected("wetdry_endpoints")) {  // wet/dry endpoints: w=1 is the bit-identical legacy path (equal to
        // the never-touched default run); w=0 is the bit-exact latency-
        // aligned delayed copy dry[k] = in[k-(L-1)]; w=0.5 follows the
        // linear law |out(0.5) - 0.5*out(1) - 0.5*out(0)| <= 1e-6 (float
@@ -2210,10 +2494,10 @@ void casesR15P1(std::vector<CaseResult>& R) {
             check(c, d <= 1e-6, "wet/dry linear law residual > 1e-6");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // bypass click-free + transparent: enter at t1, exit at t2 (both
+    if (harnSelected("bypass_clickfree_and_transparent")) {  // bypass click-free + transparent: enter at t1, exit at t2 (both
        // 480-block boundaries; bypass_seconds = 10 ms = 480 samples).
        // Gates: (i) pre-enter bit-identical to the never-bypassed
        // reference; (ii) the fully-bypassed region is the BIT-EXACT dry
@@ -2326,10 +2610,10 @@ void casesR15P1(std::vector<CaseResult>& R) {
             check(c, d > 0.0, "bypass had no effect (vacuous comparison)");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // the NEW setters are allocation-free on the audio thread, issued
+    if (harnSelected("new_setters_no_allocation")) {  // the NEW setters are allocation-free on the audio thread, issued
        // between process() calls INCLUDING mid-ramp (a gain ramp still
        // slewing when re-targeted: re-targets every 256 samples < 720) and
        // mid-bypass-blend (the crossfade still slewing when toggled back:
@@ -2404,10 +2688,10 @@ void casesR15P1(std::vector<CaseResult>& R) {
             check(c, nmc == 0, "new-surface setters allocated (multichannel)");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // default_neutrality: the 15.0.0 core is BIT-IDENTICAL to the
+    if (harnSelected("default_neutrality")) {  // default_neutrality: the 15.0.0 core is BIT-IDENTICAL to the
        // recorded 12.0.0 reference hashes under the DEFAULT surface
        // (wet=1, bypass off, no per-voice overrides, all gains 1).  The
        // four configs and the FNV-1a-64-over-float-bits law replicate
@@ -2523,7 +2807,7 @@ void casesR15P1(std::vector<CaseResult>& R) {
                   std::string("reference hash mismatch: ") + names[i]);
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 }
 
@@ -2568,7 +2852,7 @@ void casesR15Acc(std::vector<CaseResult>& R) {
     const double kNaN = std::numeric_limits<double>::quiet_NaN();
     const double kInf = std::numeric_limits<double>::infinity();
 
-    {  // 1. r15acc_ratio_change_isolation: a mid-stream per-voice ratio
+    if (harnSelected("r15acc_ratio_change_isolation")) {  // 1. r15acc_ratio_change_isolation: a mid-stream per-voice ratio
         //    change touches ONLY its own voice. Measurement: voice 3 is
         //    muted throughout two parallel reference runs (identical
         //    input/config/setter cadence), one WITH the voice-3 ratio
@@ -2651,10 +2935,10 @@ void casesR15Acc(std::vector<CaseResult>& R) {
                   "voice 3 did not converge to its new ratio within 1.0 cent");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // 2. r15acc_level_accuracy: per-voice gains {0.1, 0.25, 0.5, 1.0} on
+    if (harnSelected("r15acc_level_accuracy")) {  // 2. r15acc_level_accuracy: per-voice gains {0.1, 0.25, 0.5, 1.0} on
         //    a steady tone, ONE active voice per measurement (7 muted),
         //    steady RMS ratio vs the expected level within +/- 0.1 dB.
         //    Expected is computed in-test from the header law: final voice
@@ -2690,10 +2974,10 @@ void casesR15Acc(std::vector<CaseResult>& R) {
         check(c, worst <= 0.1,
               "steady level outside +/-0.1 dB of the expected gain");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // 3. r15acc_block_boundary_semantics: a parameter change issued
+    if (harnSelected("r15acc_block_boundary_semantics")) {  // 3. r15acc_block_boundary_semantics: a parameter change issued
         //    between process() calls applies from the NEXT block as a
         //    STREAM-POSITION event. Run A: 64-sample blocks; run B: the
         //    identical stream in 150-sample blocks; the same simultaneous
@@ -2818,10 +3102,10 @@ void casesR15Acc(std::vector<CaseResult>& R) {
                   "(vacuous comparison)");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // 4. r15acc_reset_reprepare_determinism: a scripted event sequence
+    if (harnSelected("r15acc_reset_reprepare_determinism")) {  // 4. r15acc_reset_reprepare_determinism: a scripted event sequence
         //    (per-voice ratios + gains + mute/unmute + wet/dry moves +
         //    bypass enter/exit + base-delay change) -> full-run output hash;
         //    then reset() -> replay, prepare(same cfg) -> replay, destroy +
@@ -2924,10 +3208,10 @@ void casesR15Acc(std::vector<CaseResult>& R) {
         check(c, h1 == h2 && h2 == h3 && h3 == h4,
               "full-run output hashes differ");
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // 5. r15acc_stereo_surface: MultichannelShifter 2ch with the full
+    if (harnSelected("r15acc_stereo_surface")) {  // 5. r15acc_stereo_surface: MultichannelShifter 2ch with the full
         //    per-voice surface active (per-voice ratios + one voice muted +
         //    wet 0.5 + a bypass enter/exit mid-run + feedback). Broadcast
         //    parity: the same input on both channels -> identical outputs
@@ -3018,10 +3302,10 @@ void casesR15Acc(std::vector<CaseResult>& R) {
                   "silent R input produced non-zero R output");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // 6. r15acc_robustness_battery: 8 voices + the surface active
+    if (harnSelected("r15acc_robustness_battery")) {  // 6. r15acc_robustness_battery: 8 voices + the surface active
         //    (wet 0.5, voice 5 muted, one bypass enter/exit mid-run) across
         //    silence / -60 dBFS sine / 440 Hz tone / 3-tone chord / white
         //    noise / 100 Hz impulse train. Gates: all finite and bounded,
@@ -3194,10 +3478,10 @@ void casesR15Acc(std::vector<CaseResult>& R) {
             check(c, d == 0.0 && heq, "replay is not bit-identical");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 
-    {  // 7. r15acc_invalid_args: the invalid-argument matrix. Rejected
+    if (harnSelected("r15acc_invalid_args")) {  // 7. r15acc_invalid_args: the invalid-argument matrix. Rejected
         //    calls (out-of-range voice index, non-positive ratio/gain,
         //    non-finite anything, base delay <= 0 or beyond the ring
         //    range) must be NO-OPS: a run with the invalid calls sprinkled
@@ -3395,7 +3679,7 @@ void casesR15Acc(std::vector<CaseResult>& R) {
                   "the largest in-range base delay was not accepted");
         }
         c.pass = c.note.empty();
-        R.push_back(std::move(c));
+        pushCase(R, std::move(c));
     }
 }
 
@@ -3417,10 +3701,10 @@ std::string jsonEscape(const std::string& s) {
     return o;
 }
 
-void writeJson(const std::string& path) {
+void writeJson(const std::string& path, double wallMs) {
     std::string j = "{\n  \"suite\": \"octavox_native_tests\",\n  \"version\": \"";
     j += versionString();
-    j += "\",\n  \"cases\": [\n";
+    j += "\",\n  \"environment\": {" + envJsonFragment() + "},\n  \"cases\": [\n";
     int idx = 0;
     for (const auto& c : g_results) {
         j += "    {\"name\": \"" + jsonEscape(c.name) + "\", \"pass\": " +
@@ -3432,7 +3716,12 @@ void writeJson(const std::string& path) {
             j += "\"" + jsonEscape(c.values[i].first) + "\": " + buf;
             if (i + 1 < c.values.size()) j += ", ";
         }
-        j += "}}";
+        // R16-P2 additions (backward compatible: new keys only)
+        char dbuf[32];
+        std::snprintf(dbuf, sizeof(dbuf), "%.1f", c.duration_ms);
+        j += "}, \"group\": \"" + jsonEscape(c.group) +
+             "\", \"category\": \"" + jsonEscape(c.category) +
+             "\", \"duration_ms\": " + dbuf + "}";
         if (++idx < (int)g_results.size()) j += ",";
         j += "\n";
     }
@@ -3440,7 +3729,33 @@ void writeJson(const std::string& path) {
     for (const auto& c : g_results) passed += c.pass ? 1 : 0;
     j += "  ],\n  \"summary\": {\"total\": " + std::to_string(g_results.size()) +
          ", \"passed\": " + std::to_string(passed) + ", \"failed\": " +
-         std::to_string(g_results.size() - passed) + "}\n}\n";
+         std::to_string(g_results.size() - passed);
+    // R16-P2 additions: selected counts, wall time, per-group subtotals.
+    j += ", \"selected\": " + std::to_string(g_results.size()) +
+         ", \"selected_passed\": " + std::to_string(passed) +
+         ", \"selected_failed\": " + std::to_string(g_results.size() - passed);
+    char wbuf[32];
+    std::snprintf(wbuf, sizeof(wbuf), "%.1f", wallMs);
+    j += ", \"wall_time_ms\": ";
+    j += wbuf;
+    j += ", \"groups\": {";
+    for (int g = 0; g < kGroupCount; ++g) {
+        int sel = 0, gp = 0;
+        double ms = 0.0;
+        for (const auto& c : g_results) {
+            if (c.group != kGroupIds[g]) continue;
+            ++sel;
+            gp += c.pass ? 1 : 0;
+            ms += c.duration_ms;
+        }
+        char gbuf[160];
+        std::snprintf(gbuf, sizeof(gbuf),
+                      "%s\"%s\": {\"selected\": %d, \"passed\": %d, "
+                      "\"failed\": %d, \"duration_ms\": %.1f}",
+                      g == 0 ? "" : ", ", kGroupIds[g], sel, gp, sel - gp, ms);
+        j += gbuf;
+    }
+    j += "}}\n}\n";
     FILE* f = std::fopen(path.c_str(), "wb");
     if (f) {
         std::fwrite(j.data(), 1, j.size(), f);
@@ -3449,39 +3764,143 @@ void writeJson(const std::string& path) {
 }
 
 // ---------------------------------------------------------------------------
+static void usageExit(const std::string& msg) {
+    std::fprintf(stderr, "%s\n", msg.c_str());
+    std::fprintf(stderr,
+                 "usage: octavox_tests [--json <path>] [--durations] [--list]\n"
+                 "    [--filter <substring>]  (repeatable, OR, "
+                 "case-insensitive name substring)\n"
+                 "    [--group <id>]          (repeatable, OR)\n"
+                 "    [--category unit|long]  (repeatable, OR)\n"
+                 "kinds AND together; unknown ids or an empty selection "
+                 "exit 2\n");
+    std::fprintf(stderr, "valid groups:");
+    for (int i = 0; i < kGroupCount; ++i)
+        std::fprintf(stderr, " %s", kGroupIds[i]);
+    std::fprintf(stderr, "\nvalid categories:");
+    for (int i = 0; i < 2; ++i)
+        std::fprintf(stderr, " %s", kCategories[i]);
+    std::fprintf(stderr, "\n");
+    std::exit(2);
+}
+
 int main(int argc, char** argv) {
     std::string jsonPath;
+    bool durations = false;
+    bool list = false;
     for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--json") == 0 && i + 1 < argc)
+        const std::string a = argv[i];
+        if (a == "--json" && i + 1 < argc) {
             jsonPath = argv[++i];
+        } else if (a == "--durations") {
+            durations = true;
+        } else if (a == "--list") {
+            list = true;
+        } else if (a == "--filter" && i + 1 < argc) {
+            g_filterSubs.push_back(argv[++i]);
+        } else if (a == "--group" && i + 1 < argc) {
+            g_selGroups.push_back(argv[++i]);
+        } else if (a == "--category" && i + 1 < argc) {
+            g_selCats.push_back(argv[++i]);
+        } else {
+            usageExit("error: unknown or incomplete option: " + a);
+        }
     }
 
-    casesPrepareReset(g_results);
-    casesUnity(g_results);
-    casesVoices(g_results);
-    casesStereo(g_results);
-    casesRatesFormats(g_results);
-    casesStability(g_results);
-    casesR13(g_results);
-    casesR15P1(g_results);
-    casesR15Acc(g_results);
+    // validate group ids / categories against the static registry
+    for (const auto& g : g_selGroups) {
+        bool ok = false;
+        for (int i = 0; i < kGroupCount; ++i)
+            if (g == kGroupIds[i]) {
+                ok = true;
+                break;
+            }
+        if (!ok) usageExit("error: unknown group '" + g + "'");
+    }
+    for (const auto& cat : g_selCats) {
+        if (cat != "unit" && cat != "long")
+            usageExit("error: unknown category '" + cat + "'");
+    }
+
+    if (list) {  // static registry dump; no case runs
+        for (int i = 0; i < kAllCaseCount; ++i)
+            std::printf("%-46s %-14s %s\n", kAllCases[i].name,
+                        kAllCases[i].group, kAllCases[i].category);
+        return 0;
+    }
+
+    // selection over the registry (the full default run = all 85 cases)
+    int selected = 0;
+    for (int i = 0; i < kAllCaseCount; ++i)
+        if (harnSelected(kAllCases[i].name)) ++selected;
+    if (selected == 0)
+        usageExit("error: the given filters select zero cases");
+    g_progTotal = selected;
+
+    struct GroupRunner {
+        const char* id;
+        void (*fn)(std::vector<CaseResult>&);
+    };
+    static const GroupRunner kRunners[] = {
+        {"prepare_reset", casesPrepareReset}, {"unity", casesUnity},
+        {"voices", casesVoices},              {"stereo", casesStereo},
+        {"rates_formats", casesRatesFormats}, {"stability", casesStability},
+        {"r13", casesR13},                    {"r15p1", casesR15P1},
+        {"r15acc", casesR15Acc},
+    };
+    static const int kRunnerCount =
+        static_cast<int>(sizeof(kRunners) / sizeof(kRunners[0]));
+
+    const auto wallStart = std::chrono::steady_clock::now();
+    for (int r = 0; r < kRunnerCount; ++r) {
+        int n = 0;
+        for (int i = 0; i < kAllCaseCount; ++i)
+            if (kAllCases[i].group == std::string(kRunners[r].id) &&
+                harnSelected(kAllCases[i].name))
+                ++n;
+        if (n == 0) continue;
+        std::printf("== group %s: %d cases ==\n", kRunners[r].id, n);
+        std::fflush(stdout);
+        g_currentGroup = kRunners[r].id;
+        g_lastMark = std::chrono::steady_clock::now();
+        kRunners[r].fn(g_results);
+    }
+    const double wallMs =
+        std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - wallStart)
+            .count();
 
     int passed = 0, failed = 0;
-    std::printf("%-46s %-6s %s\n", "CASE", "PASS", "MEASUREMENTS (selected)");
-    std::printf("%s\n", std::string(100, '-').c_str());
-    for (const auto& c : g_results) {
-        if (c.pass) ++passed; else ++failed;
-        std::printf("%-46s %-6s %s\n", c.name.c_str(), c.pass ? "ok" : "FAIL",
-                    c.note.c_str());
-        for (const auto& v : c.values)
-            std::printf("%-46s %-6s %s = %.10g\n", "", "", v.first.c_str(),
-                        v.second);
+    if (durations) {
+        std::printf("%-46s %-6s %12s %s\n", "CASE", "PASS", "DURATION(ms)",
+                    "MEASUREMENTS (selected)");
+        std::printf("%s\n", std::string(113, '-').c_str());
+        for (const auto& c : g_results) {
+            if (c.pass) ++passed; else ++failed;
+            std::printf("%-46s %-6s %12.1f %s\n", c.name.c_str(),
+                        c.pass ? "ok" : "FAIL", c.duration_ms, c.note.c_str());
+            for (const auto& v : c.values)
+                std::printf("%-46s %-6s %12s %s = %.10g\n", "", "", "",
+                            v.first.c_str(), v.second);
+        }
+    } else {
+        std::printf("%-46s %-6s %s\n", "CASE", "PASS", "MEASUREMENTS (selected)");
+        std::printf("%s\n", std::string(100, '-').c_str());
+        for (const auto& c : g_results) {
+            if (c.pass) ++passed; else ++failed;
+            std::printf("%-46s %-6s %s\n", c.name.c_str(), c.pass ? "ok" : "FAIL",
+                        c.note.c_str());
+            for (const auto& v : c.values)
+                std::printf("%-46s %-6s %s = %.10g\n", "", "", v.first.c_str(),
+                            v.second);
+        }
     }
     std::printf("%s\n%s: %d passed, %d failed, %d total\n",
                 std::string(100, '-').c_str(), versionString(), passed, failed,
                 (int)g_results.size());
+    std::printf("TOTAL_WALL_MS %.1f\n", wallMs);
 
-    if (!jsonPath.empty()) writeJson(jsonPath);
+    if (!jsonPath.empty()) writeJson(jsonPath, wallMs);
 
     return failed == 0 ? 0 : 1;
 }

@@ -20,6 +20,19 @@
 // 2026-10-26 environment-reset recovery, with the P5 extensions applied.
 // Requires src/dsp.cpp to be recovered before building (see
 // evidence/analysis_round15/NOTES_R15P2.md).
+//
+// R16-P2 extensions (reproducible workflow):
+//   * case selection: --case <name> (repeatable) and/or --cases a,b,c
+//     (union); --list prints the case names; unknown name exits 2; the
+//     default (no flags) still runs ALL cases;
+//   * NEW 13th case mono_8v_b128_96k_ctrl512 (the R16-P3 detector-cost
+//     isolation row at 96 kHz: mono_8v_b128_96k with detection_interval
+//     512).  The delivered round-15 bench had 12 cases -- this row is NEW
+//     in round 16 (noted in the stdout header and the JSON "note" field);
+//   * JSON: an "environment" object (timestamp/compiler/build type/
+//     sanitizers/os/cpu/cores) and a per-row "wall_ms" (wall duration of
+//     the measured loop) were ADDED; every round-15 field (incl.
+//     sample_rate and surface) survives unchanged.
 
 #include <algorithm>
 #include <chrono>
@@ -27,10 +40,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <string>
 #include <vector>
 
 #include <sys/resource.h>
+#include <unistd.h>
 
 #include "octavox/dsp.hpp"
 
@@ -83,6 +98,7 @@ struct BenchRow {
     long rss_kb;
     long steady_allocs;
     double seconds;
+    double wall_ms;          // R16-P2: wall duration of the measured loop (ms)
 };
 
 std::string jsonEscape(const std::string& s) {
@@ -96,6 +112,77 @@ std::string jsonEscape(const std::string& s) {
         }
     }
     return o;
+}
+
+// ---- environment record (R16-P2; same fragment shape as test_main.cpp) --
+static std::string readProcFile(const char* path) {
+    FILE* f = std::fopen(path, "rb");
+    if (!f) return "";
+    std::string s;
+    char buf[512];
+    size_t n;
+    while ((n = std::fread(buf, 1, sizeof(buf), f)) > 0) s.append(buf, n);
+    std::fclose(f);
+    while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) s.pop_back();
+    return s;
+}
+
+#ifndef OCTAVOX_BUILD_TYPE
+#define OCTAVOX_BUILD_TYPE "unknown"
+#endif
+#ifndef OCTAVOX_SANITIZERS
+#define OCTAVOX_SANITIZERS 0
+#endif
+
+static std::string envJsonFragment() {
+    char ts[48];
+    std::time_t t = std::time(nullptr);
+    std::tm tmv{};
+    gmtime_r(&t, &tmv);
+    std::strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", &tmv);
+    std::string os = readProcFile("/proc/sys/kernel/ostype");
+    const std::string osrel = readProcFile("/proc/sys/kernel/osrelease");
+    if (!os.empty() && !osrel.empty()) os += " " + osrel;
+    std::string cpu;
+    {
+        FILE* f = std::fopen("/proc/cpuinfo", "rb");
+        if (f) {
+            char line[1024];
+            while (std::fgets(line, sizeof(line), f)) {
+                if (std::strncmp(line, "model name", 10) == 0) {
+                    const char* colon = std::strchr(line, ':');
+                    if (colon) {
+                        cpu = colon + 1;
+                        // trim trailing newline and leading spaces
+                        while (!cpu.empty() &&
+                               (cpu.back() == '\n' || cpu.back() == '\r'))
+                            cpu.pop_back();
+                        size_t b = cpu.find_first_not_of(' ');
+                        cpu = (b == std::string::npos) ? "" : cpu.substr(b);
+                    }
+                    break;
+                }
+            }
+            std::fclose(f);
+        }
+    }
+    long cores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (cores <= 0) cores = 0;
+    std::string j = "\"timestamp_utc\": \"";
+    j += ts;
+    j += "\", \"compiler\": \"";
+    j += jsonEscape(__VERSION__);
+    j += "\", \"build_type\": \"";
+    j += jsonEscape(OCTAVOX_BUILD_TYPE);
+    j += "\", \"sanitizers\": ";
+    j += (OCTAVOX_SANITIZERS != 0) ? "true" : "false";
+    j += ", \"os\": \"";
+    j += jsonEscape(os);
+    j += "\", \"cpu\": \"";
+    j += jsonEscape(cpu);
+    j += "\", \"cores\": ";
+    j += std::to_string(cores);
+    return j;
 }
 
 void runCase(const std::string& name, int voices, int channels, int block,
@@ -195,40 +282,134 @@ void runCase(const std::string& name, int voices, int channels, int block,
     row.sample_rate = sample_rate;
     row.surface = surface;
     row.seconds = best;
+    row.wall_ms = best * 1000.0;  // R16-P2: wall duration of the best loop
     // ns per output FRAME (one frame = one sample per channel)
     row.ns_per_sample = best * 1e9 / n;
     row.realtime_factor = static_cast<double>(n) / sr / best;
     row.rss_kb = peakRssKb();
     row.steady_allocs = allocs::count();
     rows.push_back(std::move(row));
+    std::printf("bench: %-26s done, wall %.0f ms, %.2f ns/frame\n",
+                name.c_str(), row.wall_ms, row.ns_per_sample);
+    std::fflush(stdout);
 }
 
 }  // namespace
 
+// ---------------------------------------------------------------------------
+// R16-P2: the bench case table (13 cases).  The first 12 are the delivered
+// round-15 set (same relative order); mono_8v_b128_96k_ctrl512 is the NEW
+// R16 row (detector-cost isolation at 96 kHz, detection_interval 512).
+// ---------------------------------------------------------------------------
+struct CaseSpec {
+    const char* name;
+    int voices, channels, block, detection_interval;
+    int audio_seconds, repeats, sample_rate;
+    bool surface;
+};
+
+static const CaseSpec kBenchCases[] = {
+    // main matrix: 1/8 voices, mono/stereo, representative block sizes
+    {"mono_1v_b64", 1, 1, 64, 64, 5, 3, 48000, false},
+    {"mono_1v_b128", 1, 1, 128, 64, 5, 3, 48000, false},
+    {"mono_1v_b512", 1, 1, 512, 64, 5, 3, 48000, false},
+    {"mono_8v_b64", 8, 1, 64, 64, 5, 3, 48000, false},
+    {"mono_8v_b128", 8, 1, 128, 64, 5, 3, 48000, false},
+    {"mono_8v_b512", 8, 1, 512, 64, 5, 3, 48000, false},
+    {"stereo_1v_b128", 1, 2, 128, 64, 5, 3, 48000, false},
+    {"stereo_8v_b128", 8, 2, 128, 64, 5, 3, 48000, false},
+    // detector share: same config with a sparse control rate
+    {"mono_8v_b128_ctrl512", 8, 1, 128, 512, 5, 3, 48000, false},
+    // R15-P2: 96 kHz variants (control costs scale with the rate)
+    {"mono_1v_b128_96k", 1, 1, 128, 64, 5, 3, 96000, false},
+    {"mono_8v_b128_96k", 8, 1, 128, 64, 5, 3, 96000, false},
+    // R16-P2 NEW ROW: detector-cost isolation at 96 kHz (ctrl 512)
+    {"mono_8v_b128_96k_ctrl512", 8, 1, 128, 512, 5, 3, 96000, false},
+    // R15-P2: per-voice-surface overhead case (48 kHz, surface ACTIVE)
+    {"mono_8v_b128_surface", 8, 1, 128, 64, 5, 3, 48000, true},
+};
+static const int kBenchCaseCount =
+    static_cast<int>(sizeof(kBenchCases) / sizeof(kBenchCases[0]));
+
+static void usageExit(const std::string& msg) {
+    std::fprintf(stderr, "%s\n", msg.c_str());
+    std::fprintf(stderr,
+                 "usage: octavox_bench [--json <path>] [--case <name>] "
+                 "[--cases a,b,c] [--list]\n");
+    std::fprintf(stderr, "valid cases (default = all %d):\n", kBenchCaseCount);
+    for (int i = 0; i < kBenchCaseCount; ++i)
+        std::fprintf(stderr, "  %s\n", kBenchCases[i].name);
+    std::exit(2);
+}
+
 int main(int argc, char** argv) {
     std::string jsonPath;
+    std::vector<std::string> wanted;
+    bool list = false;
     for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--json") == 0 && i + 1 < argc)
+        const std::string a = argv[i];
+        if (a == "--json" && i + 1 < argc) {
             jsonPath = argv[++i];
+        } else if (a == "--case" && i + 1 < argc) {
+            wanted.push_back(argv[++i]);
+        } else if (a == "--cases" && i + 1 < argc) {
+            // comma-separated list (union with the --case picks)
+            std::string csv = argv[++i];
+            std::string cur;
+            for (char ch : csv) {
+                if (ch == ',') {
+                    if (!cur.empty()) wanted.push_back(cur);
+                    cur.clear();
+                } else {
+                    cur += ch;
+                }
+            }
+            if (!cur.empty()) wanted.push_back(cur);
+        } else if (a == "--list") {
+            list = true;
+        } else {
+            usageExit("error: unknown or incomplete option: " + a);
+        }
     }
 
+    // validate the requested names against the case table
+    for (const auto& w : wanted) {
+        bool ok = false;
+        for (int i = 0; i < kBenchCaseCount; ++i)
+            if (w == kBenchCases[i].name) {
+                ok = true;
+                break;
+            }
+        if (!ok) usageExit("error: unknown bench case '" + w + "'");
+    }
+
+    if (list) {  // static case dump; nothing runs
+        for (int i = 0; i < kBenchCaseCount; ++i)
+            std::printf("%s\n", kBenchCases[i].name);
+        return 0;
+    }
+
+    // default: no selection flags = ALL cases (unchanged full run)
+    if (wanted.empty())
+        for (int i = 0; i < kBenchCaseCount; ++i)
+            wanted.push_back(kBenchCases[i].name);
+
     std::vector<BenchRow> rows;
-    // main matrix: 1/8 voices, mono/stereo, representative block sizes
-    runCase("mono_1v_b64", 1, 1, 64, 64, 5, 3, rows);
-    runCase("mono_1v_b128", 1, 1, 128, 64, 5, 3, rows);
-    runCase("mono_1v_b512", 1, 1, 512, 64, 5, 3, rows);
-    runCase("mono_8v_b64", 8, 1, 64, 64, 5, 3, rows);
-    runCase("mono_8v_b128", 8, 1, 128, 64, 5, 3, rows);
-    runCase("mono_8v_b512", 8, 1, 512, 64, 5, 3, rows);
-    runCase("stereo_1v_b128", 1, 2, 128, 64, 5, 3, rows);
-    runCase("stereo_8v_b128", 8, 2, 128, 64, 5, 3, rows);
-    // detector share: same config with a sparse control rate
-    runCase("mono_8v_b128_ctrl512", 8, 1, 128, 512, 5, 3, rows);
-    // R15-P2: 96 kHz variants (control costs scale with the rate) + the
-    // per-voice-surface overhead case (48 kHz, surface ACTIVE).
-    runCase("mono_1v_b128_96k", 1, 1, 128, 64, 5, 3, rows, 96000);
-    runCase("mono_8v_b128_96k", 8, 1, 128, 64, 5, 3, rows, 96000);
-    runCase("mono_8v_b128_surface", 8, 1, 128, 64, 5, 3, rows, 48000, true);
+    for (int i = 0; i < kBenchCaseCount; ++i) {
+        const CaseSpec& s = kBenchCases[i];
+        bool run = false;
+        for (const auto& w : wanted)
+            if (w == s.name) {
+                run = true;
+                break;
+            }
+        if (!run) continue;
+        std::printf("== bench case %s (%d/%d selected) ==\n", s.name,
+                    (int)rows.size() + 1, (int)wanted.size());
+        std::fflush(stdout);
+        runCase(s.name, s.voices, s.channels, s.block, s.detection_interval,
+                s.audio_seconds, s.repeats, rows, s.sample_rate, s.surface);
+    }
 
     std::printf("%-26s %5s %3s %5s %5s %6s %3s %12s %10s %10s %8s\n",
                 "CASE", "vox", "ch", "block", "ctrl", "sr", "sfc",
@@ -242,13 +423,20 @@ int main(int argc, char** argv) {
                     r.steady_allocs);
     }
     std::printf("%s\n%s\n", std::string(110, '-').c_str(), versionString());
+    std::printf("# note: %d cases -- R16-P2 adds mono_8v_b128_96k_ctrl512 "
+                "(detector-cost isolation at 96 kHz); the delivered "
+                "round-15 bench had 12 cases\n",
+                (int)rows.size());
 
     if (!jsonPath.empty()) {
         std::string j = "{\n  \"bench\": \"octavox_native\",\n  \"version\": \"";
         j += versionString();
-        j += "\",\n  \"sample_rate\": [48000, 96000],\n  \"input\": "
-             "\"LCG(2025) noise, amp 0.5, 5 s per case, best of 3\",\n  "
-             "\"rows\": [\n";
+        j += "\",\n  \"environment\": {" + envJsonFragment() + "},\n";
+        j += "  \"sample_rate\": [48000, 96000],\n  \"input\": "
+             "\"LCG(2025) noise, amp 0.5, 5 s per case, best of 3\",\n";
+        j += "  \"note\": \"R16-P2: 13 cases -- mono_8v_b128_96k_ctrl512 "
+             "(detection_interval 512 at 96 kHz) is the NEW R16 row; the "
+             "round-15 delivery had 12\",\n  \"rows\": [\n";
         for (size_t i = 0; i < rows.size(); ++i) {
             const auto& r = rows[i];
             char buf[512];
@@ -259,12 +447,12 @@ int main(int argc, char** argv) {
                           "\"sample_rate\": %d, \"surface\": %s, "
                           "\"ns_per_frame\": %.4f, \"realtime_factor\": %.4f, "
                           "\"rss_kb\": %ld, \"steady_allocs\": %ld, "
-                          "\"seconds\": %.6f}",
+                          "\"seconds\": %.6f, \"wall_ms\": %.3f}",
                           jsonEscape(r.name).c_str(), r.voices, r.channels,
                           r.block, r.detection_interval, r.sample_rate,
                           r.surface ? "true" : "false", r.ns_per_sample,
                           r.realtime_factor, r.rss_kb, r.steady_allocs,
-                          r.seconds);
+                          r.seconds, r.wall_ms);
             j += buf;
             if (i + 1 < rows.size()) j += ",";
             j += "\n";

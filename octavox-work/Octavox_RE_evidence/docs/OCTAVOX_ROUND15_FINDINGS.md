@@ -183,12 +183,16 @@ design, a later milestone only after this acceptance battery is green (per the t
 ## 7. Artifacts & reproduction (working tree: `octavox-work/Octavox_RE_evidence/`)
 
 ```bash
-export PATH=/home/z/.local/bin:$PATH
+# cmake >= 3.16 required (pip-installed in these environments: the round-15
+# sessions used /home/z/.local/bin, the round-16 environment /home/z/.venv/bin
+# — put whichever contains cmake on PATH; [R16-P1 note])
 cd native
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j2
-./build/octavox_tests                 # 85/85 (≈30 s)
+./build/octavox_tests                 # 85/85 (measured 41.2 s, release, R16-R0; the
+                                      #  "≈30 s" claim is superseded — correction log)
 ./build/octavox_tests --json ../evidence/analysis_round15/r15_acceptance_results.json
-./build/octavox_bench                 # 11 cases, 0 allocations
+./build/octavox_bench                 # 12 cases, 0 allocations
+                                      # [R16-P1 correction: previously "11 cases" — 12 rows]
 ./build/octavox_r15refcap             # the four neutrality hashes vs r15_reference_hashes.txt
 # ASan+UBSan:
 cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZERS=ON && cmake --build build-asan -j2

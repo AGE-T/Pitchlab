@@ -1,4 +1,4 @@
-# Octavox (Eventide) - reverse-engineering evidence package - round 15
+# Octavox (Eventide) - reverse-engineering evidence package - round 16
 
 Independent static analysis of `Ox.vst3` (Eventide Octavox), plus an independent DSP
 demonstration written from scratch. **The target binary was never modified and was never run.**
@@ -396,7 +396,9 @@ Reproduction (native):
 export PATH=/home/z/.local/bin:$PATH
 cd native && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j2
 ./build/octavox_tests            # 85/85
-./build/octavox_bench            # 11 cases, 0 allocations
+./build/octavox_bench            # 12 cases, 0 allocations
+# [R16-P1 correction, 2026-10-28: previously "11 cases" — the delivered
+# bench has 12 rows; superseded.]
 ./build/octavox_r15refcap        # neutrality hashes vs r15_reference_hashes.txt
 ```
 
@@ -448,3 +450,38 @@ from the wall-clock cost rows. **Its numbers describe our implementation, never 
   Q-10, Q-11 were closed in round 6; the `[+0x420]` consumer and its period law were closed in round
   7**; Q-12 was closed in round 5 and Q-13 in round 4. C5 is **PARTIAL**, not closed.
 * No protection mechanism was bypassed and no byte of the target was written.
+
+## What is new in round 16 (evidence reconciliation, reproducible acceptance, VST3 wrapper milestone)
+
+**Read `docs/OCTAVOX_ROUND16_FINDINGS.md` first.** Headlines:
+
+* **P1 reconciliation:** 16 dated corrections across 9 files — every
+  obsolete round-15 status statement (the "dsp.cpp MISSING" salvage note,
+  the "not yet wired" r15acc claims, the 51-case counts, the "11 bench
+  cases" off-by-one, the "≈30 s" suite estimate, …) superseded IN PLACE
+  with tagged correction notes; history preserved; the correction log is
+  `evidence/analysis_round16/R16_P1_RECONCILIATION_LOG.md`. The missing
+  `poc/poc_run.log` restored byte-identical from the round-15 zip.
+* **P2 reproducibility:** the suite and bench are now profiled and
+  selectable — per-test durations, `--list/--filter/--group/--category`,
+  live progress, named bench cases, machine-readable JSON with environment
+  records; measured on this host: release 85/85 in **41.0 s**, ASan+UBSan
+  85/85 in **6.16 min** (the ">5 min" independent-verification report
+  resolved — the sanitizer leg alone accounts for it); all 85 tests stay in
+  the default run; the 220 gate calls proven textually unchanged.
+* **P3:** the 96 kHz path profiled — the detector's O(ntau·m) YIN loop is
+  83–95 % of the cost; every optimisation candidate rejected on
+  bit-neutrality/behaviour grounds (documented); the tested
+  `detection_interval` knob already yields 11.90× realtime at 96 kHz.
+* **P4 — the VST3 wrapper is REAL:** `native/vst3/` wraps the untouched
+  15.0.0 core as `OctavoxNative.vst3` (SingleComponentEffect, mono/stereo
+  buses, the full 38-parameter surface, sample-accurate automation by
+  segmentation — **proven bit-exact** vs the core's block-boundary
+  implementation, OVR1 state save/restore — proven bit-exact, latency
+  reporting, click-free bypass, in-place-safe, **0 allocations in
+  process()**). Validation: the VST3 SDK's own validator **47/47**; the
+  in-process wrapper test suite **8/8**. Build instructions and the
+  pinned-SHA SDK acquisition record: `native/vst3/VST3_WRAPPER.md`.
+* The DSP core, the Python reference and all prior-round evidence are
+  unchanged (verified); the four default-neutrality hashes still match.
+  The original binary was never executed.

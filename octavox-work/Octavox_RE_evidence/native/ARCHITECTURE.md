@@ -151,9 +151,12 @@ value if you need it across calls.
 
 ## Build and test
 
-See `native/README.md`. Release tests: 51/51; ASan+UBSan build: 51/51 with
-zero sanitizer reports; release benchmark and the cross-language metrics are
-machine-readable JSON in `evidence/analysis_round12/`.
+See `native/README.md`. Release tests: 85/85 (51 frozen round-12 + 19
+R13-recovery + 7 P1 + 7 r15acc acceptance); ASan+UBSan build: 85/85 with
+zero sanitizer reports; release benchmark (12 cases) and the acceptance
+results are machine-readable (`evidence/analysis_round15/`).
+[R16-P1 correction, 2026-10-28: previously "51/51" (round-12 state) —
+superseded to the delivered 15.0.0 counts.]
 
 ## Round-15 parameter surface (15.0.0)
 

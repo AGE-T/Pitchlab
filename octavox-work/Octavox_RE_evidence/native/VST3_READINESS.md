@@ -5,14 +5,29 @@ written during the R15-P2 session). Assessed object: the CURRENT public API
 (`include/octavox/dsp.hpp`, version 15.0.0) as documented by its normative
 header contract. This is an honest readiness note, not a marketing document.
 
-**Context caveat (recorded honestly):** a second environment reset wiped the
-live tree during the R15-P2 session AFTER the 78/78-green state was verified
-at session start. The 15.0.0 API surface is preserved verbatim
-(`include/octavox/dsp.hpp` restored); the implementation was being recovered
-at the time of writing. The measurements quoted below are the recorded ones
-(14.0.0 baseline `evidence/analysis_round14_recovery/r14_baseline_bench_stdout.txt`
+**Context caveat (historical, written mid-incident):** a second environment
+reset wiped the live tree during the R15-P2 session AFTER the 78/78-green
+state was verified at session start. At the time of writing the 15.0.0
+implementation was being recovered; the 15.0.0 API surface was preserved
+verbatim (`include/octavox/dsp.hpp` restored) and the measurements quoted
+below were the recorded ones (14.0.0 baseline
+`evidence/analysis_round14_recovery/r14_baseline_bench_stdout.txt`
 + the P1 re-measurement of 15.0.0, unchanged vs baseline). See
-`evidence/analysis_round15/NOTES_R15P2.md`.
+`evidence/analysis_round15/NOTES_R15P2.md` for the incident record.
+
+> **[R16-P1 reconciliation, 2026-10-28]** The intermediate-stage uncertainty
+> above is superseded by the FINAL round-15 state: `src/dsp.cpp` was
+> re-implemented (worklog R15-REB1) and verified bit-neutral vs 12.0.0 by the
+> four reference hashes (`native/r15_reference_hashes.txt`, re-verified
+> 2026-10-28 before any round-16 edit); the full 85-case suite — including
+> the 7 `r15acc_*` acceptance cases — was wired and delivered **85/85
+> passing (release AND ASan/UBSan, zero sanitizer reports)** with the
+> machine-readable result file
+> `evidence/analysis_round15/r15_acceptance_results.json`; the 96 kHz and
+> active-surface benchmark rows were measured and delivered
+> (`r15_bench_15.txt`). This note's per-dimension assessments stand as
+> written; the round-16 wrapper milestone is tracked separately (see the
+> round-16 addendum at the end of this file when delivered).
 
 ---
 
@@ -116,8 +131,13 @@ at the time of writing. The measurements quoted below are the recorded ones
   8.1-12.6 MB + ~2 MiB/engine for the R15 dry ring). The default (wet=1)
   path is bit-identical to 14.0.0 and costs the same; the wet path adds one
   dry-ring copy + one multiply-add per sample. 96 kHz and active-surface
-  rows are specified in the R15-P2 bench extension (pending re-measurement
-  after the tree recovery, see NOTES_R15P2.md).
+  rows were subsequently measured and delivered (R15-REB2,
+  `evidence/analysis_round15/r15_bench_15.txt`): mono_1v_b128_96k
+  4998.30 ns/frame = 2.08× realtime, mono_8v_b128_96k 5211.17 = 2.00×,
+  mono_8v_b128_surface 1520.40 = 13.70× — 0 allocations everywhere.
+  [R16-P1 correction, 2026-10-28: this paragraph previously ended "pending
+  re-measurement after the tree recovery" — superseded; see the
+  reconciliation log.]
 
 ---
 
@@ -131,7 +151,60 @@ Config + live parameter surface itself (list above).
 
 **No wrapper is built, by design.** A VST3 wrapper is a later milestone,
 to be started only after the round-15 13-category acceptance battery is
-green on a recovered tree (per the round-15 task book; the battery's 7 new
-`r15acc_*` cases are designed and salvaged in
-`native/tests/r15_acceptance_cases.cpp.inc`, not yet run — see
-`evidence/analysis_round15/NOTES_R15P2.md`).
+green on a recovered tree (per the round-15 task book).
+
+> **[R16-P1 reconciliation, 2026-10-28]** The battery condition is MET: the
+> seven `r15acc_*` cases were wired into `tests/test_main.cpp` by R15-REB2
+> and the delivered suite is **85/85 passing** (release + ASan/UBSan) with
+> the machine-readable result file shipped at
+> `evidence/analysis_round15/r15_acceptance_results.json` — the earlier
+> "designed and salvaged … not yet run" statement above is superseded
+> (kept for the correction history). The wrapper milestone itself is the
+> round-16 task book's Priority 4; the outcome (implemented wrapper or
+> documented blocker) is recorded in `OCTAVOX_ROUND16_FINDINGS.md` and the
+> round-16 addendum to this file.
+
+---
+
+## ROUND-16 ADDENDUM (2026-10-28): the wrapper milestone is DELIVERED
+
+The readiness assessment above was the round-15 state. Round 16 (task
+R16-P4b) closed the milestone it pointed to:
+
+* **A real, minimal VST3 wrapper is implemented, built and validated** —
+  `native/vst3/` wraps the untouched 15.0.0 core as the module
+  `OctavoxNative.vst3` (SingleComponentEffect: processor + controller in
+  one component; symmetric mono/stereo buses; 38 parameters incl. the full
+  per-voice surface; sample-accurate automation via block segmentation;
+  OVR1 state save/restore; latency = `latencySamples()`, click-free bypass
+  via `setBypass`; silence/n=0/block-size/reset handling; in-place-safe;
+  **zero allocations in `process()`**).
+* **The two PARTIAL dimensions above are now closed by the wrapper
+  itself:**
+  * *Sample-accurate automation*: the wrapper applies parameter events at
+    their exact in-block sample offsets by splitting the block at the event
+    boundaries and invoking the core's setters between the sub-block
+    `process()` calls — i.e. it uses the core's OWN tested block-boundary
+    contract as the engine of sample accuracy. The equivalence is PROVEN
+    bit-exact by the wrapper test `segmentation_equivalence_BITEXACT`
+    (maxdiff = 0 vs the hand-driven core with the same setter calls at the
+    same stream positions) — the "host-side ramp OR core extension"
+    alternative (a) from the assessment turned out unnecessary: plain
+    segmentation is exact, because the core is block-agnostic by contract.
+  * *State serialization*: the wrapper snapshots exactly the list above
+    (whole Config + the live 38-value surface + bus channels) into a
+    versioned binary blob; restore = `prepare(cfg)` + re-apply the surface,
+    reproducing the run bit-exactly from stream position 0 (gated:
+    live/same-instance/fresh-instance restores all maxdiff = 0).
+* **Validation:** the VST3 SDK's own validator (v3.7.12_build_20) passes
+  **47/47** against the built module; the in-process wrapper test suite
+  passes **8/8** (lifecycle, conversions, segmentation equivalence, state
+  roundtrips, silence/blocks/reset, in-place, 0-allocations, latency).
+  Evidence: `../evidence/analysis_round16/r16_vst3_wrapper_tests.txt`,
+  `r16_vst3_validator.txt`; implementation + build + SDK acquisition:
+  `native/vst3/VST3_WRAPPER.md`.
+
+The overall verdict is therefore superseded: the core is
+**wrapper-ready AND wrapped** — the remaining "limitations" are the
+wrapper's documented scope decisions (no GUI editor, symmetric buses only,
+no mid-stream resume), listed in VST3_WRAPPER.md §6.

@@ -91,3 +91,55 @@ Recovered tree at `/home/z/octavox/work/Octavox_RE_evidence/`:
   — recorded in the worklog R15-P1 entry.
 - Task C (`native/VST3_READINESS.md`): WRITTEN (see the file) — it is an
   API/contract assessment and cites only recorded measurements.
+
+---
+
+## FINAL STATUS — R16-P1 reconciliation addendum (added 2026-10-28)
+
+This section was added by the round-16 reconciliation (task R16-P1) to close
+the loop on the incident record above. Everything above this line is the
+ORIGINAL mid-incident note (2026-10-26, written while the tree was still
+missing parts); it is preserved unchanged as the historical record of the
+intermediate stage. What actually happened afterwards:
+
+### What was lost at the intermediate stage (superseded claims above)
+
+- `native/src/dsp.cpp` — the first 15.0.0 implementation (the file was LOST;
+  the note above correctly describes it as missing).
+- `native/tests/test_main.cpp` — the 78-case suite (LOST).
+- The P1 `r15p1_refcapture/` tool and the three original default-neutrality
+  hashes 0xc7179361… / 0xa894e576… / 0x638ce760… (their capture harness was
+  never re-created; they are superseded by the four-hash record in
+  `native/r15_reference_hashes.txt`).
+- The raw round-15 static scan scripts/outputs and the first canonical-doc
+  updates (verdicts survive as the reconstructed record in `NOTES.md`).
+- `cli/r14recovery_probe.cpp` and the parity/interp harness sources (results
+  survive in `r14recovery_reconstructed.md`).
+- native/README.md / ARCHITECTURE.md updates (re-done in R15-REB2/D).
+
+### What was subsequently restored and verified (final state)
+
+- **R15-R1**: the working tree moved INTO the persistent project directory
+  (`octavox-work/`), salvaged files overlaid on the round-12 base.
+- **R15-REB1**: `src/dsp.cpp` re-implemented from the round-12 base against
+  the restored normative header; verified **bit-neutral vs 12.0.0** by the
+  NEW four-hash capture tool `octavox_r15refcap` (4/4 identical, release AND
+  ASan+UBSan); 51/51 round-12 gates green; the 96 kHz detector probe tracks
+  (110.00003 Hz on a 110 Hz tone vs 0.000000 on the 12.0.0 core).
+- **R15-REB2**: `tests/test_main.cpp` reconstructed to the full 85 cases
+  (51 frozen round-12 + 19 R13-recovery + 7 P1 + 7 r15acc wired from
+  `r15_acceptance_cases.cpp.inc`) — **85/85 passing, release AND ASan/UBSan,
+  zero sanitizer reports**; machine-readable
+  `evidence/analysis_round15/r15_acceptance_results.json` delivered; the
+  benchmark measured (12 cases incl. the 96 kHz + active-surface rows,
+  0 allocations; `r15_bench_15.txt` + `r15_bench_comparison.md`).
+- **R15-D**: the round-15 package delivered and independently verified from
+  a fresh extraction (Octavox_RE_evidence_round15.zip, SHA-256
+  990b1d48cff8aa69186cd6855d1512abacbfe829a2924a0d6a7934affc7208ec).
+- **R16-R0 (2026-10-28)**: the surviving tree re-verified before any
+  round-16 edit — 85/85 release (41.2 s full-suite duration) and the four
+  neutrality hashes re-captured and matching.
+
+The "Honest task status" section above is therefore a snapshot of the
+intermediate stage, NOT the final outcome: Tasks A and B WERE subsequently
+completed and delivered.

@@ -1,4 +1,6 @@
-# OCTAVOX round 12 -- native DSP core build
+# OCTAVOX native DSP core build (15.0.0)
+# [R16-P1 CORRECTION, 2026-10-28: header was "round 12" — superseded; the
+# project() version below has been 15.0.0 since the round-15 delivery.]
 # Requires CMake >= 3.16 and a C++17 compiler. Builds:
 #   octavox_dsp      static library (the DSP core)
 #   octavox_tests    correctness + unity regression suite (JSON results)
@@ -16,11 +18,18 @@
 #   cmake --build build-asan -j
 #   ./build-asan/octavox_tests --json results_asan.json
 #
-# R15-P2 SALVAGE NOTE (2026-10-26): restored from the intact 15.0.0 tree
-# after the second environment reset, minus the octavox_r14probe target
-# (its source cli/r14recovery_probe.cpp was lost with the tree; see
-# evidence/analysis_round15/NOTES_R15P2.md). src/dsp.cpp is MISSING from
-# this restored tree and must be recovered before anything builds.
+# R15-P2 SALVAGE NOTE (2026-10-26, historical record): this CMakeLists was
+# restored from the intact 15.0.0 tree after the second environment reset,
+# minus the octavox_r14probe target (its source cli/r14recovery_probe.cpp
+# was lost with the tree; see evidence/analysis_round15/NOTES_R15P2.md).
+# At salvage time src/dsp.cpp was missing and had to be recovered before
+# anything built.
+# [R16-P1 CORRECTION, 2026-10-28: the MISSING-dsp.cpp statement above is
+# SUPERSEDED — src/dsp.cpp was re-implemented by R15-REB1 (verified
+# bit-neutral vs 12.0.0 by the four reference hashes in
+# r15_reference_hashes.txt) and the tree builds and passes 85/85
+# (release + ASan/UBSan). Kept for the correction history; see
+# evidence/analysis_round16/R16_P1_RECONCILIATION_LOG.md.]
 
 cmake_minimum_required(VERSION 3.16)
 project(octavox_native LANGUAGES CXX VERSION 15.0.0)
@@ -50,6 +59,8 @@ endif()
 
 # ---------------------------------------------------------------------------
 # Test harness (correctness + unity regression; gated by exit code)
+# R16-P2: build-type / sanitizer compile definitions so the JSON environment
+# record reports them (-DOCTAVOX_BUILD_TYPE="Release", -DOCTAVOX_SANITIZERS=1).
 # ---------------------------------------------------------------------------
 add_executable(octavox_tests
     tests/test_main.cpp
@@ -57,6 +68,12 @@ add_executable(octavox_tests
     tests/alloc_counter.cpp
 )
 target_link_libraries(octavox_tests PRIVATE octavox_dsp)
+target_compile_definitions(octavox_tests PRIVATE
+    OCTAVOX_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
+)
+if(ENABLE_SANITIZERS)
+    target_compile_definitions(octavox_tests PRIVATE OCTAVOX_SANITIZERS=1)
+endif()
 
 # ---------------------------------------------------------------------------
 # Native WAV->WAV demo CLI (harness utility for cross-language metrics)
@@ -86,12 +103,20 @@ target_compile_options(octavox_r15refcap PRIVATE -Wall -Wextra)
 # ---------------------------------------------------------------------------
 # Benchmark (release; deterministic LCG input identical to the Python side)
 # R15-P2: 96 kHz variants + the per-voice-surface case (see bench_main.cpp).
+# R16-P2: 13th case mono_8v_b128_96k_ctrl512 + case selection + the JSON
+# environment record (build-type/sanitizer compile definitions as above).
 # ---------------------------------------------------------------------------
 add_executable(octavox_bench
     bench/bench_main.cpp
     tests/alloc_counter.cpp
 )
 target_link_libraries(octavox_bench PRIVATE octavox_dsp)
+target_compile_definitions(octavox_bench PRIVATE
+    OCTAVOX_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
+)
+if(ENABLE_SANITIZERS)
+    target_compile_definitions(octavox_bench PRIVATE OCTAVOX_SANITIZERS=1)
+endif()
 
 # Silence the (intended) alloc-counter note in release builds.
 target_compile_options(octavox_tests PRIVATE -Wall -Wextra)

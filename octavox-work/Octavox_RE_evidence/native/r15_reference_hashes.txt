@@ -76,3 +76,9 @@ NEXT AGENT: the 7 r15acc_* acceptance cases (tests/r15_acceptance_cases.cpp.inc)
 are designed but NOT wired; after wiring them, re-run this capture tool and
 check the four hashes above still match (they are the regression record for
 any future core change).
+[R16-P1 CORRECTION, 2026-10-28: the statement above is SUPERSEDED — the 7
+r15acc_* cases were wired into tests/test_main.cpp by R15-REB2 and the
+delivered suite is 85/85 (release + ASan/UBSan). The regression instruction
+STANDS: re-run this capture tool after any future core change and check the
+four hashes. Re-verified 2026-10-28 (R16-R0, pre-edit baseline): all four
+match. See evidence/analysis_round16/R16_P1_RECONCILIATION_LOG.md.]
