@@ -20,7 +20,14 @@
 #include <string>
 #include <vector>
 
+// R17-P2: Windows/MSVC portability guards (the POSIX calls are environment
+// reporting only -- the Linux paths are unchanged).
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 #include "octavox/dsp.hpp"
 #include "wav_io.hpp"
@@ -405,6 +412,7 @@ static std::vector<std::string> g_selCats;     // OR of categories
 static std::string g_currentGroup;             // group currently running
 static int g_progDone = 0;                     // cases pushed so far
 static int g_progTotal = 0;                    // cases selected this run
+static bool g_reverse = false;                 // R17-P1: --reverse order mode
 
 static std::chrono::steady_clock::time_point g_lastMark;  // duration epoch
 
@@ -497,7 +505,11 @@ static std::string envJsonFragment() {
     char ts[48];
     std::time_t t = std::time(nullptr);
     std::tm tmv{};
+#ifdef _WIN32
+    gmtime_s(&tmv, &t);
+#else
     gmtime_r(&t, &tmv);
+#endif
     std::strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", &tmv);
     std::string os = readProcFile("/proc/sys/kernel/ostype");
     const std::string osrel = readProcFile("/proc/sys/kernel/osrelease");
@@ -525,7 +537,13 @@ static std::string envJsonFragment() {
             std::fclose(f);
         }
     }
+#ifdef _WIN32
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    long cores = static_cast<long>(si.dwNumberOfProcessors);
+#else
     long cores = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
     if (cores <= 0) cores = 0;
     std::string j = "\"timestamp_utc\": \"";
     j += ts;
@@ -541,6 +559,8 @@ static std::string envJsonFragment() {
     j += jsonEscape(cpu);
     j += "\", \"cores\": ";
     j += std::to_string(cores);
+    j += ", \"reverse_order\": ";
+    j += g_reverse ? "true" : "false";
     return j;
 }
 
@@ -3772,6 +3792,9 @@ static void usageExit(const std::string& msg) {
                  "case-insensitive name substring)\n"
                  "    [--group <id>]          (repeatable, OR)\n"
                  "    [--category unit|long]  (repeatable, OR)\n"
+                 "    [--reverse]             (R17-P1: run the group runners in\n"
+                 "                            reverse order -- order-independence\n"
+                 "                            check; same cases, same gates)\n"
                  "kinds AND together; unknown ids or an empty selection "
                  "exit 2\n");
     std::fprintf(stderr, "valid groups:");
@@ -3802,6 +3825,8 @@ int main(int argc, char** argv) {
             g_selGroups.push_back(argv[++i]);
         } else if (a == "--category" && i + 1 < argc) {
             g_selCats.push_back(argv[++i]);
+        } else if (a == "--reverse") {
+            g_reverse = true;
         } else {
             usageExit("error: unknown or incomplete option: " + a);
         }
@@ -3852,7 +3877,12 @@ int main(int argc, char** argv) {
         static_cast<int>(sizeof(kRunners) / sizeof(kRunners[0]));
 
     const auto wallStart = std::chrono::steady_clock::now();
-    for (int r = 0; r < kRunnerCount; ++r) {
+    // R17-P1: --reverse runs the group runners back-to-front (order-
+    // independence check). Pure harness bookkeeping: the same case set with
+    // the same gates runs either way; per-group durations are stamped the
+    // same way. Within a group the case order is the registration order.
+    for (int ri = 0; ri < kRunnerCount; ++ri) {
+        const int r = g_reverse ? (kRunnerCount - 1 - ri) : ri;
         int n = 0;
         for (int i = 0; i < kAllCaseCount; ++i)
             if (kAllCases[i].group == std::string(kRunners[r].id) &&

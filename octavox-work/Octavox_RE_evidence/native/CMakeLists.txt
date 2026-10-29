@@ -53,7 +53,11 @@ if(ENABLE_SANITIZERS)
     add_link_options(-fsanitize=address,undefined)
 else()
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        add_compile_options(-O2)
+        # R17-P2: MSVC uses CMake's own Release defaults (/O2); the explicit
+        # -O2 stays for GCC/Clang (unchanged behaviour on the verified path).
+        if(NOT MSVC)
+            add_compile_options(-O2)
+        endif()
     endif()
 endif()
 
@@ -85,7 +89,9 @@ add_executable(octavox_cli
 )
 target_link_libraries(octavox_cli PRIVATE octavox_dsp)
 target_include_directories(octavox_cli PRIVATE tests)
-target_compile_options(octavox_cli PRIVATE -Wall -Wextra)
+if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
+    target_compile_options(octavox_cli PRIVATE -Wall -Wextra)
+endif()
 
 # ---------------------------------------------------------------------------
 # R15-REB1 neutrality reference capture: four deterministic configs ->
@@ -98,7 +104,9 @@ add_executable(octavox_r15refcap
     cli/r15ref_capture.cpp
 )
 target_link_libraries(octavox_r15refcap PRIVATE octavox_dsp)
-target_compile_options(octavox_r15refcap PRIVATE -Wall -Wextra)
+if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
+    target_compile_options(octavox_r15refcap PRIVATE -Wall -Wextra)
+endif()
 
 # ---------------------------------------------------------------------------
 # Benchmark (release; deterministic LCG input identical to the Python side)
@@ -119,6 +127,10 @@ if(ENABLE_SANITIZERS)
 endif()
 
 # Silence the (intended) alloc-counter note in release builds.
-target_compile_options(octavox_tests PRIVATE -Wall -Wextra)
-target_compile_options(octavox_bench PRIVATE -Wall -Wextra)
-target_compile_options(octavox_dsp PRIVATE -Wall -Wextra)
+# R17-P2: -Wall/-Wextra are GCC/Clang options (cl.exe accepts -Wall but not
+# -Wextra); guarded so the same CMakeLists drives an MSVC build.
+if(NOT MSVC)
+    target_compile_options(octavox_tests PRIVATE -Wall -Wextra)
+    target_compile_options(octavox_bench PRIVATE -Wall -Wextra)
+    target_compile_options(octavox_dsp PRIVATE -Wall -Wextra)
+endif()

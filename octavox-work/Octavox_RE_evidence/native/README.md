@@ -15,6 +15,11 @@ ownership, threading, channel isolation, limitations) and
 [R16-P1 correction, 2026-10-28: the title and intro previously described
 the round-12 state ("Round 12", 51 cases); superseded to the actual 15.0.0
 state — see evidence/analysis_round16/R16_P1_RECONCILIATION_LOG.md.]
+[R17 addendum, 2026-10-29: the harness gained a `--reverse` order-
+independence flag (JSON `environment.reverse_order`); the CMakeLists and
+both harness sources carry MSVC portability guards (Linux-neutral — the
+release suite, the four hashes and the module hash are unchanged); the
+wrapper tests are 15/15; see docs/OCTAVOX_ROUND17_FINDINGS.md.]
 
 ## Layout
 
@@ -33,6 +38,8 @@ cli/octavox_cli.cpp       WAV->WAV demo CLI (cross-language metrics driver)
 cli/r15ref_capture.cpp    neutrality reference capture (octavox_r15refcap)
 r15_reference_hashes.txt  the four default-neutrality regression hashes
 VST3_READINESS.md         wrapper readiness assessment
+tools/                    R17-P2: pinned-SHA SDK acquisition + full build/test
+                          chains (get_vst3_sdk.{sh,ps1}, build_and_test.{sh,ps1})
 ARCHITECTURE.md           architecture note (round-15 surface mechanisms)
 ```
 
@@ -121,10 +128,20 @@ reference) are produced by
   unchanged (220 `check(...)` calls textually identical; pre-edit sources
   preserved in `../evidence/analysis_round16/`). Measured here: release
   85/85 in ~41 s; ASan+UBSan 85/85 in ~6.2 min.
-- **VST3 wrapper (R16-P4b):** `native/vst3/` — a REAL minimal VST3 plug-in
-  around this core (module `OctavoxNative.vst3`, validator 47/47, wrapper
-  tests 8/8 incl. the bit-exact sample-accurate-vs-block-boundary
-  equivalence proof and the state roundtrips). Requires the VST3 SDK
-  v3.7.12_build_20 (NOT redistributed; pinned-SHA acquisition record and
-  build instructions: `vst3/VST3_WRAPPER.md`). The core itself is
-  unchanged; the wrapper compiles it from `../src` independently.
+- **VST3 wrapper (R16-P4b, extended R17-P3):** `native/vst3/` — a REAL
+  minimal VST3 plug-in around this core (module `OctavoxNative.vst3`,
+  validator 47/47, wrapper tests **15/15** — the R16 eight incl. the
+  bit-exact sample-accurate-vs-block-boundary equivalence proof and the
+  state roundtrips, plus the R17 seven: the 38-parameter metadata
+  audit/conversion roundtrips, block start/middle/last/end events,
+  simultaneous multi-voice events, clickless bypass+wet/dry automation
+  with 0 allocations, full-surface save/restore, cross-rate/cross-layout
+  restore, and invalid/truncated state blobs). Requires the VST3 SDK
+  v3.7.12_build_20 (NOT redistributed; acquire+verify it with
+  `tools/get_vst3_sdk.sh` / `.ps1` — executed this round — or follow the
+  pinned-SHA record in `vst3/VST3_WRAPPER.md`; the full chain:
+  `tools/build_and_test.sh`, executed end-to-end, and
+  `tools/build_and_test.ps1` for Windows/MSVC — **authored, not executed:
+  no Windows runtime here**). The core itself is unchanged; the wrapper
+  compiles it from `../src` independently. The module rebuilds
+  byte-identically (SHA-256 b293cecb...).

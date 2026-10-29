@@ -208,3 +208,37 @@ The overall verdict is therefore superseded: the core is
 **wrapper-ready AND wrapped** — the remaining "limitations" are the
 wrapper's documented scope decisions (no GUI editor, symmetric buses only,
 no mid-stream resume), listed in VST3_WRAPPER.md §6.
+
+---
+
+## Round-17 addendum (2026-10-29) — reproducible build, audited parameter/state contract
+
+* **Reproducible from a clean extraction (R17-P2).** The pinned-SHA SDK
+  acquisition is now scripted (`native/tools/get_vst3_sdk.sh` / `.ps1`:
+  exact-revision fetches, `git rev-parse` verification, tag-gitlink
+  cross-check, evidence-tree write refusal, clear failures; the POSIX
+  variant executed in both `--verify` and fresh-install modes this round —
+  the working SDK content-matches all four components). The full
+  validation chain is scripted (`native/tools/build_and_test.sh`,
+  executed end-to-end: release leg 74 s, ASan leg 376 s, wrapper leg —
+  `RESULT: ALL GATES PASSED, total wall 454 s`). The Windows/MSVC
+  counterpart (`build_and_test.ps1`) is authored with MSVC portability
+  guards in the build files, but **no Windows build has been executed or
+  tested** — see VST3_WRAPPER.md §6.
+* **The parameter and state contract is audited and machine-checked
+  (R17-P3).** The wrapper test suite grew 8 → **15 cases**: the 38-parameter
+  metadata table (id uniqueness, spec integrity, processor/controller
+  `ParameterInfo` agreement, boundary/middle conversion roundtrips),
+  events at block start/middle/last/block-end (bit-exact), simultaneous
+  multi-voice events at one sample position (bit-exact), bypass+wet/dry
+  automation clickless (bounded step) with **0 allocations**, the full
+  38-parameter surface save/restore (0 value mismatches, bit-exact
+  replay), cross-rate/cross-layout restore (48 k stereo → 96 k mono and
+  44.1 k stereo, bit-exact), and invalid/truncated state blobs (all 428
+  truncation prefixes rejected; processor stays usable). The validator
+  re-run: **47/47**. The module hash is byte-identical to the round-16
+  delivery. No core gate was weakened; the four reference hashes still
+  match (re-verified in the release, ASan and -O0 legs this round).
+* The readiness verdict is unchanged and strengthened: **wrapper-ready,
+  wrapped, and reproducibly re-buildable** (Linux-verified; Windows
+  scripted-but-unexecuted). No GUI editor exists — none is faked.

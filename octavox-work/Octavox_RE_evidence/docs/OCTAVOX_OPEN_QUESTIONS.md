@@ -168,7 +168,25 @@ outputs — provenance note inside):
   and `highcut*`, feeding `LWetDryMix`/`RWetDryMix`). Proven by four
   exhaustive scans (RIP-window scan = 2 exact hits; absolute-VA byte scan =
   0; disp-0x40F0 scan = engine-only; ×6-idiom scan = exactly 2 functions).
-* **Q-D (host candidate table / scale-key) NOT CLOSED — not attempted**:
+* **Q-D (host candidate table / scale-key) NOT CLOSED — not attempted**
+  [R17 SUPERSEDED, 2026-10-29: Q-D is now CLOSED at the structural level —
+  see §4 below and evidence/analysis_round17/r17_static_findings.md; this
+  round-15 record is kept for the correction history]:
   two sandbox resets destroyed the analysis environment twice; the recovery
   effort went to the three closable questions and the native library.
   Recorded OPEN with the investigation plan in NOTES.md.
+
+---
+
+## 4. Round-17 status (2026-10-29)
+
+Five bounded residuals were re-attacked (full evidence:
+`evidence/analysis_round17/r17_static_findings.md`):
+
+| item | status |
+|---|---|
+| **Q-D (host candidate table / scale-key)** | **CLOSED (structural), bounded DER residue** — the candidate tables are .rdata constants: five temperament cent-tables `0x1803BB690` (Equal/Just_Major/Just_Minor/Pythagorean/Meantone, matching the choices string `0x1803BBF60`), the **newly decoded 19-row scale-pattern table `0x1803BB780`** (stride 0x30), the key map `0x1803BB610` (17→12, enharmonic collapse), the ionian reference `0x1803BB660`, the user-scale map `0x1803BB60C`. Host parameters (scale/key/tuning/userscale1..12/pitchN 29-interval) select rows through the module-graph muxes (`scal table` 15-entry mux → pattern row; `keys` → key map → A-referenced transposition; `int table N` 29-entry muxes + the chromatic/whole-tone `c_or` switch) and reach the engine via the record links (`scale`, `key`, `shift1..8`, `pcent1..8`, `tuning`, `userscale1..12`, `quantization`, `tune`); the engine composes the published tables with interval snapping (pattern values = degree-zone boundaries). Residues: the per-interval mux constants' design rule; the key-ratio ascent/descent asymmetry; runtime values UNK. |
+| Mode-1 four-float phase trajectory (Q-C residual) | **CLOSED (instruction level)** — `FUN_1800DC430..761`: mode `[obj+0x8C]==1` = the four port-table floats `[obj+0x68]→[0..0xC]` used **directly × rate `[obj+0xE8]` as the four per-frame phases** (externally steered, no internal state); mode 0 = internal phase `[obj+0x90]` gliding toward table[0] with **K = 0.25** (`0x180412260`) per sub-step, four consecutive sub-steps emitted. Mode-flag producer UNK (DER: "mod input connected"). |
+| Record-ring first-field scaling (round-12 residual) | **CLOSED** — the writer `FUN_1800E0190` copies the live period `T+0x5FD4` raw; the tracker state 6 multiplies by the cadence/2 reload and **doubles while < `[T+0x6008]·50`** with `[T+0x6008]=2048.0` (store `0x1800E0D5B`; ctor seeds `T+0x5FD4=2048.0`). The crossfade's `v = field·2^-11 ≥ 50` follows from the **octave-doubling floor** (its own ≥ 48 clamp is redundant). |
+| T+0x5F14 pre-setParam value (Q-17 residual) | **UNK by construction (init-site proof)** — the tracker ctor zero-fills only `T+0x0000..0x5EAF` and its immediate stores cover 0x5F18/0x5FD4/0x5FE0/0x6000+ but **never 0x5F10/0x5F14**; the wrapper ctor and the add_fn add no tracker-region fill; the dsp_t is an embedded member (`lea rcx,[rsi+0x430]`) ⇒ the value is allocator residue until setParam(5). Post-setParam role unchanged (Q-17 CLOSED). |
+| Kernel design formula (round-12 residual) | **UNK generator; DER characterisation** — 256×6 table `0x1803B6170`: perfect point symmetry (max diff 0.0), DC ripple ≤ 2^-13, row 0 NOT a delta (not Lagrange/windowed-sinc-with-integer-zeros), per-tap polynomial fits stall at 2.6e-5 (not Farrow), best closed-form fits (Nuttall/RRC/Kaiser/cosine-window stretched sincs) 2.1–7.4e-3 off ⇒ a numerically designed anti-aliased 6-tap 256-phase table, cutoff ≈ 0.82–0.84·Nyquist; no closed form identified as the generator. |

@@ -91,7 +91,9 @@ smtg_add_vst3plugin(octavoxnative
 )
 target_link_libraries(octavoxnative PRIVATE octavox_core_vst3 sdk)
 target_include_directories(octavoxnative PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(octavoxnative PRIVATE -Wall -Wextra)
+if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
+    target_compile_options(octavoxnative PRIVATE -Wall -Wextra)
+endif()
 
 # ---------------------------------------------------------------------------
 # The in-process wrapper test suite (drives the actual VST3 classes through
@@ -112,4 +114,6 @@ target_link_libraries(octavox_vst3_wrapper_tests PRIVATE octavox_core_vst3
                                                          sdk sdk_hosting)
 target_include_directories(octavox_vst3_wrapper_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(octavox_vst3_wrapper_tests PRIVATE -Wall -Wextra)
+if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
+    target_compile_options(octavox_vst3_wrapper_tests PRIVATE -Wall -Wextra)
+endif()

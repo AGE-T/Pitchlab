@@ -327,3 +327,41 @@ Work Log:
 
 Stage Summary:
 - ROUND 16 DELIVERED: Octavox_RE_evidence_round16.zip (326 files + manifest, SHA-256 c6a022ed7f19b9cc8dd56a98778c71583cad5d98b9a6801eaf722e145161d519) downloadable from the app's / page. Completion criteria met: the current status and historical evidence are consistent (16 tagged corrections, history preserved), the acceptance workflow is reproducible (measured: release 85/85 in 41.0 s, ASan+UBSan 85/85 in 6.16 min, per-test durations/filters/groups/progress, machine-readable outputs with environment records, 4/4 neutrality hashes re-verified three times), and the VST3 wrapper is genuinely implemented and built (validator 47/47, wrapper tests 8/8, sample-accurate automation proven bit-exact vs the block-boundary implementation, state save/restore bit-exact, 0 allocations in process(), core untouched). The target binary was never executed; runtime questions stay UNK; Q-D remains open with its recorded plan.
+
+---
+
+## ROUND 17 DELIVERY (2026-10-29) — Reproducible VST3 Build, Validation Reliability and Remaining Static DSP Questions
+
+**Package:** `Octavox_RE_evidence_round17.zip` (2 179 193 B)
+**SHA-256:** `9b91b8acb8d05fbd980b692b2d2dd29c888d3ad9c481dc4a7da7a59cdcc0c3be`
+**Manifest:** 355 files, all verified from a fresh extraction (`checksums.txt` at the zip root).
+
+- P1: validation discrepancy explained quantitatively (uniform 8-9x toolchain/host
+  slowdown vs a 300 s window; suite is 85/85 in release 43.1/41.1/42.8s-reversed,
+  ASan 373.0s, -O0 352.4s; no stall/order-dependence/interaction/buffering defect;
+  4/4 reference hashes re-verified — optimisation-level invariant).
+- P2: native/tools/ — get_vst3_sdk.sh (pinned-SHA acquisition, executed in verify +
+  fresh-install modes), build_and_test.sh (executed end-to-end: ALL GATES PASSED
+  454 s; re-executed from the fresh zip extraction: 504 s, module byte-identical
+  b293cecb...), get_vst3_sdk.ps1 + build_and_test.ps1 (Windows/MSVC — AUTHORED,
+  NOT EXECUTED; no Windows runtime). MSVC portability guards (Linux-neutral, proven).
+- P3: wrapper tests 8 -> 15 (15/15; validator 47/47): param metadata table + ID
+  uniqueness + processor/controller agreement, boundary roundtrips, block
+  start/middle/last/end events, simultaneous multi-voice events, clickless
+  bypass+wet/dry automation (0 allocs), full-surface restore (38/38 exact),
+  cross-rate/layout restore, invalid/truncated blobs (428 prefixes). Core
+  byte-identical; hashes unchanged.
+- P4: Q-D closed structurally (5 temperament tables 0x1803BB690 + NEW 19-row
+  scale-pattern table 0x1803BB780 + key/user/ionian maps + 29-interval tables,
+  mux/record-link delivery, engine composition with interval snapping);
+  mode-1 phase trajectory closed (direct 4-float x rate; mode 0 K=0.25 glide);
+  record-ring first-field scaling closed (tracker doubling floor >= 2048*50,
+  [T+0x6008]=2048.0 @0x1800E0D5B); T+0x5F14 pre-setParam UNK by construction
+  (full init-site proof); kernel generator UNK (DER characterisation: symmetric,
+  DC ripple <= 2^-13, cutoff ~0.82-0.84 Ny, no closed form matches).
+- P5: docs updated (findings/readiness/wrapper/README/open-questions with
+  superseded tags); versioned zip + manifest + SHA256; fresh-extraction
+  verification: manifest 355/355, full chain ALL GATES PASSED (release 82s leg,
+  ASan 376s leg, wrapper 46s leg), module byte-identical.
+- Third sandbox reset at round start; recovery documented (325/326 -> 326/326
+  manifest after byte-identical poc_run.log restore; from-scratch rebuilds).

@@ -36,8 +36,34 @@
 //   7. no_alloc_steady_state               global-new counter == 0 across
 //                                          steady-state process() calls
 //   8. latency_report                      getLatencySamples == core value
+//   9. param_metadata_table (R17-P3)       38-id uniqueness, spec-table
+//                                          integrity, processor<->controller
+//                                          ParameterInfo agreement, boundary
+//                                          + middle conversion roundtrips
+//  10. events_block_positions (R17-P3)     events at block start / middle /
+//                                          last sample / block end (offset
+//                                          == numSamples) vs the core
+//  11. simultaneous_multivoice_events      several voices + one global
+//      (R17-P3)                            changed at the SAME sample
+//                                          position, bit-exact vs the core
+//  12. bypass_wetdry_clickless_noalloc     bypass toggles + a smooth host
+//      (R17-P3)                            wet/dry ramp: bounded per-sample
+//                                          output step (no click), zero
+//                                          allocations
+//  13. state_full_surface_restore          ALL 38 parameters non-default ->
+//      (R17-P3)                            save -> fresh restore: every
+//                                          value restored + replay bit-exact
+//  14. state_cross_rate_layout             state saved at 48 kHz stereo,
+//      (R17-P3)                            restored at 96 kHz mono and at
+//                                          44.1 kHz stereo (bit-exact vs the
+//                                          hand-driven core at the new rate)
+//  15. state_invalid_blobs (R17-P3)        every truncation prefix, wrong
+//                                          magic / version, NaN / ring-law
+//                                          violations: rejected, processor
+//                                          stays usable
 //
 // Exit code 0 iff every case passes. Every measurement is printed.
+// --dump-params prints the 38-parameter metadata table and exits 0.
 // ---------------------------------------------------------------------------
 #include "octavox_ids.h"
 #include "octavox_native_processor.h"
@@ -49,11 +75,13 @@
 #include "octavox/dsp.hpp"
 
 #include "pluginterfaces/base/funknown.h"
+#include "pluginterfaces/base/ustring.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivstcomponent.h"
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -983,9 +1011,1102 @@ static void caseLatency(CaseResult& c) {
 }
 
 //==========================================================================
+// 9. param_metadata_table (R17-P3)
+//==========================================================================
+static void caseParamMetadata(CaseResult& c) {
+    using octavox::vst3wrap::kNumParams;
+    using octavox::vst3wrap::paramSpec;
+    using octavox::vst3wrap::domainOf;
+    using octavox::vst3wrap::normalizedFromPlain;
+    using octavox::vst3wrap::plainFromNormalized;
+
+    // (a) Parameter ID uniqueness: the spec table covers ids 0..37 exactly
+    //     once (a 38-bit mask, no holes, no duplicates).
+    uint64_t mask = 0;
+    int nSpecs = 0;
+    for (uint32_t id = 0; id < 64u; ++id) {
+        const auto& sp = paramSpec(id);
+        if (sp.id != id) continue;  // paramSpec() folds out-of-range to 0
+        ++nSpecs;
+        mask |= (1ULL << id);
+    }
+    addValue(c, "spec_table_entries", nSpecs);
+    check(c, nSpecs == 38, "spec table must have exactly 38 entries");
+    const uint64_t wantMask = (kNumParams == 64) ? ~0ULL : ((1ULL << 38) - 1ULL);
+    addValue(c, "id_mask_complete", mask == wantMask ? 1.0 : 0.0);
+    check(c, mask == wantMask,
+          "parameter ids must be unique and contiguous 0..37 (mask)");
+
+    // (b) Spec-table integrity: domain sanity, default in domain, stepCount
+    //     consistency.
+    for (uint32_t id = 0; id < 38u; ++id) {
+        const auto& sp = paramSpec(id);
+        const auto& d = sp.domain;
+        check(c, d.maxPlain > d.minPlain, "bad domain (max<=min) at id " + std::to_string(id));
+        check(c, d.stepPlain >= 0.0, "negative step at id " + std::to_string(id));
+        check(c, sp.defaultPlain >= d.minPlain && sp.defaultPlain <= d.maxPlain,
+              "default outside domain at id " + std::to_string(id));
+        if (d.stepPlain > 0.0) {
+            const double steps = (d.maxPlain - d.minPlain) / d.stepPlain;
+            const double rounded = std::floor(steps + 0.5);
+            const double stepCount = static_cast<double>(
+                static_cast<int32>(std::floor(steps + 0.5)));
+            check(c, std::fabs(steps - rounded) < 1e-9 && stepCount >= 1.0,
+                  "span/step not integral at id " + std::to_string(id));
+        }
+        check(c, sp.title && sp.title[0] != '\0',
+              "empty title at id " + std::to_string(id));
+    }
+
+    // (c) Processor<->controller mapping agreement (SingleComponentEffect:
+    //     one object serves both interfaces; the host-visible ParameterInfo
+    //     must match the spec table the audio path consults).
+    auto* p = makeProcessor(Setup{});
+    check(c, p->getParameterCount() == 38, "processor must expose 38 parameters");
+    int mismatches = 0;
+    for (uint32_t id = 0; id < 38u; ++id) {
+        ParameterInfo info;
+        if (p->getParameterInfo(id, info) != kResultOk) {
+            check(c, false, "getParameterInfo failed at id " + std::to_string(id));
+            ++mismatches;
+            continue;
+        }
+        const auto& sp = paramSpec(id);
+        if (info.id != id) ++mismatches;
+        char title[128], shortT[128], units[128];
+        Steinberg::UString(info.title, str16BufferSize(String128)).toAscii(title, sizeof(title));
+        Steinberg::UString(info.shortTitle, str16BufferSize(String128)).toAscii(shortT, sizeof(shortT));
+        Steinberg::UString(info.units, str16BufferSize(String128)).toAscii(units, sizeof(units));
+        if (std::strcmp(title, sp.title) != 0) ++mismatches;
+        if (std::strcmp(shortT, sp.shortTitle) != 0) ++mismatches;
+        if (std::strcmp(units, sp.units ? sp.units : "") != 0) ++mismatches;
+        const int32 wantStep = (sp.domain.stepPlain > 0.0)
+            ? static_cast<int32>(std::floor((sp.domain.maxPlain - sp.domain.minPlain) /
+                                            sp.domain.stepPlain + 0.5))
+            : 0;
+        if (info.stepCount != wantStep) ++mismatches;
+        const double wantDef = normalizedFromPlain(id, sp.defaultPlain);
+        if (std::fabs(info.defaultNormalizedValue - wantDef) > 0.0) ++mismatches;
+        if (info.flags != sp.flags) ++mismatches;
+        if (info.unitId != sp.unitId) ++mismatches;
+    }
+    addValue(c, "parameterinfo_mismatches", mismatches);
+    check(c, mismatches == 0,
+          "processor/controller ParameterInfo must agree with the spec table "
+          "for all 38 ids (title, short, units, stepCount, default, flags, unit)");
+    p->terminate();
+    p->release();
+
+    // (d) Conversion roundtrips at boundaries and representative middles,
+    //     all 38 ids. On STEP domains the probes are GRID-ALIGNED (a
+    //     non-grid plain legitimately snaps onto the grid, so only grid
+    //     points can round-trip exactly); continuous domains probe the
+    //     fractional positions. Step domains must round-trip EXACTLY;
+    //     continuous domains within 4 ulp of the plain value.
+    int exactFail = 0, ulpFail = 0;
+    for (uint32_t id = 0; id < 38u; ++id) {
+        const auto& d = domainOf(id);
+        const double span = d.maxPlain - d.minPlain;
+        double probes[7];
+        int np = 0;
+        if (d.stepPlain > 0.0) {
+            const double nSteps = std::floor(span / d.stepPlain + 0.5);
+            probes[np++] = d.minPlain;                            // grid 0
+            probes[np++] = d.maxPlain;                            // grid N
+            probes[np++] = d.minPlain + std::floor(nSteps * 0.25) * d.stepPlain;
+            probes[np++] = d.minPlain + std::floor(nSteps * 0.50) * d.stepPlain;
+            probes[np++] = d.minPlain + std::floor(nSteps * 0.75) * d.stepPlain;
+            probes[np++] = d.minPlain + d.stepPlain;                          // grid 1
+            probes[np++] = d.minPlain + (nSteps - 1.0) * d.stepPlain;          // grid N-1
+        } else {
+            probes[np++] = d.minPlain;
+            probes[np++] = d.maxPlain;
+            probes[np++] = d.minPlain + 0.5 * span;
+            probes[np++] = d.minPlain + 0.25 * span;
+            probes[np++] = d.minPlain + 0.75 * span;
+        }
+        for (int i = 0; i < np; ++i) {
+            const double plain = probes[i];
+            const double norm = normalizedFromPlain(id, plain);
+            const double back = plainFromNormalized(id, norm);
+            if (d.stepPlain > 0.0) {
+                if (back != plain) ++exactFail;
+            } else {
+                const double tol = 4.0 * std::fabs(plain) * 2.220446049250313e-16 +
+                                   4.0 * 2.2250738585072014e-308;
+                if (!(std::fabs(back - plain) <= tol)) ++ulpFail;
+            }
+        }
+        // Normalized boundary behaviour: 0 -> min, 1 -> max, clamping of
+        // out-of-range and NaN inputs.
+        if (plainFromNormalized(id, 0.0) != d.minPlain) ++exactFail;
+        if (plainFromNormalized(id, 1.0) != d.maxPlain) ++exactFail;
+        if (plainFromNormalized(id, -0.25) != d.minPlain) ++exactFail;
+        if (plainFromNormalized(id, 1.75) != d.maxPlain) ++exactFail;
+        if (!(plainFromNormalized(id, std::nan("1")) == d.minPlain)) ++exactFail;
+        if (!(normalizedFromPlain(id, std::nan("1")) ==
+              normalizedFromPlain(id, d.minPlain))) ++exactFail;
+    }
+    addValue(c, "step_exact_roundtrip_failures", exactFail);
+    addValue(c, "continuous_ulp_roundtrip_failures", ulpFail);
+    check(c, exactFail == 0, "step-domain boundary roundtrips must be exact");
+    check(c, ulpFail == 0, "continuous-domain roundtrips must hold to 4 ulp");
+}
+
+//==========================================================================
+// 10. events_block_positions (R17-P3): parameter events at the START, the
+// MIDDLE and the LAST sample of a host block, plus one event at offset ==
+// numSamples (block end -- must take effect for the NEXT block).
+//==========================================================================
+static void caseEventsBlockPositions(CaseResult& c) {
+    using octavox::vst3wrap::ParamId;
+    using octavox::vst3wrap::normalizedFromPlain;
+
+    const int HOST_BLOCK = 1024;
+    const int N = 6 * HOST_BLOCK;
+    Lcg rng(1122334455);
+    std::vector<float> in(N), wrapOut(N);
+    rng.fill(in);
+
+    // Event schedule over the whole stream (absolute stream positions).
+    struct Ev {
+        int pos;
+        uint32_t id;
+        double plain;
+    };
+    // Regular in-block events (delivered at their true in-block offsets).
+    const std::vector<Ev> evs = {
+        // block 1: START (offset 0), MIDDLE (offset 512), LAST (offset 1023)
+        {1 * HOST_BLOCK + 0, ParamId::kPitch, -6.0},
+        {1 * HOST_BLOCK + 512, ParamId::kFeedback, 0.35},
+        {1 * HOST_BLOCK + HOST_BLOCK - 1, ParamId::kVoices, 3.0},
+        // block 5: a mid-block per-voice delay change
+        {5 * HOST_BLOCK + 777, octavox::vst3wrap::voiceDelayId(0), 12.0},
+    };
+    // The BLOCK-END event: delivered in block 3's queue with in-block offset
+    // == numSamples (1024). The VST3 convention does not require hosts to
+    // apply such points in that block; the wrapper drains them at the end of
+    // process() so they take effect for the NEXT block -- i.e. at stream
+    // position 4*HOST_BLOCK (block 4's first sample).
+    const Ev blockEnd = {4 * HOST_BLOCK, octavox::vst3wrap::voiceGainId(1), 0.3};
+    const int blockEndBlock = 3;  // the block whose queue carries it
+
+    // ---- run A: the WRAPPER (host blocks of 1024, true in-block offsets;
+    //      the block-end event rides block 3's queue at offset == n) ----
+    {
+        auto* p = makeProcessor(Setup{}, 1);
+        float* inP[1] = {in.data()};
+        float* outP[1] = {wrapOut.data()};
+        for (int b = 0; b * HOST_BLOCK < N; ++b) {
+            const int start = b * HOST_BLOCK;
+            const int n = std::min(HOST_BLOCK, N - start);
+            ParameterChanges ch;
+            bool any = false;
+            for (const auto& e : evs) {
+                if (e.pos >= start && e.pos < start + n) {
+                    addEvent(ch, e.id, e.pos - start, normalizedFromPlain(e.id, e.plain));
+                    any = true;
+                }
+            }
+            if (b == blockEndBlock) {
+                addEvent(ch, blockEnd.id, n,  // offset == numSamples (block end)
+                         normalizedFromPlain(blockEnd.id, blockEnd.plain));
+                any = true;
+            }
+            driveBlock(p, inP, outP, 1, n, any ? &ch : nullptr);
+            inP[0] += n;
+            outP[0] += n;
+        }
+        p->terminate();
+        p->release();
+    }
+
+    // The complete event list in STREAM-POSITION order (the block-end event
+    // at 4096 interleaves BETWEEN the voices event at 2047 and the delay
+    // event at 5897 -- exactly where the wrapper's end-of-block drain
+    // applies it).
+    std::vector<Ev> allEvs = evs;
+    allEvs.push_back(blockEnd);
+    std::sort(allEvs.begin(), allEvs.end(),
+              [](const Ev& a, const Ev& b) { return a.pos < b.pos; });
+
+    // ---- run B: hand-driven core, setters at the SAME stream positions.
+    //      The block-end event is issued at stream position 4*HOST_BLOCK,
+    //      i.e. BETWEEN the process() calls of block 3 and block 4 --
+    //      exactly where the wrapper applies it via the end-of-block drain. ----
+    std::vector<float> refOut(N);
+    {
+        octavox::MultichannelShifter ref;
+        check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
+        float* inP[1] = {in.data()};
+        float* outP[1] = {refOut.data()};
+        int pos = 0;
+        auto applyRef = [&](const Ev& e) {
+            const double plain = toEnginePlain(e.id, e.plain);
+            switch (e.id) {
+            case ParamId::kPitch:
+                ref.setRatio(std::pow(2.0, plain / 12.0));
+                break;
+            case ParamId::kFeedback:
+                ref.setFeedback(plain);
+                break;
+            case ParamId::kVoices:
+                ref.setVoices(static_cast<int>(std::lround(plain)));
+                break;
+            default:
+                if (e.id == octavox::vst3wrap::voiceGainId(1))
+                    ref.setVoiceGain(1, plain);
+                else if (e.id == octavox::vst3wrap::voiceDelayId(0))
+                    ref.setVoiceBaseDelay(
+                        0, octavox::vst3wrap::msToBaseDelaySamples(
+                               plain, octavox::Config{}.sample_rate,
+                               octavox::Config{}.grain));
+                break;
+            }
+        };
+        for (const auto& e : allEvs) {
+            if (e.pos > pos) {
+                ref.process(inP, outP, 1, e.pos - pos);
+                inP[0] += e.pos - pos;
+                outP[0] += e.pos - pos;
+                pos = e.pos;
+            }
+            applyRef(e);
+        }
+        if (N > pos) ref.process(inP, outP, 1, N - pos);
+    }
+
+    const bool same = bitIdentical(wrapOut, refOut);
+    const double d = maxAbsDiff(wrapOut, refOut);
+    addValue(c, "maxdiff", d);
+    addValue(c, "bit_identical", same ? 1.0 : 0.0);
+    check(c, same && d == 0.0,
+          "events at block start/middle/last/block-end must be bit-identical "
+          "to the core with setters at the same stream positions");
+
+    // ---- control: vs a host that drops the block-END event entirely --
+    // (proves the drain path genuinely applies the block-end event at the
+    //  next block's first sample: dropping it must differ)
+    std::vector<float> noEnd(N);
+    {
+        auto* p = makeProcessor(Setup{}, 1);
+        float* inP[1] = {in.data()};
+        float* outP[1] = {noEnd.data()};
+        for (int b = 0; b * HOST_BLOCK < N; ++b) {
+            const int start = b * HOST_BLOCK;
+            const int n = std::min(HOST_BLOCK, N - start);
+            ParameterChanges ch;
+            bool any = false;
+            for (const auto& e : evs) {
+                if (e.pos >= start && e.pos < start + n) {
+                    addEvent(ch, e.id, e.pos - start, normalizedFromPlain(e.id, e.plain));
+                    any = true;
+                }
+            }
+            // b == blockEndBlock: the block-end event is NOT added (dropped)
+            driveBlock(p, inP, outP, 1, n, any ? &ch : nullptr);
+            inP[0] += n;
+            outP[0] += n;
+        }
+        p->terminate();
+        p->release();
+    }
+    const double dDrop = maxAbsDiff(wrapOut, noEnd);
+    addValue(c, "blockend_event_effect_maxdiff", dDrop);
+    check(c, dDrop > 0.0, "the block-end event must have an observable effect");
+}
+
+//==========================================================================
+// 11. simultaneous_multivoice_events (R17-P3): several per-voice controls
+// AND one global control changed at the SAME sample position (multiple
+// queues, one point each, identical offsets). Bit-exact vs the core with
+// the same setters issued in the same order at that stream position.
+//==========================================================================
+static void caseSimultaneousEvents(CaseResult& c) {
+    using octavox::vst3wrap::ParamId;
+    using octavox::vst3wrap::normalizedFromPlain;
+    using octavox::vst3wrap::voiceGainId;
+    using octavox::vst3wrap::voiceOffsetId;
+    using octavox::vst3wrap::voiceMuteId;
+    using octavox::vst3wrap::voiceDelayId;
+
+    const int N = 24576;
+    const int HOST_BLOCK = 2048;
+    Lcg rng(606060);
+    std::vector<float> in(N), wrapOut(N);
+    rng.fill(in);
+
+    // One simultaneous cluster at stream position 7000 (in-block offset
+    // 7000 - 3*2048 = 856), a second at 15000 (offset 664), plus a lone
+    // event at stream position 0 to set voices=8 first (so every per-voice
+    // control is audible).
+    struct Ev {
+        int pos;
+        uint32_t id;
+        double plain;
+    };
+    const std::vector<Ev> cluster1 = {
+        {7000, voiceGainId(2), 0.4},
+        {7000, voiceOffsetId(3), 5.0},
+        {7000, voiceMuteId(5), 1.0},
+        {7000, voiceDelayId(7), 30.0},
+        {7000, ParamId::kPitch, 3.0},
+    };
+    const std::vector<Ev> cluster2 = {
+        {15000, voiceGainId(0), 1.7},
+        {15000, voiceOffsetId(2), -4.0},
+        {15000, voiceMuteId(1), 1.0},
+        {15000, voiceDelayId(4), 8.0},
+        {15000, ParamId::kWetDry, 0.55},
+    };
+    std::vector<Ev> evs;
+    evs.push_back({0, ParamId::kVoices, 8.0});
+    for (const auto& e : cluster1) evs.push_back(e);
+    for (const auto& e : cluster2) evs.push_back(e);
+
+    // ---- run A: the WRAPPER ----
+    {
+        auto* p = makeProcessor(Setup{}, 1);
+        float* inP[1] = {in.data()};
+        float* outP[1] = {wrapOut.data()};
+        for (int b = 0; b * HOST_BLOCK < N; ++b) {
+            const int start = b * HOST_BLOCK;
+            const int n = std::min(HOST_BLOCK, N - start);
+            ParameterChanges ch;
+            bool any = false;
+            // add queues in the event-list order (the wrapper applies a
+            // simultaneous cluster in queue order; the reference mirrors it)
+            for (const auto& e : evs) {
+                if (e.pos >= start && e.pos < start + n) {
+                    addEvent(ch, e.id, e.pos - start, normalizedFromPlain(e.id, e.plain));
+                    any = true;
+                }
+            }
+            driveBlock(p, inP, outP, 1, n, any ? &ch : nullptr);
+            inP[0] += n;
+            outP[0] += n;
+        }
+        p->terminate();
+        p->release();
+    }
+
+    // ---- run B: hand-driven core, the same setters at the same positions,
+    //      clusters issued in the SAME order as the queues were added. The
+    //      reference tracks the per-voice offsets exactly like the wrapper's
+    //      surface_ mirror, and replicates retargetRatios() on every
+    //      global pitch event (setRatio clears the overrides, then every
+    //      non-zero tracked offset is re-applied on the new target). ----
+    std::vector<float> refOut(N);
+    {
+        octavox::MultichannelShifter ref;
+        check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
+        const double sr = octavox::Config{}.sample_rate;
+        const double grain = octavox::Config{}.grain;
+        float* inP[1] = {in.data()};
+        float* outP[1] = {refOut.data()};
+        int pos = 0;
+        double pitchPlain = 0.0;              // the wrapper's surface_.pitchSemi
+        double offTrack[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // surface_.offset[]
+        auto retarget = [&]() {
+            ref.setRatio(std::pow(2.0, pitchPlain / 12.0));
+            for (int v = 0; v < 8; ++v)
+                if (offTrack[v] != 0.0)
+                    ref.setVoiceRatio(v, std::pow(2.0, pitchPlain / 12.0) *
+                                             std::pow(2.0, offTrack[v] / 12.0));
+        };
+        for (const auto& e : evs) {
+            if (e.pos > pos) {
+                ref.process(inP, outP, 1, e.pos - pos);
+                inP[0] += e.pos - pos;
+                outP[0] += e.pos - pos;
+                pos = e.pos;
+            }
+            const double plain = toEnginePlain(e.id, e.plain);
+            if (e.id == ParamId::kVoices)
+                ref.setVoices(static_cast<int>(std::lround(plain)));
+            else if (e.id == ParamId::kPitch) {
+                pitchPlain = plain;
+                retarget();
+            } else if (e.id == ParamId::kWetDry)
+                ref.setWetDry(plain);
+            else if (e.id >= voiceOffsetId(0) && (e.id - voiceOffsetId(0)) % 4 == 0) {
+                const int v = static_cast<int>((e.id - voiceOffsetId(0)) / 4);
+                offTrack[v] = plain;
+                if (plain != 0.0)
+                    ref.setVoiceRatio(v, std::pow(2.0, pitchPlain / 12.0) *
+                                             std::pow(2.0, plain / 12.0));
+                else
+                    retarget();  // clearing one override: the setRatio dance
+            } else if (e.id >= voiceGainId(0) && (e.id - voiceGainId(0)) % 4 == 0) {
+                const int v = static_cast<int>((e.id - voiceGainId(0)) / 4);
+                ref.setVoiceGain(v, plain);
+            } else if (e.id >= voiceMuteId(0) && (e.id - voiceMuteId(0)) % 4 == 0) {
+                const int v = static_cast<int>((e.id - voiceMuteId(0)) / 4);
+                ref.setVoiceMute(v, plain >= 0.5);
+            } else if (e.id >= voiceDelayId(0) && (e.id - voiceDelayId(0)) % 4 == 0) {
+                const int v = static_cast<int>((e.id - voiceDelayId(0)) / 4);
+                ref.setVoiceBaseDelay(
+                    v, octavox::vst3wrap::msToBaseDelaySamples(plain, sr, grain));
+            }
+        }
+        if (N > pos) ref.process(inP, outP, 1, N - pos);
+    }
+
+    const bool same = bitIdentical(wrapOut, refOut);
+    const double d = maxAbsDiff(wrapOut, refOut);
+    addValue(c, "maxdiff", d);
+    addValue(c, "bit_identical", same ? 1.0 : 0.0);
+    check(c, same && d == 0.0,
+          "simultaneous multi-voice events at one sample position must be "
+          "bit-identical to the core with the same setter order");
+}
+
+//==========================================================================
+// 12. bypass_wetdry_clickless_noalloc (R17-P3): bypass enter/exit toggles
+// and a smooth host wet/dry ramp across many blocks. Gates: (a) zero
+// allocations across the whole automation run (counter armed); (b) the
+// maximum per-sample output step stays within the analytic no-click bound
+// = reference step (same input, no automation) + the bypass ramp slope
+// term + the wet/dry event step term.
+//==========================================================================
+static void caseBypassWetDryClickless(CaseResult& c) {
+    using octavox::vst3wrap::ParamId;
+    using octavox::vst3wrap::normalizedFromPlain;
+
+    const int HOST_BLOCK = 512;
+    const int BLOCKS = 120;
+    const int N = HOST_BLOCK * BLOCKS;
+    Lcg rng(9090909);
+    std::vector<float> in(N);
+    rng.fill(in);
+
+    // Reference run: same input, NO automation (default surface, wet=1).
+    double refMaxStep = 0.0, peakOut = 0.0;
+    {
+        auto* p = makeProcessor(Setup{}, 1);
+        std::vector<float> out(N, 0.0f);
+        float* inP[1] = {in.data()};
+        float* outP[1] = {out.data()};
+        for (int b = 0; b < BLOCKS; ++b) {
+            driveBlock(p, inP, outP, 1, HOST_BLOCK, nullptr);
+            inP[0] += HOST_BLOCK;
+            outP[0] += HOST_BLOCK;
+        }
+        for (int i = 0; i < N; ++i) {
+            peakOut = std::max(peakOut, std::fabs((double)out[i]));
+            if (i > 0)
+                refMaxStep = std::max(refMaxStep,
+                                      std::fabs((double)out[i] - (double)out[i - 1]));
+        }
+        p->terminate();
+        p->release();
+    }
+    addValue(c, "reference_max_step", refMaxStep);
+    addValue(c, "peak_out", peakOut);
+
+    // Automation schedule (pre-built BEFORE arming the alloc counter):
+    //  - bypass ON at block 20, OFF at block 60 (10 ms core ramp at 48 kHz
+    //    = 480 samples per full blend sweep);
+    //  - wet/dry ramped 1.0 -> 0.5 -> 1.0 with ONE event per block over
+    //    blocks 30..90 (delta-w per event = 0.5/30 ~ 0.0167).
+    std::vector<std::unique_ptr<ParameterChanges>> evs;
+    const double dwPerEvent = 0.5 / 30.0;
+    for (int b = 0; b < BLOCKS; ++b) {
+        auto ch = std::make_unique<ParameterChanges>();
+        if (b == 20 || b == 60)
+            addEvent(*ch, ParamId::kBypass, 0,
+                     b == 20 ? 1.0 : 0.0);  // normalized: 1 = bypassed
+        if (b >= 30 && b <= 90) {
+            int k = b - 30;  // 0..60
+            double w;
+            if (k <= 30) w = 1.0 - k * dwPerEvent;        // 1.0 -> 0.5
+            else w = 0.5 + (k - 30) * dwPerEvent;         // 0.5 -> 1.0
+            addEvent(*ch, ParamId::kWetDry, 0, normalizedFromPlain(ParamId::kWetDry, w));
+        }
+        evs.push_back(std::move(ch));
+    }
+
+    // Automation run with the allocation counter armed across ALL calls.
+    auto* p = makeProcessor(Setup{}, 1);
+    std::vector<float> out(N, 0.0f);
+    {
+        float* inP[1] = {in.data()};
+        float* outP[1] = {out.data()};
+        octavox::allocs::reset();
+        octavox::allocs::arm(true);
+        for (int b = 0; b < BLOCKS; ++b) {
+            driveBlock(p, inP, outP, 1, HOST_BLOCK, evs[b].get());
+            inP[0] += HOST_BLOCK;
+            outP[0] += HOST_BLOCK;
+        }
+        octavox::allocs::arm(false);
+    }
+    const long allocs = octavox::allocs::count();
+    addValue(c, "allocations_during_automation", static_cast<double>(allocs));
+    check(c, allocs == 0, "automation run allocated (global-new counter)");
+
+    // No-click bound: per-sample output step <= reference step
+    //   + bypass ramp term: |mix-dry| per blend sample <= 2*peak/(sr*0.010)
+    //   + wet/dry event term: |dw| * |mix-dry| <= dw * 2*peak
+    const double sr = 48000.0;
+    const double bypassSeconds = octavox::Config{}.bypass_seconds;  // 0.010
+    const double bypassStep = 2.0 * peakOut / (sr * bypassSeconds);
+    const double wetdryStep = dwPerEvent * 2.0 * peakOut;
+    const double bound = refMaxStep + bypassStep + wetdryStep + 1e-12;
+    double maxStep = 0.0;
+    int stepPos = 0;
+    for (int i = 1; i < N; ++i) {
+        const double s = std::fabs((double)out[i] - (double)out[i - 1]);
+        if (s > maxStep) {
+            maxStep = s;
+            stepPos = i;
+        }
+    }
+    addValue(c, "automation_max_step", maxStep);
+    addValue(c, "automation_max_step_at_sample", stepPos);
+    addValue(c, "no_click_bound", bound);
+    check(c, maxStep <= bound,
+          "per-sample output step during bypass+wet/dry automation exceeds "
+          "the analytic no-click bound (click suspect)");
+    p->terminate();
+    p->release();
+}
+
+//==========================================================================
+// 13. state_full_surface_restore (R17-P3): set ALL 38 parameters to
+// non-default values, save, restore into a FRESH instance: every parameter
+// value must come back exactly and the replay must be bit-identical to the
+// hand-driven core configured with the same surface.
+//==========================================================================
+static void caseStateFullSurface(CaseResult& c) {
+    using octavox::vst3wrap::ParamId;
+    using octavox::vst3wrap::normalizedFromPlain;
+    using octavox::vst3wrap::voiceGainId;
+    using octavox::vst3wrap::voiceOffsetId;
+    using octavox::vst3wrap::voiceMuteId;
+    using octavox::vst3wrap::voiceDelayId;
+    namespace vw = octavox::vst3wrap;
+
+    const int N = 32768;
+    Lcg rng(70707);
+    std::vector<float> in(N);
+    rng.fill(in);
+
+    // The non-default surface (every one of the 38 parameters moved off its
+    // default; bypass stays 0 so the processing path stays exercised -- its
+    // restoration is verified through the normalized roundtrip below).
+    double plainVals[38];
+    plainVals[ParamId::kBypass] = 0.0;
+    plainVals[ParamId::kPitch] = -7.31;
+    plainVals[ParamId::kVoices] = 6.0;
+    plainVals[ParamId::kSpread] = 0.0;
+    plainVals[ParamId::kFeedback] = 0.45;
+    plainVals[ParamId::kWetDry] = 0.62;
+    for (int v = 0; v < 8; ++v) {
+        plainVals[voiceOffsetId(v)] = 3.0 - v;                 // +3 .. -4 st
+        plainVals[voiceGainId(v)] = 0.3 + 0.15 * v;            // 0.3 .. 1.35
+        plainVals[voiceMuteId(v)] = (v % 3 == 2) ? 1.0 : 0.0;  // voices 3,6,9->8
+        plainVals[voiceDelayId(v)] = 5.0 + 7.0 * v;            // 5 .. 54 ms
+    }
+
+    // ---- the hand-driven reference: canonical application order with the
+    //      wrapper's conversion chain. ----
+    std::vector<float> refOut(N);
+    {
+        octavox::MultichannelShifter ref;
+        octavox::Config cfg = vw::defaultConfig();
+        check(c, ref.prepare(cfg, 1), "reference prepare failed");
+        const double sr = cfg.sample_rate, grain = cfg.grain;
+        const double pitch = toEnginePlain(ParamId::kPitch, plainVals[ParamId::kPitch]);
+        const auto off = [&](int v) {
+            return toEnginePlain(voiceOffsetId(v), plainVals[voiceOffsetId(v)]);
+        };
+        const auto gn = [&](int v) {
+            return toEnginePlain(voiceGainId(v), plainVals[voiceGainId(v)]);
+        };
+        const auto ms = [&](int v) {
+            return toEnginePlain(voiceDelayId(v), plainVals[voiceDelayId(v)]);
+        };
+        ref.setSpread(toEnginePlain(ParamId::kSpread, plainVals[ParamId::kSpread]) >= 0.5);
+        ref.setRatio(std::pow(2.0, pitch / 12.0));
+        for (int v = 0; v < 8; ++v)
+            if (off(v) != 0.0)
+                ref.setVoiceRatio(v, std::pow(2.0, pitch / 12.0) * std::pow(2.0, off(v) / 12.0));
+        for (int v = 0; v < 8; ++v) ref.setVoiceGain(v, gn(v));
+        for (int v = 0; v < 8; ++v)
+            ref.setVoiceMute(v, toEnginePlain(voiceMuteId(v), plainVals[voiceMuteId(v)]) >= 0.5);
+        for (int v = 0; v < 8; ++v)
+            ref.setVoiceBaseDelay(v, vw::msToBaseDelaySamples(ms(v), sr, grain));
+        ref.setVoices(static_cast<int>(std::lround(
+            toEnginePlain(ParamId::kVoices, plainVals[ParamId::kVoices]))));
+        ref.setFeedback(toEnginePlain(ParamId::kFeedback, plainVals[ParamId::kFeedback]));
+        ref.setWetDry(toEnginePlain(ParamId::kWetDry, plainVals[ParamId::kWetDry]));
+        ref.setBypass(plainVals[ParamId::kBypass] >= 0.5);
+        float* inP[1] = {in.data()};
+        float* outP[1] = {refOut.data()};
+        ref.process(inP, outP, 1, N);
+    }
+
+    // ---- wrapper: apply the full surface via ONE position-0 event cluster
+    //      (canonical queue order), run, save. ----
+    std::vector<float> aOut(N);
+    MemoryStream state;
+    {
+        auto* p = makeProcessor(Setup{}, 1);
+        ParameterChanges ch;
+        // canonical order: spread, pitch, offsets, gains, mutes, delays,
+        // voices, feedback, wet/dry, bypass
+        addEvent(ch, ParamId::kSpread, 0,
+                 normalizedFromPlain(ParamId::kSpread, plainVals[ParamId::kSpread]));
+        addEvent(ch, ParamId::kPitch, 0,
+                 normalizedFromPlain(ParamId::kPitch, plainVals[ParamId::kPitch]));
+        for (int v = 0; v < 8; ++v)
+            addEvent(ch, voiceOffsetId(v), 0,
+                     normalizedFromPlain(voiceOffsetId(v), plainVals[voiceOffsetId(v)]));
+        for (int v = 0; v < 8; ++v)
+            addEvent(ch, voiceGainId(v), 0,
+                     normalizedFromPlain(voiceGainId(v), plainVals[voiceGainId(v)]));
+        for (int v = 0; v < 8; ++v)
+            addEvent(ch, voiceMuteId(v), 0,
+                     normalizedFromPlain(voiceMuteId(v), plainVals[voiceMuteId(v)]));
+        for (int v = 0; v < 8; ++v)
+            addEvent(ch, voiceDelayId(v), 0,
+                     normalizedFromPlain(voiceDelayId(v), plainVals[voiceDelayId(v)]));
+        addEvent(ch, ParamId::kVoices, 0,
+                 normalizedFromPlain(ParamId::kVoices, plainVals[ParamId::kVoices]));
+        addEvent(ch, ParamId::kFeedback, 0,
+                 normalizedFromPlain(ParamId::kFeedback, plainVals[ParamId::kFeedback]));
+        addEvent(ch, ParamId::kWetDry, 0,
+                 normalizedFromPlain(ParamId::kWetDry, plainVals[ParamId::kWetDry]));
+        addEvent(ch, ParamId::kBypass, 0,
+                 normalizedFromPlain(ParamId::kBypass, plainVals[ParamId::kBypass]));
+
+        float* inP[1] = {in.data()};
+        float* outP[1] = {aOut.data()};
+        driveBlock(p, inP, outP, 1, 4096, &ch);
+        {
+            float* in2[1] = {in.data() + 4096};
+            float* out2[1] = {aOut.data() + 4096};
+            driveBlock(p, in2, out2, 1, N - 4096, nullptr);
+        }
+        const double dLive = maxAbsDiff(aOut, refOut);
+        addValue(c, "live_full_surface_vs_reference_maxdiff", dLive);
+        check(c, dLive == 0.0, "full-surface live run must be bit-identical");
+
+        check(c, p->getState(&state) == kResultOk, "getState failed");
+        addValue(c, "state_bytes", static_cast<double>(state.getSize()));
+        p->terminate();
+        p->release();
+    }
+
+    // ---- fresh instance restore: initialize -> setState -> setup ->
+    //      activate; verify EVERY parameter comes back exactly. ----
+    std::vector<float> bOut(N);
+    {
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "fresh init failed");
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&state) == kResultOk, "fresh setState failed");
+        standardSetup(p);
+        check(c, p->setActive(true) == kResultOk, "fresh activate failed");
+
+        int valueMismatches = 0;
+        for (uint32_t id = 0; id < 38u; ++id) {
+            const double wantNorm = normalizedFromPlain(
+                id, toEnginePlain(id, plainVals[id]));
+            const double gotNorm = p->getParamNormalized(id);
+            if (gotNorm != wantNorm) ++valueMismatches;
+        }
+        addValue(c, "restored_value_mismatches", valueMismatches);
+        check(c, valueMismatches == 0,
+              "every one of the 38 parameter values must be restored exactly "
+              "(normalized roundtrip equality)");
+
+        float* inP[1] = {in.data()};
+        float* outP[1] = {bOut.data()};
+        driveBlock(p, inP, outP, 1, N, nullptr);
+        const double dFresh = maxAbsDiff(bOut, refOut);
+        addValue(c, "fresh_restore_replay_maxdiff", dFresh);
+        check(c, dFresh == 0.0, "full-surface fresh-restore replay mismatch");
+        p->terminate();
+        p->release();
+    }
+}
+
+//==========================================================================
+// 14. state_cross_rate_layout (R17-P3): state saved at 48 kHz stereo,
+// restored at 96 kHz MONO and at 44.1 kHz stereo. The restore re-prepares
+// the engine at the host's current rate/layout (documented contract); the
+// replay must be bit-identical to a hand-driven core prepared at that rate
+// and layout with the same surface.
+//==========================================================================
+static void caseStateCrossRateLayout(CaseResult& c) {
+    using octavox::vst3wrap::ParamId;
+    using octavox::vst3wrap::normalizedFromPlain;
+    using octavox::vst3wrap::voiceGainId;
+    using octavox::vst3wrap::voiceOffsetId;
+    using octavox::vst3wrap::voiceMuteId;
+    using octavox::vst3wrap::voiceDelayId;
+    namespace vw = octavox::vst3wrap;
+
+    const int N = 16384;
+    Lcg rng(80808);
+    std::vector<float> in(N);
+    rng.fill(in);
+
+    // A moderate non-default surface (2 voices, so per-voice ids 0/1 matter).
+    // The reference replicates the wrapper's documented CROSS-RATE restore
+    // semantics (VST3_WRAPPER.md 4): the FULL surface is re-applied at the
+    // host's CURRENT rate -- including the DEFAULT per-voice base delays,
+    // which are MILLISECONDS in the parameter surface (the spec-table
+    // defaults) and therefore scale with the rate. (At 48 kHz they coincide
+    // with the core's sample-domain default table 256+32*v; at other rates
+    // the ms-domain interpretation is the documented wrapper behaviour.)
+    auto applyRef = [&](octavox::MultichannelShifter& ref, double sr) {
+        octavox::Config cfg = vw::defaultConfig();
+        cfg.sample_rate = sr;
+        check(c, ref.prepare(cfg, 1), "reference prepare failed");
+        const double grain = cfg.grain;
+        const double pitch = toEnginePlain(ParamId::kPitch, 4.0);
+        const double off0 = toEnginePlain(voiceOffsetId(0), -2.0);
+        const double g1 = toEnginePlain(voiceGainId(1), 0.5);
+        const double ms0 = toEnginePlain(voiceDelayId(0), 15.0);
+        ref.setSpread(true);
+        ref.setRatio(std::pow(2.0, pitch / 12.0));
+        if (off0 != 0.0)
+            ref.setVoiceRatio(0, std::pow(2.0, pitch / 12.0) * std::pow(2.0, off0 / 12.0));
+        for (int v = 0; v < 8; ++v)
+            ref.setVoiceGain(v, v == 1 ? g1 : 1.0);
+        for (int v = 0; v < 8; ++v) {
+            const double msv = (v == 0) ? ms0 : vw::paramSpec(voiceDelayId(v)).defaultPlain;
+            ref.setVoiceBaseDelay(v, vw::msToBaseDelaySamples(msv, sr, grain));
+        }
+        ref.setVoices(2);
+        ref.setFeedback(0.2);
+        ref.setWetDry(0.8);
+    };
+
+    // ---- save at 48 kHz stereo (a short run so the state is "live") ----
+    MemoryStream state;
+    {
+        auto* p = makeProcessor(Setup{48000.0, 4096}, 2);  // stereo @ 48k
+        ParameterChanges ch;
+        addEvent(ch, ParamId::kPitch, 0, normalizedFromPlain(ParamId::kPitch, 4.0));
+        addEvent(ch, ParamId::kVoices, 0, normalizedFromPlain(ParamId::kVoices, 2.0));
+        addEvent(ch, ParamId::kFeedback, 0, normalizedFromPlain(ParamId::kFeedback, 0.2));
+        addEvent(ch, ParamId::kWetDry, 0, normalizedFromPlain(ParamId::kWetDry, 0.8));
+        addEvent(ch, voiceOffsetId(0), 0, normalizedFromPlain(voiceOffsetId(0), -2.0));
+        addEvent(ch, voiceGainId(1), 0, normalizedFromPlain(voiceGainId(1), 0.5));
+        addEvent(ch, voiceDelayId(0), 0, normalizedFromPlain(voiceDelayId(0), 15.0));
+        std::vector<float> inL = in, inR = in;  // duplicate mono material
+        std::vector<float> outL(N), outR(N);
+        float* inP[2] = {inL.data(), inR.data()};
+        float* outP[2] = {outL.data(), outR.data()};
+        driveBlock(p, inP, outP, 2, N, &ch);
+        check(c, p->getState(&state) == kResultOk, "getState failed");
+        p->terminate();
+        p->release();
+    }
+
+    // ---- restore A: 96 kHz MONO. Host flow: initialize -> setState ->
+    //      setBusArrangements(mono) -> setupProcessing(96k) -> activate. ---
+    {
+        std::vector<float> out(N);
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "init failed (96k leg)");
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&state) == kResultOk, "setState failed (96k leg)");
+        SpeakerArrangement m = SpeakerArr::kMono;
+        check(c, p->setBusArrangements(&m, 1, &m, 1) == kResultOk,
+              "mono negotiation failed (96k leg)");
+        ProcessSetup ps;
+        std::memset(&ps, 0, sizeof(ps));
+        ps.processMode = kRealtime;
+        ps.symbolicSampleSize = kSample32;
+        ps.sampleRate = 96000.0;
+        ps.maxSamplesPerBlock = 4096;
+        check(c, p->setupProcessing(ps) == kResultOk, "96k setup failed");
+        check(c, p->setActive(true) == kResultOk, "96k activate failed");
+        float* inP[1] = {in.data()};
+        float* outP[1] = {out.data()};
+        driveBlock(p, inP, outP, 1, N, nullptr);
+
+        std::vector<float> refOut(N);
+        {
+            octavox::MultichannelShifter ref;
+            applyRef(ref, 96000.0);
+            float* rIn[1] = {in.data()};
+            float* rOut[1] = {refOut.data()};
+            ref.process(rIn, rOut, 1, N);
+        }
+        const double d = maxAbsDiff(out, refOut);
+        addValue(c, "restore_96k_mono_vs_reference_maxdiff", d);
+        check(c, d == 0.0,
+              "state restored at 96 kHz mono must replay bit-identically to "
+              "the core prepared at 96 kHz mono with the same surface");
+        p->terminate();
+        p->release();
+    }
+
+    // ---- restore B: 44.1 kHz stereo. ----
+    {
+        std::vector<float> outL(N), outR(N);
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "init failed (44.1k leg)");
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&state) == kResultOk, "setState failed (44.1k leg)");
+        ProcessSetup ps;
+        std::memset(&ps, 0, sizeof(ps));
+        ps.processMode = kRealtime;
+        ps.symbolicSampleSize = kSample32;
+        ps.sampleRate = 44100.0;
+        ps.maxSamplesPerBlock = 4096;
+        check(c, p->setupProcessing(ps) == kResultOk, "44.1k setup failed");
+        check(c, p->setActive(true) == kResultOk, "44.1k activate failed");
+        std::vector<float> inL = in, inR = in;
+        float* inP[2] = {inL.data(), inR.data()};
+        float* outP[2] = {outL.data(), outR.data()};
+        driveBlock(p, inP, outP, 2, N, nullptr);
+
+        std::vector<float> refOut(N);
+        {
+            octavox::MultichannelShifter ref;
+            applyRef(ref, 44100.0);
+            float* rIn[1] = {in.data()};
+            float* rOut[1] = {refOut.data()};
+            ref.process(rIn, rOut, 1, N);
+        }
+        const double d = maxAbsDiff(outL, refOut);
+        addValue(c, "restore_44k1_stereo_vs_reference_maxdiff", d);
+        check(c, d == 0.0,
+              "state restored at 44.1 kHz stereo must replay bit-identically "
+              "to the core prepared at 44.1 kHz with the same surface");
+        p->terminate();
+        p->release();
+    }
+}
+
+//==========================================================================
+// 15. state_invalid_blobs (R17-P3): every truncation prefix of a valid
+// blob, wrong magic, wrong version, NaN config fields, ring-law violation:
+// each must be REJECTED (kResultFalse), and the processor must stay usable
+// afterwards (previous state intact, still processes, a valid setState
+// still succeeds).
+//==========================================================================
+static void caseStateInvalidBlobs(CaseResult& c) {
+    using octavox::vst3wrap::ParamId;
+    using octavox::vst3wrap::normalizedFromPlain;
+
+    // ---- make a valid blob with a non-default surface ----
+    MemoryStream state;
+    const int N = 2048;
+    {
+        auto* p = makeProcessor(Setup{}, 1);
+        ParameterChanges ch;
+        addEvent(ch, ParamId::kPitch, 0, normalizedFromPlain(ParamId::kPitch, 5.0));
+        addEvent(ch, ParamId::kVoices, 0, normalizedFromPlain(ParamId::kVoices, 4.0));
+        Lcg rng(1234321);
+        std::vector<float> in(N), out(N);
+        rng.fill(in);
+        float* inP[1] = {in.data()};
+        float* outP[1] = {out.data()};
+        driveBlock(p, inP, outP, 1, N, &ch);
+        check(c, p->getState(&state) == kResultOk, "getState failed");
+        p->terminate();
+        p->release();
+    }
+    const int L = static_cast<int>(state.getSize());
+    addValue(c, "blob_bytes", L);
+    check(c, L > 120, "implausibly small state blob");
+
+    // raw bytes of the valid blob
+    std::vector<char> good(L);
+    {
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        int32 read = 0;
+        check(c, state.read(good.data(), L, &read) == kResultOk && read == L,
+              "failed to read back the valid blob");
+    }
+    // Self-verify the field offsets used below against known values
+    // (layout: magic@0, version@4, cfg@8 [sample_rate@8, ratio@16, voices@24,
+    // max_voices@28, spread@32, feedback@36, interpolation@44, grain@48,
+    // base_delay@56, fmin@64, ...], channels@120, surface doubles@124 [slot
+    // i == param id i: bypass@124, pitch@132, voices@140, ...]).
+    {
+        const uint32_t magic = *reinterpret_cast<const uint32_t*>(&good[0]);
+        check(c, magic == 0x3152564Fu, "blob magic offset self-check failed");
+        const int32_t ver = *reinterpret_cast<const int32_t*>(&good[4]);
+        check(c, ver == 1, "blob version offset self-check failed");
+        const double sr = *reinterpret_cast<const double*>(&good[8]);
+        check(c, sr == 48000.0, "blob sample_rate offset self-check failed");
+        const int32_t cfgVoices = *reinterpret_cast<const int32_t*>(&good[24]);
+        check(c, cfgVoices == 1,
+              "blob cfg.voices offset self-check failed (got " +
+                  std::to_string(cfgVoices) + ", want the core default 1)");
+        const double grain = *reinterpret_cast<const double*>(&good[48]);
+        check(c, grain == octavox::Config{}.grain,
+              "blob grain offset self-check failed");
+        const double baseDelay = *reinterpret_cast<const double*>(&good[56]);
+        check(c, baseDelay == octavox::Config{}.base_delay,
+              "blob base_delay offset self-check failed");
+        const double surfVoices = *reinterpret_cast<const double*>(&good[140]);
+        check(c, surfVoices == 4.0,
+              "blob surface voices offset self-check failed (got " +
+                  std::to_string(surfVoices) + ", want 4)");
+        const double surfPitch = *reinterpret_cast<const double*>(&good[132]);
+        check(c, surfPitch == toEnginePlain(ParamId::kPitch, 5.0),
+              "blob surface pitch offset self-check failed");
+    }
+
+    // helper: setState from raw bytes on a fresh processor, expect rejection
+    auto rejectsWith = [&](const std::vector<char>& bytes) {
+        auto* p = makeProcessor(Setup{});
+        MemoryStream ms;
+        int32 written = 0;
+        ms.write(const_cast<char*>(bytes.data()),
+                 static_cast<int32>(bytes.size()), &written);
+        int64 spos = 0;
+        ms.seek(0, IBStream::kIBSeekSet, &spos);
+        const tresult r = p->setState(&ms);
+        p->terminate();
+        p->release();
+        return r != kResultOk;
+    };
+
+    // (a) every truncation prefix 0..L-1 must be rejected
+    int acceptedTrunc = 0;
+    for (int len = 0; len < L; ++len) {
+        std::vector<char> trunc(good.begin(), good.begin() + len);
+        if (!rejectsWith(trunc)) ++acceptedTrunc;
+    }
+    addValue(c, "truncation_prefixes_accepted", acceptedTrunc);
+    check(c, acceptedTrunc == 0,
+          "every truncation prefix of the state blob must be rejected");
+
+    // (b) wrong magic
+    {
+        std::vector<char> bad = good;
+        bad[0] = static_cast<char>(bad[0] ^ 0x5A);
+        check(c, rejectsWith(bad), "wrong magic must be rejected");
+    }
+    // (c) wrong version
+    {
+        std::vector<char> bad = good;
+        *reinterpret_cast<int32_t*>(&bad[4]) = 2;
+        check(c, rejectsWith(bad), "unsupported version must be rejected");
+    }
+    // (d) NaN sample_rate / NaN grain (non-finite, structurally unfixable:
+    //     rejected); NaN ratio (fixable: the documented defensive-clamp
+    //     policy sanitizes it to 1.0 and the restore proceeds)
+    {
+        std::vector<char> bad = good;
+        *reinterpret_cast<double*>(&bad[8]) = std::nan("1");
+        check(c, rejectsWith(bad), "NaN sample_rate must be rejected");
+    }
+    {
+        std::vector<char> bad = good;
+        *reinterpret_cast<double*>(&bad[16]) = std::nan("1");  // ratio @16
+        // documented policy: sanitizeConfig replaces a non-finite/non-positive
+        // ratio with 1.0 (a fixable field) -- the restore must SUCCEED and
+        // the engine must stay usable.
+        check(c, !rejectsWith(bad),
+              "NaN ratio must be accepted under the documented sanitize policy");
+    }
+    {
+        std::vector<char> bad = good;
+        *reinterpret_cast<double*>(&bad[48]) = std::nan("1");  // grain @48
+        check(c, rejectsWith(bad), "NaN grain must be rejected");
+    }
+    // (e) base_delay violating the ring-range law (reject, not clamp)
+    {
+        std::vector<char> bad = good;
+        *reinterpret_cast<double*>(&bad[56]) = 250000.0;  // base_delay @56
+        check(c, rejectsWith(bad), "ring-law violating base_delay must be rejected");
+    }
+    // (f) zero sample rate
+    {
+        std::vector<char> bad = good;
+        *reinterpret_cast<double*>(&bad[8]) = 0.0;
+        check(c, rejectsWith(bad), "zero sample_rate must be rejected");
+    }
+
+    // (g) after all rejections: the processor is still USABLE and the last
+    //     good state is intact. A valid blob must still restore and the
+    //     replay must equal the original run (pitch +5, voices 4).
+    {
+        auto* p = makeProcessor(Setup{}, 1);
+        Lcg rng(1234321);
+        std::vector<float> in(N), out(N);
+        rng.fill(in);
+        // the reference: core with the same surface
+        std::vector<float> refOut(N);
+        {
+            octavox::MultichannelShifter ref;
+            check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 1),
+                  "reference prepare failed");
+            const double pitch = toEnginePlain(ParamId::kPitch, 5.0);
+            ref.setRatio(std::pow(2.0, pitch / 12.0));
+            ref.setVoices(4);
+            float* rIn[1] = {in.data()};
+            float* rOut[1] = {refOut.data()};
+            ref.process(rIn, rOut, 1, N);
+        }
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&state) == kResultOk,
+              "a VALID setState after rejections must still succeed");
+        float* inP[1] = {in.data()};
+        float* outP[1] = {out.data()};
+        driveBlock(p, inP, outP, 1, N, nullptr);
+        const double d = maxAbsDiff(out, refOut);
+        addValue(c, "usable_after_rejections_maxdiff", d);
+        check(c, d == 0.0,
+              "the processor must stay usable with intact state after "
+              "invalid-blob rejections");
+        bool fin = true;
+        for (float x : out)
+            if (!std::isfinite(x)) fin = false;
+        check(c, fin, "non-finite output after invalid-blob rejections");
+        p->terminate();
+        p->release();
+    }
+}
+
+//==========================================================================
 // main
 //==========================================================================
-int main() {
+int main(int argc, char** argv) {
+    // --dump-params: print the 38-parameter metadata table and exit.
+    if (argc > 1 && std::strcmp(argv[1], "--dump-params") == 0) {
+        using octavox::vst3wrap::paramSpec;
+        using octavox::vst3wrap::normalizedFromPlain;
+        std::printf("%-4s %-22s %-10s %-9s %-7s %-7s %-7s %-8s %-11s %-10s %-4s %-6s\n",
+                    "ID", "TITLE", "SHORT", "UNITS", "MIN", "MAX", "STEP",
+                    "STEPCNT", "DEFAULT", "DEFNORM", "FLAG", "UNIT");
+        std::printf("%s\n", std::string(130, '-').c_str());
+        for (uint32_t id = 0; id < 38u; ++id) {
+            const auto& sp = paramSpec(id);
+            const auto& d = sp.domain;
+            const int32 stepCount = (d.stepPlain > 0.0)
+                ? static_cast<int32>(std::floor((d.maxPlain - d.minPlain) /
+                                                d.stepPlain + 0.5))
+                : 0;
+            char def[32], defn[32];
+            std::snprintf(def, sizeof(def), "%.10g", sp.defaultPlain);
+            std::snprintf(defn, sizeof(defn), "%.17g",
+                          normalizedFromPlain(id, sp.defaultPlain));
+            std::printf("%-4u %-22s %-10s %-9s %-7.4g %-7.4g %-7.4g %-8d %-11s %-10s 0x%x %-6d\n",
+                        id, sp.title, sp.shortTitle, sp.units ? sp.units : "",
+                        d.minPlain, d.maxPlain, d.stepPlain, stepCount, def,
+                        defn, sp.flags, sp.unitId);
+        }
+        return 0;
+    }
+
     std::vector<std::pair<const char*, void (*)(CaseResult&)>> cases = {
         {"lifecycle_smoke", caseLifecycle},
         {"param_roundtrip", caseParamRoundtrip},
@@ -995,6 +2116,13 @@ int main() {
         {"inplace_safety", caseInPlace},
         {"no_alloc_steady_state", caseNoAlloc},
         {"latency_report", caseLatency},
+        {"param_metadata_table", caseParamMetadata},
+        {"events_block_positions", caseEventsBlockPositions},
+        {"simultaneous_multivoice_events", caseSimultaneousEvents},
+        {"bypass_wetdry_clickless_noalloc", caseBypassWetDryClickless},
+        {"state_full_surface_restore", caseStateFullSurface},
+        {"state_cross_rate_layout", caseStateCrossRateLayout},
+        {"state_invalid_blobs", caseStateInvalidBlobs},
     };
 
     std::printf("%-42s %-6s %s\n", "CASE", "PASS", "MEASUREMENTS");
@@ -1017,7 +2145,7 @@ int main() {
     }
     std::printf("%s\n%s: %d passed, %d failed, %d total\n",
                 std::string(96, '-').c_str(),
-                "octavox-native VST3 wrapper tests (R16-P4b)", passed,
+                "octavox-native VST3 wrapper tests (R16-P4b + R17-P3)", passed,
                 static_cast<int>(g_results.size()) - passed,
                 static_cast<int>(g_results.size()));
     return passed == static_cast<int>(g_results.size()) ? 0 : 1;

@@ -44,8 +44,14 @@
 #include <string>
 #include <vector>
 
+// R17-P2: Windows/MSVC portability guards (Linux paths unchanged).
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <sys/resource.h>
 #include <unistd.h>
+#endif
 
 #include "octavox/dsp.hpp"
 
@@ -79,10 +85,14 @@ double nowSec() {
 }
 
 long peakRssKb() {
+#ifdef _WIN32
+    return 0;  // peak RSS not reported on Windows in this harness (cosmetic)
+#else
     struct rusage ru;
     std::memset(&ru, 0, sizeof(ru));
     getrusage(RUSAGE_SELF, &ru);
     return ru.ru_maxrss;
+#endif
 }
 
 struct BenchRow {
@@ -138,7 +148,11 @@ static std::string envJsonFragment() {
     char ts[48];
     std::time_t t = std::time(nullptr);
     std::tm tmv{};
+#ifdef _WIN32
+    gmtime_s(&tmv, &t);
+#else
     gmtime_r(&t, &tmv);
+#endif
     std::strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", &tmv);
     std::string os = readProcFile("/proc/sys/kernel/ostype");
     const std::string osrel = readProcFile("/proc/sys/kernel/osrelease");
@@ -166,7 +180,13 @@ static std::string envJsonFragment() {
             std::fclose(f);
         }
     }
+#ifdef _WIN32
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    long cores = static_cast<long>(si.dwNumberOfProcessors);
+#else
     long cores = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
     if (cores <= 0) cores = 0;
     std::string j = "\"timestamp_utc\": \"";
     j += ts;

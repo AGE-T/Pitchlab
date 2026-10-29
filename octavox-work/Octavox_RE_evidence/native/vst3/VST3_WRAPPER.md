@@ -1,11 +1,13 @@
-# OCTAVOX native core — the VST3 wrapper (R16-P4b)
+# OCTAVOX native core — the VST3 wrapper (R16-P4b, extended R17-P3)
 
-**Status: IMPLEMENTED, BUILT AND VALIDATED** (2026-10-28). A real, minimal
-VST3 plug-in around the octavox-native 15.0.0 DSP core — not a placeholder:
-the module builds as a proper `OctavoxNative.vst3` bundle, passes the VST3
-SDK's own conformance validator (47/47), and passes an 8-case in-process
-wrapper test suite including the **bit-exact sample-accurate-vs-block-boundary
-equivalence proof**.
+**Status: IMPLEMENTED, BUILT AND VALIDATED** (2026-10-28; re-validated and
+extended 2026-10-29 — round 17). A real, minimal VST3 plug-in around the
+octavox-native 15.0.0 DSP core — not a placeholder: the module builds as a
+proper `OctavoxNative.vst3` bundle, passes the VST3 SDK's own conformance
+validator (47/47), and passes a **15-case** in-process wrapper test suite
+(8 cases in round 16 + 7 parameter/state-contract cases in round 17)
+including the **bit-exact sample-accurate-vs-block-boundary equivalence
+proof** and the full 38-parameter contract audit.
 
 PROVENANCE: this wrapper is OUR OWN independent harmonizer implementation
 around our own DSP core (`../include/octavox/dsp.hpp`). It is **not** a
@@ -48,9 +50,23 @@ VST3 SDK **v3.7.12_build_20** at `VST3_SDK_ROOT` (default
 redistributed with this package; Steinberg VST3 dual license applies to
 anyone rebuilding).
 
+**R17-P2: the SDK is acquired and verified by a script** — see
+`../tools/get_vst3_sdk.sh` (POSIX) / `../tools/get_vst3_sdk.ps1` (Windows)
+and `../tools/README.md`. The scripts fetch exactly the pinned revision set
+below, verify every fetched revision (`git rev-parse`), cross-check the
+tag's gitlinks, refuse to write inside the evidence tree, and fail clearly
+on missing git/network/tar. The full build+test chain (core suite + hashes
++ bench + ASan leg + wrapper + validator) is scripted in
+`../tools/build_and_test.sh` (Linux, executed end-to-end this round) and
+`../tools/build_and_test.ps1` (Windows/MSVC, **authored but NOT executed —
+no Windows runtime in this environment; no Windows binary has been built
+or tested**).
+
 ```sh
 export PATH=/home/z/.venv/bin:$PATH        # cmake 4.4.4 in this environment
-cd native/vst3
+cd native/tools
+./get_vst3_sdk.sh                           # pinned-SHA SDK acquisition + verification
+cd ../vst3
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j4                    # builds octavoxnative (the module
                                            # bundle + moduleinfo.json via the
@@ -58,14 +74,16 @@ cmake --build build -j4                    # builds octavoxnative (the module
                                            # octavox_vst3_wrapper_tests and
                                            # validator; the module build
                                            # automatically runs the validator
-./build/bin/Release/octavox_vst3_wrapper_tests    # 8/8, exit 0
-./build/validator/Release/validator \
+./build/bin/Release/octavox_vst3_wrapper_tests    # 15/15, exit 0
+./build/bin/Release/validator \
     build/VST3/Release/OctavoxNative.vst3         # 47/47 (re-run manually)
 ```
 
 SDK acquisition record (this environment, 2026-10-28 — the recursive clone
 stalled, so the components were fetched individually at the exact pinned
-gitlinks of the tag):
+gitlinks of the tag; **2026-10-29: the pinned set was re-verified against a
+fresh fetch and the working tree content-matches all four components** —
+`evidence/analysis_round17/`, get_vst3_sdk.sh --verify):
 
 | component | repository | pinned SHA |
 |---|---|---|
@@ -94,9 +112,71 @@ octavox_native_processor.h/.cpp the SingleComponentEffect: lifecycle, buses,
 factory.cpp                    the module factory (constexpr form)
 octavox_vst3_tests.cpp         the in-process test suite (host mocks = the
                                SDK's own hosting utilities; references =
-                               the hand-driven core)
+                               the hand-driven core; 15 cases, see §5)
 CMakeLists.txt                 the build (SDK external-consumer pattern)
+../tools/get_vst3_sdk.{sh,ps1} R17-P2: pinned-SHA SDK acquisition + verification
+../tools/build_and_test.{sh,ps1} R17-P2: the full build+validation chains
 ```
+
+### 3a. The 38-parameter contract (R17-P3 audit)
+
+The complete machine-readable table (id, title, short title, units, min,
+max, step, stepCount, default plain, default normalized, flags, unit) is
+dumped by `octavox_vst3_wrapper_tests --dump-params`; the round-17 capture
+is `../../evidence/analysis_round17/r17_param_metadata_table.txt` and the
+automated audit is the `param_metadata_table` test case (ID uniqueness via
+a 38-bit mask, spec-table integrity, processor<->controller
+`ParameterInfo` agreement for all 38 ids, boundary/middle conversion
+roundtrips — exact on step grids, ≤ 4 ulp continuous). Summary:
+
+| ids | parameter | domain | step | default | notes |
+|---|---|---|---|---|---|
+| 0 | Bypass | [0,1] bool | 1 | 0 | `kIsBypass|kCanAutomate`, root unit |
+| 1 | Pitch Shift | ±24 semitones | 0.01 (4800 steps) | 0 | the 1-cent grid |
+| 2 | Voices | 1..8 | 1 (7 steps) | 1 | core default |
+| 3 | Spread | [0,1] bool | 1 | 1 | core default on |
+| 4 | Feedback | [0, 0.9] | continuous | 0 | subset of the core's clamped (-1,1) |
+| 5 | Wet/Dry | [0,1] | continuous | 1 | 1 = bit-neutral all-wet |
+| 6+4v | Voice v+1 Pitch Offset | ±24 semitones | 0.01 | 0 | per voice |
+| 7+4v | Voice v+1 Gain | [0,2] | continuous | 1 | linear amplitude |
+| 8+4v | Voice v+1 Mute | [0,1] bool | 1 | 0 | per voice |
+| 9+4v | Voice v+1 Base Delay | [0,200] ms | continuous | (256+32v)/48 ms | ms-domain (see below) |
+
+Conversion laws (`octavox_params.cpp`): normalized→plain clamps [0,1]
+(NaN→min), plain = min + round-half-up(norm·span/step)·step on grids
+(exactly reversible at grid points), min + norm·span continuous;
+plain→normalized clamps into the domain and grid-snaps. The base-delay
+parameter converts ms→samples at the CURRENT rate, clamped into the core's
+ring-range law (`d + 3·grain + 8 < 2^18`, one sample of margin).
+
+**Cross-rate semantics (verified by `state_cross_rate_layout`)**: the
+per-voice base-delay DEFAULTS are milliseconds in the parameter surface
+(the spec-table defaults (256+32v)/48 ms) and therefore scale with the host
+rate on restore — at 48 kHz they coincide exactly with the core's
+sample-domain default table 256+32v; at other rates the ms-domain
+interpretation is the documented wrapper behaviour (a "6 ms" delay is 6 ms
+at any rate).
+
+### 3b. The OVR1 v1 state blob layout (428 bytes, self-verified in tests)
+
+```
+0x000  u32 magic 'OVR1' (0x3152564F)     0x120  i32 channels (bus count at save)
+0x004  i32 version = 1                   0x124  38 × f64 plain values, fixed
+0x008  Config (17 fields, 112 bytes):         order = parameter id order
+       sample_rate@8, ratio@16, voices@24,     (bypass@124, pitch@132,
+       max_voices@28, spread@32, feedback@36,  voices@140, spread@148,
+       interpolation@44, grain@48,             feedback@156, wetdry@164,
+       base_delay@56, fmin@64, fmax@72,        then per voice: offset, gain,
+       s_hysteresis@80, f0_history@88,         mute, base-ms ×8)
+       detection_interval@92, engagement@96,
+       gain_ramp@104, bypass_seconds@112
+```
+Reading rejects: short/truncated input (EVERY prefix length is tested),
+wrong magic, unsupported version, non-finite/unfixable config fields
+(NaN sample_rate/grain, ring-law violations); fixable fields are
+sanitised per the documented defensive-clamp policy (e.g. a non-finite
+ratio becomes 1.0 — tested). Restore re-prepares the engine at the host's
+CURRENT rate/layout and re-applies the full surface in canonical order.
 
 ## 4. Design notes
 
@@ -132,30 +212,59 @@ CMakeLists.txt                 the build (SDK external-consumer pattern)
   SDK's `sdk` library does not include it (only the "again" sample compiles
   it into its own target); consumers of the base class must compile it.
 
-## 5. Measured results (2026-10-28, this host: 2-core Xeon, GCC 14.2.0)
+## 5. Measured results (2026-10-28 R16; re-measured 2026-10-29 R17, this host: 2-core Xeon, GCC 14.2.0)
 
-* wrapper tests: **8/8** (`r16_vst3_wrapper_tests.txt`): factory/lifecycle
-  ok; conversions exactly idempotent; voices 1-vs-8 audibly differ (0.325);
-  default run and bypass path bit-identical to the hand-driven core (0/0);
-  **segmentation equivalence maxdiff = 0** (and ≠ coarse-host timing by
-  0.509); state roundtrips 0/0/0 (428-byte blob); split-invariance 0;
-  reset-vs-fresh-surface 0; in-place 0; **0 allocations** in 100 process
-  calls with events; latency 2304 == 2304.
-* validator: **47 tests passed, 0 failed** (`r16_vst3_validator.txt`) — the
+* wrapper tests: **15/15** (`r17_vst3_wrapper_tests.txt`): the R16 eight
+  (factory/lifecycle ok; conversions exactly idempotent; voices 1-vs-8
+  audibly differ 0.325; default run and bypass path bit-identical to the
+  hand-driven core 0/0; **segmentation equivalence maxdiff = 0** (and ≠
+  coarse-host timing by 0.509); state roundtrips 0/0/0 (428-byte blob);
+  split-invariance 0; reset-vs-fresh-surface 0; in-place 0; **0
+  allocations** in 100 process calls with events; latency 2304 == 2304)
+  plus the R17 seven: **param_metadata_table** (38-id mask, spec
+  integrity, ParameterInfo agreement 0 mismatches, boundary roundtrips —
+  0 exact failures, 0 ulp failures), **events_block_positions**
+  (start/middle/last/block-end events bit-identical, maxdiff = 0, and the
+  dropped-block-end control differs 0.059),
+  **simultaneous_multivoice_events** (5 queues at one sample position,
+  bit-identical, maxdiff = 0), **bypass_wetdry_clickless_noalloc**
+  (automation_max_step 0.4980181 ≤ bound 0.5073929; 0 allocations across
+  the 120-block automation run), **state_full_surface_restore** (all 38
+  parameters non-default: 0 restored-value mismatches, live and
+  fresh-restore replays maxdiff = 0), **state_cross_rate_layout**
+  (48 kHz stereo → 96 kHz mono and 44.1 kHz stereo replays maxdiff = 0
+  vs the hand-driven core at the new rate/layout),
+  **state_invalid_blobs** (all 428 truncation prefixes rejected; wrong
+  magic/version, NaN sample_rate/grain, ring-law violation rejected; NaN
+  ratio accepted-and-sanitised per the documented policy; processor stays
+  usable: post-rejection valid restore replay maxdiff = 0).
+* validator: **47 tests passed, 0 failed** (`r17_vst3_validator.txt`) — the
   one iteration during development (46/1) was the "Process Format" test at
   1234567.8 Hz: the core's documented (0, 1e6] Hz domain; the wrapper now
   refuses out-of-domain setups in `setupProcessing` (the validator's
   tolerated path) instead of failing `setActive` later.
 * module: `OctavoxNative.vst3/Contents/x86_64-linux/OctavoxNative.so`
   (375 936 B, SHA-256
-  b293cecbcd42ce732ccd1789dea39ed82845a75b539084b0b79124ef559ea8ba at the
-  time of writing) + `Contents/Resources/moduleinfo.json` (generated by the
-  SDK's moduleinfotool; `r16_vst3_moduleinfo.json` copy).
+  b293cecbcd42ce732ccd1789dea39ed82845a75b539084b0b79124ef559ea8ba —
+  **byte-identical across the R16 delivery, the post-reset R17 rebuild and
+  the R17 CMake-guard rebuild**; `r16_vst3_moduleinfo.json` copy +
+  `r17_param_metadata_table.txt`).
+* the full chain also runs via `../tools/build_and_test.sh`: release leg
+  74 s (85/85 + 4/4 hashes + bench), ASan leg 376 s (85/85), wrapper leg
+  15/15 + validator 47/47 — `RESULT: ALL GATES PASSED (total wall 454 s)`
+  (`r17_build_script_run.txt`).
 
 ## 6. Known limitations (honest)
 
 * No GUI/editor (`IPlugView` not implemented — the task book asks for a
   minimal processor/controller wrapper; hosts automate the parameters).
+  **There is no graphical interface, and none is planned to be faked — do
+  not mistake this wrapper for a completed graphical plug-in.**
+* **No Windows build has been produced or tested.** The Windows/MSVC path
+  exists as reviewed scripts (`../tools/get_vst3_sdk.ps1`,
+  `../tools/build_and_test.ps1`) and MSVC portability guards in the
+  CMakeLists/harnesses, but this environment has no Windows runtime; the
+  Linux chain is the only executed verification.
 * Symmetric mono/stereo buses only; sidechains/aux not applicable (no
   sidechain parameters exist in the core).
 * Mid-stream state resume is not attempted (restore = deterministic from
@@ -166,3 +275,7 @@ CMakeLists.txt                 the build (SDK external-consumer pattern)
 * State exchange relies on the VST3 contract that the host does not call
   `getState`/`setState` concurrently with `process()` (standard practice,
   same as the SDK's own samples).
+* Cross-compiler caveat: the four reference hashes are the GCC 14.2
+  record; MSVC floating-point codegen may legitimately differ, so a hash
+  mismatch on Windows is reported, not treated as proof of a defect (the
+  85-case suite carries the correctness gates).

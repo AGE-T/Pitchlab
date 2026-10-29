@@ -1,4 +1,4 @@
-# Octavox (Eventide) - reverse-engineering evidence package - round 16
+# Octavox (Eventide) - reverse-engineering evidence package - round 17
 
 Independent static analysis of `Ox.vst3` (Eventide Octavox), plus an independent DSP
 demonstration written from scratch. **The target binary was never modified and was never run.**
@@ -450,6 +450,44 @@ from the wall-clock cost rows. **Its numbers describe our implementation, never 
   Q-10, Q-11 were closed in round 6; the `[+0x420]` consumer and its period law were closed in round
   7**; Q-12 was closed in round 5 and Q-13 in round 4. C5 is **PARTIAL**, not closed.
 * No protection mechanism was bypassed and no byte of the target was written.
+
+## What is new in round 17 (reproducible VST3 build, validation reliability, parameter/state contract audit, static DSP progress)
+
+* **P1 — validation reliability explained** (`docs/OCTAVOX_ROUND17_FINDINGS.md` §2,
+  `evidence/analysis_round17/r17_suite_profile.md`): the full 85-case suite passes in
+  every configuration on the dev host (release 43.1 s / 41.1 s / reversed 42.8 s;
+  ASan+UBSan 373.0 s; Debug -O0 352.4 s — all 85/85); the independent environment's
+  300 s window expiry "during the r13 group near the 96 kHz detector battery" is the
+  signature of an unoptimized/sanitizer build on a host 1.5-2x slower (uniform
+  per-case slowdown 8-9x, modelled quantitatively); no stall, no order dependence
+  (new `--reverse` harness flag), no test interaction, no buffering defect; the four
+  reference hashes re-verified (they are optimisation-level invariant — they match
+  even at -O0).
+* **P2 — reproducible VST3 build**: `native/tools/` — pinned-SHA SDK acquisition
+  scripts (executed in verify + fresh-install modes; no silent upgrades; clear
+  failures), a Linux build+validation chain script executed end-to-end (ALL GATES
+  PASSED, 454 s), and authored-but-**unexecuted** Windows/MSVC scripts (no Windows
+  runtime in this environment — no Windows build is claimed). The module rebuilds
+  byte-identically (SHA-256 `b293cecb...`).
+* **P3 — parameter and state contract audit**: the wrapper test suite 8 -> **15
+  cases** (15/15): 38-parameter metadata table + ID uniqueness + processor/controller
+  agreement, boundary/middle conversion roundtrips, block start/middle/last/end
+  events, simultaneous multi-voice events, clickless bypass+wet/dry automation with
+  0 allocations, full-surface save/restore, cross-rate/cross-layout restore, and
+  invalid/truncated state blobs (all 428 prefixes). Validator 47/47. The core is
+  byte-identical; the four hashes unchanged.
+* **P4 — static DSP progress** (`evidence/analysis_round17/r17_static_findings.md`):
+  Q-D closed structurally (the five temperament tables + the newly decoded 19-row
+  scale-pattern table + key/user maps + per-voice interval tables and their module-
+  graph delivery to the engine); the mode-1 phase trajectory closed (direct 4-float
+  x rate table-driven phases vs the K=0.25 glide); the record-ring first-field
+  scaling closed (the tracker's octave-doubling floor >= 2048*50); T+0x5F14's
+  pre-setParam value proven uninitialised (UNK by construction); the kernel
+  characterised (numerically designed anti-aliased table, cutoff ~0.82-0.84 Nyquist)
+  but its exact generator stays UNK.
+* A third sandbox reset occurred before this round; the recovery (manifest
+  re-verification, one byte-identical file restore, from-scratch rebuilds) is
+  documented in the findings §"Environment note".
 
 ## What is new in round 16 (evidence reconciliation, reproducible acceptance, VST3 wrapper milestone)
 
