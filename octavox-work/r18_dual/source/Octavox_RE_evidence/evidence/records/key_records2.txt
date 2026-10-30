@@ -1,0 +1,359 @@
+### [None] live  slot=0x3F8 add=0x1800D4B70
+    statement=Live Mode %s
+    nchoices=2
+    default=0
+    choices1=off
+    choices2=on
+
+### [None] live mode delay comp  slot=0x4B0 add=0x1800CB200
+    value=40
+
+### [23] fbk1  slot=0x1160 add=0x18013AB90
+    statement=fback: %f
+    name=knob
+    min=-100
+    max=0
+    res=1
+    default=-100
+
+### [24] msw1  slot=0x1218 add=0x18013AD00
+    statement=voice 1: %s
+    name=mute
+    nchoices=2
+    default=0
+    choices1=off
+    choices2=on
+
+### [26] ogn1  slot=0x1358 add=0x18013AB90
+    statement=level: %f dB
+    name=knob
+    min=-100
+    max=0
+    res=0.1
+    default=-3
+
+### [28] pan1  slot=0x1498 add=0x18013AB90
+    statement=pan: %f
+    name=knob
+    min=-1
+    max=1
+    res=0.01
+    default=0
+
+### [29] dly1  slot=0x1550 add=0x18013AB90
+    statement=delay: %f ms
+    name=knob
+    min=0
+    max=1250
+    res=1
+    default=0
+
+### [36] sht1  slot=0x1980 add=0x18013AB90
+    statement=fshift: %f
+    name=knob
+    min=-2400
+    max=2400
+    res=1
+    default=0
+
+### [183] rdm div 1  slot=0x7320 add=0x18013A110
+    in1=rdm a-c 1-out
+    in2=1.5
+
+### [184] rdm add 1  slot=0x73B8 add=0x18013A510
+    ninputs=2
+    in1=rdm div 1-out
+    in2=0.5
+
+### [206] rdm mult 1  slot=0x7FE0 add=0x18013A390
+    in1=2000
+    in2=rdm add 8-out
+
+### [211] bypa  slot=0x8360 add=0x18013AD00
+    statement=input: %s
+    nchoices=2
+    default=0
+    choices1=normal
+    choices2=bypass
+
+### [213] rdm abs  slot=0x8450 add=0x180139A30
+    in=rdm noise-out
+
+### [214] rdm sh 1  slot=0x84A8 add=0x1801390D0
+    in=rdm abs-out
+    newsamp=rdm comp 1-out
+
+### [215] rdm slew 1  slot=0x8518 add=0x1801398E0
+    in=rdm sh 1-out
+    pslew=rdm mult 1-out
+    nslew=rdm mult 1-out
+
+### [216] rdm comp 1  slot=0x8648 add=0x1801395F0
+    in1=rdm slew 1-out
+    in2=rdm sh 1-out
+    inspread=0
+    constval=0
+    outspread=0
+
+### [217] rdm a-c 1  slot=0x8750 add=0x180139270
+    in=rdm slew 1-out
+
+### [248] delay comp 1  slot=0xA100 add=0x180138D30
+    maxdelay=51
+    in=left in-out
+    delayamt=live mode delay comp-out
+
+### [251] delay comp 2  slot=0xA508 add=0x180138D30
+    maxdelay=51
+    in=right in-out
+    delayamt=live mode delay comp-out
+
+### [253] mix  slot=0xA7A0 add=0x180138710
+    time_constant=20
+    in1=left in-out
+    in2=right in-out
+    amp1=0.5
+    amp2=0.5
+
+### [258] inst  slot=0xADB0 add=0x18013AB90
+    statement=knob: %f
+    name=knob
+    min=0
+    max=12
+    res=1
+    default=0
+
+### [259] MaxCut  slot=0xAE68 add=0x18013A8D0
+    nentries=16
+    select=inst-out
+    in1=0
+    in2=0
+    in3=-14
+    in4=-14
+    in5=-14
+    in6=-14
+    in7=-14
+    in8=-18
+    in9=-14
+    in10=-7
+    in11=-14
+    in12=-14
+    in13=-7
+    in14=-18
+    in15=-7
+    in16=-7
+
+### [260] CutFreq  slot=0xAEF0 add=0x18013A8D0
+    nentries=16
+    select=inst-out
+    in1=20000
+    in2=20000
+    in3=8000
+    in4=8000
+    in5=8000
+    in6=8000
+    in7=8000
+    in8=2000
+    in9=3500
+    in10=12000
+    in11=8000
+    in12=8000
+    in13=3500
+    in14=1200
+    in15=4000
+    in16=10000
+
+### [261] CutMultiplier  slot=0xAF78 add=0x18013A8D0
+    nentries=16
+    select=inst-out
+    in1=0
+    in2=0
+    in3=-1
+    in4=-1
+    in5=-1
+    in6=-1
+    in7=-1
+    in8=-1.2857
+    in9=-1
+    in10=-0.5
+    in11=-1
+    in12=-1
+    in13=-0.5
+    in14=-1.2857
+    in15=-0.5
+    in16=-0.5
+
+### [262] AntiAliasOnOff  slot=0xB000 add=0x18013A8D0
+    nentries=16
+    select=inst-out
+    in1=0
+    in2=0
+    in3=1
+    in4=1
+    in5=1
+    in6=1
+    in7=1
+    in8=1
+    in9=1
+    in10=0
+    in11=1
+    in12=1
+    in13=0
+    in14=1
+    in15=0
+    in16=0
+
+### [263] c_minmax2  slot=0xB088 add=0x18013AB50
+    ninputs=9
+    in1=c_multiply 1-out
+    in2=c_multiply 2-out
+    in3=c_multiply 3-out
+    in4=c_multiply 4-out
+    in5=c_multiply 5-out
+    in6=c_multiply 6-out
+    in7=c_multiply 7-out
+    in8=c_multiply 8-out
+    in9=0
+
+### [264] c_divide2  slot=0xB100 add=0x18013A110
+    in1=c_minmax2-maximum
+    in2=7
+
+### [266] c_power1  slot=0xB258 add=0x18013A110
+    in1=2
+    in2=c_multiply6-out
+
+### [268] bound1  slot=0xB3C8 add=0x1801384B0
+    in=c_fltr_a14-out
+    minimum=0
+    maximum=1
+
+### [339] feedback1  slot=0x1C620 add=0x180138710
+    time_constant=20
+    in1=stereomixer3-right
+    in2=subtract1-out
+    amp1=1
+    amp2=mfbk-out
+
+### [341] delay_xf1  slot=0x1CD50 add=0x180137630
+    maxdelay=2400
+    noutputs=1
+    in=softclip2-out
+    xfadetime=20
+    mod1=adc-null
+    modamt1=0
+    tapdls1=c_minmax-maximum
+    gain1=0
+
+### [344] subtract1  slot=0x1D538 add=0x180136FA0
+    in1=just for the filter2-out
+    in2=highcut1-out
+
+### [345] feedback  slot=0x1D5A8 add=0x180138710
+    time_constant=20
+    in1=stereomixer3-left
+    in2=subtract-out
+    amp1=1
+    amp2=mfbk-out
+
+### [346] softclip1  slot=0x1D708 add=0x1801380C0
+    in=feedback-out
+    select=1
+    drive=0
+    order=1
+    processoff=0
+
+### [347] delay_xf  slot=0x1DCD8 add=0x180137630
+    maxdelay=2400
+    noutputs=1
+    in=softclip1-out
+    xfadetime=20
+    mod1=adc-null
+    modamt1=0
+    tapdls1=c_minmax-maximum
+    gain1=0
+
+### [348] just for the filter  slot=0x1E1C0 add=0x1801374D0
+    maxdelay=1
+    in=delay_xf-out1
+    mod=adc-null
+    delayamt=0
+    modamt=0
+
+### [349] highcut  slot=0x1E360 add=0x180137260
+    in=just for the filter-out
+    freq=5
+
+### [350] subtract  slot=0x1E4C0 add=0x180136FA0
+    in1=just for the filter-out
+    in2=highcut-out
+
+### [351] c_subtract2  slot=0x1E530 add=0x18013A110
+    in1=1
+    in2=mmix-out
+
+### [360] RWetDryMix  slot=0x1EB80 add=0x180137F40
+    in1=multiply3-out
+    in2=multiply2-out
+
+### [361] monoSumWetChans  slot=0x1EBF0 add=0x180138710
+    time_constant=20
+    in1=feedback-out
+    in2=feedback1-out
+    amp1=0.707
+    amp2=0.707
+
+### [364] LWetDryMix  slot=0x1EED8 add=0x180137F40
+    in1=multiply-out
+    in2=multiply1-out
+
+### [370] peak1  slot=0x1F588 add=0x180138570
+    type=0
+    in=left out-out
+    attackcntl=0.05
+    decaycntl=0.1
+
+### [376] lipD  slot=0x1FC58 add=0x180136C20
+    in=LevLintodB3-dbvalue
+    minimum=-90
+    maximum=0
+    tag=ganred:
+
+### [378] LevMetrAtoC  slot=0x1FE08 add=0x180139270
+    in=peak1-out
+
+### [380] LevLintodB  slot=0x1FF58 add=0x180136DC0
+    linvalue=LevMetrAtoC-out
+
+### [382] lopD  slot=0x20028 add=0x180136C20
+    in=LevLintodB-dbvalue
+    minimum=-90
+    maximum=0
+    tag=ganred:
+
+### [386] overload  slot=0x203D8 add=0x180136980
+    in=iswitch6-out
+    thresh=-0.1
+
+### [388] c_switch7  slot=0x205D8 add=0x18013ABD0
+    ninputs=2
+    select=c_subtract1-out
+    in1=overload-ol
+    in2=overload2-ol
+
+### [389] c_switch8  slot=0x20660 add=0x18013ABD0
+    ninputs=2
+    select=c_subtract3-out
+    in1=overload1-ol
+    in2=overload3-ol
+
+### [394] pitM  slot=0x209A8 add=0x180136750
+    in=dtonicii9-pitch
+    statement=pitch detect
+    tag=pitM
+
+### [395] tonM  slot=0x20A58 add=0x180136750
+    in=dtonicii9-tonality
+    statement=tonality detect
+    tag=tonM
+

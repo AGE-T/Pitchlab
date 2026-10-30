@@ -1,0 +1,186 @@
+OCTAVOX R18-WDB -- WINDOWS DUAL BUILD MANIFEST
+Generated: 2026-10-30T22:30:00Z (UTC) -- see WINDOWS_DUAL_BUILD_REPORT.md
+=======================================================================
+
+DELIVERED FILE INVENTORY (relative to the delivery root; SHA-256 + size;
+WINDOWS_DUAL_BUILD_MANIFEST.txt itself is necessarily self-excluded)
+-----------------------------------------------------------------------
+de5683dc4575fcee05491d258cfa714febaa2d7c9398569c0d9e04b28ab96f0a      67269  R18_WDB_source_changes.patch
+111cf2261a1110edc1493441000ad4440f95d5511819ea7f041a3f4a6e34bc4f      24764  WINDOWS_DUAL_BUILD_REPORT.md
+de23d003a3709edf86775a88d9ea70a689b5ed0807451f8ba87d78a577043b14       6048  Windows_Validation_Kit/README_WINDOWS_VALIDATION.md
+8a74916d66abf8edb8865d43de97284ba375c0df27c035a5a7ddbaff7d3024fa       1322  Windows_Validation_Kit/Lagrange6/run_validation.cmd
+3b8d7881155ded4a62ee1ae0eed3e2348372391df9e161b243ffddc17ed0fb11       1507  Windows_Validation_Kit/ObsKernel6/run_validation.cmd
+c33ab7f9559f92d0d580df4eb6103498920076600e26b2840c5f3f5e909437c6       2439  R18_WDB_build_infrastructure/llvm-mingw-toolchain.cmake
+9df7ea20d957452f6d599837d1e32b815be7debc2dda34070fa2847ce35512f9       9339  R18_WDB_build_infrastructure/verify_windows_modules.py
+de23d003a3709edf86775a88d9ea70a689b5ed0807451f8ba87d78a577043b14       6048  R18_WDB_build_infrastructure/kit_templates/README_WINDOWS_VALIDATION.md
+76d36a24897898353ef91f5e03c23ec41413deb2330a182fe7f985444e224f35       1290  R18_WDB_build_infrastructure/kit_templates/run_validation_lagrange6.cmd
+cf8a7e139b11163122073f96747287ff7462af650d68db1fffb7a42a3bcd299c       1472  R18_WDB_build_infrastructure/kit_templates/run_validation_obskernel6.cmd
+760c5e63e2100b6e57caea9ac6898411bb94ecac3dbfb94b8fb5773709ca572d        170  evidence/wdb_core_build.log
+7e981e6dc88b21193627fee03a28f965612b9ad96f0b9de78a805d0a21f9ddb6        146  evidence/wdb_core_configure.log
+049d7b22a7812fc3c02229df241a7d9c57e4c5d125d4ee951b031763a7016fc7      38735  evidence/wdb_core_suite.txt
+91594de04bdb75563a0a47c4cc54f19305222caa1f0725ddbda164a4135b1d49        384  evidence/wdb_lin_LAGRANGE6_build.log
+9c70670de4f24f62625e0be5c6ab9dd371776c0ef21c4c35c34fa35e98bf6c69       1581  evidence/wdb_lin_LAGRANGE6_configure.log
+b85bc2d92d5b4e25b54635eec0ebe3150ad8513dbd67400a954606969cb9c2ee       1715  evidence/wdb_lin_LAGRANGE6_integration.json
+873873500b1ffd1711624b49546e7f042be3ae2cbc9ad5257f1a6c567bcbe0dd       2082  evidence/wdb_lin_LAGRANGE6_integration.txt
+55475fcc61631828db3c5bf2c4e5234fb8f4b2c279a9940b15d611387ff00651      13321  evidence/wdb_lin_LAGRANGE6_validator.txt
+abc45d50868a6362cc5181fbe119224b98955ea08b74ae5c69fdb9abc1de734f       5307  evidence/wdb_lin_LAGRANGE6_wrapper_tests.txt
+1ca21ff600423e2329c8ccf1f44544dd345b80daf484a8b181ba8643f696eea1        384  evidence/wdb_lin_OBSKERNEL6_build.log
+3b613d383b94c2f75452dc228044a5f55bc8df0b3bce1a731e99ee7861f8bc98       1585  evidence/wdb_lin_OBSKERNEL6_configure.log
+72c8fb45115f0e9704137af332cdef77cf5195db7c4062cd5e684ecf966b5f77       1719  evidence/wdb_lin_OBSKERNEL6_integration.json
+9d3dcb30382ab50d5255d648e6d1685470c2127e75bd45b3857747614d3b96b0       2086  evidence/wdb_lin_OBSKERNEL6_integration.txt
+4a995d012228e73215d0e1d436a02ca985f06bf5c42fabb4e140788a33b6340f      13325  evidence/wdb_lin_OBSKERNEL6_validator.txt
+a804c2692fec5f1168d19824d9f2a98709c99d450d41a776e9345ede9758be40       5307  evidence/wdb_lin_OBSKERNEL6_wrapper_tests.txt
+b31556c7f471f05c323be71394d5c4f0e4e2f0ddfa0a701f51e4a20f595766d4        308  evidence/wdb_refcap_lagrange6.txt
+9f9bf33fe3cb559ba1d8adfc3c10ac0a591a4e62f004d942043b3c2a057c08e3        303  evidence/wdb_refcap_obskernel6_run1.txt
+9f9bf33fe3cb559ba1d8adfc3c10ac0a591a4e62f004d942043b3c2a057c08e3        303  evidence/wdb_refcap_obskernel6_run2.txt
+e6c96d767c147e229a2562322583c7e768c3ae8b1fe6dbbdc206424877328cf8       1300  evidence/wdb_sdk_verify.txt
+03e5421a61a9631b0d7104f5f04dd003a0e8d76cb58411904782ad8f6a01e3cd        639  evidence/wdb_win_LAGRANGE6_build.log
+e3ca8d67ceedc825faa0f6f5ba4710490113d7d57b240eff02ed171d635388ef       1443  evidence/wdb_win_LAGRANGE6_configure.log
+475aa53a4b5892019666a4b73d810fe11a02680585753b0ae71aab4a66dcd7a8        226  evidence/wdb_win_LAGRANGE6_moduleinfotool_build.log
+60adfb386df5699f68d05bc7fbc838a1acdda5f9437d20bb5111f1906a930391        216  evidence/wdb_win_LAGRANGE6_validator_build.log
+bf81b13a599dbfb5557a078598c61a9cc90e9ffa27558a4867e351f06a0dc024        641  evidence/wdb_win_OBSKERNEL6_build.log
+0c64d04de30baeae0b1c22a2d00f6a977b8634e1a16fb36d888f8a6378342b37       1447  evidence/wdb_win_OBSKERNEL6_configure.log
+475aa53a4b5892019666a4b73d810fe11a02680585753b0ae71aab4a66dcd7a8        226  evidence/wdb_win_OBSKERNEL6_moduleinfotool_build.log
+60adfb386df5699f68d05bc7fbc838a1acdda5f9437d20bb5111f1906a930391        216  evidence/wdb_win_OBSKERNEL6_validator_build.log
+7d2d72ea24b941ab4c8dc1841d0d2de8a5093fc6db20251d14ae4cd5d4baa36c       7905  evidence/wdb_windows_verification.json
+94d86f8bf7e7da257158cac37a39636d6b8f2305aac09d6067240f6348815f06        302  evidence/wdb_windows_verification.txt
+3f3d19c85c40231d4dec0c6526b77d8325031eb7d52fcf141d68feaa3a88547f         44  Builds/OctavoxRE_R18_Windows_x64/Lagrange6/OctavoxRE_Lagrange6.vst3/desktop.ini
+7f0feb15d726b08c661cc293449a4dcf70500ccbe0e49b657e25f8bdc5ce021e        751  Builds/OctavoxRE_R18_Windows_x64/Lagrange6/OctavoxRE_Lagrange6.vst3/Contents/Resources/moduleinfo.json
+3f3d19c85c40231d4dec0c6526b77d8325031eb7d52fcf141d68feaa3a88547f         44  Builds/OctavoxRE_R18_Windows_x64/ObsKernel6/OctavoxRE_ObsKernel6.vst3/desktop.ini
+25e4a033c9bf65b8b663fd62ba0a102581d64ba5f337ebafa853ab5afb7bb5da        753  Builds/OctavoxRE_R18_Windows_x64/ObsKernel6/OctavoxRE_ObsKernel6.vst3/Contents/Resources/moduleinfo.json
+1dda09aceb9fa930a3894cce4ad57edd8fa48ce58157c97ba5f971d2d4e79821     254170  Builds/OctavoxRE_R18_Windows_x64/Lagrange6/OctavoxRE_Lagrange6.vst3/PlugIn.ico
+1dda09aceb9fa930a3894cce4ad57edd8fa48ce58157c97ba5f971d2d4e79821     254170  Builds/OctavoxRE_R18_Windows_x64/ObsKernel6/OctavoxRE_ObsKernel6.vst3/PlugIn.ico
+f45ed6e7ff97647bd9b61512975952ef09daffa984fec3a18991493bd8ab2738     265215  evidence/wdb_repro_LAGRANGE6_build.log
+335d5287b9998e23777093d5dd7df354ca5a7c5bfab551fc1a7f4debef1d5fce     265217  evidence/wdb_repro_OBSKERNEL6_build.log
+c58835972cc454d2ff40c197c41aeb50912fde97955433dce83a5e2f44a66679     952320  Builds/OctavoxRE_R18_Windows_x64/Lagrange6/OctavoxRE_Lagrange6.vst3/Contents/x86_64-win/OctavoxRE_Lagrange6.vst3
+c47b1010eea60c3c6db84c138472a6e87e3b88c97d10cae4e86e6be36a38612a     952320  Builds/OctavoxRE_R18_Windows_x64/ObsKernel6/OctavoxRE_ObsKernel6.vst3/Contents/x86_64-win/OctavoxRE_ObsKernel6.vst3
+431b0cb91e5a8c4320ce549a491929098fb854481112c530887df002db7f1cd6    1297408  Windows_Validation_Kit/Lagrange6/octavox_vst3_wrapper_tests.exe
+ba730dd749dddc623674a8f4c424ef402741cd3d01b04cd825d1755b4dfeda78    1297408  Windows_Validation_Kit/ObsKernel6/octavox_vst3_wrapper_tests.exe
+40cd792fa94f4e4f427e65a285fc40bceb480cbfcc34b78f5ad0cc89d8ff7ca9    2116096  Windows_Validation_Kit/shared/moduleinfotool.exe
+a289b926ca61d008527b26316e258a9283791daa34322b757fb1a64c1bc860e6    2448384  Windows_Validation_Kit/Lagrange6/octavox_module_integration_tests.exe
+9d2351fc1a1d724d267a63dc706a08140ef5d969338467139c44a8c41c4465ad    2448384  Windows_Validation_Kit/ObsKernel6/octavox_module_integration_tests.exe
+80ea6f4077515f4b280bfe0381f080bdc6c90b8e3a3189181a61dfad58859363    2722304  Windows_Validation_Kit/shared/validator.exe
+
+======================================================================
+PLUGIN IDENTITY RECORDS (both variants loadable simultaneously)
+----------------------------------------------------------------------
+VARIANT 1 (default interpolation: Lagrange6)
+  Display name          : OctavoxRE Lagrange6
+  Bundle / package name : OctavoxRE_Lagrange6
+  Bundle file           : OctavoxRE_Lagrange6.vst3
+  Processor class FUID  : {6F4E6258-9A31-42E1-8F3C-5A971D2B4E60}
+                           (R16-R18 lineage identity, renamed product;
+                            state blobs from the R16-R18 "OctavoxNative"
+                            class restore into this class)
+  Factory UID           : {7C5F93E2-4B18-4D7A-9E6C-3A2B8F1D5C44}
+  Vendor                : Octavox RE Project (consistent across variants)
+  Subcategory           : Fx|Pitch Shift
+  Version               : 1.0.0
+  Module architecture   : PE32+ (COFF magic 0x20B), x86-64 (machine 0x8664),
+                           DLL characteristic set, 14 sections
+  Module file size      : 952320 bytes
+  Module SHA-256        : c58835972cc454d2ff40c197c41aeb50912fde97955433dce83a5e2f44a66679
+  Output path (this build host):
+                           r18_dual/out/Builds/OctavoxRE_R18_Windows_x64/Lagrange6/OctavoxRE_Lagrange6.vst3
+  User-side mapping     : F:\VST\OV_DIS\Builds\OctavoxRE_R18_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3
+  Host parameter surface: 38 parameters (unchanged; no new parameter)
+
+VARIANT 2 (default interpolation: ObsKernel6)
+  Display name          : OctavoxRE ObsKernel6
+  Bundle / package name : OctavoxRE_ObsKernel6
+  Bundle file           : OctavoxRE_ObsKernel6.vst3
+  Processor class FUID  : {E3E7FA70-6A38-0D35-B05F-64B91F1E2689}
+                           (freshly minted this round, deterministic
+                            derivation: SHA-256 of the namespace string
+                            "OctavoxRE R18-Windows-Dual-Build deterministic
+                            FUID mint v1 (2026-10-30) :: processor class UID
+                            for the ObsKernel6 variant", first 16 bytes,
+                            grouped per the DECLARE_UID convention)
+  Factory UID           : {3D4CDBC6-ACAC-BB09-077F-D5B80BD2F550}
+                           (same derivation, :: module factory UID ::)
+  Vendor                : Octavox RE Project (consistent across variants)
+  Subcategory           : Fx|Pitch Shift
+  Version               : 1.0.0
+  Module architecture   : PE32+ (COFF magic 0x20B), x86-64 (machine 0x8664),
+                           DLL characteristic set, 14 sections
+  Module file size      : 952320 bytes
+  Module SHA-256        : c47b1010eea60c3c6db84c138472a6e87e3b88c97d10cae4e86e6be36a38612a
+  Output path (this build host):
+                           r18_dual/out/Builds/OctavoxRE_R18_Windows_x64/ObsKernel6/OctavoxRE_ObsKernel6.vst3
+  User-side mapping     : F:\VST\OV_DIS\Builds\OctavoxRE_R18_Windows_x64\ObsKernel6\OctavoxRE_ObsKernel6.vst3
+  Host parameter surface: 38 parameters (unchanged; no new parameter)
+
+Cross-variant guarantees (verified):
+  * the two variants NEVER share a VST3 class identity (distinct processor
+    FUIDs, distinct factory UIDs, distinct bundle/package names, distinct
+    display names) -- both are loadable simultaneously in one DAW;
+  * NO cross-contamination: each module binary contains only its own class
+    ID (byte-verified);
+  * the two module binaries differ (the interpolation selection genuinely
+    changes the compiled code);
+  * both modules are BYTE-REPRODUCIBLE: a second, fresh clean build in a
+    separate directory produced byte-identical binaries (LLD /Brepro).
+
+======================================================================
+PINNED VST3 SDK REVISION (verified this round via get_vst3_sdk.sh --verify)
+----------------------------------------------------------------------
+  main            vst3sdk @ tag v3.7.12_build_20  cc2adc90382dded9e347caf74e4532f1458715db
+  base            vst3_base                        f0998e7b8424b32ba275cf4218aa56beef29821c
+  cmake           vst3_cmake                       2022b265cdbcd90b37294d3fb397f9766dbe4c06
+  pluginterfaces  vst3_pluginterfaces              151ecde4d6ee1c457dcce848342b162461944fe6
+  public.sdk      vst3_public_sdk                  3fce096d6ee575479753f1aab23033d2e2ffdc6e
+  The SDK tree is NOT redistributed with this delivery.
+
+======================================================================
+BUILD ENVIRONMENT (this run)
+----------------------------------------------------------------------
+  Host OS        : Debian GNU/Linux 13 (trixie), kernel 5.10.134 x86_64, 2 cores, 4 GiB RAM
+  cmake          : 4.4.4 (pip)
+  Linux C++      : GCC 14.2.0 (Debian) -- the Linux validation builds
+  Windows C++    : clang 23.1.4 (llvm-mingw 20261020, ucrt x86_64 host build)
+                   target x86_64-w64-mingw32; linker LLD (PE32+ x86-64);
+                   C++ runtime: libc++/libc++abi/winpthread linked STATICALLY;
+                   UCRT used via the system api-ms-win-crt-* DLLs (like MSVC /MD)
+  Linker flags   : -static -Wl,--no-undefined -Wl,/Brepro (deterministic PE timestamp)
+  MSVC           : NOT AVAILABLE on this host (recorded deviation -- the task
+                   text asks for MSVC x64 Release; see the report's honest
+                   toolchain note. The delivered modules are genuine native
+                   Windows PE32+ x86-64 DLLs with the Microsoft x64 ABI.)
+
+======================================================================
+GATE RESULTS (all executed this round; machine-readable logs in evidence/)
+----------------------------------------------------------------------
+  pinned SDK verification                       VERIFIED (all 5 revisions)
+  85-case native DSP acceptance suite           85/85 (Linux Release build)
+  Lagrange6 neutrality hashes (r15_reference_hashes.txt)   4/4 EXACT (gate unchanged)
+  ObsKernel6 reference hashes (r18_obs_reference_hashes.txt) 4/4 EXACT
+  ObsKernel6 measurement reproducibility        run1 == run2 (byte-identical)
+  Lagrange6  Linux variant: wrapper tests       15/15
+  Lagrange6  Linux variant: module integration  12/12 (bit-exact vs Lagrange6 reference)
+  Lagrange6  Linux variant: SDK validator       47/47
+  ObsKernel6 Linux variant: wrapper tests       15/15
+  ObsKernel6 Linux variant: module integration  12/12 (bit-exact vs ObsKernel6 reference)
+  ObsKernel6 Linux variant: SDK validator       47/47
+  Windows Lagrange6  module structural checks   ALL PASSED
+  Windows ObsKernel6 module structural checks   ALL PASSED
+  Windows reproducibility (both variants)       byte-identical fresh rebuilds
+  Latency reporting (both variants, both platforms' source) 2304 samples; tail 15080
+
+FAILURES: none.
+
+SKIPPED / NOT EXECUTED (honest scope):
+  * Windows-side RUNTIME execution of the modules and test executables
+    (validator.exe / wrapper tests / integration harness on Windows): NOT
+    EXECUTED on this host -- the Linux sandbox cannot execute Windows PE
+    binaries (wine is terminated by the sandbox's seccomp policy:
+    set_thread_area -> SIGSYS kill; diagnostically established this round).
+    The Windows_Validation_Kit ships the compiled Windows executables so
+    these gates run on a real Windows x64 machine. NO DAW compatibility is
+    claimed from the Linux-side runs.
+  * DAW smoke test (task section 7): NOT PERFORMED -- no DAW is installed
+    in this environment (probed: reaper, carla, yabridge, linvst, bitwig,
+    ardour, lmms, qtracker -- none present) and installing one was not
+    permitted. The modules were built and validated but not tested in a
+    real DAW. The kit README lists the DAW smoke-test steps for the user.
+  * MSVC x64 Release configuration: NOT USED (MSVC unavailable on this
+    host) -- llvm-mingw clang 23.1.4 cross-build instead; see the report.

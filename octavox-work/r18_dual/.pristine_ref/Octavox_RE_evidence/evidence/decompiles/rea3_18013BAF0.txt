@@ -1,0 +1,38 @@
+
+longlong * FUN_18013baf0(longlong *param_1,undefined8 param_2,ulonglong param_3,int *param_4)
+
+{
+  longlong lVar1;
+  longlong lVar2;
+  int *piVar3;
+  
+  *param_1 = 0;
+  param_1[1] = 0;
+  param_1[2] = 0;
+  if (param_3 != 0) {
+    if (0x3fffffffffffffff < param_3) {
+                    /* WARNING: Subroutine does not return */
+      FUN_180011020();
+    }
+    lVar1 = param_3 * 4;
+    lVar2 = FUN_180014890(lVar1);
+    *param_1 = lVar2;
+    param_1[1] = lVar2;
+    param_1[2] = lVar2 + lVar1;
+    piVar3 = (int *)*param_1;
+    if (*param_4 == 0) {
+      FUN_180161700(piVar3,0,lVar1);
+      piVar3 = piVar3 + param_3;
+    }
+    else {
+      do {
+        *piVar3 = *param_4;
+        piVar3 = piVar3 + 1;
+        param_3 = param_3 - 1;
+      } while (param_3 != 0);
+    }
+    param_1[1] = (longlong)piVar3;
+  }
+  return param_1;
+}
+

@@ -1,0 +1,762 @@
+     1→// ---------------------------------------------------------------------------
+     2→// OCTAVOX native core -- VST3 MODULE INTEGRATION HARNESS (R18-P6)
+     3→// ============================================================================
+     4→// PROVENANCE: this harness tests OUR OWN independent harmonizer plugin
+     5→// (OctavoxNative.vst3, built from native/vst3 around the octavox native DSP
+     6→// core). It is NOT a reproduction of, and contains no code from, the original
+     7→// Eventide Octavox plug-in; the original binary was never executed.
+     8→//
+     9→// SCOPE (labelled honestly): this harness loads the ACTUAL COMPILED .vst3
+    10→// BUNDLE through the pinned Steinberg SDK's module loader
+    11→// (VST3::Hosting::Module::create -- a real dlopen of the bundle's .so and a
+    12→// real GetPluginFactory() call) and drives the exported factory's instances
+    13→// through the standard VST3 host interfaces: component creation, initialize
+    14→// with a real SDK HostApplication context, bus negotiation (mono and
+    15→// stereo), parameter queues, process() with deterministic buffers, state
+    16→// save/restore through IBStream, latency reporting and proper
+    17→// termination/unload.  The outputs are compared BIT-EXACTLY against the
+    18→// hand-driven DSP core reference (the same octavox core library, driven
+    19→// directly) under identical conditions.
+    20→//
+    21→// WHAT THIS IS NOT: this is an SDK-module-load + interface-contract test on
+    22→// ONE host implementation (the SDK's own hosting utilities on Linux).  It is
+    23→// NOT a DAW compatibility claim: no DAW was involved, and passing here does
+    24→// not certify behaviour in any specific DAW.  The SDK validator run remains
+    25→// the separate complementary check (see VST3_WRAPPER.md).
+    26→//
+    27→// No GUI/editor is exercised (the wrapper deliberately has none).
+    28→// ---------------------------------------------------------------------------
+    29→#include "octavox_params.h"
+    30→#include "octavox_ids.h"
+    31→#include "octavox/dsp.hpp"
+    32→
+    33→#include "public.sdk/source/vst/hosting/module.h"
+    34→#include "public.sdk/source/vst/hosting/hostclasses.h"
+    35→#include "public.sdk/source/vst/hosting/parameterchanges.h"
+    36→#include "public.sdk/source/common/memorystream.h"
+    37→
+    38→#include "pluginterfaces/vst/ivstaudioprocessor.h"
+    39→#include "pluginterfaces/vst/ivstcomponent.h"
+    40→#include "pluginterfaces/vst/ivstparameterchanges.h"
+    41→#include "pluginterfaces/base/funknown.h"
+    42→
+    43→#include <algorithm>
+    44→#include <cstdio>
+    45→#include <cstring>
+    46→#include <cmath>
+    47→#include <string>
+    48→#include <vector>
+    49→
+    50→using namespace Steinberg;
+    51→using namespace Steinberg::Vst;
+    52→
+    53→//==========================================================================
+    54→// harness plumbing (the same shape as the project's other test mains)
+    55→//==========================================================================
+    56→namespace {
+    57→
+    58→struct CaseResult {
+    59→    std::string name;
+    60→    bool pass = false;
+    61→    std::string note;
+    62→    std::vector<std::pair<std::string, double>> values;
+    63→};
+    64→
+    65→std::string jsonEscape(const std::string& s) {
+    66→    std::string o;
+    67→    for (char ch : s) {
+    68→        if (ch == '"' || ch == '\\') { o += '\\'; o += ch; }
+    69→        else if ((unsigned char)ch < 0x20) {
+    70→            char b[8];
+    71→            std::snprintf(b, sizeof b, "\\u%04x", (unsigned)ch);
+    72→            o += b;
+    73→        } else o += ch;
+    74→    }
+    75→    return o;
+    76→}
+    77→
+    78→void addValue(CaseResult& c, const std::string& k, double v) {
+    79→    c.values.emplace_back(k, v);
+    80→}
+    81→
+    82→bool check(CaseResult& c, bool ok, const std::string& what) {
+    83→    if (!ok) {
+    84→        if (!c.note.empty()) c.note += "; ";
+    85→        c.note += what;
+    86→    }
+    87→    return ok;
+    88→}
+    89→
+    90→int g_failures = 0;
+    91→
+    92→void pushCase(std::vector<CaseResult>& R, CaseResult&& c) {
+    93→    if (!c.pass) ++g_failures;
+    94→    std::printf("[%-34s] %-4s %s\n", c.name.c_str(), c.pass ? "ok" : "FAIL",
+    95→                c.note.c_str());
+    96→    for (const auto& v : c.values)
+    97→        std::printf("%-38s  %s = %.10g\n", "", v.first.c_str(), v.second);
+    98→    std::fflush(stdout);
+    99→    R.push_back(std::move(c));
+   100→}
+   101→
+   102→// deterministic LCG (same spec as the core's test harness)
+   103→struct Lcg {
+   104→    uint64_t s;
+   105→    explicit Lcg(uint64_t seed) : s(seed ? seed : 1) {}
+   106→    double next() {
+   107→        s = s * 6364136223846793005ULL + 1442695040888963407ULL;
+   108→        return (static_cast<double>(s >> 11) / 9007199254740992.0) * 0.5 - 0.25;
+   109→    }
+   110→    void fill(std::vector<float>& v) {
+   111→        for (auto& x : v) x = static_cast<float>(next());
+   112→    }
+   113→};
+   114→
+   115→double maxAbsDiff(const std::vector<float>& a, const std::vector<float>& b) {
+   116→    if (a.size() != b.size()) return 1e30;
+   117→    double d = 0.0;
+   118→    for (size_t i = 0; i < a.size(); ++i) {
+   119→        const double x = std::fabs(static_cast<double>(a[i]) - static_cast<double>(b[i]));
+   120→        if (x > d) d = x;
+   121→    }
+   122→    return d;
+   123→}
+   124→
+   125→bool bitIdentical(const float* a, const float* b, size_t n) {
+   126→    return std::memcmp(a, b, n * sizeof(float)) == 0;
+   127→}
+   128→
+   129→double toEnginePlain(uint32_t id, double plain) {
+   130→    return octavox::vst3wrap::plainFromNormalized(
+   131→        id, octavox::vst3wrap::normalizedFromPlain(id, plain));
+   132→}
+   133→
+   134→//==========================================================================
+   135→// the loaded-module session (the harness's "host")
+   136→//==========================================================================
+   137→VST3::Hosting::Module::Ptr g_module;
+   138→IPtr<IComponent> g_component;
+   139→IPtr<IAudioProcessor> g_audio;
+   140→IPtr<IEditController> g_edit;
+   141→HostApplication* g_hostContext = nullptr;
+   142→
+   143→struct Setup {
+   144→    double sampleRate = 48000.0;
+   145→    int32 maxBlock = 4096;
+   146→};
+   147→
+   148→// full standard lifecycle on the loaded instance; returns false on failure
+   149→bool setupLoadedInstance(const Setup& st, int channels) {
+   150→    if (!g_audio) return false;
+   151→    SpeakerArrangement in = channels == 1 ? SpeakerArr::kMono : SpeakerArr::kStereo;
+   152→    SpeakerArrangement out = in;
+   153→    if (g_audio->setBusArrangements(&in, 1, &out, 1) != kResultOk) return false;
+   154→    ProcessSetup ps;
+   155→    std::memset(&ps, 0, sizeof(ps));
+   156→    ps.processMode = kRealtime;
+   157→    ps.symbolicSampleSize = kSample32;
+   158→    ps.sampleRate = st.sampleRate;
+   159→    ps.maxSamplesPerBlock = st.maxBlock;
+   160→    if (g_audio->setupProcessing(ps) != kResultOk) return false;
+   161→    if (g_component->setActive(true) != kResultOk) return false;
+   162→    return g_audio->setProcessing(true) == kResultOk;
+   163→}
+   164→
+   165→void teardownLoadedInstance() {
+   166→    if (g_audio) g_audio->setProcessing(false);
+   167→    if (g_component) g_component->setActive(false);
+   168→}
+   169→
+   170→// one host process() call through the loaded module
+   171→void driveLoaded(float* const* in, float* const* out, int channels, int n,
+   172→                 IParameterChanges* changes) {
+   173→    AudioBusBuffers ib{}, ob{};
+   174→    ib.numChannels = channels;
+   175→    ib.channelBuffers32 = const_cast<float**>(in);
+   176→    ob.numChannels = channels;
+   177→    ob.channelBuffers32 = const_cast<float**>(out);
+   178→    AudioBusBuffers inB[1] = {ib}, outB[1] = {ob};
+   179→    ProcessData pd{};
+   180→    pd.processMode = kRealtime;
+   181→    pd.symbolicSampleSize = kSample32;
+   182→    pd.numSamples = n;
+   183→    pd.inputs = inB;
+   184→    pd.numInputs = 1;
+   185→    pd.outputs = outB;
+   186→    pd.numOutputs = 1;
+   187→    pd.inputParameterChanges = changes;
+   188→    g_audio->process(pd);
+   189→}
+   190→
+   191→void addEvent(ParameterChanges& changes, uint32_t id,
+   192→              int32 offset, double norm) {
+   193→    int32 idx = 0;
+   194→    IParamValueQueue* q = changes.addParameterData(id, idx);
+   195→    if (q) {
+   196→        int32 pidx = 0;
+   197→        q->addPoint(offset, norm, pidx);
+   198→    }
+   199→}
+   200→
+   201→}  // namespace
+   202→
+   203→//==========================================================================
+   204→// the cases
+   205→//==========================================================================
+   206→namespace {
+   207→
+   208→void caseModuleLoad(CaseResult& c, const std::string& modulePath) {
+   209→    std::string err;
+   210→    g_module = VST3::Hosting::Module::create(modulePath, err);
+   211→    check(c, g_module != nullptr, "Module::create failed: " + err);
+   212→    if (!g_module) return;
+   213→    const auto& factory = g_module->getFactory();
+   214→    check(c, factory.get() != nullptr, "no IPluginFactory exported");
+   215→    const auto infos = factory.classInfos();
+   216→    addValue(c, "factory_class_count", (double)infos.size());
+   217→    bool found = false;
+   218→    for (const auto& ci : infos)
+   219→        if (std::memcmp(ci.ID().data(), octavox::vst3wrap::OctavoxNativeProcessorUID,
+   220→                         sizeof(TUID)) == 0)
+   221→            found = true;
+   222→    check(c, found, "the processor class ID is not among the factory classes");
+   223→    check(c, !infos.empty() && infos[0].category().find("Audio Module Class") !=
+   224→                                    std::string::npos,
+   225→          "unexpected class category");
+   226→    c.pass = c.note.empty();
+   227→}
+   228→
+   229→void caseProcessorCreation(CaseResult& c) {
+   230→    if (!g_module) { c.note = "no module"; return; }
+   231→    const auto& factory = g_module->getFactory();
+   232→    g_component = factory.createInstance<IComponent>(
+   233→        VST3::UID(octavox::vst3wrap::OctavoxNativeProcessorUID));
+   234→    check(c, g_component != nullptr, "createInstance(IComponent) failed");
+   235→    if (!g_component) return;
+   236→    {
+   237→        IAudioProcessor* ap = nullptr;
+   238→        if (g_component->queryInterface(IAudioProcessor::iid,
+   239→                                        reinterpret_cast<void**>(&ap)) == kResultTrue &&
+   240→            ap)
+   241→            g_audio = IPtr<IAudioProcessor>(ap);  // adopts the add-ref'd ptr
+   242→    }
+   243→    check(c, g_audio != nullptr, "component does not export IAudioProcessor");
+   244→    {
+   245→        IEditController* ec = nullptr;
+   246→        if (g_component->queryInterface(IEditController::iid,
+   247→                                        reinterpret_cast<void**>(&ec)) == kResultTrue &&
+   248→            ec)
+   249→            g_edit = IPtr<IEditController>(ec);
+   250→    }
+   251→    check(c, g_edit != nullptr,
+   252→          "component does not export IEditController (single-component)");
+   253→    c.pass = c.note.empty();
+   254→}
+   255→
+   256→void caseComponentInit(CaseResult& c) {
+   257→    if (!g_component) { c.note = "no component"; return; }
+   258→    static HostApplication hostCtx;  // the SDK hosting utility
+   259→    g_hostContext = &hostCtx;
+   260→    const tresult r = g_component->initialize(&hostCtx);
+   261→    check(c, r == kResultOk, "initialize(host context) failed");
+   262→    const int32 inBuses = g_component->getBusCount(MediaTypes::kAudio, BusDirections::kInput);
+   263→    const int32 outBuses = g_component->getBusCount(MediaTypes::kAudio, BusDirections::kOutput);
+   264→    addValue(c, "audio_input_buses", (double)inBuses);
+   265→    addValue(c, "audio_output_buses", (double)outBuses);
+   266→    check(c, inBuses == 1 && outBuses == 1,
+   267→          "expected symmetric single Main audio buses");
+   268→    // the parameter surface is published at initialization (host contract)
+   269→    check(c, g_edit->getParameterCount() == 38,
+   270→          "getParameterCount() != 38 on the loaded instance after initialize");
+   271→    addValue(c, "parameter_count", (double)g_edit->getParameterCount());
+   272→    c.pass = c.note.empty();
+   273→}
+   274→
+   275→void caseBusMono(CaseResult& c) {
+   276→    if (!g_audio) { c.note = "no processor"; return; }
+   277→    SpeakerArrangement in = SpeakerArr::kMono, out = SpeakerArr::kMono;
+   278→    const tresult r = g_audio->setBusArrangements(&in, 1, &out, 1);
+   279→    check(c, r == kResultOk, "mono negotiation rejected");
+   280→    SpeakerArrangement gin = SpeakerArr::kEmpty, gout = SpeakerArr::kEmpty;
+   281→    g_audio->getBusArrangement(BusDirections::kInput, 0, gin);
+   282→    g_audio->getBusArrangement(BusDirections::kOutput, 0, gout);
+   283→    check(c, SpeakerArr::getChannelCount(gin) == 1 &&
+   284→                 SpeakerArr::getChannelCount(gout) == 1,
+   285→          "negotiated mono not reflected by getBusArrangement");
+   286→    c.pass = c.note.empty();
+   287→}
+   288→
+   289→void caseBusStereo(CaseResult& c) {
+   290→    if (!g_audio) { c.note = "no processor"; return; }
+   291→    SpeakerArrangement in = SpeakerArr::kStereo, out = SpeakerArr::kStereo;
+   292→    const tresult r = g_audio->setBusArrangements(&in, 1, &out, 1);
+   293→    check(c, r == kResultOk, "stereo negotiation rejected");
+   294→    SpeakerArrangement gin = SpeakerArr::kEmpty, gout = SpeakerArr::kEmpty;
+   295→    g_audio->getBusArrangement(BusDirections::kInput, 0, gin);
+   296→    g_audio->getBusArrangement(BusDirections::kOutput, 0, gout);
+   297→    check(c, SpeakerArr::getChannelCount(gin) == 2 &&
+   298→                 SpeakerArr::getChannelCount(gout) == 2,
+   299→          "negotiated stereo not reflected");
+   300→    check(c, g_audio->canProcessSampleSize(kSample32) == kResultTrue,
+   301→          "canProcessSampleSize(kSample32) != kResultTrue");
+   302→    c.pass = c.note.empty();
+   303→}
+   304→
+   305→void caseActivationLifecycle(CaseResult& c) {
+   306→    if (!g_component || !g_audio) { c.note = "no processor"; return; }
+   307→    check(c, setupLoadedInstance(Setup{}, 1), "setupProcessing/setActive/setProcessing chain failed");
+   308→    teardownLoadedInstance();
+   309→    // re-activation must work (hosts activate/deactivate around latency changes)
+   310→    ProcessSetup ps;
+   311→    std::memset(&ps, 0, sizeof(ps));
+   312→    ps.processMode = kRealtime;
+   313→    ps.symbolicSampleSize = kSample32;
+   314→    ps.sampleRate = 48000.0;
+   315→    ps.maxSamplesPerBlock = 2048;
+   316→    check(c, g_audio->setupProcessing(ps) == kResultOk, "re-setupProcessing failed");
+   317→    check(c, g_component->setActive(true) == kResultOk, "re-activate failed");
+   318→    check(c, g_audio->setProcessing(true) == kResultOk, "re-setProcessing failed");
+   319→    teardownLoadedInstance();
+   320→    c.pass = c.note.empty();
+   321→}
+   322→
+   323→// mono: the module's output == the hand-driven core, bit-exact
+   324→void caseProcessMono(CaseResult& c) {
+   325→    if (!g_audio) { c.note = "no processor"; return; }
+   326→    const int N = 65536;
+   327→    Lcg rng(987654321);
+   328→    std::vector<float> in(N), modOut(N), refOut(N);
+   329→    rng.fill(in);
+   330→    // ---- the hand-driven reference (the core library linked directly) ----
+   331→    {
+   332→        octavox::MultichannelShifter ref;
+   333→        check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
+   334→        float* inP[1] = {in.data()};
+   335→        float* outP[1] = {refOut.data()};
+   336→        ref.process(inP, outP, 1, N);
+   337→    }
+   338→    // ---- the loaded module ----
+   339→    check(c, setupLoadedInstance(Setup{}, 1), "activation failed");
+   340→    for (int off = 0; off < N; off += 4096) {
+   341→        const int n = std::min(4096, N - off);
+   342→        float* inP[1] = {in.data() + off};
+   343→        float* outP[1] = {modOut.data() + off};
+   344→        driveLoaded(inP, outP, 1, n, nullptr);
+   345→    }
+   346→    teardownLoadedInstance();
+   347→    const bool bitex = bitIdentical(modOut.data(), refOut.data(), N);
+   348→    const double d = maxAbsDiff(modOut, refOut);
+   349→    addValue(c, "mono_max_abs_diff", d);
+   350→    addValue(c, "mono_bit_exact", bitex ? 1.0 : 0.0);
+   351→    check(c, bitex, "mono stream is NOT bit-identical to the hand-driven core");
+   352→    c.pass = c.note.empty();
+   353→}
+   354→
+   355→// stereo: per-channel distinct inputs, both channels bit-exact
+   356→void caseProcessStereo(CaseResult& c) {
+   357→    if (!g_audio) { c.note = "no processor"; return; }
+   358→    const int N = 49152;  // not a multiple of the block size on purpose
+   359→    Lcg rng(24680);
+   360→    std::vector<float> inL(N), inR(N), outL(N), outR(N), refL(N), refR(N);
+   361→    rng.fill(inL);
+   362→    rng.fill(inR);
+   363→    {
+   364→        octavox::MultichannelShifter ref;
+   365→        check(c, ref.prepare(octavox::Config{}, 2), "reference prepare failed");
+   366→        float* inP[2] = {inL.data(), inR.data()};
+   367→        float* outP[2] = {refL.data(), refR.data()};
+   368→        ref.process(inP, outP, 2, N);
+   369→    }
+   370→    check(c, setupLoadedInstance(Setup{}, 2), "activation failed");
+   371→    for (int off = 0; off < N; off += 3000) {  // odd block sizes
+   372→        const int n = std::min(3000, N - off);
+   373→        float* inP[2] = {inL.data() + off, inR.data() + off};
+   374→        float* outP[2] = {outL.data() + off, outR.data() + off};
+   375→        driveLoaded(inP, outP, 2, n, nullptr);
+   376→    }
+   377→    teardownLoadedInstance();
+   378→    const bool bitex = bitIdentical(outL.data(), refL.data(), N) &&
+   379→                       bitIdentical(outR.data(), refR.data(), N);
+   380→    addValue(c, "stereo_L_max_abs_diff", maxAbsDiff(outL, refL));
+   381→    addValue(c, "stereo_R_max_abs_diff", maxAbsDiff(outR, refR));
+   382→    addValue(c, "stereo_bit_exact", bitex ? 1.0 : 0.0);
+   383→    check(c, bitex, "stereo stream is NOT bit-identical to the hand-driven core");
+   384→    c.pass = c.note.empty();
+   385→}
+   386→
+   387→// parameter queues: a full non-default surface applied through real
+   388→// IParameterChanges queues at stream position 0 == the hand-driven reference
+   389→// with the canonical application order (the wrapper test's proven pattern,
+   390→// now through the loaded module); plus a mid-block event drop-control.
+   391→void caseParamQueues(CaseResult& c) {
+   392→    if (!g_audio) { c.note = "no processor"; return; }
+   393→    using octavox::vst3wrap::ParamId;
+   394→    using octavox::vst3wrap::voiceOffsetId;
+   395→    using octavox::vst3wrap::voiceGainId;
+   396→    using octavox::vst3wrap::voiceMuteId;
+   397→    using octavox::vst3wrap::voiceDelayId;
+   398→    const int N = 65536;
+   399→    struct Ev { uint32_t id; double plain; };
+   400→    const std::vector<Ev> surf = {
+   401→        {ParamId::kPitch, 2.0},
+   402→        {voiceOffsetId(3), 7.0},
+   403→        {voiceGainId(5), 0.5},
+   404→        {voiceMuteId(6), 1.0},
+   405→        {voiceDelayId(2), 20.0},
+   406→        {ParamId::kVoices, 8.0},
+   407→        {ParamId::kWetDry, 0.7},
+   408→    };
+   409→    Lcg rng(555777);
+   410→    std::vector<float> in(N);
+   411→    rng.fill(in);
+   412→    // ---- hand-driven reference (canonical order) ----
+   413→    std::vector<float> refOut(N);
+   414→    {
+   415→        octavox::MultichannelShifter ref;
+   416→        octavox::Config cfg = octavox::Config{};
+   417→        check(c, ref.prepare(cfg, 1), "reference prepare failed");
+   418→        const double sr = cfg.sample_rate, grain = cfg.grain;
+   419→        const double pitch = toEnginePlain(ParamId::kPitch, 2.0);
+   420→        const double off3 = toEnginePlain(voiceOffsetId(3), 7.0);
+   421→        const double g5 = toEnginePlain(voiceGainId(5), 0.5);
+   422→        const bool m6 = toEnginePlain(voiceMuteId(6), 1.0) >= 0.5;
+   423→        const double d2ms = toEnginePlain(voiceDelayId(2), 20.0);
+   424→        const int voices = (int)std::lround(toEnginePlain(ParamId::kVoices, 8.0));
+   425→        const double wet = toEnginePlain(ParamId::kWetDry, 0.7);
+   426→        ref.setSpread(true);
+   427→        ref.setRatio(std::pow(2.0, pitch / 12.0));
+   428→        ref.setVoiceRatio(3, std::pow(2.0, pitch / 12.0) * std::pow(2.0, off3 / 12.0));
+   429→        ref.setVoiceGain(5, g5);
+   430→        ref.setVoiceMute(6, m6);
+   431→        ref.setVoiceBaseDelay(2, octavox::vst3wrap::msToBaseDelaySamples(d2ms, sr, grain));
+   432→        ref.setVoices(voices);
+   433→        ref.setFeedback(0.0);
+   434→        ref.setWetDry(wet);
+   435→        ref.setBypass(false);
+   436→        float* inP[1] = {in.data()};
+   437→        float* outP[1] = {refOut.data()};
+   438→        ref.process(inP, outP, 1, N);
+   439→    }
+   440→    // ---- the loaded module with a position-0 queue in canonical order ----
+   441→    std::vector<float> aOut(N);
+   442→    check(c, setupLoadedInstance(Setup{}, 1), "activation failed");
+   443→    {
+   444→        ParameterChanges ch;
+   445→        for (const auto& e : surf)
+   446→            addEvent(ch, e.id, 0,
+   447→                     octavox::vst3wrap::normalizedFromPlain(e.id, e.plain));
+   448→        float* inP[1] = {in.data()};
+   449→        float* outP[1] = {aOut.data()};
+   450→        driveLoaded(inP, outP, 1, 4096, &ch);
+   451→        float* in2[1] = {in.data() + 4096};
+   452→        float* out2[1] = {aOut.data() + 4096};
+   453→        driveLoaded(in2, out2, 1, N - 4096, nullptr);
+   454→    }
+   455→    teardownLoadedInstance();
+   456→    const double dLive = maxAbsDiff(aOut, refOut);
+   457→    addValue(c, "queue_surface_vs_reference_maxdiff", dLive);
+   458→    check(c, dLive == 0.0,
+   459→          "queued surface application is not bit-identical to the reference");
+   460→    // ---- drop-control: a mid-block event must change the stream vs none ----
+   461→    std::vector<float> bOut(N), cOut(N);
+   462→    check(c, setupLoadedInstance(Setup{}, 1), "re-activation failed");
+   463→    {
+   464→        ParameterChanges ch;
+   465→        addEvent(ch, ParamId::kWetDry, 2000, 0.25);  // mid-block event
+   466→        for (int off = 0; off < N; off += 4096) {
+   467→            const int n = std::min(4096, N - off);
+   468→            float* inP[1] = {in.data() + off};
+   469→            float* outP[1] = {bOut.data() + off};
+   470→            driveLoaded(inP, outP, 1, n, off == 0 ? &ch : nullptr);
+   471→        }
+   472→        for (int off = 0; off < N; off += 4096) {
+   473→            const int n = std::min(4096, N - off);
+   474→            float* inP[1] = {in.data() + off};
+   475→            float* outP[1] = {cOut.data() + off};
+   476→            driveLoaded(inP, outP, 1, n, nullptr);
+   477→        }
+   478→    }
+   479→    teardownLoadedInstance();
+   480→    const double dDrop = maxAbsDiff(bOut, cOut);
+   481→    addValue(c, "midblock_event_effect_maxdiff", dDrop);
+   482→    check(c, dDrop > 0.0,
+   483→          "the mid-block parameter event had no effect (queue not consumed)");
+   484→    c.pass = c.note.empty();
+   485→}
+   486→
+   487→// state save through the module's IComponent::getState, restore into a
+   488→// SECOND factory-created instance, both continue bit-identically
+   489→void caseStateSaveRestore(CaseResult& c) {
+   490→    if (!g_module || !g_audio) { c.note = "no module"; return; }
+   491→    using octavox::vst3wrap::ParamId;
+   492→    const int N = 32768;
+   493→    Lcg rng(13579);
+   494→    std::vector<float> in(N);
+   495→    rng.fill(in);
+   496→    MemoryStream state;
+   497→    std::vector<float> run1(N), run2(N);
+   498→    check(c, setupLoadedInstance(Setup{}, 1), "activation failed");
+   499→    {
+   500→        // a non-default surface via the queue, then run, then save
+   501→        ParameterChanges ch;
+   502→        addEvent(ch, ParamId::kPitch, 0,
+   503→                 octavox::vst3wrap::normalizedFromPlain(ParamId::kPitch, -5.0));
+   504→        addEvent(ch, ParamId::kFeedback, 0,
+   505→                 octavox::vst3wrap::normalizedFromPlain(ParamId::kFeedback, 0.3));
+   506→        for (int off = 0; off < N; off += 4096) {
+   507→            const int n = std::min(4096, N - off);
+   508→            float* inP[1] = {in.data() + off};
+   509→            float* outP[1] = {run1.data() + off};
+   510→            driveLoaded(inP, outP, 1, n, off == 0 ? &ch : nullptr);
+   511→        }
+   512→        check(c, g_component->getState(&state) == kResultOk, "getState failed");
+   513→    }
+   514→    teardownLoadedInstance();
+   515→    addValue(c, "state_blob_bytes", (double)((int64_t)state.getSize()));
+   516→    check(c, state.getSize() > 4, "state blob suspiciously small");
+   517→    // ---- a SECOND instance from the same loaded factory ----
+   518→    IPtr<IComponent> comp2 = g_module->getFactory().createInstance<IComponent>(
+   519→        VST3::UID(octavox::vst3wrap::OctavoxNativeProcessorUID));
+   520→    check(c, comp2 != nullptr, "second instance creation failed");
+   521→    if (!comp2) { c.pass = false; return; }
+   522→    IPtr<IAudioProcessor> audio2;
+   523→    {
+   524→        IAudioProcessor* ap2 = nullptr;
+   525→        if (comp2->queryInterface(IAudioProcessor::iid,
+   526→                                  reinterpret_cast<void**>(&ap2)) == kResultTrue && ap2)
+   527→            audio2 = IPtr<IAudioProcessor>(ap2);
+   528→    }
+   529→    check(c, audio2 != nullptr, "second instance lacks IAudioProcessor");
+   530→    check(c, comp2->initialize(g_hostContext) == kResultOk,
+   531→          "second instance initialize failed");
+   532→    SpeakerArrangement mono = SpeakerArr::kMono;
+   533→    audio2->setBusArrangements(&mono, 1, &mono, 1);
+   534→    ProcessSetup ps;
+   535→    std::memset(&ps, 0, sizeof(ps));
+   536→    ps.processMode = kRealtime;
+   537→    ps.symbolicSampleSize = kSample32;
+   538→    ps.sampleRate = 48000.0;
+   539→    ps.maxSamplesPerBlock = 4096;
+   540→    audio2->setupProcessing(ps);
+   541→    state.seek(0, IBStream::kIBSeekSet, nullptr);
+   542→    check(c, comp2->setState(&state) == kResultOk, "setState into instance 2 failed");
+   543→    comp2->setActive(true);
+   544→    audio2->setProcessing(true);
+   545→    for (int off = 0; off < N; off += 4096) {
+   546→        const int n = std::min(4096, N - off);
+   547→        float* inP[1] = {in.data() + off};
+   548→        float* outP[1] = {run2.data() + off};
+   549→        AudioBusBuffers ib{}, ob{};
+   550→        ib.numChannels = 1;
+   551→        ib.channelBuffers32 = inP;
+   552→        ob.numChannels = 1;
+   553→        ob.channelBuffers32 = outP;
+   554→        AudioBusBuffers inB[1] = {ib}, outB[1] = {ob};
+   555→        ProcessData pd{};
+   556→        pd.processMode = kRealtime;
+   557→        pd.symbolicSampleSize = kSample32;
+   558→        pd.numSamples = n;
+   559→        pd.inputs = inB;
+   560→        pd.numInputs = 1;
+   561→        pd.outputs = outB;
+   562→        pd.numOutputs = 1;
+   563→        audio2->process(pd);
+   564→    }
+   565→    audio2->setProcessing(false);
+   566→    comp2->setActive(false);
+   567→    const bool bitex = bitIdentical(run1.data(), run2.data(), N);
+   568→    addValue(c, "restored_replay_bit_exact", bitex ? 1.0 : 0.0);
+   569→    addValue(c, "restored_replay_maxdiff", maxAbsDiff(run1, run2));
+   570→    check(c, bitex,
+   571→          "the restored second instance does not replay bit-identically");
+   572→    check(c, comp2->terminate() == kResultOk, "second instance terminate failed");
+   573→    c.pass = c.note.empty();
+   574→}
+   575→
+   576→void caseLatencyReporting(CaseResult& c) {
+   577→    if (!g_audio) { c.note = "no processor"; return; }
+   578→    // the wrapper reports the core's latencySamples(); compare against the
+   579→    // core library's own value for the default config (the exact contract).
+   580→    octavox::MultichannelShifter ref;
+   581→    check(c, ref.prepare(octavox::Config{}, 2), "reference prepare failed");
+   582→    const uint32 expect = ref.latencySamples();
+   583→    const uint32 got = g_audio->getLatencySamples();
+   584→    addValue(c, "expected_latency_samples", (double)expect);
+   585→    addValue(c, "reported_latency_samples", (double)got);
+   586→    check(c, got == expect,
+   587→          "the module's getLatencySamples() != the core's latencySamples()");
+   588→    const uint32 tail = g_audio->getTailSamples();
+   589→    addValue(c, "reported_tail_samples", (double)tail);
+   590→    check(c, tail > 0, "tail samples not reported");
+   591→    c.pass = c.note.empty();
+   592→}
+   593→
+   594→void caseTerminateUnload(CaseResult& c) {
+   595→    if (!g_component) { c.note = "no component"; return; }
+   596→    check(c, g_component->terminate() == kResultOk, "terminate failed");
+   597→    // release every interface, then destroy the Module (dlclose)
+   598→    g_edit = nullptr;
+   599→    g_audio = nullptr;
+   600→    g_component = nullptr;
+   601→    const std::string modName = g_module ? g_module->getName() : "";
+   602→    g_module = nullptr;  // ~Module -> library unload
+   603→    addValue(c, "module_name_len", (double)modName.size());
+   604→    check(c, true, "");
+   605→    c.pass = c.note.empty();
+   606→}
+   607→
+   608→}  // namespace
+   609→
+   610→//==========================================================================
+   611→// main
+   612→//==========================================================================
+   613→int main(int argc, char** argv) {
+   614→    std::string modulePath, jsonPath;
+   615→    for (int i = 1; i < argc; ++i) {
+   616→        const std::string a = argv[i];
+   617→        if (a == "--module" && i + 1 < argc) modulePath = argv[++i];
+   618→        else if (a == "--json" && i + 1 < argc) jsonPath = argv[++i];
+   619→        else {
+   620→            std::fprintf(stderr, "usage: %s [--module <path/to/OctavoxNative.vst3>] "
+   621→                                 "[--json <path>]\n", argv[0]);
+   622→            return 2;
+   623→        }
+   624→    }
+   625→    // default: <exe_dir>/../../VST3/Release/OctavoxNative.vst3
+   626→    if (modulePath.empty()) {
+   627→        std::string exe = argv[0];
+   628→        const size_t slash = exe.find_last_of('/');
+   629→        const std::string dir = slash == std::string::npos ? "." : exe.substr(0, slash);
+   630→        const char* cands[] = {
+   631→            "/../../VST3/Release/OctavoxNative.vst3",
+   632→            "/../../../VST3/Release/OctavoxNative.vst3",
+   633→            "/OctavoxNative.vst3",
+   634→        };
+   635→        for (const char* suff : cands) {
+   636→            std::string p = dir + suff;
+   637→            FILE* f = std::fopen(p.c_str(), "rb");
+   638→            if (f) { std::fclose(f); modulePath = p; break; }
+   639→        }
+   640→        if (modulePath.empty()) {
+   641→            // last resort: relative to the CWD
+   642→            const char* rel[] = {"build/VST3/Release/OctavoxNative.vst3",
+   643→                                 "VST3/Release/OctavoxNative.vst3"};
+   644→            for (const char* p : rel) {
+   645→                FILE* f = std::fopen(p, "rb");
+   646→                if (f) { std::fclose(f); modulePath = p; break; }
+   647→            }
+   648→        }
+   649→    }
+   650→    if (modulePath.empty()) {
+   651→        std::fprintf(stderr, "error: OctavoxNative.vst3 not found "
+   652→                             "(build it first, or pass --module)\n");
+   653→        return 2;
+   654→    }
+   655→    std::printf("module: %s\n", modulePath.c_str());
+   656→    std::printf("harness scope: SDK module loader + factory + full interface "
+   657→                "contract vs the hand-driven core (NOT a DAW test)\n\n");
+   658→
+   659→    std::vector<CaseResult> R;
+   660→    {
+   661→        CaseResult c{"module_load_factory"};
+   662→        caseModuleLoad(c, modulePath);
+   663→        pushCase(R, std::move(c));
+   664→    }
+   665→    {
+   666→        CaseResult c{"processor_creation"};
+   667→        caseProcessorCreation(c);
+   668→        pushCase(R, std::move(c));
+   669→    }
+   670→    {
+   671→        CaseResult c{"component_initialize_buses"};
+   672→        caseComponentInit(c);
+   673→        pushCase(R, std::move(c));
+   674→    }
+   675→    {
+   676→        CaseResult c{"bus_negotiation_mono"};
+   677→        caseBusMono(c);
+   678→        pushCase(R, std::move(c));
+   679→    }
+   680→    {
+   681→        CaseResult c{"bus_negotiation_stereo"};
+   682→        caseBusStereo(c);
+   683→        pushCase(R, std::move(c));
+   684→    }
+   685→    {
+   686→        CaseResult c{"activation_lifecycle"};
+   687→        caseActivationLifecycle(c);
+   688→        pushCase(R, std::move(c));
+   689→    }
+   690→    {
+   691→        CaseResult c{"process_mono_bitexact"};
+   692→        caseProcessMono(c);
+   693→        pushCase(R, std::move(c));
+   694→    }
+   695→    {
+   696→        CaseResult c{"process_stereo_bitexact"};
+   697→        caseProcessStereo(c);
+   698→        pushCase(R, std::move(c));
+   699→    }
+   700→    {
+   701→        CaseResult c{"param_queue_events"};
+   702→        caseParamQueues(c);
+   703→        pushCase(R, std::move(c));
+   704→    }
+   705→    {
+   706→        CaseResult c{"state_save_restore_second_instance"};
+   707→        caseStateSaveRestore(c);
+   708→        pushCase(R, std::move(c));
+   709→    }
+   710→    {
+   711→        CaseResult c{"latency_reporting"};
+   712→        caseLatencyReporting(c);
+   713→        pushCase(R, std::move(c));
+   714→    }
+   715→    {
+   716→        CaseResult c{"terminate_unload"};
+   717→        caseTerminateUnload(c);
+   718→        pushCase(R, std::move(c));
+   719→    }
+   720→
+   721→    int passed = 0, failed = 0;
+   722→    for (const auto& c : R) (c.pass ? passed : failed)++;
+   723→    std::printf("\n%s: %d passed, %d failed, %d total\n",
+   724→                "octavox-module-integration", passed, failed, (int)R.size());
+   725→    std::printf("TOTAL_CASES %d\n", (int)R.size());
+   726→
+   727→    if (!jsonPath.empty()) {
+   728→        FILE* f = std::fopen(jsonPath.c_str(), "w");
+   729→        if (f) {
+   730→            std::fprintf(f, "{\n  \"suite\": \"octavox-module-integration\",\n");
+   731→            std::fprintf(f, "  \"module_path\": \"%s\",\n",
+   732→                         jsonEscape(modulePath).c_str());
+   733→            std::fprintf(f, "  \"cases\": [\n");
+   734→            bool first = true;
+   735→            for (const auto& c : R) {
+   736→                if (!first) std::fprintf(f, ",\n");
+   737→                first = false;
+   738→                std::fprintf(f, "    {\"name\": \"%s\", \"pass\": %s",
+   739→                             jsonEscape(c.name).c_str(), c.pass ? "true" : "false");
+   740→                if (!c.values.empty()) {
+   741→                    std::fprintf(f, ", \"values\": {");
+   742→                    for (size_t i = 0; i < c.values.size(); ++i) {
+   743→                        if (i) std::fprintf(f, ", ");
+   744→                        std::fprintf(f, "\"%s\": %.10g",
+   745→                                     jsonEscape(c.values[i].first).c_str(),
+   746→                                     c.values[i].second);
+   747→                    }
+   748→                    std::fprintf(f, "}");
+   749→                }
+   750→                std::fprintf(f, ", \"note\": \"%s\"}",
+   751→                             jsonEscape(c.note).c_str());
+   752→            }
+   753→            std::fprintf(f, "\n  ],\n");
+   754→            std::fprintf(f, "  \"summary\": {\"passed\": %d, \"failed\": %d, "
+   755→                            "\"total\": %d}\n}\n",
+   756→                         passed, failed, (int)R.size());
+   757→            std::fclose(f);
+   758→        }
+   759→    }
+   760→    return failed == 0 ? 0 : 1;
+   761→}
+   762→

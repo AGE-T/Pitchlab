@@ -1,0 +1,34 @@
+OCTAVOX full validation chain (2026-10-29T17:24:13Z)
+  native tree:   /home/z/my-project/octavox-work/Octavox_RE_evidence/native
+  evidence out:  /tmp/r17_script_full
+---------------------------------------------------------------
+toolchain: cmake version 4.4.4
+compiler:  g++ (g++ (Debian 14.2.0-19) 14.2.0)
+cores:     2
+
+[LEG 1] native core -- Release (-O2): 85-case suite + 4 reference hashes
+  built (see build_release.log)
+  suite: 85 passed, 0 failed, 85 total
+  neutrality hashes: 4/4 exact match vs r15_reference_hashes.txt
+  bench: completed (see r17_bench.json)
+  leg 1 wall: 74 s
+
+[LEG 2] native core -- Debug + ASan/UBSan: the 85-case suite again
+  (expect several minutes; the sanitizer leg measured ~6.2 min on the
+   2-core dev host -- see OCTAVOX_ROUND17_FINDINGS.md P1 for the
+   timing model: a fixed <6 min window is NOT a valid gate)
+  built (see build_asan.log)
+  suite: 85 passed, 0 failed, 85 total, zero sanitizer reports
+  leg 2 wall: 376 s
+
+[LEG 3] VST3 wrapper -- module + 15-case wrapper tests + SDK validator
+  SDK: /home/z/my-project/octavox-work/vst3sdk (cc2adc90382dded9e347caf74e4532f1458715db)
+  built; the automatic validator pass is inside build_vst3.log
+  wrapper tests: 15/15
+  validator: 47 tests passed, 0 tests failed
+  module: /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/VST3/Release/OctavoxNative.vst3/Contents/x86_64-linux/OctavoxNative.so
+    sha256: b293cecbcd42ce732ccd1789dea39ed82845a75b539084b0b79124ef559ea8ba
+  leg 3 wall: 3 s
+---------------------------------------------------------------
+RESULT: ALL GATES PASSED (total wall 454 s)
+  evidence captured in: /tmp/r17_script_full

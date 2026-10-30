@@ -1,0 +1,51 @@
+0000000180103EA0  83d872                     sbb      eax, 0x72                                reg=19; imm=0x72
+0000000180103EA3  0000                       add      byte ptr [rax], al                       [base=35 idx=0 scale=1 disp=0x0]; reg=2
+0000000180103EA5  f30f59c2                   mulss    xmm0, xmm2                               reg=122; reg=124
+0000000180103EA9  f30f1118                   movss    dword ptr [rax], xmm3                    [base=35 idx=0 scale=1 disp=0x0]; reg=125
+0000000180103EAD  488b83d8720000             mov      rax, qword ptr [rbx + 0x72d8]            reg=35; [base=37 idx=0 scale=1 disp=0x72d8]
+0000000180103EB4  f30f58d8                   addss    xmm3, xmm0                               reg=125; reg=122
+0000000180103EB8  0f28c3                     movaps   xmm0, xmm3                               reg=122; reg=125
+0000000180103EBB  f30f115804                 movss    dword ptr [rax + 4], xmm3                [base=35 idx=0 scale=1 disp=0x4]; reg=125
+0000000180103EC0  f30f5cc1                   subss    xmm0, xmm1                               reg=122; reg=123
+0000000180103EC4  f30f59c2                   mulss    xmm0, xmm2                               reg=122; reg=124
+0000000180103EC8  f30f58d8                   addss    xmm3, xmm0                               reg=125; reg=122
+0000000180103ECC  488b83d8720000             mov      rax, qword ptr [rbx + 0x72d8]            reg=35; [base=37 idx=0 scale=1 disp=0x72d8]
+0000000180103ED3  488d8b18840000             lea      rcx, [rbx + 0x8418]                      reg=38; [base=37 idx=0 scale=1 disp=0x8418]
+0000000180103EDA  0f28c3                     movaps   xmm0, xmm3                               reg=122; reg=125
+0000000180103EDD  f30f5cc1                   subss    xmm0, xmm1                               reg=122; reg=123
+0000000180103EE1  f30f115808                 movss    dword ptr [rax + 8], xmm3                [base=35 idx=0 scale=1 disp=0x8]; reg=125
+0000000180103EE6  488b83d8720000             mov      rax, qword ptr [rbx + 0x72d8]            reg=35; [base=37 idx=0 scale=1 disp=0x72d8]
+0000000180103EED  f30f59c2                   mulss    xmm0, xmm2                               reg=122; reg=124
+0000000180103EF1  f30f58d8                   addss    xmm3, xmm0                               reg=125; reg=122
+0000000180103EF5  0f28c3                     movaps   xmm0, xmm3                               reg=122; reg=125
+0000000180103EF8  f30f11580c                 movss    dword ptr [rax + 0xc], xmm3              [base=35 idx=0 scale=1 disp=0xc]; reg=125
+0000000180103EFD  f30f5cc1                   subss    xmm0, xmm1                               reg=122; reg=123
+0000000180103F01  f30f59c2                   mulss    xmm0, xmm2                               reg=122; reg=124
+0000000180103F05  f30f58c3                   addss    xmm0, xmm3                               reg=122; reg=125
+0000000180103F09  f30f1183e0720000           movss    dword ptr [rbx + 0x72e0], xmm0           [base=37 idx=0 scale=1 disp=0x72e0]; reg=122
+0000000180103F11  e82a5c0300                 call     0x180139b40                              imm=0x180139b40
+0000000180103F16  f30f101542ed3000           movss    xmm2, dword ptr [rip + 0x30ed42]         reg=124; [base=41 idx=0 scale=1 disp=0x30ed42]
+0000000180103F1E  488b8388840000             mov      rax, qword ptr [rbx + 0x8488]            reg=35; [base=37 idx=0 scale=1 disp=0x8488]
+0000000180103F25  488b08                     mov      rcx, qword ptr [rax]                     reg=38; [base=35 idx=0 scale=1 disp=0x0]
+0000000180103F28  488b83a0840000             mov      rax, qword ptr [rbx + 0x84a0]            reg=35; [base=37 idx=0 scale=1 disp=0x84a0]
+0000000180103F2F  f30f1001                   movss    xmm0, dword ptr [rcx]                    reg=122; [base=38 idx=0 scale=1 disp=0x0]
+0000000180103F33  0f54c2                     andps    xmm0, xmm2                               reg=122; reg=124
+0000000180103F36  f30f1100                   movss    dword ptr [rax], xmm0                    [base=35 idx=0 scale=1 disp=0x0]; reg=122
+0000000180103F3A  f30f104104                 movss    xmm0, dword ptr [rcx + 4]                reg=122; [base=38 idx=0 scale=1 disp=0x4]
+0000000180103F3F  488b83a0840000             mov      rax, qword ptr [rbx + 0x84a0]            reg=35; [base=37 idx=0 scale=1 disp=0x84a0]
+0000000180103F46  0f54c2                     andps    xmm0, xmm2                               reg=122; reg=124
+0000000180103F49  f30f114004                 movss    dword ptr [rax + 4], xmm0                [base=35 idx=0 scale=1 disp=0x4]; reg=122
+0000000180103F4E  f30f104908                 movss    xmm1, dword ptr [rcx + 8]                reg=123; [base=38 idx=0 scale=1 disp=0x8]
+0000000180103F53  488b83a0840000             mov      rax, qword ptr [rbx + 0x84a0]            reg=35; [base=37 idx=0 scale=1 disp=0x84a0]
+0000000180103F5A  0f54ca                     andps    xmm1, xmm2                               reg=123; reg=124
+0000000180103F5D  f30f114808                 movss    dword ptr [rax + 8], xmm1                [base=35 idx=0 scale=1 disp=0x8]; reg=123
+0000000180103F62  f30f10410c                 movss    xmm0, dword ptr [rcx + 0xc]              reg=122; [base=38 idx=0 scale=1 disp=0xc]
+0000000180103F67  488d8ba8840000             lea      rcx, [rbx + 0x84a8]                      reg=38; [base=37 idx=0 scale=1 disp=0x84a8]
+0000000180103F6E  488b83a0840000             mov      rax, qword ptr [rbx + 0x84a0]            reg=35; [base=37 idx=0 scale=1 disp=0x84a0]
+0000000180103F75  0f54c2                     andps    xmm0, xmm2                               reg=122; reg=124
+0000000180103F78  f30f11400c                 movss    dword ptr [rax + 0xc], xmm0              [base=35 idx=0 scale=1 disp=0xc]; reg=122
+0000000180103F7D  e8ee590300                 call     0x180139970                              imm=0x180139970
+0000000180103F82  488d8b18850000             lea      rcx, [rbx + 0x8518]                      reg=38; [base=37 idx=0 scale=1 disp=0x8518]
+0000000180103F89  e802580300                 call     0x180139790                              imm=0x180139790
+0000000180103F8E  488d8b48860000             lea      rcx, [rbx + 0x8648]                      reg=38; [base=37 idx=0 scale=1 disp=0x8648]
+0000000180103F95  e8e6540300                 call     0x180139480                              imm=0x180139480

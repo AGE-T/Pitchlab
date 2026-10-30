@@ -1,0 +1,1282 @@
+diff -ruN a/native/cli/r15ref_capture.cpp b/native/cli/r15ref_capture.cpp
+--- a/native/cli/r15ref_capture.cpp	2026-10-26 21:22:55.000000000 +0000
++++ b/native/cli/r15ref_capture.cpp	2026-10-30 21:42:05.769450829 +0000
+@@ -14,7 +14,14 @@
+ // native/r15_reference_hashes.txt.
+ //
+ // Modes:
+-//   (default)   capture the four reference hashes
++//   (default)   capture the four reference hashes (core-default Lagrange6
++//               kernel -- the EXISTING gate; behaviour byte-identical to
++//               the R15 tool)
++//   --interpolation <lagrange6|lagrange6q|obskernel6>
++//               capture the four hashes with EVERY config's interpolation
++//               set to the named kernel (R18-WDB: establishes the separate,
++//               reproducible ObsKernel6 reference measurements WITHOUT
++//               touching the default gate or r15_reference_hashes.txt)
+ //   --probe96   detector-at-96 kHz probe (steady 110 Hz sine, grain 8192 /
+ //               base 512): prints the detector estimate; documents the R13-b
+ //               sample-rate-relative window law (12.0.0 is blind there,
+@@ -108,6 +115,17 @@
+     return fnv1a64(out.data(), out.size());
+ }
+ 
++// R18-WDB: the per-run interpolation override (default = none: the core's
++// own default, Lagrange6, preserving the historical gate bit-exactly).
++Interpolation g_interpOverride = Interpolation::Lagrange6;
++bool g_interpForced = false;
++
++Config baseConfig() {
++    Config cfg;  // all defaults
++    if (g_interpForced) cfg.interpolation = g_interpOverride;
++    return cfg;
++}
++
+ void captureFour() {
+     const int sr = 48000;
+     const int N = 1 << 18;  // 262144 samples (>= 2^18)
+@@ -116,7 +134,7 @@
+     {
+         const auto in = noise(987654321ULL, N, 0.5);
+         AlignedDelayLine e;
+-        Config cfg;  // all defaults: ratio 1, 1 voice, spread, fb 0
++        Config cfg = baseConfig();  // all defaults: ratio 1, 1 voice, spread, fb 0
+         e.prepare(cfg);
+         const int pat[] = {64, 150, 512};
+         const uint64_t h = runMono(e, in, pat, 3);
+@@ -129,7 +147,7 @@
+     {
+         const auto in = tone(220.0, sr, N, 0.5);
+         AlignedDelayLine e;
+-        Config cfg;
++        Config cfg = baseConfig();
+         cfg.ratio = std::pow(2.0, 700.0 / 1200.0);
+         cfg.voices = 8;
+         cfg.feedback = 0.25;
+@@ -145,7 +163,7 @@
+     {
+         const auto in = chirp(200.0, 800.0, sr, N, 0.5);
+         AlignedDelayLine e;
+-        Config cfg;
++        Config cfg = baseConfig();
+         cfg.ratio = std::pow(2.0, -400.0 / 1200.0);
+         cfg.voices = 4;
+         cfg.spread = false;
+@@ -164,7 +182,7 @@
+         const auto inL = noise(1111111111ULL, N, 0.4);
+         const auto inR = noise(2222222222ULL, N, 0.4);
+         MultichannelShifter m;
+-        Config cfg;
++        Config cfg = baseConfig();
+         cfg.voices = 4;
+         m.prepare(cfg, 2);
+         std::vector<float> outL(N, 0.0f), outR(N, 0.0f);
+@@ -190,6 +208,13 @@
+     }
+ 
+     std::printf("version: %s\n", versionString());
++    std::printf("interpolation: %s%s\n",
++                g_interpForced ? "forced-" : "core-default-",
++                g_interpForced ? (g_interpOverride == Interpolation::ObsKernel6
++                                     ? "ObsKernel6"
++                                     : (g_interpOverride == Interpolation::Lagrange6Q
++                                            ? "Lagrange6Q" : "Lagrange6"))
++                               : "Lagrange6");
+ }
+ 
+ void probe96() {
+@@ -234,6 +259,23 @@
+             probe96();
+             return 0;
+         }
++        if (std::strcmp(argv[i], "--interpolation") == 0 && i + 1 < argc) {
++            const char* m = argv[++i];
++            g_interpForced = true;
++            if (std::strcmp(m, "obskernel6") == 0)
++                g_interpOverride = Interpolation::ObsKernel6;
++            else if (std::strcmp(m, "lagrange6q") == 0)
++                g_interpOverride = Interpolation::Lagrange6Q;
++            else if (std::strcmp(m, "lagrange6") == 0)
++                g_interpOverride = Interpolation::Lagrange6;
++            else {
++                std::fprintf(stderr,
++                             "error: --interpolation must be lagrange6 | "
++                             "lagrange6q | obskernel6 (got '%s')\n",
++                             m);
++                return 2;
++            }
++        }
+     }
+     captureFour();
+     return 0;
+diff -ruN a/native/r18_obs_reference_hashes.txt b/native/r18_obs_reference_hashes.txt
+--- a/native/r18_obs_reference_hashes.txt	1970-01-01 00:00:00.000000000 +0000
++++ b/native/r18_obs_reference_hashes.txt	2026-10-30 21:46:43.358965230 +0000
+@@ -0,0 +1,70 @@
++OCTAVOX R18-WDB -- OBSKERNEL6 VARIANT REFERENCE HASHES (Windows dual build)
++=======================================================================
++Recorded 2026-10-30 during the R18 Windows dual-build round (Lagrange6 vs
++ObsKernel6). These are the SEPARATE, reproducible reference measurements for
++the OBSKERNEL6 variant of our independent harmonizer, established because the
++selected kernel CHANGES the output of three of the four default-neutrality
++configurations. The EXISTING Lagrange6 gate (native/r15_reference_hashes.txt)
++is PRESERVED UNCHANGED and still passes 4/4 with the default tool behaviour.
++
++PROTOCOL
++--------
++Tool:   native/cli/r15ref_capture.cpp (CMake target octavox_r15refcap), run
++        with the R18-WDB mode added this round:
++          ./octavox_r15refcap --interpolation obskernel6
++        Every config's Config::interpolation is set to Interpolation::
++        ObsKernel6 (the target's observed static 256x6 .rdata kernel used
++        as a comparison mode in our independent DSP engine); all other
++        fields stay at the core defaults. The DEFAULT invocation (no flag)
++        is byte-identical to the historical R15 tool -- the existing gate
++        is untouched.
++Hash:   FNV-1a 64 over the raw output float bits (little-endian bytes), the
++        same law as the acceptance suite's default_neutrality cases and
++        r15_reference_hashes.txt.
++Input:  the SAME four pure-formula configurations as r15_reference_hashes.txt
++        (same seeds, tones, chirp, block patterns, N = 2^18 at 48 kHz) -- the
++        only difference is the interpolation kernel.
++Build:  Release, GCC 14.2.0, Debian 13 x86_64 (the same host/compiler class
++        as the R16-R18 reference records).
++
++THE FOUR OBSKERNEL6 MEASUREMENTS (two consecutive runs compared equal)
++-----------------------------------------------------------------------------
++  cfg1_default_unity_lcg_noise_b64_150_512  0x74318b06c182aacb
++  cfg2_r700c_8v_spread_fb025_sine220       0xa73fa640f0fcce9b
++  cfg3_rm400c_4v_nospread_chirp200_800     0x517af72e159b5a53
++  cfg4_stereo_2ch_4v_unity_then_r400c      0x87e676a3e9ecc108
++-----------------------------------------------------------------------------
++
++DIFFERENCE vs THE LAGRANGE6 REFERENCE (r15_reference_hashes.txt)
++-----------------------------------------------------------------
++  cfg1  0x74318b06c182aacb == 0x74318b06c182aacb   IDENTICAL
++  cfg2  0xa73fa640f0fcce9b != 0x46a091e98f2a413a   DIFFERS
++  cfg3  0x517af72e159b5a53 != 0x9502cf8827e8782c   DIFFERS
++  cfg4  0x87e676a3e9ecc108 != 0x6f7a2ce3ca310c25   DIFFERS
++
++Interpretation of cfg1 (IDENTICAL): cfg1 is the default-surface configuration
++(ratio 1, 1 voice, wet 1, bypass off, no per-voice overrides, gain 1) whose
++engine takes the special-cased legacy output path with the bit-neutral
++x*1.0 == x multiplication (documented in r15_reference_hashes.txt since
++R15-REB1). That path does not traverse the fractional-delay interpolation
++kernel, so swapping Lagrange6 -> ObsKernel6 cannot change its output bits.
++cfg2/cfg3/cfg4 exercise real transposition reads and therefore differ.
++
++STATUS
++------
++* Reproducibility: two consecutive runs on the same build produced
++  byte-identical output (run logs in the R18-WDB evidence directory).
++* The 85-case acceptance suite (native, core defaults = Lagrange6) is
++  unchanged and passes 85/85 on the unmodified core; these ObsKernel6
++  hashes are the variant's own reference record, NOT a replacement of any
++  existing gate.
++* Cross-check at the wrapper level: the OBSKERNEL6 VST3 module's processed
++  output is bit-exact vs an ObsKernel6-configured hand-driven core
++  reference (12/12 integration cases), and the same source built as
++  LAGRANGE6 passes the identical suites with the Lagrange6 references --
++  proving the variant plumbing end to end (see WINDOWS_DUAL_BUILD_REPORT.md).
++* Scope note (the standing rule): these are measurements of OUR OWN
++  independent DSP implementation. The ObsKernel6 kernel is the static
++  256x6 interpolation table OBSERVED in the original binary's .rdata; using
++  it does NOT make this engine a reproduction of the original Eventide
++  Octavox, and the original binary was never executed.
+diff -ruN a/native/tools/windows_dual_build.sh b/native/tools/windows_dual_build.sh
+--- a/native/tools/windows_dual_build.sh	1970-01-01 00:00:00.000000000 +0000
++++ b/native/tools/windows_dual_build.sh	2026-10-30 22:13:17.821553631 +0000
+@@ -0,0 +1,364 @@
++#!/usr/bin/env bash
++# ============================================================================
++# OCTAVOX R18-WDB: Windows dual VST3 build + validation chain
++# (Lagrange6 vs ObsKernel6; the R18-Windows-Dual-Build round)
++# ============================================================================
++# Reproduces the full round-18 Windows-dual-build chain end to end from the
++# round-18 evidence tree:
++#
++#   LEG 0  environment + pinned-SDK verification (get_vst3_sdk.sh --verify)
++#   LEG 1  native core (Linux, Release): the 85-case acceptance suite +
++#          the four Lagrange6 neutrality hashes (r15_reference_hashes.txt,
++#          UNCHANGED gate) + the four ObsKernel6 reference measurements
++#          (r18_obs_reference_hashes.txt, established this round) with a
++#          double-run reproducibility check
++#   LEG 2  VST3 wrapper, LINUX builds of BOTH variants (the same source and
++#          the same OCTAVOX_VST3_INTERPOLATION configuration as the Windows
++#          builds): 15-case wrapper tests, 12-case compiled-module
++#          integration harness (loads the built bundle through the SDK
++#          module loader; the reference uses the SAME variant kernel) and
++#          the Steinberg validator (47/47) -- per variant
++#   LEG 3  VST3 wrapper, WINDOWS x64 cross-builds of BOTH variants
++#          (llvm-mingw clang 23.1.4 -> genuine PE32+ x86-64 modules;
++#          MSVC does not exist on this Linux host -- recorded deviation,
++#          see WINDOWS_DUAL_BUILD_REPORT.md): module + test executables +
++#          validator.exe + moduleinfotool.exe per variant
++#   LEG 4  Windows build reproducibility: a second, FRESH build directory
++#          per variant must produce a byte-identical module (-Wl,/Brepro)
++#   LEG 5  assembly of the delivery layout
++#          (out/Builds/OctavoxRE_R18_Windows_x64/{Lagrange6,ObsKernel6} +
++#          the Windows_Validation_Kit for user-side Windows runs) incl. the
++#          authored Contents/Resources/moduleinfo.json per bundle
++#   LEG 6  structural verification of BOTH Windows modules (PE32+ x86-64,
++#          DLL flag, GetPluginFactory export, import allow-list, identity
++#          strings, PClassInfo CID in the Windows COM GUID layout, no
++#          cross-variant FUID contamination, sizes, SHA-256) ->
++#          machine-readable JSON + human-readable summary
++#
++# Usage:
++#   ./windows_dual_build.sh [--sdk-root <path>] [--evidence-out <dir>]
++#                           [--skip-linux] [--skip-core]
++#
++# Exit code 0 iff EVERY gate passes. Nothing is weakened: the 85-case suite
++# and the four Lagrange6 neutrality hashes are the round-15/16/17/18 gates,
++# bit-identical; the ObsKernel6 measurements are a SEPARATE record.
++#
++# STATUS: executed end-to-end in the development environment this round
++# (2026-10-30); see evidence/logs/ for the captured outputs and
++# WINDOWS_DUAL_BUILD_REPORT.md for the interpretation.
++# ============================================================================
++set -euo pipefail
++
++SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++NATIVE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
++R18_ROOT="$(cd "${NATIVE_DIR}/../../.." && pwd)"          # .../r18_dual
++VST3_DIR="${NATIVE_DIR}/vst3"
++DEFAULT_SDK="${R18_ROOT}/../vst3sdk"                      # sibling of r18_dual
++TOOLCHAIN_FILE="${R18_ROOT}/llvm-mingw-toolchain.cmake"
++WINSHIM_DIR="/home/z/tools/winshims"                      # no-op 'attrib'
++
++SKIP_LINUX=0
++SKIP_CORE=0
++SDK_ROOT="${DEFAULT_SDK}"
++EVID_OUT="${R18_ROOT}/evidence/logs"
++OUT_ROOT="${R18_ROOT}/out"
++
++while [ $# -gt 0 ]; do
++    case "$1" in
++        --sdk-root) SDK_ROOT="$2"; shift ;;
++        --evidence-out) EVID_OUT="$2"; shift ;;
++        --skip-linux) SKIP_LINUX=1 ;;
++        --skip-core) SKIP_CORE=1 ;;
++        -h|--help) sed -n '2,45p' "$0"; exit 0 ;;
++        *) echo "unknown option: $1" >&2; exit 2 ;;
++    esac
++    shift
++done
++mkdir -p "${EVID_OUT}"
++
++say() { printf '%s\n' "$*"; }
++hr()  { say "---------------------------------------------------------------"; }
++
++T0_GLOBAL=$(date +%s)
++phase_start() { T0_PHASE=$(date +%s); }
++phase_secs()  { echo "$(( $(date +%s) - T0_PHASE ))"; }
++
++FAILURES=0
++fail() { say "  !! FAILED: $*"; FAILURES=$((FAILURES + 1)); }
++
++# Windows cross-build configuration (identical for both variants except the
++# interpolation selection). -Wl,/Brepro makes LLD emit a deterministic PE
++# TimeDateStamp -> byte-reproducible modules (verified by LEG 4).
++win_configure() { # $1 = build dir, $2 = VARIANT
++    cmake -S "${VST3_DIR}" -B "$1" \
++        -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
++        -DCMAKE_BUILD_TYPE=Release \
++        -DVST3_SDK_ROOT="${SDK_ROOT}" \
++        -DOCTAVOX_VST3_INTERPOLATION="$2" \
++        -DSMTG_RUN_VST_VALIDATOR=OFF \
++        -DSMTG_CREATE_MODULE_INFO=OFF \
++        -DSMTG_CREATE_PLUGIN_LINK=OFF \
++        -DCMAKE_MODULE_LINKER_FLAGS="-static -Wl,--no-undefined -Wl,/Brepro" \
++        -DCMAKE_SHARED_LINKER_FLAGS="-static -Wl,--no-undefined -Wl,/Brepro" \
++        -DCMAKE_EXE_LINKER_FLAGS="-static -Wl,/Brepro"
++}
++lin_configure() { # $1 = build dir, $2 = VARIANT
++    cmake -S "${VST3_DIR}" -B "$1" \
++        -DCMAKE_BUILD_TYPE=Release \
++        -DVST3_SDK_ROOT="${SDK_ROOT}" \
++        -DOCTAVOX_VST3_INTERPOLATION="$2"
++}
++
++say "OCTAVOX R18-WDB Windows dual build ($(date -u '+%Y-%m-%dT%H:%M:%SZ'))"
++say "  native tree:    ${NATIVE_DIR}"
++say "  SDK:            ${SDK_ROOT}"
++say "  toolchain file: ${TOOLCHAIN_FILE}"
++hr
++command -v cmake >/dev/null 2>&1 || { say "ERROR: cmake not on PATH (need >= 3.19)."; exit 1; }
++[ -x /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++ ] || {
++    say "ERROR: llvm-mingw cross toolchain not at /home/z/tools/llvm-mingw."; exit 1; }
++say "toolchain: $(cmake --version | head -1)"
++say "cross c++: $(/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++ --version | head -1)"
++
++# ==============================================================================
++# LEG 0: pinned SDK verification
++# ==============================================================================
++say ""
++say "[LEG 0] pinned VST3 SDK verification (v3.7.12_build_20 + component SHAs)"
++phase_start
++if "${SCRIPT_DIR}/get_vst3_sdk.sh" --verify "${SDK_ROOT}" > "${EVID_OUT}/wdb_sdk_verify.txt" 2>&1; then
++    say "  SDK: VERIFIED at the pinned revisions ($(rg -o 'VERIFIED' "${EVID_OUT}/wdb_sdk_verify.txt" | head -1))"
++else
++    fail "pinned SDK verification"
++fi
++say "  leg 0 wall: $(phase_secs) s"
++
++# ==============================================================================
++# LEG 1: native core (the shared DSP core -- gates UNCHANGED)
++# ==============================================================================
++if [ "${SKIP_CORE}" = "1" ]; then
++    say ""
++    say "[LEG 1] SKIPPED (--skip-core)"
++else
++    say ""
++    say "[LEG 1] native core -- Release: 85-case suite + 4+4 reference hashes"
++    phase_start
++    CORE_BUILD="${R18_ROOT}/build_lin_core"
++    cmake -S "${NATIVE_DIR}" -B "${CORE_BUILD}" -DCMAKE_BUILD_TYPE=Release \
++        > "${EVID_OUT}/wdb_core_configure.log" 2>&1 || fail "core configure"
++    cmake --build "${CORE_BUILD}" -j2 > "${EVID_OUT}/wdb_core_build.log" 2>&1 || fail "core build"
++
++    "${CORE_BUILD}/octavox_tests" > "${EVID_OUT}/wdb_core_suite.txt" 2>&1 \
++        || fail "85-case suite (85/85 required)"
++    rg -q "85 passed, 0 failed" "${EVID_OUT}/wdb_core_suite.txt" \
++        && say "  85-case suite: 85/85" || fail "85-case suite summary"
++
++    # the four EXISTING Lagrange6 neutrality hashes (unchanged gate)
++    "${CORE_BUILD}/octavox_r15refcap" > "${EVID_OUT}/wdb_refcap_lagrange6.txt" 2>&1 || fail "refcap lagrange6"
++    HASH_OK=1
++    for cfg in cfg1_default_unity_lcg_noise_b64_150_512 \
++               cfg2_r700c_8v_spread_fb025_sine220 \
++               cfg3_rm400c_4v_nospread_chirp200_800 \
++               cfg4_stereo_2ch_4v_unity_then_r400c; do
++        got="$(rg "${cfg}" "${EVID_OUT}/wdb_refcap_lagrange6.txt" | rg -o '0x[0-9a-f]{16}' | head -1)"
++        want="$(rg "^ *${cfg}" "${NATIVE_DIR}/r15_reference_hashes.txt" | rg -o '0x[0-9a-f]{16}' | head -1)"
++        [ "${got}" = "${want}" ] || { fail "lagrange6 hash ${cfg}: got ${got} want ${want}"; HASH_OK=0; }
++    done
++    [ "${HASH_OK}" = "1" ] && say "  Lagrange6 neutrality hashes: 4/4 exact vs r15_reference_hashes.txt"
++
++    # the four NEW ObsKernel6 reference measurements + reproducibility
++    "${CORE_BUILD}/octavox_r15refcap" --interpolation obskernel6 \
++        > "${EVID_OUT}/wdb_refcap_obskernel6_run1.txt" 2>&1 || fail "refcap obskernel6 run1"
++    "${CORE_BUILD}/octavox_r15refcap" --interpolation obskernel6 \
++        > "${EVID_OUT}/wdb_refcap_obskernel6_run2.txt" 2>&1 || fail "refcap obskernel6 run2"
++    cmp -s "${EVID_OUT}/wdb_refcap_obskernel6_run1.txt" "${EVID_OUT}/wdb_refcap_obskernel6_run2.txt" \
++        && say "  ObsKernel6 measurements: reproducible (run1 == run2)" \
++        || fail "obskernel6 reproducibility"
++    HASH_OK=1
++    for cfg in cfg1_default_unity_lcg_noise_b64_150_512 \
++               cfg2_r700c_8v_spread_fb025_sine220 \
++               cfg3_rm400c_4v_nospread_chirp200_800 \
++               cfg4_stereo_2ch_4v_unity_then_r400c; do
++        got="$(rg "${cfg}" "${EVID_OUT}/wdb_refcap_obskernel6_run1.txt" | rg -o '0x[0-9a-f]{16}' | head -1)"
++        want="$(rg "^ *${cfg}" "${NATIVE_DIR}/r18_obs_reference_hashes.txt" | rg -o '0x[0-9a-f]{16}' | head -1)"
++        [ "${got}" = "${want}" ] || { fail "obskernel6 hash ${cfg}: got ${got} want ${want}"; HASH_OK=0; }
++    done
++    [ "${HASH_OK}" = "1" ] && say "  ObsKernel6 reference hashes: 4/4 exact vs r18_obs_reference_hashes.txt"
++    say "  leg 1 wall: $(phase_secs) s"
++fi
++
++# ==============================================================================
++# LEG 2: LINUX builds of BOTH variants (same source + same configuration as
++# the Windows builds; the full functional validation runs HERE because the
++# Linux sandbox cannot execute Windows PE binaries -- wine is blocked by the
++# sandbox's seccomp policy; see WINDOWS_DUAL_BUILD_REPORT.md).
++# ==============================================================================
++variant_leg2() { # $1 = VARIANT (LAGRANGE6|OBSKERNEL6) $2 = bundle name
++    local VARIANT="$1" BUNDLE="$2"
++    local B="${R18_ROOT}/build_lin_$(echo "${VARIANT}" | tr 'A-Z' 'a-z')"
++    say ""
++    say "[LEG 2/${VARIANT}] LINUX variant build + wrapper/integration/validator"
++    phase_start
++    lin_configure "${B}" "${VARIANT}" > "${EVID_OUT}/wdb_lin_${VARIANT}_configure.log" 2>&1 || fail "lin ${VARIANT} configure"
++    cmake --build "${B}" -j2 > "${EVID_OUT}/wdb_lin_${VARIANT}_build.log" 2>&1 || fail "lin ${VARIANT} build"
++    rg "OCTAVOX VST3 build variant" "${EVID_OUT}/wdb_lin_${VARIANT}_configure.log" | head -1 | sed 's/^-- /  /'
++
++    "${B}/bin/Release/octavox_vst3_wrapper_tests" \
++        > "${EVID_OUT}/wdb_lin_${VARIANT}_wrapper_tests.txt" 2>&1 \
++        || fail "lin ${VARIANT} wrapper tests (15/15 required)"
++    rg -q "15 passed, 0 failed" "${EVID_OUT}/wdb_lin_${VARIANT}_wrapper_tests.txt" \
++        && say "  wrapper tests: 15/15" || fail "lin ${VARIANT} wrapper summary"
++
++    ( cd "${VST3_DIR}" && "${B}/bin/Release/octavox_module_integration_tests" \
++        --module "${B}/VST3/Release/${BUNDLE}.vst3" \
++        --json "${EVID_OUT}/wdb_lin_${VARIANT}_integration.json" \
++        > "${EVID_OUT}/wdb_lin_${VARIANT}_integration.txt" 2>&1 ) \
++        || fail "lin ${VARIANT} integration (12/12 required)"
++    rg -q "12 passed, 0 failed" "${EVID_OUT}/wdb_lin_${VARIANT}_integration.txt" \
++        && say "  module integration: 12/12 (bit-exact vs the ${VARIANT} core reference)" \
++        || fail "lin ${VARIANT} integration summary"
++
++    "${B}/bin/Release/validator" "${B}/VST3/Release/${BUNDLE}.vst3" \
++        > "${EVID_OUT}/wdb_lin_${VARIANT}_validator.txt" 2>&1 \
++        || fail "lin ${VARIANT} validator (47/47 required)"
++    rg -q "47 tests passed, 0 tests failed" "${EVID_OUT}/wdb_lin_${VARIANT}_validator.txt" \
++        && say "  SDK validator: 47/47" || fail "lin ${VARIANT} validator summary"
++    say "  leg 2/${VARIANT} wall: $(phase_secs) s"
++}
++if [ "${SKIP_LINUX}" = "1" ]; then
++    say ""
++    say "[LEG 2] SKIPPED (--skip-linux)"
++else
++    variant_leg2 LAGRANGE6  OctavoxRE_Lagrange6
++    variant_leg2 OBSKERNEL6 OctavoxRE_ObsKernel6
++fi
++
++# ==============================================================================
++# LEG 3: WINDOWS x64 cross-builds of BOTH variants
++# ==============================================================================
++export PATH="${WINSHIM_DIR}:${PATH}"   # no-op 'attrib' (cosmetic +s attribute)
++variant_leg3() { # $1 = VARIANT $2 = bundle name
++    local VARIANT="$1" BUNDLE="$2"
++    local B="${R18_ROOT}/build_$(echo "${VARIANT}" | tr 'A-Z' 'a-z')"
++    say ""
++    say "[LEG 3/${VARIANT}] WINDOWS x64 cross-build (llvm-mingw, PE32+ x86-64)"
++    phase_start
++    win_configure "${B}" "${VARIANT}" > "${EVID_OUT}/wdb_win_${VARIANT}_configure.log" 2>&1 || fail "win ${VARIANT} configure"
++    cmake --build "${B}" -j2 > "${EVID_OUT}/wdb_win_${VARIANT}_build.log" 2>&1 || fail "win ${VARIANT} build"
++    cmake --build "${B}" --target validator > "${EVID_OUT}/wdb_win_${VARIANT}_validator_build.log" 2>&1 || fail "win ${VARIANT} validator build"
++    cmake --build "${B}" --target moduleinfotool > "${EVID_OUT}/wdb_win_${VARIANT}_moduleinfotool_build.log" 2>&1 || fail "win ${VARIANT} moduleinfotool build"
++    local MOD="${B}/VST3/Release/${BUNDLE}.vst3/Contents/x86_64-win/${BUNDLE}.vst3"
++    file "${MOD}" | rg -q "PE32\+ executable for MS Windows .*DLL.*x86-64" \
++        && say "  module: PE32+ x86-64 DLL ($(stat -c%s "${MOD}") bytes)" \
++        || fail "win ${VARIANT} module is not a PE32+ x86-64 DLL"
++    say "  module sha256: $(sha256sum "${MOD}" | cut -d' ' -f1)"
++    say "  leg 3/${VARIANT} wall: $(phase_secs) s"
++}
++variant_leg3 LAGRANGE6 OctavoxRE_Lagrange6
++variant_leg3 OBSKERNEL6 OctavoxRE_ObsKernel6
++
++# ==============================================================================
++# LEG 4: Windows build reproducibility (fresh directories, byte comparison)
++# ==============================================================================
++say ""
++say "[LEG 4] Windows reproducibility: fresh clean builds -> byte-identical modules"
++phase_start
++variant_leg4() { # $1 = VARIANT $2 = bundle name
++    local VARIANT="$1" BUNDLE="$2"
++    local B="${R18_ROOT}/build_repro_$(echo "${VARIANT}" | tr 'A-Z' 'a-z')"
++    local PRIMARY="${R18_ROOT}/build_$(echo "${VARIANT}" | tr 'A-Z' 'a-z')"
++    rm -rf "${B}"
++    win_configure "${B}" "${VARIANT}" > /dev/null 2>&1
++    cmake --build "${B}" -j2 > "${EVID_OUT}/wdb_repro_${VARIANT}_build.log" 2>&1 || fail "repro ${VARIANT} build"
++    local M1="${B}/VST3/Release/${BUNDLE}.vst3/Contents/x86_64-win/${BUNDLE}.vst3"
++    local M0="${PRIMARY}/VST3/Release/${BUNDLE}.vst3/Contents/x86_64-win/${BUNDLE}.vst3"
++    if cmp -s "${M1}" "${M0}"; then
++        say "  ${VARIANT}: fresh build byte-identical ($(sha256sum "${M0}" | cut -d' ' -f1))"
++    else
++        fail "repro ${VARIANT}: fresh build DIFFERS from the primary module"
++    fi
++    rm -rf "${B}"
++}
++variant_leg4 LAGRANGE6 OctavoxRE_Lagrange6
++variant_leg4 OBSKERNEL6 OctavoxRE_ObsKernel6
++say "  leg 4 wall: $(phase_secs) s"
++
++# ==============================================================================
++# LEG 5: assembly of the delivery layout + moduleinfo.json + validation kit
++# ==============================================================================
++say ""
++say "[LEG 5] assembly: out/Builds/OctavoxRE_R18_Windows_x64 + the Windows validation kit"
++phase_start
++BUILDS="${OUT_ROOT}/Builds/OctavoxRE_R18_Windows_x64"
++KIT="${OUT_ROOT}/Windows_Validation_Kit"
++rm -rf "${BUILDS}" "${KIT}"
++mkdir -p "${BUILDS}/Lagrange6" "${BUILDS}/ObsKernel6" \
++         "${KIT}/Lagrange6" "${KIT}/ObsKernel6" "${KIT}/shared"
++
++variant_assemble() { # $1 = VARIANT $2 = bundle name $3 = dir name
++    local VARIANT="$1" BUNDLE="$2" DIRNAME="$3"
++    local SRC="${R18_ROOT}/build_$(echo "${VARIANT}" | tr 'A-Z' 'a-z')"
++    local DST="${BUILDS}/${DIRNAME}/${BUNDLE}.vst3"
++    mkdir -p "${DST}/Contents/x86_64-win" "${DST}/Contents/Resources"
++    cp "${SRC}/VST3/Release/${BUNDLE}.vst3/Contents/x86_64-win/${BUNDLE}.vst3" \
++       "${DST}/Contents/x86_64-win/${BUNDLE}.vst3"
++    cp "${SRC}/VST3/Release/${BUNDLE}.vst3/PlugIn.ico" "${DST}/PlugIn.ico"
++    cp "${SRC}/VST3/Release/${BUNDLE}.vst3/desktop.ini" "${DST}/desktop.ini"
++    # moduleinfo.json: copied from the equivalent LINUX variant build, where
++    # the pinned SDK's own moduleinfotool GENERATED it from the real factory
++    # of the same source + the same variant configuration (the moduleinfo
++    # metadata is platform-independent). The Windows validation kit ships
++    # moduleinfotool.exe so a real Windows machine can regenerate/verify it
++    # natively -- see the kit README.
++    cp "${R18_ROOT}/build_lin_$(echo "${VARIANT}" | tr 'A-Z' 'a-z')/VST3/Release/${BUNDLE}.vst3/Contents/Resources/moduleinfo.json" \
++       "${DST}/Contents/Resources/moduleinfo.json"
++    # validation kit: the variant-aware test executables
++    cp "${SRC}/bin/octavox_vst3_wrapper_tests.exe" "${KIT}/${DIRNAME}/"
++    cp "${SRC}/bin/octavox_module_integration_tests.exe" "${KIT}/${DIRNAME}/"
++    say "  assembled ${DST}"
++}
++variant_assemble LAGRANGE6  OctavoxRE_Lagrange6  Lagrange6
++variant_assemble OBSKERNEL6 OctavoxRE_ObsKernel6 ObsKernel6
++
++# shared SDK tools (byte-identical across the two variant builds -- verified)
++cp "${R18_ROOT}/build_lagrange6/bin/validator.exe"      "${KIT}/shared/"
++cp "${R18_ROOT}/build_lagrange6/bin/moduleinfotool.exe" "${KIT}/shared/"
++if ! cmp -s "${R18_ROOT}/build_lagrange6/bin/validator.exe" \
++            "${R18_ROOT}/build_obskernel6/bin/validator.exe"; then
++    fail "validator.exe differs between the two variant builds (expected identical)"
++fi
++# the kit's run scripts + README
++cp "${R18_ROOT}/kit_templates/run_validation_lagrange6.cmd"  "${KIT}/Lagrange6/run_validation.cmd"
++cp "${R18_ROOT}/kit_templates/run_validation_obskernel6.cmd" "${KIT}/ObsKernel6/run_validation.cmd"
++cp "${R18_ROOT}/kit_templates/README_WINDOWS_VALIDATION.md"  "${KIT}/"
++say "  assembled ${KIT}"
++say "  leg 5 wall: $(phase_secs) s"
++
++# ==============================================================================
++# LEG 6: structural verification of BOTH Windows modules -> JSON + summary
++# ==============================================================================
++say ""
++say "[LEG 6] structural verification of the Windows modules"
++phase_start
++python3 "${R18_ROOT}/verify_windows_modules.py" \
++    --builds "${BUILDS}" --out "${EVID_OUT}/wdb_windows_verification.json" \
++    > "${EVID_OUT}/wdb_windows_verification.txt" 2>&1 \
++    || fail "structural verification (see wdb_windows_verification.json)"
++rg "RESULT:" "${EVID_OUT}/wdb_windows_verification.txt" | head -2 | sed 's/^/  /'
++say "  leg 6 wall: $(phase_secs) s"
++
++# ==============================================================================
++# summary
++# ==============================================================================
++hr
++TOTAL=$(( $(date +%s) - T0_GLOBAL ))
++if [ "${FAILURES}" = "0" ]; then
++    say "RESULT: ALL GATES PASSED (total wall ${TOTAL} s)"
++    say "  evidence captured in: ${EVID_OUT}"
++    say "  delivery layout at:  ${OUT_ROOT}"
++    exit 0
++else
++    say "RESULT: ${FAILURES} FAILURE(S) (total wall ${TOTAL} s)"
++    say "  evidence captured in: ${EVID_OUT}"
++    exit 1
++fi
+diff -ruN a/native/vst3/CMakeLists.txt b/native/vst3/CMakeLists.txt
+--- a/native/vst3/CMakeLists.txt	2026-10-30 19:18:45.000000000 +0000
++++ b/native/vst3/CMakeLists.txt	2026-10-30 22:01:39.495825070 +0000
+@@ -37,6 +37,38 @@
+         "(see native/vst3/VST3_WRAPPER.md for the pinned-SHA acquisition).")
+ endif()
+ 
++# ---------------------------------------------------------------------------
++# R18-WDB (Windows dual build): the wrapper's compile-time default
++# interpolation -- the VARIANT selection. Exactly one of
++#   OCTAVOX_VST3_INTERP_LAGRANGE6 / _LAGRANGE6Q / _OBSKERNEL6
++# is defined for every wrapper consumer (module, wrapper reference tests,
++# compiled-module integration tests; consumed ONLY via the central helper
++# octavox_build_config.h). The GENERIC DSP CORE DEFAULT stays
++# Interpolation::Lagrange6 (native/include/octavox/dsp.hpp is UNCHANGED).
++#
++# The variant also selects the bundle/package name and the VST3 identities
++# (display name + per-variant processor class FUID / factory UID -- see
++# octavox_build_config.h). The 38-parameter host surface is identical in
++# every variant (no host parameter is added for the interpolation).
++# ---------------------------------------------------------------------------
++set(OCTAVOX_VST3_INTERPOLATION "LAGRANGE6" CACHE STRING
++    "VST3 wrapper default interpolation kernel: LAGRANGE6 | LAGRANGE6Q | OBSKERNEL6")
++string(TOUPPER "${OCTAVOX_VST3_INTERPOLATION}" OCTAVOX_VST3_INTERPOLATION)
++if(NOT OCTAVOX_VST3_INTERPOLATION MATCHES "^(LAGRANGE6|LAGRANGE6Q|OBSKERNEL6)$")
++    message(FATAL_ERROR "OCTAVOX_VST3_INTERPOLATION must be one of "
++        "LAGRANGE6 | LAGRANGE6Q | OBSKERNEL6 (got: '${OCTAVOX_VST3_INTERPOLATION}')")
++endif()
++set(OCTAVOX_VST3_VARIANT_DEF "OCTAVOX_VST3_INTERP_${OCTAVOX_VST3_INTERPOLATION}=1")
++if(OCTAVOX_VST3_INTERPOLATION STREQUAL "OBSKERNEL6")
++    set(OCTAVOX_VST3_BUNDLE_NAME "OctavoxRE_ObsKernel6")
++elseif(OCTAVOX_VST3_INTERPOLATION STREQUAL "LAGRANGE6Q")
++    set(OCTAVOX_VST3_BUNDLE_NAME "OctavoxRE_Lagrange6Q")
++else()
++    set(OCTAVOX_VST3_BUNDLE_NAME "OctavoxRE_Lagrange6")
++endif()
++message(STATUS "OCTAVOX VST3 build variant: ${OCTAVOX_VST3_INTERPOLATION} "
++               "(bundle ${OCTAVOX_VST3_BUNDLE_NAME}.vst3; define ${OCTAVOX_VST3_VARIANT_DEF})")
++
+ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ set(CMAKE_CXX_EXTENSIONS OFF)
+@@ -76,21 +108,60 @@
+ include_directories(${ROOT} ${SDK_ROOT})
+ 
+ # ---------------------------------------------------------------------------
+-# The plug-in module (bundle name OctavoxNative.vst3)
++# R18-WDB MinGW (llvm-mingw + libc++) compatibility shims. The pinned SDK
++# tree itself stays BYTE-UNTOUCHED (the pinned-SHA verification still
++# passes); these only adjust compilation from OUR build scope:
++#   1) public.sdk/source/common/threadchecker_win32.cpp uses std::terminate
++#      without including <exception> (MSVC/libstdc++ provide it transitively;
++#      libc++ does not) -> force-include <exception>.
++#   2) public.sdk/source/vst/utility/alignedalloc.h guards its Windows path
++#      with _MSC_VER, so MinGW takes the POSIX std::aligned_alloc branch,
++#      which libc++ does not provide -> force-include
++#      mingw_compat_aligned_alloc.h (see that file's header comment for the
++#      full dormancy analysis of the alloc/free pairing caveat).
++# Recorded in WINDOWS_DUAL_BUILD_REPORT.md.
++# ---------------------------------------------------------------------------
++if(MINGW)
++    # a SINGLE -include flag per target (CMake deduplicates repeated
++    # '-include' tokens, which would orphan a second file argument)
++    set(OCTAVOX_MINGW_SHIM "${CMAKE_CURRENT_SOURCE_DIR}/mingw_compat_shim.h")
++    foreach(octavox_sdk_target sdk sdk_hosting sdk_common)
++        if(TARGET ${octavox_sdk_target})
++            target_compile_options(${octavox_sdk_target} PRIVATE
++                -include "${OCTAVOX_MINGW_SHIM}")
++        endif()
++    endforeach()
++    if(TARGET moduleinfotool)
++        target_compile_options(moduleinfotool PRIVATE
++            -include "${OCTAVOX_MINGW_SHIM}")
++    endif()
++    #   3) the SDK validator's Windows entry point is wmain (main.cpp's
++    #      SMTG_OS_WINDOWS branch); MSVC links it automatically, MinGW needs
++    #      the -municode driver flag to select the wmainCRTStartup entry.
++    #      Applied to the target from OUR scope (SDK tree untouched).
++    if(TARGET validator)
++        target_link_options(validator PRIVATE -municode)
++    endif()
++endif()
++
++# ---------------------------------------------------------------------------
++# The plug-in module (bundle name per VARIANT: OctavoxRE_<Variant>.vst3)
+ # ---------------------------------------------------------------------------
+ smtg_add_vst3plugin(octavoxnative
+-    PACKAGE_NAME "OctavoxNative"
++    PACKAGE_NAME "${OCTAVOX_VST3_BUNDLE_NAME}"
+     SOURCES_LIST
+         octavox_native_processor.cpp
+         octavox_native_processor.h
+         octavox_params.cpp
+         octavox_params.h
++        octavox_build_config.h
+         octavox_ids.h
+         factory.cpp
+         ${VST3_SDK_ROOT}/public.sdk/source/vst/vstsinglecomponenteffect.cpp
+ )
+ target_link_libraries(octavoxnative PRIVATE octavox_core_vst3 sdk)
+ target_include_directories(octavoxnative PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
++target_compile_definitions(octavoxnative PRIVATE ${OCTAVOX_VST3_VARIANT_DEF})
+ if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
+     target_compile_options(octavoxnative PRIVATE -Wall -Wextra)
+ endif()
+@@ -114,13 +185,14 @@
+                                                          sdk sdk_hosting)
+ target_include_directories(octavox_vst3_wrapper_tests PRIVATE
+     ${CMAKE_CURRENT_SOURCE_DIR})
++target_compile_definitions(octavox_vst3_wrapper_tests PRIVATE ${OCTAVOX_VST3_VARIANT_DEF})
+ if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
+     target_compile_options(octavox_vst3_wrapper_tests PRIVATE -Wall -Wextra)
+ endif()
+ 
+ # ---------------------------------------------------------------------------
+ # R18-P6: the ACTUAL-COMPILED-MODULE integration harness.  Loads the built
+-# OctavoxNative.vst3 bundle through the pinned SDK's VST3::Hosting::Module
++# OctavoxRE_<Variant>.vst3 bundle through the pinned SDK's VST3::Hosting::Module
+ # loader (a real dlopen + GetPluginFactory) and drives the exported factory
+ # instances through the full host interface contract; outputs are compared
+ # bit-exactly with the hand-driven core reference.  This is an
+@@ -132,6 +204,7 @@
+     octavox_params.cpp
+     ${VST3_SDK_ROOT}/public.sdk/source/common/memorystream.cpp
+ )
++target_compile_definitions(octavox_module_integration_tests PRIVATE ${OCTAVOX_VST3_VARIANT_DEF})
+ # the SDK keeps Module::create in the platform file
+ if(WIN32)
+     target_sources(octavox_module_integration_tests PRIVATE
+diff -ruN a/native/vst3/mingw_compat_aligned_alloc.h b/native/vst3/mingw_compat_aligned_alloc.h
+--- a/native/vst3/mingw_compat_aligned_alloc.h	1970-01-01 00:00:00.000000000 +0000
++++ b/native/vst3/mingw_compat_aligned_alloc.h	2026-10-30 21:55:33.411837557 +0000
+@@ -0,0 +1,60 @@
++// ---------------------------------------------------------------------------
++// OCTAVOX R18-WDB -- MinGW/libc++ compatibility shim: ::aligned_alloc
++// ============================================================================
++// FORCE-INCLUDED (via -include) into the pinned VST3 SDK's build targets
++// when compiling with llvm-mingw (x86_64-w64-mingw32, libc++). The SDK tree
++// itself stays BYTE-UNTOUCHED (the pinned-SHA verification still passes);
++// this shim is applied from OUR build scope only.
++//
++// WHY: public.sdk/source/vst/utility/alignedalloc.h selects its
++// implementation with `#elif defined(_MSC_VER)`, so a MinGW build takes the
++// POSIX branch and calls std::aligned_alloc -- which llvm-mingw's libc++
++// does not provide (Windows CRT has no C11 aligned_alloc; UCRT offers
++// _aligned_malloc/_aligned_free). libc++ declares
++// `using ::aligned_alloc _LIBCPP_USING_IF_EXISTS;` in <cstdlib>, so a GLOBAL
++// declaration made BEFORE <cstdlib> is first parsed is picked up by
++// std::aligned_alloc exactly. This shim provides that declaration.
++//
++// CAVEAT (documented, dormant): the SDK's aligned_free() non-MSVC branch
++// frees the block with std::free(), while _aligned_malloc blocks must be
++// freed with _aligned_free(). The pairing is therefore only sound if the
++// aligned path is never exercised. Analysis for THIS build:
++//   * the only SDK callers of Steinberg::Vst::aligned_alloc/aligned_free are
++//     public.sdk/source/vst/utility/dataexchange.cpp and
++//     public.sdk/source/vst/hosting/hostdataexchangehandler.cpp -- the
++//     OPTIONAL VST3 data-exchange feature;
++//   * our plugin module never implements/opts into IDataExchangeHandler, so
++//     the module never calls it;
++//   * our wrapper tests and the compiled-module integration harness drive
++//     the plain component/audio/controller interfaces only;
++//   * the Steinberg validator's test suites (general/bus/state/processing/
++//     noteexpression/unit) contain no data-exchange test, and the feature
++//     could only activate for a plugin that advertises it.
++// The code therefore compiles to correct, DORMANT symbols in every binary
++// delivered this round. Recorded in WINDOWS_DUAL_BUILD_REPORT.md.
++// ---------------------------------------------------------------------------
++#pragma once
++
++#include <stddef.h>
++#include <malloc.h>  // _aligned_malloc (UCRT / mingw-w64)
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* C11 aligned_alloc semantics over the Windows UCRT aligned allocator.
++   Declared at GLOBAL scope so that libc++'s
++   `using ::aligned_alloc _LIBCPP_USING_IF_EXISTS;` (<cstdlib>) resolves
++   std::aligned_alloc to this definition. `static __inline` gives every
++   including TU its own copy (no cross-TU linkage issues, C and C++). */
++static __inline void* aligned_alloc(size_t alignment, size_t size)
++{
++    if (alignment == 0)  /* defensive: C11 requires a power of two > 0 */
++        alignment = sizeof(void*);
++    /* _aligned_malloc's parameter order is (size, alignment). */
++    return _aligned_malloc(size, alignment);
++}
++
++#ifdef __cplusplus
++}
++#endif
+diff -ruN a/native/vst3/mingw_compat_shim.h b/native/vst3/mingw_compat_shim.h
+--- a/native/vst3/mingw_compat_shim.h	1970-01-01 00:00:00.000000000 +0000
++++ b/native/vst3/mingw_compat_shim.h	2026-10-30 21:57:30.144454806 +0000
+@@ -0,0 +1,20 @@
++// ---------------------------------------------------------------------------
++// OCTAVOX R18-WDB -- combined MinGW/libc++ force-include shim (SDK targets)
++// ============================================================================
++// Force-included (a SINGLE -include flag per target -- CMake deduplicates
++// repeated '-include' tokens, which would orphan a second file argument)
++// into the pinned VST3 SDK's build targets when compiling with llvm-mingw
++// (x86_64-w64-mingw32, libc++). The SDK tree itself stays BYTE-UNTOUCHED.
++//
++//   1) <exception>: public.sdk/source/common/threadchecker_win32.cpp uses
++//      std::terminate without including <exception> (MSVC/libstdc++ provide
++//      it transitively; libc++ does not).
++//   2) mingw_compat_aligned_alloc.h: provides ::aligned_alloc for
++//      std::aligned_alloc (see that file's header comment for the full
++//      analysis of the SDK's _MSC_VER guard and the dormancy record).
++// ---------------------------------------------------------------------------
++#pragma once
++
++#include <exception>
++
++#include "mingw_compat_aligned_alloc.h"
+diff -ruN a/native/vst3/octavox_build_config.h b/native/vst3/octavox_build_config.h
+--- a/native/vst3/octavox_build_config.h	1970-01-01 00:00:00.000000000 +0000
++++ b/native/vst3/octavox_build_config.h	2026-10-30 21:37:54.743079139 +0000
+@@ -0,0 +1,148 @@
++// ---------------------------------------------------------------------------
++// OCTAVOX native core -- VST3 wrapper BUILD CONFIGURATION (R18-WDB)
++// ============================================================================
++// PROVENANCE: our own independent harmonizer implementation around the
++// octavox native DSP core. NOT a reproduction of the original Eventide
++// Octavox plug-in; no target code; the original binary was never executed.
++//
++// THE CENTRAL VARIANT HELPER (the one place the build's interpolation
++// selection and the dual VST3 identities are defined):
++//
++//   The CMake cache variable OCTAVOX_VST3_INTERPOLATION
++//     (LAGRANGE6 | LAGRANGE6Q | OBSKERNEL6, default LAGRANGE6)
++//   is translated by native/vst3/CMakeLists.txt into EXACTLY ONE of
++//     OCTAVOX_VST3_INTERP_LAGRANGE6 / _LAGRANGE6Q / _OBSKERNEL6
++//   compile definitions, visible to every wrapper consumer (the module,
++//   the wrapper reference tests, the compiled-module integration tests,
++//   and every state restore / initialization path).
++//
++// Everything variant-dependent is consumed FROM THIS HEADER ONLY:
++//   * build::kDefaultInterpolation -- the wrapper's compile-time default
++//     interpolation (the GENERIC DSP CORE DEFAULT in octavox/dsp.hpp is
++//     UNCHANGED and stays Interpolation::Lagrange6 -- the core tree is
++//     frozen; only the wrapper's configuration layer selects the kernel).
++//   * build::referenceConfig()     -- the engine configuration the wrapper
++//     tests / integration tests use for their hand-driven core references
++//     (core defaults + the variant interpolation; an OBSKERNEL6 module is
++//     NEVER compared against a LAGRANGE6 reference).
++//   * build::kInterpolationName / kBundleName / kPluginDisplayName --
++//     the obvious-to-the-user identity strings.
++//   * the per-variant processor class FUIDs + factory UIDs (see below).
++//
++// DUAL IDENTITIES (both variants must be loadable simultaneously in one
++// DAW): the two variants NEVER share a VST3 class identity.
++//   * LAGRANGE6  variant keeps the R16-R18 lineage identity:
++//       processor {6F4E6258-9A31-42E1-8F3C-5A971D2B4E60}
++//       factory   {7C5F93E2-4B18-4D7A-9E6C-3A2B8F1D5C44}
++//     (a state blob saved by the R16-R18 "OctavoxNative" module restores
++//     into this class -- same class ID, renamed product).
++//   * OBSKERNEL6 variant carries freshly minted, deterministically derived
++//     UIDs (SHA-256 of a fixed namespace string, first 16 bytes, grouped
++//     per the DECLARE_UID convention of the existing UIDs; derivation
++//     recorded in WINDOWS_DUAL_BUILD_REPORT.md):
++//       processor {E3E7FA70-6A38-0D35-B05F-64B91F1E2689}
++//         = sha256("OctavoxRE R18-Windows-Dual-Build deterministic FUID
++//                   mint v1 (2026-10-30) :: processor class UID for the
++//                   ObsKernel6 variant")[0..15]
++//       factory   {3D4CDBC6-ACAC-BB09-077F-D5B80BD2F550}
++//         = sha256("... :: module factory UID for the ObsKernel6
++//                   variant")[0..15]
++//
++// The 38-parameter host surface is IDENTICAL in both variants: no host
++// parameter is added, removed or renumbered (the interpolation choice is
++// a COMPILE-TIME property of the module, never a host-visible parameter).
++// ---------------------------------------------------------------------------
++#pragma once
++
++#include "octavox/dsp.hpp"
++
++#include "pluginterfaces/base/funknown.h"
++
++#include <string>
++
++namespace octavox {
++namespace vst3wrap {
++namespace build {
++
++//--------------------------------------------------------------------------
++// The compile-time interpolation selection
++//--------------------------------------------------------------------------
++
++#if defined(OCTAVOX_VST3_INTERP_OBSKERNEL6)
++
++/// The wrapper's default interpolation for this build.
++constexpr Interpolation kDefaultInterpolation = Interpolation::ObsKernel6;
++/// Short kernel name (identity/display/reporting).
++constexpr const char* kInterpolationName = "ObsKernel6";
++/// VST3 bundle/package base name (OctavoxRE_<Variant>.vst3).
++constexpr const char* kBundleName = "OctavoxRE_ObsKernel6";
++/// Plugin display name (the factory-registered class name).
++constexpr const char* kPluginDisplayName = "OctavoxRE ObsKernel6";
++
++/// Processor class FUID of THIS variant (freshly minted, deterministic
++/// derivation documented in the header comment above + the build report).
++DECLARE_UID(OctavoxNativeProcessorUID, 0xE3E7FA70, 0x6A380D35, 0xB05F64B9, 0x1F1E2689)
++/// Module factory UID of THIS variant.
++DECLARE_UID(OctavoxNativeFactoryUID, 0x3D4CDBC6, 0xACACBB09, 0x077FD5B8, 0x0BD2F550)
++
++#elif defined(OCTAVOX_VST3_INTERP_LAGRANGE6Q)
++
++/// The wrapper's default interpolation for this build.
++constexpr Interpolation kDefaultInterpolation = Interpolation::Lagrange6Q;
++/// Short kernel name (identity/display/reporting).
++constexpr const char* kInterpolationName = "Lagrange6Q";
++/// VST3 bundle/package base name.
++constexpr const char* kBundleName = "OctavoxRE_Lagrange6Q";
++/// Plugin display name (the factory-registered class name).
++constexpr const char* kPluginDisplayName = "OctavoxRE Lagrange6Q";
++
++/// Processor class FUID of THIS variant (R16-R18 lineage identity).
++DECLARE_UID(OctavoxNativeProcessorUID, 0x6F4E6258, 0x9A3142E1, 0x8F3C5A97, 0x1D2B4E60)
++/// Module factory UID of THIS variant.
++DECLARE_UID(OctavoxNativeFactoryUID, 0x7C5F93E2, 0x4B184D7A, 0x9E6C3A2B, 0x8F1D5C44)
++
++#else  // default: LAGRANGE6
++
++/// The wrapper's default interpolation for this build.
++constexpr Interpolation kDefaultInterpolation = Interpolation::Lagrange6;
++/// Short kernel name (identity/display/reporting).
++constexpr const char* kInterpolationName = "Lagrange6";
++/// VST3 bundle/package base name (OctavoxRE_<Variant>.vst3).
++constexpr const char* kBundleName = "OctavoxRE_Lagrange6";
++/// Plugin display name (the factory-registered class name).
++constexpr const char* kPluginDisplayName = "OctavoxRE Lagrange6";
++
++/// Processor class FUID of THIS variant (R16-R18 lineage identity:
++/// the R16/R17/R18 "OctavoxNative" class, renamed with state-blob
++/// compatibility preserved).
++DECLARE_UID(OctavoxNativeProcessorUID, 0x6F4E6258, 0x9A3142E1, 0x8F3C5A97, 0x1D2B4E60)
++/// Module factory UID of THIS variant.
++DECLARE_UID(OctavoxNativeFactoryUID, 0x7C5F93E2, 0x4B184D7A, 0x9E6C3A2B, 0x8F1D5C44)
++
++#endif
++
++//--------------------------------------------------------------------------
++// The single engine-configuration helper every consumer uses
++//--------------------------------------------------------------------------
++
++/// The engine configuration for THIS build variant: the pure core defaults
++/// (Config{} -- the generic DSP core default, UNCHANGED) with the wrapper's
++/// compile-time interpolation selection substituted. Used by:
++///   * the processor constructor / initialization paths,
++///   * state restore (the variant selection is authoritative),
++///   * the wrapper reference tests' hand-driven core references,
++///   * the compiled-module integration tests' core references
++///     (an OBSKERNEL6 module is never compared against a LAGRANGE6
++///     reference).
++inline Config referenceConfig() {
++    Config c{};  // core defaults (frozen core tree)
++    c.interpolation = kDefaultInterpolation;
++    return c;
++}
++
++/// The .vst3 bundle file name of THIS variant (OctavoxRE_<Variant>.vst3).
++inline std::string bundleFileName() { return std::string(kBundleName) + ".vst3"; }
++
++}  // namespace build
++}  // namespace vst3wrap
++}  // namespace octavox
+diff -ruN a/native/vst3/octavox_ids.h b/native/vst3/octavox_ids.h
+--- a/native/vst3/octavox_ids.h	2026-10-28 20:29:16.000000000 +0000
++++ b/native/vst3/octavox_ids.h	2026-10-30 21:38:11.695172197 +0000
+@@ -1,31 +1,54 @@
+ // ---------------------------------------------------------------------------
+-// OCTAVOX native core -- VST3 wrapper: class identity (R16-P4b)
++// OCTAVOX native core -- VST3 wrapper: class identity (R16-P4b, R18-WDB)
+ // ============================================================================
+ // PROVENANCE: our own independent harmonizer implementation around the
+ // octavox native DSP core. NOT a reproduction of the original Eventide
+ // Octavox plug-in; no target code; the original binary was never executed.
+ //
+-// Fresh FUIDs minted for this wrapper (not copied from any SDK sample):
+-//   OctavoxNativeProcessorUID = {6F4E6258-9A31-42E1-8F3C-5A971D2B4E60}
+-//   OctavoxNativeFactoryUID   = {7C5F93E2-4B18-4D7A-9E6C-3A2B8F1D5C44}
++// R18-WDB (Windows dual build): every identity in this header is now
++// VARIANT-CONDITIONAL and comes from the single central build
++// configuration helper octavox_build_config.h:
++//
++//   * OctavoxNativeProcessorUID / OctavoxNativeFactoryUID -- per-variant
++//     FUIDs (the two variants never share a VST3 class identity; the
++//     LAGRANGE6 variant keeps the R16-R18 lineage FUIDs, the OBSKERNEL6
++//     variant carries freshly minted deterministic ones).
++//   * kPluginName -- the per-variant display name ("OctavoxRE Lagrange6" /
++//     "OctavoxRE ObsKernel6") which makes the interpolation choice
++//     obvious in any host's plug-in list.
++//
++// The names of the symbols are UNCHANGED (all consumers -- factory.cpp,
++// the wrapper tests, the integration harness -- keep compiling against
++// octavox::vst3wrap::OctavoxNativeProcessorUID / kPluginName / ... and
++// automatically pick up the variant identity of the configured build).
+ // ---------------------------------------------------------------------------
+ #pragma once
+ 
++#include "octavox_build_config.h"
++
+ #include "pluginterfaces/base/funknown.h"
+ 
+ namespace octavox {
+ namespace vst3wrap {
+ 
+-// Fresh UIDs minted for this wrapper (not copied from any SDK sample):
+-// processor {6F4E6258-9A31-42E1-8F3C-5A971D2B4E60}
+-// factory   {7C5F93E2-4B18-4D7A-9E6C-3A2B8F1D5C44}
++// Fresh UIDs minted for this wrapper (not copied from any SDK sample);
++// per-variant values, declared in octavox_build_config.h:
++//   LAGRANGE6  variant: processor {6F4E6258-9A31-42E1-8F3C-5A971D2B4E60}
++//                        factory   {7C5F93E2-4B18-4D7A-9E6C-3A2B8F1D5C44}
++//                        (R16-R18 lineage identity)
++//   LAGRANGE6Q variant: same lineage FUIDs (an auxiliary kernel variant)
++//   OBSKERNEL6 variant: processor {E3E7FA70-6A38-0D35-B05F-64B91F1E2689}
++//                        factory   {3D4CDBC6-ACAC-BB09-077F-D5B80BD2F550}
++//                        (deterministically minted for this round)
+ // (DECLARE_UID form: constexpr TUID, usable by the constexpr module factory
+ // and directly as an FIDString by hosts/tests.)
+-DECLARE_UID(OctavoxNativeProcessorUID, 0x6F4E6258, 0x9A3142E1, 0x8F3C5A97, 0x1D2B4E60)
+-DECLARE_UID(OctavoxNativeFactoryUID, 0x7C5F93E2, 0x4B184D7A, 0x9E6C3A2B, 0x8F1D5C44)
++using build::OctavoxNativeProcessorUID;
++using build::OctavoxNativeFactoryUID;
+ 
+-/// Plugin identity strings (factory registration).
+-constexpr const char* kPluginName = "OctavoxRE Native Harmonizer";
++/// Plugin identity strings (factory registration) -- per-variant display
++/// name making the interpolation choice obvious; vendor identity is kept
++/// CONSISTENT across both variants (the vendor is the same project).
++constexpr const char* kPluginName = build::kPluginDisplayName;
+ constexpr const char* kVendorName = "Octavox RE Project";
+ constexpr const char* kVendorWeb = "https://example.invalid/octavox-re";
+ constexpr const char* kVendorEmail = "octavox-re@example.invalid";
+diff -ruN a/native/vst3/octavox_module_integration_tests.cpp b/native/vst3/octavox_module_integration_tests.cpp
+--- a/native/vst3/octavox_module_integration_tests.cpp	2026-10-30 18:26:43.000000000 +0000
++++ b/native/vst3/octavox_module_integration_tests.cpp	2026-10-30 21:40:57.455078669 +0000
+@@ -18,6 +18,14 @@
+ // hand-driven DSP core reference (the same octavox core library, driven
+ // directly) under identical conditions.
+ //
++// R18-WDB (Windows dual build): the harness is VARIANT-AWARE.  The bundle
++// it looks for, the class FUID it queries and the hand-driven core
++// reference all come from the central build configuration helper
++// (octavox_build_config.h): an OBSKERNEL6 module is compared against an
++// OBSKERNEL6 reference -- NEVER against a LAGRANGE6 reference.  The module
++// path can be given explicitly (--module <path>); the default candidates
++// use this build's bundle name (OctavoxRE_<Variant>.vst3).
++//
+ // WHAT THIS IS NOT: this is an SDK-module-load + interface-contract test on
+ // ONE host implementation (the SDK's own hosting utilities on Linux).  It is
+ // NOT a DAW compatibility claim: no DAW was involved, and passing here does
+@@ -328,9 +336,12 @@
+     std::vector<float> in(N), modOut(N), refOut(N);
+     rng.fill(in);
+     // ---- the hand-driven reference (the core library linked directly) ----
++    // R18-WDB: the reference uses THIS build variant's interpolation
++    // (octavox_build_config.h via defaultConfig()); an OBSKERNEL6 module is
++    // never compared against a LAGRANGE6 reference.
+     {
+         octavox::MultichannelShifter ref;
+-        check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
++        check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 1), "reference prepare failed");
+         float* inP[1] = {in.data()};
+         float* outP[1] = {refOut.data()};
+         ref.process(inP, outP, 1, N);
+@@ -362,7 +373,7 @@
+     rng.fill(inR);
+     {
+         octavox::MultichannelShifter ref;
+-        check(c, ref.prepare(octavox::Config{}, 2), "reference prepare failed");
++        check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 2), "reference prepare failed");
+         float* inP[2] = {inL.data(), inR.data()};
+         float* outP[2] = {refL.data(), refR.data()};
+         ref.process(inP, outP, 2, N);
+@@ -413,7 +424,8 @@
+     std::vector<float> refOut(N);
+     {
+         octavox::MultichannelShifter ref;
+-        octavox::Config cfg = octavox::Config{};
++        // R18-WDB: the reference engine uses THIS build variant's kernel.
++        octavox::Config cfg = octavox::vst3wrap::defaultConfig();
+         check(c, ref.prepare(cfg, 1), "reference prepare failed");
+         const double sr = cfg.sample_rate, grain = cfg.grain;
+         const double pitch = toEnginePlain(ParamId::kPitch, 2.0);
+@@ -576,9 +588,9 @@
+ void caseLatencyReporting(CaseResult& c) {
+     if (!g_audio) { c.note = "no processor"; return; }
+     // the wrapper reports the core's latencySamples(); compare against the
+-    // core library's own value for the default config (the exact contract).
++    // core library's own value for the variant's config (the exact contract).
+     octavox::MultichannelShifter ref;
+-    check(c, ref.prepare(octavox::Config{}, 2), "reference prepare failed");
++    check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 2), "reference prepare failed");
+     const uint32 expect = ref.latencySamples();
+     const uint32 got = g_audio->getLatencySamples();
+     addValue(c, "expected_latency_samples", (double)expect);
+@@ -617,42 +629,51 @@
+         if (a == "--module" && i + 1 < argc) modulePath = argv[++i];
+         else if (a == "--json" && i + 1 < argc) jsonPath = argv[++i];
+         else {
+-            std::fprintf(stderr, "usage: %s [--module <path/to/OctavoxNative.vst3>] "
+-                                 "[--json <path>]\n", argv[0]);
++            std::fprintf(stderr, "usage: %s [--module <path/to/%s>] "
++                                 "[--json <path>]\n", argv[0],
++                         octavox::vst3wrap::build::kBundleName);
+             return 2;
+         }
+     }
+-    // default: <exe_dir>/../../VST3/Release/OctavoxNative.vst3
++    // R18-WDB: THIS build variant's bundle (OctavoxRE_<Variant>.vst3) from
++    // the central build configuration helper.
++    const std::string bundleName = octavox::vst3wrap::build::bundleFileName();
++    // default: <exe_dir>/../../VST3/Release/<bundle> (both separators --
++    // the harness also runs on Windows builds where argv[0] uses '\')
+     if (modulePath.empty()) {
+         std::string exe = argv[0];
+-        const size_t slash = exe.find_last_of('/');
++        const size_t slash = exe.find_last_of("/\\");
+         const std::string dir = slash == std::string::npos ? "." : exe.substr(0, slash);
+-        const char* cands[] = {
+-            "/../../VST3/Release/OctavoxNative.vst3",
+-            "/../../../VST3/Release/OctavoxNative.vst3",
+-            "/OctavoxNative.vst3",
++        const std::string cands[] = {
++            "/../../VST3/Release/" + bundleName,
++            "/../../../VST3/Release/" + bundleName,
++            "/" + bundleName,
+         };
+-        for (const char* suff : cands) {
++        for (const std::string& suff : cands) {
+             std::string p = dir + suff;
+             FILE* f = std::fopen(p.c_str(), "rb");
+             if (f) { std::fclose(f); modulePath = p; break; }
+         }
+         if (modulePath.empty()) {
+             // last resort: relative to the CWD
+-            const char* rel[] = {"build/VST3/Release/OctavoxNative.vst3",
+-                                 "VST3/Release/OctavoxNative.vst3"};
+-            for (const char* p : rel) {
+-                FILE* f = std::fopen(p, "rb");
++            const std::string rel[] = {"build/VST3/Release/" + bundleName,
++                                       "VST3/Release/" + bundleName};
++            for (const std::string& p : rel) {
++                FILE* f = std::fopen(p.c_str(), "rb");
+                 if (f) { std::fclose(f); modulePath = p; break; }
+             }
+         }
+     }
+     if (modulePath.empty()) {
+-        std::fprintf(stderr, "error: OctavoxNative.vst3 not found "
+-                             "(build it first, or pass --module)\n");
++        std::fprintf(stderr, "error: %s not found "
++                             "(build it first, or pass --module)\n",
++                     bundleName.c_str());
+         return 2;
+     }
+     std::printf("module: %s\n", modulePath.c_str());
++    std::printf("build variant: %s (default interpolation: %s)\n",
++                octavox::vst3wrap::build::kBundleName,
++                octavox::vst3wrap::build::kInterpolationName);
+     std::printf("harness scope: SDK module loader + factory + full interface "
+                 "contract vs the hand-driven core (NOT a DAW test)\n\n");
+ 
+@@ -728,6 +749,10 @@
+         FILE* f = std::fopen(jsonPath.c_str(), "w");
+         if (f) {
+             std::fprintf(f, "{\n  \"suite\": \"octavox-module-integration\",\n");
++            std::fprintf(f, "  \"build_variant\": \"%s\",\n",
++                         octavox::vst3wrap::build::kBundleName);
++            std::fprintf(f, "  \"default_interpolation\": \"%s\",\n",
++                         octavox::vst3wrap::build::kInterpolationName);
+             std::fprintf(f, "  \"module_path\": \"%s\",\n",
+                          jsonEscape(modulePath).c_str());
+             std::fprintf(f, "  \"cases\": [\n");
+diff -ruN a/native/vst3/octavox_native_processor.cpp b/native/vst3/octavox_native_processor.cpp
+--- a/native/vst3/octavox_native_processor.cpp	2026-10-28 20:44:19.000000000 +0000
++++ b/native/vst3/octavox_native_processor.cpp	2026-10-30 21:38:59.459434089 +0000
+@@ -4,6 +4,7 @@
+ // ============================================================================
+ #include "octavox_native_processor.h"
+ 
++#include "octavox_build_config.h"
+ #include "octavox_ids.h"
+ 
+ #include "base/source/fstreamer.h"
+@@ -26,10 +27,13 @@
+ using Steinberg::IBStream;
+ using namespace Steinberg::Vst;
+ 
+-// Fresh UIDs minted for this wrapper (not copied from any SDK sample):
+-// processor {6F4E6258-9A31-42E1-8F3C-5A971D2B4E60}
+-// factory   {7C5F93E2-4B18-4D7A-9E6C-3A2B8F1D5C44}
+-// (declared as constexpr TUIDs in octavox_ids.h -- DECLARE_UID form)
++// Fresh UIDs minted for this wrapper (not copied from any SDK sample);
++// per-variant FUIDs since R18-WDB (see octavox_build_config.h):
++//   LAGRANGE6  processor {6F4E6258-9A31-42E1-8F3C-5A971D2B4E60} (lineage)
++//              factory   {7C5F93E2-4B18-4D7A-9E6C-3A2B8F1D5C44} (lineage)
++//   OBSKERNEL6 processor {E3E7FA70-6A38-0D35-B05F-64B91F1E2689} (minted)
++//              factory   {3D4CDBC6-ACAC-BB09-077F-D5B80BD2F550} (minted)
++// (declared as constexpr TUIDs in octavox_build_config.h -- DECLARE_UID form)
+ 
+ //==========================================================================
+ // Construction / lifecycle
+@@ -444,6 +448,16 @@
+     if (!readStateData(state, st)) return Steinberg::kResultFalse;
+ 
+     cfg_ = st.cfg;
++    // R18-WDB (variant authoritativeness): the compile-time interpolation
++    // selection of THIS module build is authoritative on the state-restore
++    // path. A state blob saved by the OTHER variant (or by an R16-R18
++    // "OctavoxNative" module) still restores every other field verbatim,
++    // but the interpolation kernel stays this build's selection -- the
++    // variant's DSP difference is a compile-time property, never a
++    // host-visible or state-switchable parameter. The blob's own
++    // interpolation field (same variant: identical value) round-trips
++    // bit-unchanged.
++    cfg_.interpolation = build::kDefaultInterpolation;
+     // The engine is prepared at the HOST's current rate (a state saved at
+     // another rate re-prepares here; the time-domain parameters -- grain,
+     // base delay in the Config are sample-domain fields -- are restored
+diff -ruN a/native/vst3/octavox_params.h b/native/vst3/octavox_params.h
+--- a/native/vst3/octavox_params.h	2026-10-28 20:26:39.000000000 +0000
++++ b/native/vst3/octavox_params.h	2026-10-30 21:38:30.846277256 +0000
+@@ -33,6 +33,7 @@
+ // guards are first hit.
+ #include "public.sdk/source/vst/vstsinglecomponenteffect.h"
+ 
++#include "octavox_build_config.h"
+ #include "octavox/dsp.hpp"
+ 
+ #include "base/source/fstring.h"
+@@ -160,10 +161,13 @@
+ void plainArrayToSurface(const double in[kNumParams], Surface& s);
+ 
+ /// The engine configuration the wrapper uses: the pure core defaults
+-/// (Config{} -- see octavox/dsp.hpp), with sampleRate substituted at prepare
+-/// time. All timbre/buffer fields stay at the core defaults unless a restored
+-/// state blob carries others.
+-inline Config defaultConfig() { return Config{}; }
++/// (Config{} -- see octavox/dsp.hpp) with the WRAPPER's compile-time
++/// interpolation selection substituted (octavox_build_config.h -- the
++/// generic DSP core default stays Interpolation::Lagrange6, UNCHANGED;
++/// only this wrapper configuration layer selects the variant kernel),
++/// with sampleRate substituted at prepare time. All timbre/buffer fields
++/// stay at the core defaults unless a restored state blob carries others.
++inline Config defaultConfig() { return build::referenceConfig(); }
+ 
+ //--------------------------------------------------------------------------
+ // Versioned binary state blob ('OVR1' version 1) -- exact layout in
+diff -ruN a/native/vst3/octavox_vst3_tests.cpp b/native/vst3/octavox_vst3_tests.cpp
+--- a/native/vst3/octavox_vst3_tests.cpp	2026-10-29 17:06:05.000000000 +0000
++++ b/native/vst3/octavox_vst3_tests.cpp	2026-10-30 21:39:33.322619387 +0000
+@@ -429,7 +429,7 @@
+     std::vector<float> refOut(N), refBy(N);
+     {
+         octavox::MultichannelShifter ref;
+-        check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
++        check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 1), "reference prepare failed");
+         float* inP[1] = {in.data()};
+         float* oP[1] = {refOut.data()};
+         ref.process(inP, oP, 1, N);
+@@ -438,7 +438,7 @@
+         // A FRESH reference for the bypass run (a fresh engine + setBypass
+         // before processing = the wrapper's event-at-position-0 path).
+         octavox::MultichannelShifter ref2;
+-        check(c, ref2.prepare(octavox::Config{}, 1), "reference prepare failed");
++        check(c, ref2.prepare(octavox::vst3wrap::defaultConfig(), 1), "reference prepare failed");
+         ref2.setBypass(true);
+         float* inP[1] = {in.data()};
+         float* oB[1] = {refBy.data()};
+@@ -529,7 +529,7 @@
+     std::vector<float> refOut(N);
+     {
+         octavox::MultichannelShifter ref;
+-        check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
++        check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 1), "reference prepare failed");
+         float* inP[1] = {in.data()};
+         float* outP[1] = {refOut.data()};
+         int pos = 0;
+@@ -576,7 +576,7 @@
+     std::vector<float> refOut2(N);
+     {
+         octavox::MultichannelShifter ref;
+-        check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
++        check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 1), "reference prepare failed");
+         float* inP[1] = {in.data()};
+         float* outP[1] = {refOut2.data()};
+         for (int b = 0; b * HOST_BLOCK < N; ++b) {
+@@ -863,7 +863,7 @@
+         std::vector<float> refR(N);
+         {
+             octavox::MultichannelShifter ref;
+-            check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
++            check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 1), "reference prepare failed");
+             const double pitch = toEnginePlain(octavox::vst3wrap::ParamId::kPitch, -3.0);
+             ref.setRatio(std::pow(2.0, pitch / 12.0));
+             float* inP[1] = {in.data()};
+@@ -999,7 +999,7 @@
+     const uint32 wl = p->getLatencySamples();
+ 
+     octavox::MultichannelShifter ref;
+-    check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
++    check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 1), "reference prepare failed");
+     const int rl = ref.latencySamples();
+     addValue(c, "wrapper_latency_samples", static_cast<double>(wl));
+     addValue(c, "core_latency_samples", static_cast<double>(rl));
+@@ -1237,7 +1237,7 @@
+     std::vector<float> refOut(N);
+     {
+         octavox::MultichannelShifter ref;
+-        check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
++        check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 1), "reference prepare failed");
+         float* inP[1] = {in.data()};
+         float* outP[1] = {refOut.data()};
+         int pos = 0;
+@@ -1399,7 +1399,7 @@
+     std::vector<float> refOut(N);
+     {
+         octavox::MultichannelShifter ref;
+-        check(c, ref.prepare(octavox::Config{}, 1), "reference prepare failed");
++        check(c, ref.prepare(octavox::vst3wrap::defaultConfig(), 1), "reference prepare failed");
+         const double sr = octavox::Config{}.sample_rate;
+         const double grain = octavox::Config{}.grain;
+         float* inP[1] = {in.data()};

@@ -1,0 +1,26 @@
+00000001800E7EF6  488d8b28410000             lea      rcx, [rbx + 0x4128]                      reg=38; [base=37 idx=0 scale=1 disp=0x4128]
+00000001800E7EFD  e82e8ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7F02  488d8b10410000             lea      rcx, [rbx + 0x4110]                      reg=38; [base=37 idx=0 scale=1 disp=0x4110]
+00000001800E7F09  e8228ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7F0E  488d8bf8400000             lea      rcx, [rbx + 0x40f8]                      reg=38; [base=37 idx=0 scale=1 disp=0x40f8]
+00000001800E7F15  e8168ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7F1A  488d8bc0400000             lea      rcx, [rbx + 0x40c0]                      reg=38; [base=37 idx=0 scale=1 disp=0x40c0]
+00000001800E7F21  e80a8ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7F26  488d8ba0400000             lea      rcx, [rbx + 0x40a0]                      reg=38; [base=37 idx=0 scale=1 disp=0x40a0]
+00000001800E7F2D  e8fe8ef2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7F32  488d8b80000000             lea      rcx, [rbx + 0x80]                        reg=38; [base=37 idx=0 scale=1 disp=0x80]
+00000001800E7F39  e852630500                 call     0x18013e290                              imm=0x18013e290
+00000001800E7F3E  488d4b68                   lea      rcx, [rbx + 0x68]                        reg=38; [base=37 idx=0 scale=1 disp=0x68]
+00000001800E7F42  e8094ff7ff                 call     0x18005ce50                              imm=0x18005ce50
+00000001800E7F47  488d4b30                   lea      rcx, [rbx + 0x30]                        reg=38; [base=37 idx=0 scale=1 disp=0x30]
+00000001800E7F4B  e870fbf2ff                 call     0x180017ac0                              imm=0x180017ac0
+00000001800E7F50  488d4b10                   lea      rcx, [rbx + 0x10]                        reg=38; [base=37 idx=0 scale=1 disp=0x10]
+00000001800E7F54  e8478af2ff                 call     0x1800109a0                              imm=0x1800109a0
+00000001800E7F59  488d05c01f3200             lea      rax, [rip + 0x321fc0]                    reg=35; [base=41 idx=0 scale=1 disp=0x321fc0]
+00000001800E7F60  488903                     mov      qword ptr [rbx], rax                     [base=37 idx=0 scale=1 disp=0x0]; reg=35
+00000001800E7F63  488b5c2430                 mov      rbx, qword ptr [rsp + 0x30]              reg=37; [base=44 idx=0 scale=1 disp=0x30]
+00000001800E7F68  4883c420                   add      rsp, 0x20                                reg=44; imm=0x20
+00000001800E7F6C  5f                         pop      rdi                                      reg=39
+00000001800E7F6D  c3                         ret                                               
+00000001800E7F6E  cc                         int3                                              
+00000001800E7F6F  cc                         int3                                              

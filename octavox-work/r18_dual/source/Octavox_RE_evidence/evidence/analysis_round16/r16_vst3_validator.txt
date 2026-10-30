@@ -1,0 +1,235 @@
+# R16-P4b: VST3 SDK validator run against OctavoxNative.vst3 (Release, 2026-10-28T20:45:31Z)
+# (the SDK's post-build validator hook; the module target build re-runs it)
+$ cmake --build build --target octavoxnative
+In file included from /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/octavox_params.h:38,
+                 from /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/octavox_native_processor.h:48,
+                 from /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/octavox_native_processor.cpp:5:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../../../vst3sdk/base/source/fstring.h: In copy constructor ‘Steinberg::StringObject::StringObject(const Steinberg::StringObject&, Steinberg::int32)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../../../vst3sdk/base/source/fstring.h:752:9: warning: base class ‘class Steinberg::FObject’ should be explicitly initialized in the copy constructor [-Wextra]
+  752 |         StringObject (const StringObject& str, int32 n = -1) : String (str, n) {}
+      |         ^~~~~~~~~~~~
+* Loading module...
+
+	/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/VST3/Release/OctavoxNative.vst3
+
+* Scanning classes...
+
+  Factory Info:
+	vendor = Octavox RE Project
+	url = https://example.invalid/octavox-re
+	email = octavox-re@example.invalid
+
+  Class Info 0:
+	name = OctavoxRE Native Harmonizer
+	category = Audio Module Class
+	subCategories = Fx|Pitch Shift
+	version = 1.0.0
+	sdkVersion = VST 3.7.12
+	cid = 6F4E62589A3142E18F3C5A971D2B4E60
+
+* Checking snapshots...
+
+Info: No snapshots in Bundle.
+
+* Creating tests...
+
+* Running tests...
+
+-------------------------------------------------------------
+TestSuite : OctavoxRE Native Harmonizer
+-------------------------------------------------------------
+
+-------------------------------------------------------------
+TestSuite : General Tests
+-------------------------------------------------------------
+
+Info:  ===Scan Editor Classes ====================================
+Info:  Processor and edit controller united.
+
+Info:  ===Scan Buses ====================================
+Info:  => Audio Buses: [1 In(s) => 1 Out(s)]
+Info:       In [0]: "Audio Input" (Main-Default Active) 
+Info:       Out[0]: "Audio Output" (Main-Default Active) 
+Info:  => Event Buses: [0 In(s) => 0 Out(s)]
+
+Info:  ===Scan Parameters ====================================
+Info:  This component exports 38 parameter(s)
+Info:     Parameter 000 (id=0): [title="Bypass"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 001 (id=1): [title="Pitch Shift"] [unit="semitones"] [type = D, default = 0.500000, unit = 1]
+Info:     Parameter 002 (id=2): [title="Voices"] [unit=""] [type = D, default = 0.000000, unit = 1]
+Info:     Parameter 003 (id=3): [title="Spread"] [unit=""] [type = T, default = 1.000000, unit = 1]
+Info:     Parameter 004 (id=4): [title="Feedback"] [unit=""] [type = F, default = 0.000000, unit = 1]
+Info:     Parameter 005 (id=5): [title="Wet/Dry"] [unit=""] [type = F, default = 1.000000, unit = 1]
+Info:     Parameter 006 (id=6): [title="Voice 1 Pitch Offset"] [unit="semitones"] [type = D, default = 0.500000, unit = 10]
+Info:     Parameter 007 (id=7): [title="Voice 1 Gain"] [unit=""] [type = F, default = 0.500000, unit = 10]
+Info:     Parameter 008 (id=8): [title="Voice 1 Mute"] [unit=""] [type = T, default = 0.000000, unit = 10]
+Info:     Parameter 009 (id=9): [title="Voice 1 Base Delay"] [unit="ms"] [type = F, default = 0.026667, unit = 10]
+Info:     Parameter 010 (id=10): [title="Voice 2 Pitch Offset"] [unit="semitones"] [type = D, default = 0.500000, unit = 11]
+Info:     Parameter 011 (id=11): [title="Voice 2 Gain"] [unit=""] [type = F, default = 0.500000, unit = 11]
+Info:     Parameter 012 (id=12): [title="Voice 2 Mute"] [unit=""] [type = T, default = 0.000000, unit = 11]
+Info:     Parameter 013 (id=13): [title="Voice 2 Base Delay"] [unit="ms"] [type = F, default = 0.030000, unit = 11]
+Info:     Parameter 014 (id=14): [title="Voice 3 Pitch Offset"] [unit="semitones"] [type = D, default = 0.500000, unit = 12]
+Info:     Parameter 015 (id=15): [title="Voice 3 Gain"] [unit=""] [type = F, default = 0.500000, unit = 12]
+Info:     Parameter 016 (id=16): [title="Voice 3 Mute"] [unit=""] [type = T, default = 0.000000, unit = 12]
+Info:     Parameter 017 (id=17): [title="Voice 3 Base Delay"] [unit="ms"] [type = F, default = 0.033333, unit = 12]
+Info:     Parameter 018 (id=18): [title="Voice 4 Pitch Offset"] [unit="semitones"] [type = D, default = 0.500000, unit = 13]
+Info:     Parameter 019 (id=19): [title="Voice 4 Gain"] [unit=""] [type = F, default = 0.500000, unit = 13]
+Info:     Parameter 020 (id=20): [title="Voice 4 Mute"] [unit=""] [type = T, default = 0.000000, unit = 13]
+Info:     Parameter 021 (id=21): [title="Voice 4 Base Delay"] [unit="ms"] [type = F, default = 0.036667, unit = 13]
+Info:     Parameter 022 (id=22): [title="Voice 5 Pitch Offset"] [unit="semitones"] [type = D, default = 0.500000, unit = 14]
+Info:     Parameter 023 (id=23): [title="Voice 5 Gain"] [unit=""] [type = F, default = 0.500000, unit = 14]
+Info:     Parameter 024 (id=24): [title="Voice 5 Mute"] [unit=""] [type = T, default = 0.000000, unit = 14]
+Info:     Parameter 025 (id=25): [title="Voice 5 Base Delay"] [unit="ms"] [type = F, default = 0.040000, unit = 14]
+Info:     Parameter 026 (id=26): [title="Voice 6 Pitch Offset"] [unit="semitones"] [type = D, default = 0.500000, unit = 15]
+Info:     Parameter 027 (id=27): [title="Voice 6 Gain"] [unit=""] [type = F, default = 0.500000, unit = 15]
+Info:     Parameter 028 (id=28): [title="Voice 6 Mute"] [unit=""] [type = T, default = 0.000000, unit = 15]
+Info:     Parameter 029 (id=29): [title="Voice 6 Base Delay"] [unit="ms"] [type = F, default = 0.043333, unit = 15]
+Info:     Parameter 030 (id=30): [title="Voice 7 Pitch Offset"] [unit="semitones"] [type = D, default = 0.500000, unit = 16]
+Info:     Parameter 031 (id=31): [title="Voice 7 Gain"] [unit=""] [type = F, default = 0.500000, unit = 16]
+Info:     Parameter 032 (id=32): [title="Voice 7 Mute"] [unit=""] [type = T, default = 0.000000, unit = 16]
+Info:     Parameter 033 (id=33): [title="Voice 7 Base Delay"] [unit="ms"] [type = F, default = 0.046667, unit = 16]
+Info:     Parameter 034 (id=34): [title="Voice 8 Pitch Offset"] [unit="semitones"] [type = D, default = 0.500000, unit = 17]
+Info:     Parameter 035 (id=35): [title="Voice 8 Gain"] [unit=""] [type = F, default = 0.500000, unit = 17]
+Info:     Parameter 036 (id=36): [title="Voice 8 Mute"] [unit=""] [type = T, default = 0.000000, unit = 17]
+Info:     Parameter 037 (id=37): [title="Voice 8 Base Delay"] [unit="ms"] [type = F, default = 0.050000, unit = 17]
+
+Info:  ===MIDI Mapping ====================================
+Info:  No MIDI Mapping interface supplied!
+
+Info:  ===MIDI Learn ====================================
+Info:  No MIDI Learn interface supplied!
+
+Info:  ===Scan Units ====================================
+Info:  This component has 9 unit(s).
+Info:     Unit000 (ID = 1): "Global" (parent ID = 0, programlist ID = -1)
+Info:     Unit001 (ID = 10): "Voice 1" (parent ID = 1, programlist ID = -1)
+Info:     Unit002 (ID = 11): "Voice 2" (parent ID = 1, programlist ID = -1)
+Info:     Unit003 (ID = 12): "Voice 3" (parent ID = 1, programlist ID = -1)
+Info:     Unit004 (ID = 13): "Voice 4" (parent ID = 1, programlist ID = -1)
+Info:     Unit005 (ID = 14): "Voice 5" (parent ID = 1, programlist ID = -1)
+Info:     Unit006 (ID = 15): "Voice 6" (parent ID = 1, programlist ID = -1)
+Info:     Unit007 (ID = 16): "Voice 7" (parent ID = 1, programlist ID = -1)
+Info:     Unit008 (ID = 17): "Voice 8" (parent ID = 1, programlist ID = -1)
+
+Info:  ===Scan Programs ====================================
+Info:  This component does not export any programs.
+
+Info:  ===Terminate/Initialize ====================================
+
+Info:  ===Check Unit Structure ====================================
+Info:  All units have valid parent IDs.
+
+Info:  ===Valid State Transition 32bits ====================================
+
+Info:  ===Valid State Transition 64bits ====================================
+Info:  64bit Audio Processing not supported.
+
+Info:  ===Bus Consistency ====================================
+
+Info:  ===Bus Activation ====================================
+Info:     Bus Activation: Input Audio Bus (0) (kMain)
+Info:     Bus Activation: Output Audio Bus (0) (kMain)
+
+Info:  ===Check Audio Bus Arrangement ====================================
+Info:     Check Input Audio Bus Arrangement (0)
+Info:     Check Output Audio Bus Arrangement (0)
+
+Info:  ===SideChain Arrangement ====================================
+
+Info:  ===Suspend/Resume ====================================
+
+Info:  ===Note Expression ====================================
+Info:  No Note Expression interface supplied!
+
+Info:  ===Keyswitch ====================================
+Info:  No Keyswitch interface supplied!
+
+Info:  ===ProcessContext Requirements ====================================
+Info:  ProcessContextRequirements:
+Info:   - None
+
+-------------------------------------------------------------
+TestSuite : Single Precision (32 bit) Tests
+-------------------------------------------------------------
+
+
+Info:  ===Process function running in another thread ====================================
+
+Info:  ===Silence Flags ====================================
+
+Info:  ===Silence Processing ====================================
+Info:  The component reported a wrong silent flag for its output buffer! : output is silent but silenceFlags not set !
+
+Info:  ===Parameters Flush (no Buffer) ====================================
+
+Info:  ===Parameters Flush 2 (only numChannel==0) ====================================
+
+Info:  ===Parameters Flush 2 (no Buffer, no parameter change) ====================================
+
+Info:  ===Variable Block Size ====================================
+
+Info:  ===Process Format ====================================
+Info:  ***Tested Sample Rates***
+Info:        22050 Hz - processed successfully!
+Info:        32000 Hz - processed successfully!
+Info:        44100 Hz - processed successfully!
+Info:        48000 Hz - processed successfully!
+Info:        88200 Hz - processed successfully!
+Info:        96000 Hz - processed successfully!
+Info:       192000 Hz - processed successfully!
+Info:       384000 Hz - processed successfully!
+Info:    1234.5678 Hz - processed successfully!
+Info:    12345.678 Hz - processed successfully!
+Info:    123456.78 Hz - processed successfully!
+ERROR: IAudioProcessor::setupProcessing (..) failed for samplerate 1234567.800 Hz! 
+
+Info:  ===Parameter Bypass persistence ====================================
+
+Info:  ===In: Stereo: 2 Channels, Out: Stereo: 2 Channels ====================================
+
+Info:  ===In: Mono: 1 Channels, Out: Mono: 1 Channels ====================================
+
+Info:  ===Accuracy: Block, 1 Parameters, Change every100 Samples ====================================
+
+Info:  ===Accuracy: Sample, 1 Parameters, Change every100 Samples ====================================
+
+-------------------------------------------------------------
+TestSuite : Double Precision (64 bit) Tests
+-------------------------------------------------------------
+
+Info:  64bit Audio Processing not supported.
+
+Info:  64bit Audio Processing not supported.
+
+Info:  64bit Audio Processing not supported.
+
+Info:  64bit Audio Processing not supported.
+
+Info:  64bit Audio Processing not supported.
+
+Info:  64bit Audio Processing not supported.
+
+Info:  64bit Audio Processing not supported.
+
+Info:  64bit Audio Processing not supported.
+
+Info:  64bit Audio Processing not supported.
+
+Info:  64bit Audio Processing not supported.
+
+Info:  ===In: Stereo: 2 Channels, Out: Stereo: 2 Channels ====================================
+Info:  64bit Audio Processing not supported.
+
+Info:  ===In: Mono: 1 Channels, Out: Mono: 1 Channels ====================================
+Info:  64bit Audio Processing not supported.
+
+Info:  ===Accuracy: Block, 1 Parameters, Change every100 Samples ====================================
+Info:  64bit Audio Processing not supported.
+
+Info:  ===Accuracy: Sample, 1 Parameters, Change every100 Samples ====================================
+Info:  64bit Audio Processing not supported.
+
+-------------------------------------------------------------
+Result: 47 tests passed, 0 tests failed
+-------------------------------------------------------------
+'/home/z/.vst3/OctavoxNative.vst3' -> '/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/VST3/Release/OctavoxNative.vst3'
