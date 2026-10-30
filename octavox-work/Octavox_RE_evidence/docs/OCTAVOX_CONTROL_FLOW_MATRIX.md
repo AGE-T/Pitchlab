@@ -474,3 +474,92 @@ to **"per output sample by `page[12+idx]·2^-23`"**; and the earlier tap
 distance description "tapA/tapB differ by `D_v`" is refined to "by the
 record **interval**" (`ring[recidx+1]`), with `D_v` (port 20) acting earlier
 in the chain as the per-voice work-ring input delay.
+
+---
+
+## 14. Round-18 addendum — the path & parameter REACHABILITY matrix (static, OBS)
+
+Round 18 closed several producer/reachability questions; this section
+records the NEW reachability facts (full instruction evidence in
+`evidence/analysis_round18/r18_static_findings.md`). "Reachable" below is a
+static-data property: the value/row/position can occur in the shipped patch
+and data — not a runtime observation (the target was never executed).
+
+### 14.1 The output-stage mode path — mode 1 is dead code in the shipped patch
+
+| path | reachability |
+|---|---|
+| `[obj+0x8C] == 1` (the externally steered 4-float phase trajectory, R17) | **UNREACHABLE in the shipped patch** — the field is the module record's `modsw` (default `'0'`, range 0..1, class-defaults entry `0x1803B99A8`), written once by the core ctor `0x1800DBCC9`; the shipped records [342]/[348] set `maxdelay/in/mod/delayamt/modamt` but **no `modsw`** ⇒ mode 0 (the K=0.25 glide) is the only live trajectory |
+| mode 0 glide | **REACHABLE (the default)** — `[obj+0x90]` zeroed by the binder `0x1800DC295` |
+
+### 14.2 The tracker cadence path — the rate is a framework param, not a record field
+
+| path | reachability |
+|---|---|
+| setparam case 5 (the rate → `T+0x5F14` = {2,4,8}, `dsp+0xA524`, the rate-class detector constants `dsp+0xA3CC..0xA41C`) | **Reachable only via the framework's rate broadcast** — param 5 is absent from the 'dtonicii' 1.7 class-default record (no rate field); the class-default formulas reference `#speed`, proving the setup machinery knows the rate at graph construction; the exact broadcast call site is UNK (virtual dispatch). The detector constants exist ONLY behind this case ⇒ a functioning plugin requires the delivery before audio |
+| `T+0x5F14`'s pre-delivery value | **Indeterminate (allocator residue)** — no ctor store covers `0x5F10`/`0x5F14` (the register-zeroed ctor block `0x1800E0D80..0x1800E0E10` covers `0x5FF8` (state=0 — correcting the R15/R17 record) but not these two); consumed only at the first countdown expiry (audio time) |
+| host parameters (scale/key/shift/pcent/…) before the first host event | **REACHABLE via the slot-vector defaults** — the wrapper ctor `0x1800E2C00` publishes min/max/default triples and `FUN_1800E5160` reads live-or-default per block ⇒ no host event is structurally required |
+
+### 14.3 The interval-choice → engine-walk reachability (the 6-slot grid)
+
+The `int table N` mux law `v = 14 + s + δ` (`δ = 1` iff `s mod 7 ∈ {2,6}`)
+makes the reachable walk-target grid `{0, 2, 3, 4, 6} mod 7` — the 2nd and
+6th scale positions are NEVER engine targets. The parameter-level
+reachability (which choices produce identical outcomes):
+
+| choice(s) | mux value | walk steps | reachable target grid position |
+|---|---|---|---|
+| `+2nd` | 15 | −1 | 6 (the 7th below) |
+| `+3rd`, `+4th` | **17 (identical)** | −3 | 4 (the 5th below) |
+| `+5th` | 18 | −4 | 3 (the 4th below) |
+| `+6th` | 19 | −5 | 2 (the 3rd below) |
+| `+7th`, `+1 oct` | **21 (identical)** | −7 | 0 (the octave below) |
+| `+9th` | 22 | −8 | 6 + octave |
+| `+10th`, `+11th` | **24 (identical)** | −10 | 4 + octave |
+| `+12th` | 25 | −11 | 3 + octave |
+| `+13th` | 26 | −12 | 2 + octave |
+| `+14th`, `+2 oct` | **28 (identical)** | −14 | 0 + 2 octaves |
+| `−3rd` | 12 | +2 | 2 (the 3rd above) |
+| `−4th` | 11 | +3 | 3 (the 4th above) |
+| `−5th`, `−6th` | **10 (identical)** | +4 | 4 (the 5th above) |
+| `−7th` | 8 | +6 | 6 (the 7th above) |
+| `−2nd`, `unison` | **14 (identical)** | 0 | 0 (unison) |
+| `−9th`, `−1 oct` | **7 (identical)** | +7 | 0 + octave |
+| `−12th`, `−13th` | **3 (identical)** | +11 | 3 + octave |
+| `−2 oct` … compounds | 0, 1, 4, 5 | ±13/±14/… | the mirrored compounds |
+
+Positions 1 and 5 (the 2nd and 6th) appear in NO row — the engine's
+realised harmony vocabulary is `{P1, M3, P4, P5, M7, P8}` upward and the
+just inversions downward (OBS from the data; the design intent is
+DER/UNK). Pentatonic-scale selections switch to the raw-index path
+(`c_cmp2/3` test the scal-table output for 14/15 — the mux outputs of the
+chromatic/whole-tone CHOICES), where the penta zone-runs do their own
+snapping.
+
+### 14.4 Scale-choice → pattern-row reachability (the authored irregularity)
+
+| engine scale choice | scal-table mux output | pattern row actually loaded | row content |
+|---|---|---|---|
+| ionian … melodic min | 1…11 | 1…11 (matching) | the seven modes + harmonic/melodic minor |
+| **chromatic** | **14** | **14** | **the penta-MAJ pattern** (not the 99-filler chromatic row 12!) |
+| **whole tone** | **15** | **15** | **the penta-MIN pattern** (not row 13) |
+| **penta maj** | **16** | **16** | **the enigmatic pattern** (not row 14) |
+| **penta min** | **17** | **17** | **the neapolitan pattern** (not row 15) |
+| **enigmatic** | **18** | **18** | **the hungarian pattern** (not row 16) |
+| **neapolitan** | **13** | **13** | **the whole-tone pattern** (not row 17) |
+| **hungarian** | — | **out of the 15-entry mux** (behaviour UNK) | (row 18 unused via this path) |
+
+This is authored data (the record text `in10=14 … in15=13`), not a
+decompilation artifact — recorded as an authored inconsistency; audible
+effects UNK (the target was never executed).
+
+### 14.5 The kernel-table row reachability
+
+| consumer | phase law | reachable rows |
+|---|---|---|
+| the engine read path (`engine+0x40F0`) | `phase = (int(pos·2048.0) >> 3) & mask` (`0x1800E24A1–AD`) = `floor(frac·256) & 255` | **all 256 rows** |
+| the output-stage filter readers (`[obj+0xD0]`) | `phase = int(frac · 255.0f)` (`0x1800DC616–1A`; the constant `0x180412710` = 255.0f, byte-verified) | **rows 0..254 only — row 255 is unreachable in this consumer** |
+
+Both consumers pair tap k with `ring[(base+k) & mask]` and accumulate in
+double. (This corrects the standing "row = int(frac·256)" record, which
+held only for the engine path.)

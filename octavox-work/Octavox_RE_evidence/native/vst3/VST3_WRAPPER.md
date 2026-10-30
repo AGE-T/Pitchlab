@@ -1,4 +1,4 @@
-# OCTAVOX native core — the VST3 wrapper (R16-P4b, extended R17-P3)
+# OCTAVOX native core — the VST3 wrapper (R16-P4b, extended R17-P3, R18-P6)
 
 **Status: IMPLEMENTED, BUILT AND VALIDATED** (2026-10-28; re-validated and
 extended 2026-10-29 — round 17). A real, minimal VST3 plug-in around the
@@ -279,3 +279,62 @@ CURRENT rate/layout and re-applies the full surface in canonical order.
   record; MSVC floating-point codegen may legitimately differ, so a hash
   mismatch on Windows is reported, not treated as proof of a defect (the
   85-case suite carries the correctness gates).
+
+
+---
+
+## 7. Round-18 addendum — the compiled-module integration harness (R18-P6)
+
+A new harness, `octavox_module_integration_tests.cpp` (CMake target
+`octavox_module_integration_tests`, built after `octavoxnative`), tests
+the **actual compiled `OctavoxNative.vst3` bundle** — not the internal
+processor class. It loads the bundle through the pinned SDK's
+`VST3::Hosting::Module::create` (a real `dlopen` of
+`Contents/x86_64-linux/OctavoxNative.so` + `GetPluginFactory()`), and
+drives the exported factory's instances through the standard host
+interfaces using the SDK's own hosting utilities
+(`HostApplication`, `ParameterChanges`, `MemoryStream`; on Linux the
+SDK's `module_linux.cpp` supplies `Module::create` and is compiled into
+the harness).
+
+The 12 cases (results: `evidence/analysis_round18/r18_module_integration.json`,
+12/12 on 2026-10-30):
+
+1. `module_load_factory` — module load, factory discovery, class-info
+   enumeration (1 class, our CID), category sanity;
+2. `processor_creation` — `createInstance<IComponent>` + the
+   IAudioProcessor/IEditController queries (single-component);
+3. `component_initialize_buses` — `initialize(HostApplication)` (a real
+   host context), 1+1 audio buses, the 38-parameter surface published;
+4. `bus_negotiation_mono` / 5. `bus_negotiation_stereo` — the
+   `setBusArrangements` negotiation reflected by `getBusArrangement`;
+   `canProcessSampleSize(kSample32)`;
+6. `activation_lifecycle` — setup → activate → processing on/off →
+   re-activation (the host latency-change cycle);
+7. `process_mono_bitexact` / 8. `process_stereo_bitexact` — deterministic
+   LCG streams (odd block sizes for stereo) processed by the module vs
+   the **hand-driven core reference: bit-identical** (max abs diff 0);
+9. `param_queue_events` — a full non-default surface applied through real
+   `IParameterChanges` queues = bit-identical to the reference
+   (canonical application order) + a mid-block event drop-control
+   (measured effect 0.205 — the queue is genuinely consumed);
+10. `state_save_restore_second_instance` — `getState` (428-byte blob) →
+    a **second factory-created instance** → `setState` → bit-identical
+    replay;
+11. `latency_reporting` — `getLatencySamples()` == the core's exact
+    `latencySamples()` (2304 @ 48 kHz default config); tail 15080;
+12. `terminate_unload` — `terminate()` + full release + Module
+    destruction (library unload) — clean.
+
+**Scope label (stated here, in the harness header and its stdout):** this
+is an SDK-module-load + interface-contract test on ONE host
+implementation (the SDK's own utilities on Linux). **It is not a DAW
+compatibility claim** — no DAW was involved, and passing here does not
+certify behaviour in any specific DAW. The SDK validator run (47/47)
+remains the complementary check. No GUI/editor is exercised (§6).
+
+R18 re-verification on the fresh build (SDK at its archived location
+`octavox-work/vst3sdk`): wrapper tests 15/15, validator 47/47,
+integration harness 12/12, and **the module's SHA-256 is byte-identical
+to the R16/R17 record** (`b293cecbcd42…f559ea8ba`) — deterministic
+compilation re-proven from the moved SDK tree.

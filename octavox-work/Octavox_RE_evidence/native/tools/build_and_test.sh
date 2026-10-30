@@ -9,9 +9,11 @@
 #   3. VST3 wrapper (Release): build (the SDK validator runs automatically
 #      as part of the module build), the 15-case wrapper tests and a manual
 #      validator re-run against the built bundle
+#   4. R18: the compiled-module integration harness (loads the built bundle
+#      through the SDK module loader; 12/12 required)
 #
 # Usage:
-#   ./build_and_test.sh [--skip-asan] [--skip-bench] [--sdk-root <path>]
+#   ./build_and_test.sh [--skip-asan] [--skip-bench] [--skip-vst3] [--sdk-root <path>]
 #                       [--evidence-out <dir>]
 #
 # Defaults: the SDK at ../../../vst3sdk (see native/tools/get_vst3_sdk.sh);
@@ -32,6 +34,7 @@ DEFAULT_SDK="$(cd "${SCRIPT_DIR}/../../../vst3sdk" 2>/dev/null && pwd || true)"
 
 SKIP_ASAN=0
 SKIP_BENCH=0
+SKIP_VST3=0
 SDK_ROOT="${DEFAULT_SDK}"
 EVID_OUT="$(mktemp -d "${TMPDIR:-/tmp}/octavox_validation.XXXXXX")"
 
@@ -39,6 +42,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --skip-asan) SKIP_ASAN=1 ;;
         --skip-bench) SKIP_BENCH=1 ;;
+        --skip-vst3) SKIP_VST3=1 ;;
         --sdk-root) SDK_ROOT="$2"; shift ;;
         --evidence-out) EVID_OUT="$2"; shift ;;
         -h|--help) sed -n '2,25p' "$0"; exit 0 ;;
@@ -88,23 +92,23 @@ cmake --build "${NATIVE_DIR}/build" -j > "${EVID_OUT}/build_release.log" 2>&1 \
     || { fail "release build"; }
 say "  built (see build_release.log)"
 
-"${NATIVE_DIR}/build/octavox_tests" --json "${EVID_OUT}/r17_acceptance_results.json" \
-    > "${EVID_OUT}/r17_suite_stdout_release.txt" 2>&1 \
+"${NATIVE_DIR}/build/octavox_tests" --json "${EVID_OUT}/r18_acceptance_results.json" \
+    > "${EVID_OUT}/r18_suite_stdout_release.txt" 2>&1 \
     || { fail "release suite (85/85 required)"; }
-if grep -q "passed, 0 failed" "${EVID_OUT}/r17_suite_stdout_release.txt"; then
-    say "  suite: $(grep -o '[0-9]* passed, [0-9]* failed, [0-9]* total' "${EVID_OUT}/r17_suite_stdout_release.txt" | head -1)"
+if grep -q "passed, 0 failed" "${EVID_OUT}/r18_suite_stdout_release.txt"; then
+    say "  suite: $(grep -o '[0-9]* passed, [0-9]* failed, [0-9]* total' "${EVID_OUT}/r18_suite_stdout_release.txt" | head -1)"
 else
     fail "release suite summary line missing"
 fi
 
 # the four default-neutrality reference hashes (exact match required)
-"${NATIVE_DIR}/build/octavox_r15refcap" > "${EVID_OUT}/r17_refcap_check.txt" 2>&1 || fail "refcap run"
+"${NATIVE_DIR}/build/octavox_r15refcap" > "${EVID_OUT}/r18_refcap_check.txt" 2>&1 || fail "refcap run"
 HASH_OK=1
 for cfg in cfg1_default_unity_lcg_noise_b64_150_512 \
            cfg2_r700c_8v_spread_fb025_sine220 \
            cfg3_rm400c_4v_nospread_chirp200_800 \
            cfg4_stereo_2ch_4v_unity_then_r400c; do
-    got="$(grep -o "0x[0-9a-f]*" <(grep "$cfg" "${EVID_OUT}/r17_refcap_check.txt") | head -1)"
+    got="$(grep -o "0x[0-9a-f]*" <(grep "$cfg" "${EVID_OUT}/r18_refcap_check.txt") | head -1)"
     want="$(grep -o "0x[0-9a-f]*" <(grep "$cfg" "${NATIVE_DIR}/r15_reference_hashes.txt") | head -1)"
     if [ "${got}" != "${want}" ]; then
         fail "reference hash ${cfg}: got ${got} want ${want}"
@@ -114,9 +118,9 @@ done
 [ "${HASH_OK}" = "1" ] && say "  neutrality hashes: 4/4 exact match vs r15_reference_hashes.txt"
 
 if [ "${SKIP_BENCH}" = "0" ]; then
-    "${NATIVE_DIR}/build/octavox_bench" --json "${EVID_OUT}/r17_bench.json" \
-        > "${EVID_OUT}/r17_bench_stdout.txt" 2>&1 || fail "bench run"
-    say "  bench: $(grep -c 'alloc' "${EVID_OUT}/r17_bench_stdout.txt" >/dev/null && echo 'completed' || echo 'completed') (see r17_bench.json)"
+    "${NATIVE_DIR}/build/octavox_bench" --json "${EVID_OUT}/r18_bench.json" \
+        > "${EVID_OUT}/r18_bench_stdout.txt" 2>&1 || fail "bench run"
+    say "  bench: $(grep -c 'alloc' "${EVID_OUT}/r18_bench_stdout.txt" >/dev/null && echo 'completed' || echo 'completed') (see r18_bench.json)"
 fi
 say "  leg 1 wall: $(phase_secs) s"
 
@@ -137,10 +141,10 @@ else
         > "${EVID_OUT}/configure_asan.log" 2>&1 || fail "asan configure"
     cmake --build "${NATIVE_DIR}/build-asan" -j > "${EVID_OUT}/build_asan.log" 2>&1 || fail "asan build"
     say "  built (see build_asan.log)"
-    "${NATIVE_DIR}/build-asan/octavox_tests" --json "${EVID_OUT}/r17_acceptance_results_asan.json" \
-        > "${EVID_OUT}/r17_suite_stdout_asan.txt" 2>&1 || fail "asan suite (85/85 required)"
-    if grep -q "passed, 0 failed" "${EVID_OUT}/r17_suite_stdout_asan.txt"; then
-        say "  suite: $(grep -o '[0-9]* passed, [0-9]* failed, [0-9]* total' "${EVID_OUT}/r17_suite_stdout_asan.txt" | head -1), zero sanitizer reports"
+    "${NATIVE_DIR}/build-asan/octavox_tests" --json "${EVID_OUT}/r18_acceptance_results_asan.json" \
+        > "${EVID_OUT}/r18_suite_stdout_asan.txt" 2>&1 || fail "asan suite (85/85 required)"
+    if grep -q "passed, 0 failed" "${EVID_OUT}/r18_suite_stdout_asan.txt"; then
+        say "  suite: $(grep -o '[0-9]* passed, [0-9]* failed, [0-9]* total' "${EVID_OUT}/r18_suite_stdout_asan.txt" | head -1), zero sanitizer reports"
     else
         fail "asan suite summary line missing"
     fi
@@ -168,8 +172,8 @@ else
     fi
 
     WRAP_TESTS="${VST3_DIR}/build/bin/Release/octavox_vst3_wrapper_tests"
-    "${WRAP_TESTS}" > "${EVID_OUT}/r17_vst3_wrapper_tests.txt" 2>&1 || fail "wrapper tests (15/15 required)"
-    if grep -q "15 passed, 0 failed" "${EVID_OUT}/r17_vst3_wrapper_tests.txt"; then
+    "${WRAP_TESTS}" > "${EVID_OUT}/r18_vst3_wrapper_tests.txt" 2>&1 || fail "wrapper tests (15/15 required)"
+    if grep -q "15 passed, 0 failed" "${EVID_OUT}/r18_vst3_wrapper_tests.txt"; then
         say "  wrapper tests: 15/15"
     else
         fail "wrapper test summary unexpected"
@@ -178,10 +182,10 @@ else
     VALIDATOR="${VST3_DIR}/build/bin/Release/validator"
     MODULE_DIR="${VST3_DIR}/build/VST3/Release/OctavoxNative.vst3"
     if [ -x "${VALIDATOR}" ] && [ -d "${MODULE_DIR}" ]; then
-        "${VALIDATOR}" "${MODULE_DIR}" > "${EVID_OUT}/r17_vst3_validator.txt" 2>&1 \
+        "${VALIDATOR}" "${MODULE_DIR}" > "${EVID_OUT}/r18_vst3_validator.txt" 2>&1 \
             || fail "SDK validator (47/47 required)"
-        if grep -q "0 tests failed" "${EVID_OUT}/r17_vst3_validator.txt"; then
-            say "  validator: $(grep -o '[0-9]* tests passed, [0-9]* tests failed' "${EVID_OUT}/r17_vst3_validator.txt" | head -1)"
+        if grep -q "0 tests failed" "${EVID_OUT}/r18_vst3_validator.txt"; then
+            say "  validator: $(grep -o '[0-9]* tests passed, [0-9]* tests failed' "${EVID_OUT}/r18_vst3_validator.txt" | head -1)"
         fi
         MODULE_SO="$(find "${MODULE_DIR}" -name 'OctavoxNative.so' | head -1)"
         [ -n "${MODULE_SO}" ] && say "  module: ${MODULE_SO}" \
@@ -191,6 +195,29 @@ else
     fi
 fi
 say "  leg 3 wall: $(phase_secs) s"
+
+# ==============================================================================
+# LEG 4 (R18-P6): the compiled-module integration harness
+# ==============================================================================
+hr
+phase_start
+say "[LEG 4] compiled-module integration harness (the loaded .vst3 bundle)"
+if [ "${SKIP_VST3}" = "1" ]; then
+    say "[LEG 4] SKIPPED (--skip-vst3)"
+else
+    INTEG_TESTS="${VST3_DIR}/build/bin/Release/octavox_module_integration_tests"
+    [ -x "${INTEG_TESTS}" ] || fail "integration harness not built (octavox_module_integration_tests)"
+    ( cd "${VST3_DIR}" && "${INTEG_TESTS}" \
+        --json "${EVID_OUT}/r18_module_integration.json" \
+        > "${EVID_OUT}/r18_module_integration_stdout.txt" 2>&1 ) \
+        || fail "module integration harness (12/12 required)"
+    if grep -q "12 passed, 0 failed" "${EVID_OUT}/r18_module_integration_stdout.txt"; then
+        say "  module integration: 12/12 (the loaded bundle, bit-exact vs the core)"
+    else
+        fail "module integration summary unexpected"
+    fi
+fi
+say "  leg 4 wall: $(phase_secs) s"
 
 # ==============================================================================
 # summary

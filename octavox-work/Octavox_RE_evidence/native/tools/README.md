@@ -114,3 +114,22 @@ powershell -ExecutionPolicy Bypass -File build_and_test.ps1 -SdkRoot C:\vst3sdk 
 | `get_vst3_sdk.ps1`  | PowerShell 5+, git, tar.exe (Windows 10 1803+), network   |
 | `build_and_test.sh` | bash, cmake ≥ 3.19, g++ or clang++ (C++17), the SDK (leg 3) |
 | `build_and_test.ps1`| PowerShell 5+, cmake ≥ 3.19, MSVC (cl.exe) + Windows SDK, the SDK (leg 2) |
+
+---
+
+## Round-18 update (2026-10-30)
+
+`build_and_test.sh` gained **LEG 4**: the compiled-module integration
+harness (`octavox_module_integration_tests`, 12/12 required — loads the
+built bundle through the SDK module loader and checks it bit-exactly
+against the core; `--skip-vst3` skips it). Executed end-to-end this round
+with `--skip-asan` (the ASan leg had already run standalone: 85/85 in
+6.07 min): **RESULT: ALL GATES PASSED (total wall 81 s)** — leg 1 release
+76 s (85/85 + 4/4 hashes + bench), leg 3 wrapper 15/15 + validator 47/47 +
+the module hash unchanged (`b293cecb…`), leg 4 integration 12/12.
+Evidence: `../evidence/analysis_round18/r18_build_script_run/`.
+`build_and_test.ps1` (Windows) is unchanged in status: authored, NOT
+executed (no Windows runtime here); it does not yet include the LEG-4
+harness — the Windows harness path is authored in the CMake
+(`module_win32.cpp`) but unexecuted, like every Windows claim in this
+package.

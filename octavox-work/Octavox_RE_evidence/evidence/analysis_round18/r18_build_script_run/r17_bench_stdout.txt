@@ -1,0 +1,45 @@
+== bench case mono_1v_b64 (1/13 selected) ==
+bench: mono_1v_b64                done, wall 324 ms, 1349.05 ns/frame
+== bench case mono_1v_b128 (2/13 selected) ==
+bench: mono_1v_b128               done, wall 323 ms, 1347.39 ns/frame
+== bench case mono_1v_b512 (3/13 selected) ==
+bench: mono_1v_b512               done, wall 322 ms, 1340.16 ns/frame
+== bench case mono_8v_b64 (4/13 selected) ==
+bench: mono_8v_b64                done, wall 370 ms, 1542.61 ns/frame
+== bench case mono_8v_b128 (5/13 selected) ==
+bench: mono_8v_b128               done, wall 376 ms, 1565.96 ns/frame
+== bench case mono_8v_b512 (6/13 selected) ==
+bench: mono_8v_b512               done, wall 379 ms, 1578.50 ns/frame
+== bench case stereo_1v_b128 (7/13 selected) ==
+bench: stereo_1v_b128             done, wall 652 ms, 2714.60 ns/frame
+== bench case stereo_8v_b128 (8/13 selected) ==
+bench: stereo_8v_b128             done, wall 750 ms, 3126.28 ns/frame
+== bench case mono_8v_b128_ctrl512 (9/13 selected) ==
+bench: mono_8v_b128_ctrl512       done, wall 101 ms, 419.25 ns/frame
+== bench case mono_1v_b128_96k (10/13 selected) ==
+bench: mono_1v_b128_96k           done, wall 2403 ms, 5005.47 ns/frame
+== bench case mono_8v_b128_96k (11/13 selected) ==
+bench: mono_8v_b128_96k           done, wall 2498 ms, 5205.18 ns/frame
+== bench case mono_8v_b128_96k_ctrl512 (12/13 selected) ==
+bench: mono_8v_b128_96k_ctrl512   done, wall 417 ms, 869.35 ns/frame
+== bench case mono_8v_b128_surface (13/13 selected) ==
+bench: mono_8v_b128_surface       done, wall 358 ms, 1492.24 ns/frame
+CASE                         vox  ch block  ctrl     sr sfc     ns/frame  xrealtime     rss_kb   allocs
+--------------------------------------------------------------------------------------------------------------
+mono_1v_b64                    1   1    64    64  48000          1349.05      15.44      10816        0
+mono_1v_b128                   1   1   128    64  48000          1347.39      15.46      10912        0
+mono_1v_b512                   1   1   512    64  48000          1340.16      15.55      10912        0
+mono_8v_b64                    8   1    64    64  48000          1542.61      13.51      10912        0
+mono_8v_b128                   8   1   128    64  48000          1565.96      13.30      10912        0
+mono_8v_b512                   8   1   512    64  48000          1578.50      13.20      10912        0
+stereo_1v_b128                 1   2   128    64  48000          2714.60       7.67      16984        0
+stereo_8v_b128                 8   2   128    64  48000          3126.28       6.66      16984        0
+mono_8v_b128_ctrl512           8   1   128   512  48000           419.25      49.69      16984        0
+mono_1v_b128_96k               1   1   128    64  96000          5005.47       2.08      16984        0
+mono_8v_b128_96k               8   1   128    64  96000          5205.18       2.00      16984        0
+mono_8v_b128_96k_ctrl512       8   1   128   512  96000           869.35      11.98      16984        0
+mono_8v_b128_surface           8   1   128    64  48000  on      1492.24      13.96      16984        0
+--------------------------------------------------------------------------------------------------------------
+octavox-native 15.0.0
+# note: 13 cases -- R16-P2 adds mono_8v_b128_96k_ctrl512 (detector-cost isolation at 96 kHz); the delivered round-15 bench had 12 cases
+json written: ../evidence/analysis_round18/r18_build_script_run/r17_bench.json

@@ -1,6 +1,7 @@
 /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/CMakeFiles/octavox_core_vst3.dir
 /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/CMakeFiles/octavoxnative.dir
 /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/CMakeFiles/octavox_vst3_wrapper_tests.dir
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/CMakeFiles/octavox_module_integration_tests.dir
 /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/CMakeFiles/edit_cache.dir
 /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/CMakeFiles/rebuild_cache.dir
 /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/vst3sdk/CMakeFiles/cmake_modules.dir

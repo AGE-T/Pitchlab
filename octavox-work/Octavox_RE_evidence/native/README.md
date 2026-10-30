@@ -145,3 +145,18 @@ reference) are produced by
   no Windows runtime here**). The core itself is unchanged; the wrapper
   compiles it from `../src` independently. The module rebuilds
   byte-identically (SHA-256 b293cecb...).
+[R18 addendum, 2026-10-30: the test harness gained the `--diag <path>`
+forensic trace (case start/completion records with per-case wall time,
+process RSS, the always-on allocation-counter totals and an FP-environment
+probe — designed for post-mortem analysis when a constrained environment
+kills a run inside a window) and the `--isolate` group-isolated fallback
+mode (one fresh forked process per group; POSIX only; explicitly NOT
+equivalent to the single-process full run). The 85-case default suite and
+all gates are unchanged; the four reference hashes still match (re-verified
+this round in the release, ASan and -O0 legs). The aggregate-suite timing
+anomaly reported by the independent verification environment is
+quantitatively reconciled (one uniform slowdown factor
+F ∈ [12.42, 15.85]) and positively reproduced under CPU contention — see
+`../evidence/analysis_round18/r18_suite_diagnostics.md`. The VST3 side
+gained the compiled-module integration harness (12/12, bit-exact vs this
+core) — see `vst3/VST3_WRAPPER.md` §7.]

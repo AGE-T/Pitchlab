@@ -242,3 +242,38 @@ no mid-stream resume), listed in VST3_WRAPPER.md §6.
 * The readiness verdict is unchanged and strengthened: **wrapper-ready,
   wrapped, and reproducibly re-buildable** (Linux-verified; Windows
   scripted-but-unexecuted). No GUI editor exists — none is faked.
+
+---
+
+## Round-18 addendum (2026-10-30) — the compiled-module integration harness
+
+* **New: the actual compiled bundle is now integration-tested through the
+  pinned SDK's module loader** — `octavox_module_integration_tests`
+  (12/12, bit-exact vs the hand-driven core; see
+  `native/vst3/VST3_WRAPPER.md` §7 and
+  `evidence/analysis_round18/r18_module_integration.json`). The harness
+  loads the built `OctavoxNative.vst3` with `VST3::Hosting::Module::create`
+  (a real dlopen + factory), creates the processor/controller through the
+  exported factory, negotiates mono/stereo buses, drives parameter queues
+  and deterministic process() streams, saves/restores state into a second
+  factory-created instance, checks latency against the core's exact value,
+  and terminates/unloads cleanly. **Scope: an SDK-module-load +
+  interface-contract test on one host implementation — NOT a DAW
+  compatibility claim.**
+* The aggregate native suite gained a forensic `--diag` trace
+  (case start/completion, wall, RSS, allocation counters, FP-env probe)
+  and an `--isolate` group-isolated fallback; the 85-case single-process
+  suite remains canonical (release 43.5 s, ASan 6.07 min, −O0 5.9 min this
+  round; the four reference hashes 4/4). The independent-environment
+  window anomaly is quantitatively reconciled (one uniform factor
+  F ∈ [12.42, 15.85]) and positively reproduced under CPU contention
+  (killed inside the 96 kHz battery after 58 cases — the exact reported
+  signature); see `evidence/analysis_round18/r18_suite_diagnostics.md`.
+* Re-verification on the fresh build: wrapper tests 15/15, validator
+  47/47, integration 12/12, reference hashes 4/4 — and the module SHA-256
+  is byte-identical to R16/R17 (`b293cecb…`), re-proving deterministic
+  compilation with the SDK at its archived location.
+* The verdict is unchanged: **wrapper-ready, wrapped, reproducibly
+  re-buildable, and now integration-tested as a loaded module** (Linux;
+  Windows still scripted-but-unexecuted; no GUI editor exists — none is
+  faked).

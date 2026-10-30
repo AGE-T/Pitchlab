@@ -117,3 +117,39 @@ target_include_directories(octavox_vst3_wrapper_tests PRIVATE
 if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
     target_compile_options(octavox_vst3_wrapper_tests PRIVATE -Wall -Wextra)
 endif()
+
+# ---------------------------------------------------------------------------
+# R18-P6: the ACTUAL-COMPILED-MODULE integration harness.  Loads the built
+# OctavoxNative.vst3 bundle through the pinned SDK's VST3::Hosting::Module
+# loader (a real dlopen + GetPluginFactory) and drives the exported factory
+# instances through the full host interface contract; outputs are compared
+# bit-exactly with the hand-driven core reference.  This is an
+# SDK-module-load + interface-contract test -- NOT a DAW compatibility
+# claim (see the file header).
+# ---------------------------------------------------------------------------
+add_executable(octavox_module_integration_tests
+    octavox_module_integration_tests.cpp
+    octavox_params.cpp
+    ${VST3_SDK_ROOT}/public.sdk/source/common/memorystream.cpp
+)
+# the SDK keeps Module::create in the platform file
+if(WIN32)
+    target_sources(octavox_module_integration_tests PRIVATE
+        ${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/module_win32.cpp)
+elseif(APPLE)
+    target_sources(octavox_module_integration_tests PRIVATE
+        ${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/module_mac.mm)
+else()
+    target_sources(octavox_module_integration_tests PRIVATE
+        ${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/module_linux.cpp)
+endif()
+# (the Windows/macOS harness paths are AUTHORED, not executed -- the
+#  R18 execution evidence is Linux-only, as stated in VST3_WRAPPER.md §7.)
+target_link_libraries(octavox_module_integration_tests PRIVATE
+    octavox_core_vst3 sdk sdk_hosting)
+target_include_directories(octavox_module_integration_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR})
+if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
+    target_compile_options(octavox_module_integration_tests PRIVATE -Wall -Wextra)
+endif()
+add_dependencies(octavox_module_integration_tests octavoxnative)

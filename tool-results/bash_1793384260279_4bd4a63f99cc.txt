@@ -1,0 +1,267 @@
+launched 3922
+=== ASan+UBSan leg (build + full suite + diag) ===
+-- octavox: sanitizers ON (address+undefined)
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/z/my-project/octavox-work/Octavox_RE_evidence/native/build-asan
+[ 14%] Built target octavox_dsp
+[ 21%] Building CXX object CMakeFiles/octavox_tests.dir/tests/alloc_counter.cpp.o
+[ 42%] Built target octavox_cli
+[ 50%] Building CXX object CMakeFiles/octavox_tests.dir/tests/test_main.cpp.o
+[ 64%] Built target octavox_r15refcap
+[ 71%] Building CXX object CMakeFiles/octavox_bench.dir/tests/alloc_counter.cpp.o
+[ 78%] Linking CXX executable octavox_bench
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘double meas::envModulationDb(const float*, int, int, int, int)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:251:51: warning: unused parameter ‘sr’ [-Wunused-parameter]
+  251 | double envModulationDb(const float* x, int n, int sr, int skip, int w) {
+      |                                               ~~~~^~
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesPrepareReset(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:724:39: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  724 |         CaseResult c{"prepare_default"};
+      |                                       ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:724:39: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:735:48: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  735 |         CaseResult c{"prepare_invalid_rejected"};
+      |                                                ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:735:48: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:765:41: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  765 |         CaseResult c{"reset_determinism"};
+      |                                         ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:765:41: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:791:40: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  791 |         CaseResult c{"repeated_prepare"};
+      |                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:791:40: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:813:45: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  813 |         CaseResult c{"block_size_invariance"};
+      |                                             ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:813:45: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:852:50: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  852 |         CaseResult c{"steady_state_no_allocation"};
+      |                                                  ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:852:50: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In lambda function:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:882:26: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  882 |         CaseResult c{name};
+      |                          ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:882:26: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesUnity(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:951:40: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  951 |         CaseResult c{"unity_gain_exact"};
+      |                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:951:40: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:969:46: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  969 |         CaseResult c{"unity_entry_continuity"};
+      |                                              ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:969:46: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In lambda function:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:999:30: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+  999 |         CaseResult c{caseName};
+      |                              ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:999:30: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesUnity(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1063:40: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1063 |         CaseResult c{"no_bypass_region"};
+      |                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1063:40: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1084:48: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1084 |         CaseResult c{"unity_feedback_stability"};
+      |                                                ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1084:48: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1101:53: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1101 |         CaseResult c{"unity_8voice_unison_exact_mix"};
+      |                                                     ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1101:53: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesVoices(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1135:45: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1135 |         CaseResult c{"voices_8_spread_+700c"};
+      |                                             ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1135:45: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1153:43: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1153 |         CaseResult c{"setvoices_midstream"};
+      |                                           ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1153:43: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesStereo(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1177:46: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1177 |         CaseResult c{"stereo_isolation_unity"};
+      |                                              ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1177:46: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1200:48: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1200 |         CaseResult c{"stereo_isolation_shifted"};
+      |                                                ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1200:48: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1218:43: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1218 |         CaseResult c{"stereo_independence"};
+      |                                           ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1218:43: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesRatesFormats(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1246:40: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1246 |         CaseResult c{"rate_44100_+400c"};
+      |                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1246:40: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1263:40: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1263 |         CaseResult c{"rate_96000_+400c"};
+      |                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1263:40: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1279:51: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1279 |         CaseResult c{"wav_roundtrip_example_input"};
+      |                                                   ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1279:51: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1321:38: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1321 |         CaseResult c{"wav_24bit_read"};
+      |                                      ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1321:38: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesStability(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1371:51: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1371 |         CaseResult c{"longrun_60s_8voice_feedback"};
+      |                                                   ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1371:51: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1392:39: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1392 |         CaseResult c{"chirp_30s_+700c"};
+      |                                       ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1392:39: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1405:39: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1405 |         CaseResult c{"impulse_latency"};
+      |                                       ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1405:39: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1424:45: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1424 |         CaseResult c{"impulse_latency_unity"};
+      |                                             ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1424:45: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1444:39: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1444 |         CaseResult c{"dc_input_finite"};
+      |                                       ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1444:39: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1454:42: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1454 |         CaseResult c{"clipping_behaviour"};
+      |                                          ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1454:42: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In lambda function:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1571:26: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1571 |         CaseResult c{name};
+      |                          ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1571:26: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In lambda function:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1638:26: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1638 |         CaseResult c{name};
+      |                          ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1638:26: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesR13(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1730:56: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1730 |         CaseResult c{"cold_start_no_spurious_transient"};
+      |                                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1730:56: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1780:53: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1780 |         CaseResult c{"detector_96000hz_sine_battery"};
+      |                                                     ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1780:53: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1814:53: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1814 |         CaseResult c{"detector_44100hz_sine_battery"};
+      |                                                     ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1814:53: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1846:56: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1846 |         CaseResult c{"detector_estimate_tracking_44100"};
+      |                                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1846:56: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1874:56: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1874 |         CaseResult c{"detector_estimate_tracking_48000"};
+      |                                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1874:56: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1898:56: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1898 |         CaseResult c{"detector_estimate_tracking_96000"};
+      |                                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1898:56: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1933:55: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1933 |         CaseResult c{"detector_96k_estimate_stability"};
+      |                                                       ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1933:55: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1969:52: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 1969 |         CaseResult c{"rt_reprepare_zero_allocation"};
+      |                                                    ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:1969:52: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2000:65: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2000 |         CaseResult c{"rt_reprepare_param_change_zero_allocation"};
+      |                                                                 ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2000:65: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2039:65: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2039 |         CaseResult c{"rt_reprepare_multichannel_zero_allocation"};
+      |                                                                 ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2039:65: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2073:46: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2073 |         CaseResult c{"rt_reset_no_allocation"};
+      |                                              ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2073:46: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2101:60: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2101 |         CaseResult c{"rt_setters_and_process_no_allocation"};
+      |                                                            ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2101:60: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2211:52: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2211 |         CaseResult c{"rt_reprepare_result_identity"};
+      |                                                    ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2211:52: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2300:52: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2300 |         CaseResult c{"voicestats_ratio_diagnostics"};
+      |                                                    ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2300:52: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesR15P1(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2361:52: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2361 |         CaseResult c{"per_voice_ratios_independent"};
+      |                                                    ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2361:52: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2412:52: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2412 |         CaseResult c{"per_voice_gain_ramp_and_mute"};
+      |                                                    ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2412:52: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2524:49: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2524 |         CaseResult c{"per_voice_delay_isolation"};
+      |                                                 ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2524:49: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2585:40: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2585 |         CaseResult c{"wetdry_endpoints"};
+      |                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2585:40: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2658:56: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2658 |         CaseResult c{"bypass_clickfree_and_transparent"};
+      |                                                        ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2658:56: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2765:49: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2765 |         CaseResult c{"new_setters_no_allocation"};
+      |                                                 ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2765:49: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2845:42: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 2845 |         CaseResult c{"default_neutrality"};
+      |                                          ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:2845:42: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp: In function ‘void casesR15Acc(std::vector<CaseResult>&)’:
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3007:53: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 3007 |         CaseResult c{"r15acc_ratio_change_isolation"};
+      |                                                     ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3007:53: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3089:45: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 3089 |         CaseResult c{"r15acc_level_accuracy"};
+      |                                             ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3089:45: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3133:55: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 3133 |         CaseResult c{"r15acc_block_boundary_semantics"};
+      |                                                       ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3133:55: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3263:58: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 3263 |         CaseResult c{"r15acc_reset_reprepare_determinism"};
+      |                                                          ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3263:58: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3363:45: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 3363 |         CaseResult c{"r15acc_stereo_surface"};
+      |                                             ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3363:45: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3458:49: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 3458 |         CaseResult c{"r15acc_robustness_battery"};
+      |                                                 ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3458:49: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+[ 85%] Built target octavox_bench
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3635:43: warning: missing initializer for member ‘CaseResult::note’ [-Wmissing-field-initializers]
+ 3635 |         CaseResult c{"r15acc_invalid_args"};
+      |                                           ^
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/test_main.cpp:3635:43: warning: missing initializer for member ‘CaseResult::values’ [-Wmissing-field-initializers]
+[ 92%] Linking CXX executable octavox_tests
+[100%] Built target octavox_tests
+z         4032 96.4  3.8 21475012624 157368 ?  R    18:17   0:15 ./build-asan/octavox_tests --diag ../evidence/analysis_round18/r18_diag_asan.jsonl --json ../evidence/analysis_round18/r18_acceptance_asan.json

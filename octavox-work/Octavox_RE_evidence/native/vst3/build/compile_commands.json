@@ -84,6 +84,30 @@
   "output": "CMakeFiles/octavox_vst3_wrapper_tests.dir/home/z/my-project/octavox-work/Octavox_RE_evidence/native/tests/alloc_counter.cpp.o"
 },
 {
+  "directory": "/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build",
+  "command": "/usr/bin/c++  -I/home/z/my-project/octavox-work/vst3sdk -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3 -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../include -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../src -I/home/z/my-project/octavox-work/vst3sdk/public.sdk/.. -I/home/z/my-project/octavox-work/vst3sdk/base/.. -I/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/..  -Wno-multichar -O3 -DNDEBUG -std=c++17 -fPIE -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -Wsuggest-override -Wall -Wextra -DRELEASE=1 -o CMakeFiles/octavox_module_integration_tests.dir/octavox_module_integration_tests.cpp.o -c /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/octavox_module_integration_tests.cpp",
+  "file": "/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/octavox_module_integration_tests.cpp",
+  "output": "CMakeFiles/octavox_module_integration_tests.dir/octavox_module_integration_tests.cpp.o"
+},
+{
+  "directory": "/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build",
+  "command": "/usr/bin/c++  -I/home/z/my-project/octavox-work/vst3sdk -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3 -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../include -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../src -I/home/z/my-project/octavox-work/vst3sdk/public.sdk/.. -I/home/z/my-project/octavox-work/vst3sdk/base/.. -I/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/..  -Wno-multichar -O3 -DNDEBUG -std=c++17 -fPIE -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -Wsuggest-override -Wall -Wextra -DRELEASE=1 -o CMakeFiles/octavox_module_integration_tests.dir/octavox_params.cpp.o -c /home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/octavox_params.cpp",
+  "file": "/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/octavox_params.cpp",
+  "output": "CMakeFiles/octavox_module_integration_tests.dir/octavox_params.cpp.o"
+},
+{
+  "directory": "/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build",
+  "command": "/usr/bin/c++  -I/home/z/my-project/octavox-work/vst3sdk -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3 -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../include -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../src -I/home/z/my-project/octavox-work/vst3sdk/public.sdk/.. -I/home/z/my-project/octavox-work/vst3sdk/base/.. -I/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/..  -Wno-multichar -O3 -DNDEBUG -std=c++17 -fPIE -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -Wsuggest-override -Wall -Wextra -DRELEASE=1 -o CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.o -c /home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp",
+  "file": "/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp",
+  "output": "CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.o"
+},
+{
+  "directory": "/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build",
+  "command": "/usr/bin/c++  -I/home/z/my-project/octavox-work/vst3sdk -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3 -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../include -I/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/../src -I/home/z/my-project/octavox-work/vst3sdk/public.sdk/.. -I/home/z/my-project/octavox-work/vst3sdk/base/.. -I/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/..  -Wno-multichar -O3 -DNDEBUG -std=c++17 -fPIE -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -Wsuggest-override -Wall -Wextra -DRELEASE=1 -o CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.o -c /home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp",
+  "file": "/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp",
+  "output": "CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.o"
+},
+{
   "directory": "/home/z/my-project/octavox-work/Octavox_RE_evidence/native/vst3/build/vst3sdk/pluginterfaces",
   "command": "/usr/bin/c++  -I/home/z/my-project/octavox-work/vst3sdk -I/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/..  -Wno-multichar -O3 -DNDEBUG -std=c++17 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -Wsuggest-override -o CMakeFiles/pluginterfaces.dir/base/conststringtable.cpp.o -c /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/conststringtable.cpp",
   "file": "/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/conststringtable.cpp",

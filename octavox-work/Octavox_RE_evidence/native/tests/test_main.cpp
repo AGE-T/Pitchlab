@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cfenv>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -27,6 +28,8 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #endif
 
 #include "octavox/dsp.hpp"
@@ -37,6 +40,8 @@ using namespace octavox;
 // JSON string escaper (defined in the JSON-report section; needed earlier by
 // the R16-P2 environment record).
 std::string jsonEscape(const std::string& s);
+// /proc reader (defined in the environment-record section below).
+static std::string readProcFile(const char* path);
 
 // ---------------------------------------------------------------------------
 // Allocation counter interface (defined in alloc_counter.cpp)
@@ -46,6 +51,11 @@ namespace allocs {
 long count();
 void arm(bool on);
 void reset();
+// R18-P1: always-on process-wide allocation totals (never armed/gated;
+// the diagnostic trace reads them to prove the per-case allocation state
+// returns to a bounded baseline -- bookkeeping only).
+long totalNew();
+long totalDelete();
 }  // namespace allocs
 }  // namespace octavox
 
@@ -416,6 +426,93 @@ static bool g_reverse = false;                 // R17-P1: --reverse order mode
 
 static std::chrono::steady_clock::time_point g_lastMark;  // duration epoch
 
+// ---------------------------------------------------------------------------
+// R18-P1: aggregate-suite diagnostic mode (--diag <path>) and the
+// group-isolated fallback (--isolate).
+//
+// --diag writes an append-only, line-flushed JSONL trace of suite events:
+// suite start/end, group start/end, every case START and completion, the
+// per-case wall time, the process RSS (where /proc is available), the
+// always-on allocation counter state (total new/delete/outstanding -- never
+// armed, pure bookkeeping) and a floating-point environment probe (rounding
+// mode + accrued exception flags).  Every record is flushed BEFORE the next
+// case body starts, so when a constrained verification environment kills the
+// run inside its window, the last "case_start" without a matching
+// "case_end" pinpoints exactly where the run stood.  The trace NEVER gates:
+// it is observation only; the 85-case default suite and every gate are
+// unchanged.
+//
+// --isolate (POSIX only) runs each selected group in a fresh forked child
+// process (one process per group, progress on stdout, results returned over
+// a pipe).  It is the documented fallback for constrained environments and a
+// differential diagnostic: if a single-process run misbehaves while
+// --isolate passes, the cause is process-global state; if both behave the
+// same, it is not.  It is NOT equivalent to the single-process full run and
+// is never claimed to be.
+// ---------------------------------------------------------------------------
+static bool g_isolate = false;             // R18-P1: --isolate fallback mode
+static std::string g_diagPath;             // R18-P1: --diag <path>
+static FILE* g_diag = nullptr;             // open trace handle (or null)
+static std::vector<std::string> g_diagNext;  // predicted case order (running group)
+static size_t g_diagNextIdx = 0;             // index of the case now in flight
+static std::chrono::steady_clock::time_point g_diagT0;  // trace epoch
+static int g_diagRound0 = -1;                // rounding mode at suite start
+static int g_diagFlags0 = -1;                // fenv flags at suite start
+
+static double diagMs() {
+    return std::chrono::duration<double, std::milli>(
+               std::chrono::steady_clock::now() - g_diagT0)
+        .count();
+}
+
+static long diagRssKb() {
+#ifndef _WIN32
+    // VmRSS from /proc/self/status (Linux; "where supported" per the spec)
+    const std::string st = readProcFile("/proc/self/status");
+    const size_t p = st.find("VmRSS:");
+    if (p != std::string::npos) {
+        long v = 0;
+        if (std::sscanf(st.c_str() + p + 6, "%ld", &v) == 1) return v;
+    }
+#endif
+    return -1;  // unsupported on this platform
+}
+
+static std::string diagStatePairs() {
+    char b[192];
+    std::snprintf(b, sizeof b,
+                  "\"rss_kb\": %ld, \"alloc_new\": %ld, \"alloc_del\": %ld, "
+                  "\"alloc_out\": %ld, \"round\": %d, \"fenv\": %d",
+                  diagRssKb(), allocs::totalNew(), allocs::totalDelete(),
+                  allocs::totalNew() - allocs::totalDelete(),
+                  std::fegetround(), std::fetestexcept(FE_ALL_EXCEPT));
+    return std::string(b);
+}
+
+static void diagEmit(const std::string& line) {
+    if (!g_diag) return;
+    std::fprintf(g_diag, "%s\n", line.c_str());
+    std::fflush(g_diag);
+}
+
+// START record for the case about to run (idx = 1-based position in THIS run)
+static void diagCaseStart(size_t idx, const std::string& name) {
+    if (!g_diag) return;
+    char b[96];
+    std::snprintf(b, sizeof b, ", \"idx\": %zu, \"t_ms\": %.1f, ", idx,
+                  diagMs());
+    diagEmit("{\"ev\": \"case_start\", \"name\": \"" + jsonEscape(name) +
+             "\"" + b + diagStatePairs() + "}");
+}
+
+static long diagPid() {
+#ifdef _WIN32
+    return (long)GetCurrentProcessId();
+#else
+    return (long)getpid();
+#endif
+}
+
 static std::string toLowerStr(const std::string& s) {
     std::string o = s;
     for (char& ch : o)
@@ -479,6 +576,30 @@ static void pushCase(std::vector<CaseResult>& R, CaseResult&& c) {
                 pushed.name.c_str(), pushed.pass ? "ok" : "FAIL",
                 pushed.duration_ms);
     std::fflush(stdout);
+    // R18-P1 diagnostic trace: the completion record for THIS case and the
+    // START record for the next predicted case (both flushed before the next
+    // case body can run).  If the actual case name disagrees with the
+    // prediction a diag_sync record marks it (the registry mirrors the push
+    // order; a desync would only mislabel records, never a gate).
+    if (g_diag) {
+        char b[96];
+        std::snprintf(b, sizeof b,
+                      ", \"idx\": %d, \"pass\": %s, \"wall_ms\": %.1f, "
+                      "\"t_ms\": %.1f, ",
+                      g_progDone, pushed.pass ? "true" : "false",
+                      pushed.duration_ms, diagMs());
+        diagEmit("{\"ev\": \"case_end\", \"name\": \"" +
+                 jsonEscape(pushed.name) + "\"" + b + diagStatePairs() + "}");
+        if (g_diagNextIdx < g_diagNext.size() &&
+            g_diagNext[g_diagNextIdx] != pushed.name) {
+            diagEmit("{\"ev\": \"diag_sync\", \"predicted\": \"" +
+                     jsonEscape(g_diagNext[g_diagNextIdx]) +
+                     "\", \"actual\": \"" + jsonEscape(pushed.name) + "\"}");
+        }
+        ++g_diagNextIdx;
+        if (g_diagNextIdx < g_diagNext.size())
+            diagCaseStart((size_t)g_progDone + 1, g_diagNext[g_diagNextIdx]);
+    }
 }
 
 // ---- environment record (R16-P2; same fragment shape in bench_main.cpp) --
@@ -561,6 +682,8 @@ static std::string envJsonFragment() {
     j += std::to_string(cores);
     j += ", \"reverse_order\": ";
     j += g_reverse ? "true" : "false";
+    j += ", \"isolate\": ";
+    j += g_isolate ? "true" : "false";
     return j;
 }
 
@@ -3795,6 +3918,15 @@ static void usageExit(const std::string& msg) {
                  "    [--reverse]             (R17-P1: run the group runners in\n"
                  "                            reverse order -- order-independence\n"
                  "                            check; same cases, same gates)\n"
+                 "    [--diag <path>]         (R18-P1: JSONL diagnostic trace --\n"
+                 "                            case start/completion, wall, RSS,\n"
+                 "                            allocation counters, fenv probe;\n"
+                 "                            observation only, never a gate)\n"
+                 "    [--isolate]             (R18-P1, POSIX only: run each group\n"
+                 "                            in a fresh forked process -- the\n"
+                 "                            constrained-environment fallback;\n"
+                 "                            NOT equivalent to a single-process\n"
+                 "                            full run)\n"
                  "kinds AND together; unknown ids or an empty selection "
                  "exit 2\n");
     std::fprintf(stderr, "valid groups:");
@@ -3827,6 +3959,15 @@ int main(int argc, char** argv) {
             g_selCats.push_back(argv[++i]);
         } else if (a == "--reverse") {
             g_reverse = true;
+        } else if (a == "--diag" && i + 1 < argc) {
+            g_diagPath = argv[++i];
+        } else if (a == "--isolate") {
+#ifdef _WIN32
+            usageExit("error: --isolate is not supported on Windows "
+                      "(use repeated --group runs instead)");
+#else
+            g_isolate = true;
+#endif
         } else {
             usageExit("error: unknown or incomplete option: " + a);
         }
@@ -3877,10 +4018,152 @@ int main(int argc, char** argv) {
         static_cast<int>(sizeof(kRunners) / sizeof(kRunners[0]));
 
     const auto wallStart = std::chrono::steady_clock::now();
+    // R18-P1: open the diagnostic trace (if requested) BEFORE any case body
+    // can run, and stamp the suite_start record (environment + initial fenv).
+    if (!g_diagPath.empty()) {
+        g_diag = std::fopen(g_diagPath.c_str(), "w");
+        if (!g_diag) {
+            std::fprintf(stderr, "error: cannot open --diag file '%s'\n",
+                         g_diagPath.c_str());
+            return 2;
+        }
+        g_diagT0 = wallStart;
+        g_diagRound0 = std::fegetround();
+        g_diagFlags0 = std::fetestexcept(FE_ALL_EXCEPT);
+        char b[128];
+        std::snprintf(b, sizeof b,
+                      ", \"pid\": %ld, \"format\": \"r18diag1\", "
+                      "\"round0\": %d, \"fenv0\": %d, ",
+                      diagPid(), g_diagRound0, g_diagFlags0);
+        diagEmit("{\"ev\": \"suite_start\", " + envJsonFragment() +
+                 std::string(b) + diagStatePairs() + "}");
+    }
     // R17-P1: --reverse runs the group runners back-to-front (order-
     // independence check). Pure harness bookkeeping: the same case set with
     // the same gates runs either way; per-group durations are stamped the
     // same way. Within a group the case order is the registration order.
+#ifndef _WIN32
+    if (g_isolate) {
+        // R18-P1 group-isolated fallback: one fresh forked process per
+        // selected group (see the block comment above).  The children print
+        // the usual live progress lines on the inherited stdout and return
+        // their case results over a pipe; the parent aggregates and prints
+        // the final table + JSON exactly like the single-process run.
+        // NOTE: this mode is a constrained-environment fallback and a
+        // process-global-state differential -- it is NOT the canonical
+        // single-process full run and is never reported as equivalent.
+        for (int ri = 0; ri < kRunnerCount; ++ri) {
+            const int r = g_reverse ? (kRunnerCount - 1 - ri) : ri;
+            int n = 0;
+            for (int i = 0; i < kAllCaseCount; ++i)
+                if (kAllCases[i].group == std::string(kRunners[r].id) &&
+                    harnSelected(kAllCases[i].name))
+                    ++n;
+            if (n == 0) continue;
+            std::printf("== group %s: %d cases (isolated process) ==\n",
+                        kRunners[r].id, n);
+            std::fflush(stdout);
+            if (g_diag) {
+                g_diagNext.clear();
+                for (int i = 0; i < kAllCaseCount; ++i)
+                    if (kAllCases[i].group == std::string(kRunners[r].id) &&
+                        harnSelected(kAllCases[i].name))
+                        g_diagNext.push_back(kAllCases[i].name);
+                g_diagNextIdx = 0;
+                diagEmit("{\"ev\": \"group_start\", \"group\": \"" +
+                         std::string(kRunners[r].id) + "\", \"cases\": " +
+                         std::to_string(n) + ", \"t_ms\": " +
+                         std::to_string(diagMs()) + "}");
+                if (!g_diagNext.empty())
+                    diagCaseStart((size_t)g_progDone + 1, g_diagNext[0]);
+            }
+            int pipefd[2];
+            if (pipe(pipefd) != 0) {
+                std::perror("error: pipe");
+                return 2;
+            }
+            std::fflush(stdout);
+            const pid_t pid = fork();
+            if (pid < 0) {
+                std::perror("error: fork");
+                return 2;
+            }
+            if (pid == 0) {
+                // child: fresh process image from the (case-free) parent
+                // state; runs exactly one group, reports over the pipe.
+                // The inherited g_results (already-reported groups) must be
+                // cleared so the child reports ONLY its own group's cases.
+                ::close(pipefd[0]);
+                FILE* out = ::fdopen(pipefd[1], "w");
+                g_results.clear();
+                g_currentGroup = kRunners[r].id;
+                g_lastMark = std::chrono::steady_clock::now();
+                kRunners[r].fn(g_results);
+                for (const auto& c : g_results)
+                    std::fprintf(out, "CASE\t%s\t%d\t%.1f\t%s\t%s\n",
+                                 c.name.c_str(), c.pass ? 1 : 0, c.duration_ms,
+                                 c.group.c_str(), c.category.c_str());
+                int gp = 0, gf = 0;
+                for (const auto& c : g_results) (c.pass ? gp : gf)++;
+                std::fprintf(out, "GROUPSUM\t%d\t%d\n", gp, gf);
+                std::fflush(out);
+                std::fclose(out);
+                if (g_diag)
+                    diagEmit("{\"ev\": \"group_end\", \"group\": \"" +
+                             std::string(kRunners[r].id) + "\", \"t_ms\": " +
+                             std::to_string(diagMs()) + "}");
+                std::fflush(stdout);
+                std::fflush(g_diag);
+                ::_exit(gf == 0 ? 0 : 1);
+            }
+            // parent: read the child's protocol lines, then reap it
+            ::close(pipefd[1]);
+            FILE* in = ::fdopen(pipefd[0], "r");
+            char line[512];
+            int got = 0;
+            while (std::fgets(line, sizeof(line), in)) {
+                char name[256];
+                int ok = 0;
+                double dur = 0.0;
+                char grp[64], cat[16];
+                if (std::sscanf(line, "CASE\t%255[^\t]\t%d\t%lf\t%63[^\t]\t%15[^\n]",
+                                name, &ok, &dur, grp, cat) == 5) {
+                    CaseResult c;
+                    c.name = name;
+                    c.pass = (ok != 0);
+                    c.duration_ms = dur;
+                    c.group = grp;
+                    c.category = cat;
+                    g_results.push_back(std::move(c));
+                    ++got;
+                }  // GROUPSUM lines are redundant here: the CASE lines
+                   // already carry the per-group pass/fail state.
+            }
+            std::fclose(in);
+            g_progDone += got;  // keep the global case index monotonic
+                                 // across the forked children
+            int status = 0;
+            ::waitpid(pid, &status, 0);
+            if (!WIFEXITED(status)) {
+                std::fprintf(stderr,
+                             "WARNING: isolated group '%s' child did not "
+                             "exit normally (status 0x%x)\n",
+                             kRunners[r].id, status);
+            }
+            // if the child died before reporting all its cases, record the
+            // missing ones as failures so the aggregate stays honest
+            for (int miss = got; miss < n; ++miss) {
+                CaseResult c;
+                c.name = std::string(kRunners[r].id) + ":child_report_missing";
+                c.pass = false;
+                c.note = "isolated child produced no result for this case";
+                c.group = kRunners[r].id;
+                c.category = "unit";
+                g_results.push_back(std::move(c));
+            }
+        }
+    } else  // the canonical single-process path (unchanged behaviour)
+#endif
     for (int ri = 0; ri < kRunnerCount; ++ri) {
         const int r = g_reverse ? (kRunnerCount - 1 - ri) : ri;
         int n = 0;
@@ -3891,14 +4174,47 @@ int main(int argc, char** argv) {
         if (n == 0) continue;
         std::printf("== group %s: %d cases ==\n", kRunners[r].id, n);
         std::fflush(stdout);
+        // R18-P1: diag bookkeeping -- the predicted case order for this
+        // group (registry order, filtered by the selection), the group_start
+        // record and the first case's START record, all flushed before the
+        // first case body runs.
+        if (g_diag) {
+            g_diagNext.clear();
+            for (int i = 0; i < kAllCaseCount; ++i)
+                if (kAllCases[i].group == std::string(kRunners[r].id) &&
+                    harnSelected(kAllCases[i].name))
+                    g_diagNext.push_back(kAllCases[i].name);
+            g_diagNextIdx = 0;
+            diagEmit("{\"ev\": \"group_start\", \"group\": \"" +
+                     std::string(kRunners[r].id) + "\", \"cases\": " +
+                     std::to_string(n) + ", \"t_ms\": " +
+                     std::to_string(diagMs()) + "}");
+            if (!g_diagNext.empty())
+                diagCaseStart((size_t)g_progDone + 1, g_diagNext[0]);
+        }
         g_currentGroup = kRunners[r].id;
         g_lastMark = std::chrono::steady_clock::now();
         kRunners[r].fn(g_results);
+        if (g_diag)
+            diagEmit("{\"ev\": \"group_end\", \"group\": \"" +
+                     std::string(kRunners[r].id) + "\", \"t_ms\": " +
+                     std::to_string(diagMs()) + "}");
     }
     const double wallMs =
         std::chrono::duration<double, std::milli>(
             std::chrono::steady_clock::now() - wallStart)
             .count();
+
+    // R18-P1: suite_end record (aggregate counts, flushed immediately)
+    if (g_diag) {
+        int dp = 0, df = 0;
+        for (const auto& c : g_results) (c.pass ? dp : df)++;
+        diagEmit("{\"ev\": \"suite_end\", \"passed\": " +
+                 std::to_string(dp) + ", \"failed\": " +
+                 std::to_string(df) + ", \"total\": " +
+                 std::to_string((int)g_results.size()) +
+                 ", \"wall_ms\": " + std::to_string(wallMs) + "}");
+    }
 
     int passed = 0, failed = 0;
     if (durations) {

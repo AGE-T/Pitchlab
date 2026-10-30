@@ -1,4 +1,4 @@
-# Octavox (Eventide) - reverse-engineering evidence package - round 17
+# Octavox (Eventide) - reverse-engineering evidence package - round 18
 
 Independent static analysis of `Ox.vst3` (Eventide Octavox), plus an independent DSP
 demonstration written from scratch. **The target binary was never modified and was never run.**
@@ -523,3 +523,62 @@ from the wall-clock cost rows. **Its numbers describe our implementation, never 
 * The DSP core, the Python reference and all prior-round evidence are
   unchanged (verified); the four default-neutrality hashes still match.
   The original binary was never executed.
+
+---
+
+## What is new in round 18 (remaining static DSP semantics, the aggregate-test anomaly resolved + reproduced, and the compiled-module integration harness)
+
+* **P1 — the aggregate test anomaly is explained quantitatively AND positively
+  reproduced** (`docs/OCTAVOX_ROUND18_FINDINGS.md` §2,
+  `evidence/analysis_round18/r18_suite_diagnostics.md`): a single uniform
+  slowdown factor **F ∈ [12.42, 15.85]** satisfies every observation the
+  independent verification environment reported (the full suite stopping at
+  the 96 kHz detector battery after 58 cases, the r13 group passing alone,
+  the stability+r13 combination passing in one process, the r15 groups
+  passing alone); under a measured ≈2× CPU contention on this host, a 300 s
+  window kills the −O0 run **inside the battery after exactly 58 cases**
+  (diag-traced), while the same contended run without the window completes
+  85/85. New harness capabilities (gates untouched): `--diag` (the JSONL
+  forensic trace: case start/completion, wall, RSS, allocation counters,
+  FP-env probe) and `--isolate` (the group-isolated fallback — explicitly
+  not equivalent to a single-process run).
+* **P2 — the mode-flag producer CLOSED**: `[obj+0x8C]` = the module record's
+  **`modsw`** field (default '0', range 0..1), written once by the core ctor
+  `0x1800DBAD0@0x1800DBCC9`; absent from the shipped patch ⇒ the R17-decoded
+  mode-1 trajectory is **dead code in the shipped plugin**; R17's "mod input
+  connected" hypothesis refuted (`evidence/analysis_round18/r18_static_findings.md` §P2).
+* **P3 — the tracker `T+0x5F14` setter resolved**: the dsp setParam case 5 =
+  **the system sample rate** (not a host parameter, not a record field — the
+  'dtonicii' 1.7 class-default record has no rate entry); the ctor DOES
+  initialise the state `[T+0x5FF8]=0` (an R17 record correction); the exact
+  rate-broadcast call site is bounded UNK with the decisive Windows experiment
+  specified (§P3).
+* **P4 — the interval-mux design rule CLOSED**: `v = 14 + s + δ` with `δ=1`
+  iff the label's step count `s ≡ 2 or 6 (mod 7)`; the reachable walk-target
+  grid = `{0,2,3,4,6} mod 7` — **the 2nd and 6th scale positions are never
+  engine targets** (why "+3rd" and "+4th" share a mux value, etc.); the
+  key-ratio law is symmetric `±temperament[|key−9|]` (R17's "asymmetry" was a
+  decompiler stack-layout artifact — corrected); the pentatonic raw-index
+  path and an authored scal-table irregularity are recorded (§P4, and the
+  reachability matrix in `docs/OCTAVOX_CONTROL_FLOW_MATRIX.md` §14).
+* **P5 — the kernel question CLOSED as UNK-generator/DER-characterisation**:
+  no runtime writer exists (two code references, both readers ⇒ build-time
+  data); the exact phase law = delay `2 + r/256` (centroid-proven); the two
+  consumers index the table differently (engine `floor(frac·256)&255`;
+  filter readers `int(frac·255)` — row 255 unreachable there); newly rejected
+  design families: equiripple/Remez, flat-passband least-squares. Our core
+  keeps the observed table as the opt-in `ObsKernel6` mode; `Lagrange6`
+  remains the default (§P5).
+* **P6 — the compiled-module integration harness (12/12, bit-exact)**:
+  `native/vst3/octavox_module_integration_tests.cpp` loads the built
+  `OctavoxNative.vst3` through the pinned SDK's module loader (a real
+  dlopen + factory) and drives the full host interface contract — bus
+  negotiation, parameter queues, deterministic processing (bit-exact vs
+  the hand-driven core, mono+stereo), state save/restore into a second
+  factory instance, latency, terminate/unload. **Scope: an SDK-module-load
+  + interface-contract test — NOT a DAW compatibility claim.** The module
+  SHA-256 is byte-identical to R16/R17 (`b293cecb…`).
+* **P7 — documentation**: the round-18 findings, the updated open questions
+  (§5), the new path/parameter **reachability matrix**
+  (`docs/OCTAVOX_CONTROL_FLOW_MATRIX.md` §14), the wrapper/readiness/README
+  addenda, the updated build script, and this archive.
