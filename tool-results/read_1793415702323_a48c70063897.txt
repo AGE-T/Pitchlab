@@ -1,0 +1,897 @@
+     1→#!/usr/bin/env bash
+     2→# ============================================================================
+     3→# OCTAVOX R19: Windows dual VST3 build + validation chain (ROUND 19)
+     4→# (Lagrange6 vs ObsKernel6 on the 16.0.0 core; the R19-D-build round)
+     5→# ============================================================================
+     6→# Reproduces the full round-19 Windows-dual-build chain end to end from the
+     7→# round-19 evidence tree (native/ = the 16.0.0 source: decimated detector
+     8→# default, click-free commit/base-delay crossfades, voice activation ramps,
+     9→# blob v2; new CLI tools octavox_r19_clickscan / octavox_r19_nulltest /
+    10→# octavox_r19_variant_metrics; new dual-module tool octavox_dual_nulltest):
+    11→#
+    12→#   LEG 0  environment + pinned-SDK verification (get_vst3_sdk.sh --verify)
+    13→#   LEG 1  native core (Linux, Release): the 93-case acceptance suite +
+    14→#          THREE reference-hash records, all four configs each:
+    15→#            * --legacy                          vs r15_reference_hashes.txt
+    16→#              (the LEGACY Lagrange6 gate, unchanged since R15-REB1),
+    17→#            * --legacy --interpolation obskernel6
+    18→#                                             vs r18_obs_reference_hashes.txt
+    19→#              (the LEGACY ObsKernel6 gate, established R18-WDB),
+    20→#            * defaults (16.0.0: decimated detector + crossfades)
+    21→#                                             vs r19_reference_hashes.txt
+    22→#              (the NEW 16.0.0 record, established this round)
+    23→#          + a double-run reproducibility check of the default record
+    24→#   LEG 2  VST3 wrapper, LINUX builds of BOTH variants (same source and same
+    25→#          OCTAVOX_VST3_INTERPOLATION configuration as the Windows builds):
+    26→#          15-case wrapper tests, 12-case compiled-module integration
+    27→#          harness, Steinberg validator (47/47) -- per variant -- PLUS the
+    28→#          R19 dual-module null test (octavox_dual_nulltest) on the FRESH
+    29→#          R19 Linux modules: both bundles loaded simultaneously in one
+    30→#          process, lockstep stimulus; unity must be bit-identical,
+    31→#          non-unity MUST differ (exit code 0 gates the chain)
+    32→#   LEG 3  VST3 wrapper, WINDOWS x64 cross-builds of BOTH variants
+    33→#          (llvm-mingw clang -> genuine PE32+ x86-64 modules; MSVC does not
+    34→#          exist on this Linux host -- recorded deviation, see the R18
+    35→#          report; TOOLCHAIN DEVIATION THIS ROUND: the installed llvm-mingw
+    36→#          now provides clang 23.1.2 (release 20260922, ucrt); R18 used
+    37→#          23.1.4 from a release that no longer exists on this host) --
+    38→#          module + test executables + validator.exe + moduleinfotool.exe
+    39→#          per variant; PLUS a third LAGRANGE6Q Windows build (the static
+    40→#          compile-definition code-change proof for LEG 6) and a Windows
+    41→#          cross-build of the variant-independent octavox_dual_nulltest
+    42→#          tool (auxiliary validation-kit extra; NOT a chain gate -- a
+    43→#          compile failure is recorded honestly and the chain continues)
+    44→#   LEG 4  Windows build reproducibility: a second, FRESH build directory
+    45→#          per variant must produce a byte-identical module (-Wl,/Brepro)
+    46→#   LEG 5  assembly of the delivery layout
+    47→#          (out/Builds/OctavoxRE_R19_Windows_x64/{Lagrange6,ObsKernel6} +
+    48→#          the Windows_Validation_Kit for user-side Windows runs) incl. the
+    49→#          authored Contents/Resources/moduleinfo.json per bundle (class
+    50→#          version 1.1.0 from the source's kPluginVersion) and, if the
+    51→#          Windows dual-nulltest built, shared/octavox_dual_nulltest.exe +
+    52→#          run_dual_nulltest.cmd
+    53→#   LEG 6  structural verification of BOTH Windows modules (PE32+ x86-64,
+    54→#          DLL flag, GetPluginFactory export, import allow-list, identity
+    55→#          strings, PClassInfo CID in the Windows COM GUID layout, no
+    56→#          cross-variant FUID contamination, sizes, SHA-256; reuses the
+    57→#          R18_WDB_build_infrastructure verifier unchanged) + the R19 static
+    58→#          variant proofs: the two delivered modules differ (sha256), the
+    59→#          ObsKernel6 kernel table's first-row float bytes are present in
+    60→#          BOTH modules (the core compiles all interpolation modes), and
+    61→#          the auxiliary LAGRANGE6Q module's sha256 DIFFERS from both --
+    62→#          proving the compile definition genuinely changes the emitted
+    63→#          code (together with the LEG 2 dual-module null test and the
+    64→#          moduleinfo identity records: the static+dynamic proof set)
+    65→#
+    66→# Usage:
+    67→#   ./r19_dual_build.sh [--sdk-root <path>] [--evidence-out <dir>]
+    68→#                       [--skip-linux] [--skip-core]
+    69→#
+    70→# Exit code 0 iff EVERY gate passes. Nothing is weakened: the 93-case suite
+    71→# and the three 4-config hash records are the round-15..19 gates,
+    72→# bit-identical; the R19 default record is a SEPARATE, new record.
+    73→#
+    74→# RESUMABILITY (environment note): this sandbox terminates long-running
+    75→# tool invocations, so the chain is written to be RE-RUNNABLE -- every leg
+    76→# is idempotent and the Windows legs SKIP a configure/build whose outputs
+    77→# already exist and are structurally valid (Make-based builds resume
+    78→# incrementally; interrupted links are re-done). Re-run the script (with
+    79→# --skip-core --skip-linux to jump straight to the Windows legs) until it
+    80→# completes; every evidence file is (re)written by the leg that owns it.
+    81→#
+    82→# STATUS: executed end-to-end in the development environment this round
+    83→# (2026-10-31); see evidence/logs/r19_* for the captured outputs.
+    84→# ============================================================================
+    85→set -euo pipefail
+    86→
+    87→SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    88→NATIVE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+    89→R19_ROOT="$(cd "${NATIVE_DIR}/../../.." && pwd)"          # .../r18_dual
+    90→VST3_DIR="${NATIVE_DIR}/vst3"
+    91→DEFAULT_SDK="${R19_ROOT}/../vst3sdk"                      # sibling of r18_dual
+    92→TOOLCHAIN_FILE="${R19_ROOT}/llvm-mingw-toolchain.cmake"
+    93→WINSHIM_DIR="/home/z/tools/winshims"                      # no-op 'attrib'
+    94→VERIFY_SCRIPT="${R19_ROOT}/delivery/R18_WDB_build_infrastructure/verify_windows_modules.py"
+    95→
+    96→SKIP_LINUX=0
+    97→SKIP_CORE=0
+    98→SDK_ROOT="${DEFAULT_SDK}"
+    99→EVID_OUT="${R19_ROOT}/evidence/logs"
+   100→OUT_ROOT="${R19_ROOT}/out"
+   101→
+   102→# R19 build directories (NEW names -- the R18 dirs are left untouched)
+   103→CORE_BUILD="${R19_ROOT}/build_r19_lin_core"
+   104→LIN_LAG="${R19_ROOT}/build_r19_lin_lagrange6"
+   105→LIN_OBS="${R19_ROOT}/build_r19_lin_obskernel6"
+   106→WIN_LAG="${R19_ROOT}/build_win_lagrange6"
+   107→WIN_OBS="${R19_ROOT}/build_win_obskernel6"
+   108→WIN_LAGQ="${R19_ROOT}/build_win_lagrange6q"
+   109→WIN_REPRO_LAG="${R19_ROOT}/build_win_repro_lagrange6"
+   110→WIN_REPRO_OBS="${R19_ROOT}/build_win_repro_obskernel6"
+   111→WIN_DN="${R19_ROOT}/build_win_dualnulltest"
+   112→
+   113→while [ $# -gt 0 ]; do
+   114→    case "$1" in
+   115→        --sdk-root) SDK_ROOT="$2"; shift ;;
+   116→        --evidence-out) EVID_OUT="$2"; shift ;;
+   117→        --skip-linux) SKIP_LINUX=1 ;;
+   118→        --skip-core) SKIP_CORE=1 ;;
+   119→        -h|--help) sed -n '2,68p' "$0"; exit 0 ;;
+   120→        *) echo "unknown option: $1" >&2; exit 2 ;;
+   121→    esac
+   122→    shift
+   123→done
+   124→mkdir -p "${EVID_OUT}"
+   125→
+   126→say() { printf '%s\n' "$*"; }
+   127→hr()  { say "---------------------------------------------------------------"; }
+   128→
+   129→T0_GLOBAL=$(date +%s)
+   130→phase_start() { T0_PHASE=$(date +%s); }
+   131→phase_secs()  { echo "$(( $(date +%s) - T0_PHASE ))"; }
+   132→
+   133→FAILURES=0
+   134→fail() { say "  !! FAILED: $*"; FAILURES=$((FAILURES + 1)); }
+   135→
+   136→# The four deterministic capture configurations (identical across the three
+   137→# reference records; see r15/r18_obs/r19_reference_hashes.txt).
+   138→CFGS="cfg1_default_unity_lcg_noise_b64_150_512
+   139→cfg2_r700c_8v_spread_fb025_sine220
+   140→cfg3_rm400c_4v_nospread_chirp200_800
+   141→cfg4_stereo_2ch_4v_unity_then_r400c"
+   142→
+   143→# refcap_gate <evidence-file> <reference-file> <label>: all four hashes must
+   144→# match the record exactly.
+   145→refcap_gate() { # $1 = captured output $2 = reference hashes $3 = label
+   146→    local OK=1
+   147→    while IFS= read -r cfg; do
+   148→        local got want
+   149→        got="$(rg "${cfg}" "$1" | rg -o '0x[0-9a-f]{16}' | head -1)"
+   150→        want="$(rg "^ *${cfg}" "$2" | rg -o '0x[0-9a-f]{16}' | head -1)"
+   151→        [ "${got}" = "${want}" ] || { fail "$3 hash ${cfg}: got ${got} want ${want}"; OK=0; }
+   152→    done <<<"${CFGS}"
+   153→    [ "${OK}" = "1" ] && say "  $3: 4/4 exact vs $(basename "$2")"
+   154→    return 0
+   155→}
+   156→
+   157→# Windows cross-build configuration (identical for both variants except the
+   158→# interpolation selection). -Wl,/Brepro makes LLD emit a deterministic PE
+   159→# TimeDateStamp -> byte-reproducible modules (verified by LEG 4).
+   160→win_configure() { # $1 = build dir, $2 = VARIANT
+   161→    cmake -S "${VST3_DIR}" -B "$1" \
+   162→        -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
+   163→        -DCMAKE_BUILD_TYPE=Release \
+   164→        -DVST3_SDK_ROOT="${SDK_ROOT}" \
+   165→        -DOCTAVOX_VST3_INTERPOLATION="$2" \
+   166→        -DSMTG_RUN_VST_VALIDATOR=OFF \
+   167→        -DSMTG_CREATE_MODULE_INFO=OFF \
+   168→        -DSMTG_CREATE_PLUGIN_LINK=OFF \
+   169→        -DCMAKE_MODULE_LINKER_FLAGS="-static -Wl,--no-undefined -Wl,/Brepro" \
+   170→        -DCMAKE_SHARED_LINKER_FLAGS="-static -Wl,--no-undefined -Wl,/Brepro" \
+   171→        -DCMAKE_EXE_LINKER_FLAGS="-static -Wl,/Brepro"
+   172→}
+   173→lin_configure() { # $1 = build dir, $2 = VARIANT
+   174→    cmake -S "${VST3_DIR}" -B "$1" \
+   175→        -DCMAKE_BUILD_TYPE=Release \
+   176→        -DVST3_SDK_ROOT="${SDK_ROOT}" \
+   177→        -DOCTAVOX_VST3_INTERPOLATION="$2"
+   178→}
+   179→
+   180→# A Windows module is "complete" only if it exists AND parses as a PE32+
+   181→# x86-64 DLL (guards against a link interrupted mid-write by the sandbox's
+   182→# process termination -- an invalid module is removed and re-linked).
+   183→#
+   184→# file_pe_x64 probes file(1) via command substitution + case globbing (no
+   185→# pipe, no regex escaping) with ONE defensive retry. (History: the chain's
+   186→# first authoring used `rg "PE32+ executable..."` -- an unescaped `+` that
+   187→# never matches the literal "PE32+" -- which made the informational exe
+   188→# probe print a false negative; the glob form cannot regress that way.)
+   189→file_pe_x64() { # $1 = path, $2 = optional "dll" (also require the DLL flag)
+   190→    local out
+   191→    out="$(file "$1" 2>/dev/null || true)"
+   192→    case "${out}" in
+   193→        *"PE32+ executable for MS Windows"*x86-64*) ;;
+   194→        *) sleep 1; out="$(file "$1" 2>/dev/null || true)" ;;
+   195→    esac
+   196→    case "${out}" in
+   197→        *"PE32+ executable for MS Windows"*x86-64*)
+   198→            if [ "${2:-}" = "dll" ]; then
+   199→                case "${out}" in *"(DLL)"*) return 0 ;; *) return 1 ;; esac
+   200→            fi
+   201→            return 0 ;;
+   202→    esac
+   203→    return 1
+   204→}
+   205→win_mod_ok() { # $1 = module path
+   206→    [ -f "$1" ] && file_pe_x64 "$1" dll
+   207→}
+   208→
+   209→say "OCTAVOX R19 Windows dual build ($(date -u '+%Y-%m-%dT%H:%M:%SZ'))"
+   210→say "  native tree:    ${NATIVE_DIR}"
+   211→say "  SDK:            ${SDK_ROOT}"
+   212→say "  toolchain file: ${TOOLCHAIN_FILE}"
+   213→hr
+   214→command -v cmake >/dev/null 2>&1 || { say "ERROR: cmake not on PATH (need >= 3.19)."; exit 1; }
+   215→[ -x /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++ ] || {
+   216→    say "ERROR: llvm-mingw cross toolchain not at /home/z/tools/llvm-mingw."; exit 1; }
+   217→say "toolchain: $(cmake --version | head -1)"
+   218→say "cross c++: $(/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++ --version | head -1)"
+   219→say "llvm-mingw dist: $(basename "$(readlink -f /home/z/tools/llvm-mingw)")"
+   220→say "  (RECORDED TOOLCHAIN DEVIATION vs R18: clang 23.1.2 here; R18 used the"
+   221→say "   23.1.4 llvm-mingw release, which no longer exists on this host)"
+   222→
+   223→# ==============================================================================
+   224→# LEG 0: pinned SDK verification
+   225→# ==============================================================================
+   226→say ""
+   227→say "[LEG 0] pinned VST3 SDK verification (v3.7.12_build_20 + component SHAs)"
+   228→phase_start
+   229→if "${SCRIPT_DIR}/get_vst3_sdk.sh" --verify "${SDK_ROOT}" > "${EVID_OUT}/r19_sdk_verify.txt" 2>&1; then
+   230→    say "  SDK: VERIFIED at the pinned revisions ($(rg -o 'VERIFIED' "${EVID_OUT}/r19_sdk_verify.txt" | head -1))"
+   231→else
+   232→    fail "pinned SDK verification"
+   233→fi
+   234→say "  leg 0 wall: $(phase_secs) s"
+   235→
+   236→# ==============================================================================
+   237→# LEG 1: native core (the shared DSP core -- the 16.0.0 gates)
+   238→# ==============================================================================
+   239→if [ "${SKIP_CORE}" = "1" ]; then
+   240→    say ""
+   241→    say "[LEG 1] SKIPPED (--skip-core)"
+   242→else
+   243→    say ""
+   244→    say "[LEG 1] native core -- Release: 93-case suite + 4+4+4 reference hashes"
+   245→    phase_start
+   246→    cmake -S "${NATIVE_DIR}" -B "${CORE_BUILD}" -DCMAKE_BUILD_TYPE=Release \
+   247→        > "${EVID_OUT}/r19_core_configure.log" 2>&1 || fail "core configure"
+   248→    cmake --build "${CORE_BUILD}" -j2 > "${EVID_OUT}/r19_core_build.log" 2>&1 || fail "core build"
+   249→
+   250→    "${CORE_BUILD}/octavox_tests" > "${EVID_OUT}/r19_core_suite.txt" 2>&1 \
+   251→        || fail "93-case suite (93/93 required)"
+   252→    rg -q "93 passed, 0 failed" "${EVID_OUT}/r19_core_suite.txt" \
+   253→        && say "  93-case suite: 93/93" || fail "93-case suite summary"
+   254→
+   255→    # (a) the LEGACY Lagrange6 neutrality record (the permanent 15.0.0 gate)
+   256→    "${CORE_BUILD}/octavox_r15refcap" --legacy \
+   257→        > "${EVID_OUT}/r19_refcap_legacy.txt" 2>&1 || fail "refcap legacy lagrange6"
+   258→    refcap_gate "${EVID_OUT}/r19_refcap_legacy.txt" \
+   259→        "${NATIVE_DIR}/r15_reference_hashes.txt" \
+   260→        "legacy Lagrange6 neutrality hashes"
+   261→
+   262→    # (b) the LEGACY ObsKernel6 record (the R18-WDB variant gate, legacy-pinned)
+   263→    "${CORE_BUILD}/octavox_r15refcap" --legacy --interpolation obskernel6 \
+   264→        > "${EVID_OUT}/r19_refcap_legacy_obs.txt" 2>&1 || fail "refcap legacy obskernel6"
+   265→    refcap_gate "${EVID_OUT}/r19_refcap_legacy_obs.txt" \
+   266→        "${NATIVE_DIR}/r18_obs_reference_hashes.txt" \
+   267→        "legacy ObsKernel6 reference hashes"
+   268→
+   269→    # (c) the NEW 16.0.0 default record (decimated detector + click-free
+   270→    #     commits) + double-run reproducibility
+   271→    "${CORE_BUILD}/octavox_r15refcap" \
+   272→        > "${EVID_OUT}/r19_refcap_default_run1.txt" 2>&1 || fail "refcap default run1"
+   273→    "${CORE_BUILD}/octavox_r15refcap" \
+   274→        > "${EVID_OUT}/r19_refcap_default_run2.txt" 2>&1 || fail "refcap default run2"
+   275→    cmp -s "${EVID_OUT}/r19_refcap_default_run1.txt" "${EVID_OUT}/r19_refcap_default_run2.txt" \
+   276→        && say "  16.0.0 default record: reproducible (run1 == run2)" \
+   277→        || fail "16.0.0 default record reproducibility"
+   278→    refcap_gate "${EVID_OUT}/r19_refcap_default_run1.txt" \
+   279→        "${NATIVE_DIR}/r19_reference_hashes.txt" \
+   280→        "16.0.0 default reference hashes"
+   281→    say "  leg 1 wall: $(phase_secs) s"
+   282→fi
+   283→
+   284→# ==============================================================================
+   285→# LEG 2: LINUX builds of BOTH variants (same source + same configuration as
+   286→# the Windows builds; the full functional validation runs HERE because the
+   287→# Linux sandbox cannot execute Windows PE binaries -- wine is blocked by the
+   288→# sandbox's seccomp policy; see the R18 report) + the R19 dual-module null
+   289→# test on the fresh modules.
+   290→# ==============================================================================
+   291→variant_leg2() { # $1 = VARIANT (LAGRANGE6|OBSKERNEL6) $2 = bundle name
+   292→    local VARIANT="$1" BUNDLE="$2"
+   293→    local B
+   294→    case "${VARIANT}" in
+   295→        LAGRANGE6)  B="${LIN_LAG}" ;;
+   296→        OBSKERNEL6) B="${LIN_OBS}" ;;
+   297→    esac
+   298→    say ""
+   299→    say "[LEG 2/${VARIANT}] LINUX variant build + wrapper/integration/validator"
+   300→    phase_start
+   301→    lin_configure "${B}" "${VARIANT}" > "${EVID_OUT}/r19_lin_${VARIANT}_configure.log" 2>&1 || fail "lin ${VARIANT} configure"
+   302→    cmake --build "${B}" -j2 > "${EVID_OUT}/r19_lin_${VARIANT}_build.log" 2>&1 || fail "lin ${VARIANT} build"
+   303→    rg "OCTAVOX VST3 build variant" "${EVID_OUT}/r19_lin_${VARIANT}_configure.log" | head -1 | sed 's/^-- /  /' || true
+   304→
+   305→    "${B}/bin/Release/octavox_vst3_wrapper_tests" \
+   306→        > "${EVID_OUT}/r19_lin_${VARIANT}_wrapper_tests.txt" 2>&1 \
+   307→        || fail "lin ${VARIANT} wrapper tests (15/15 required)"
+   308→    rg -q "15 passed, 0 failed" "${EVID_OUT}/r19_lin_${VARIANT}_wrapper_tests.txt" \
+   309→        && say "  wrapper tests: 15/15" || fail "lin ${VARIANT} wrapper summary"
+   310→
+   311→    ( cd "${VST3_DIR}" && "${B}/bin/Release/octavox_module_integration_tests" \
+   312→        --module "${B}/VST3/Release/${BUNDLE}.vst3" \
+   313→        --json "${EVID_OUT}/r19_lin_${VARIANT}_integration.json" \
+   314→        > "${EVID_OUT}/r19_lin_${VARIANT}_integration.txt" 2>&1 ) \
+   315→        || fail "lin ${VARIANT} integration (12/12 required)"
+   316→    rg -q "12 passed, 0 failed" "${EVID_OUT}/r19_lin_${VARIANT}_integration.txt" \
+   317→        && say "  module integration: 12/12 (bit-exact vs the ${VARIANT} core reference)" \
+   318→        || fail "lin ${VARIANT} integration summary"
+   319→
+   320→    "${B}/bin/Release/validator" "${B}/VST3/Release/${BUNDLE}.vst3" \
+   321→        > "${EVID_OUT}/r19_lin_${VARIANT}_validator.txt" 2>&1 \
+   322→        || fail "lin ${VARIANT} validator (47/47 required)"
+   323→    rg -q "47 tests passed, 0 tests failed" "${EVID_OUT}/r19_lin_${VARIANT}_validator.txt" \
+   324→        && say "  SDK validator: 47/47" || fail "lin ${VARIANT} validator summary"
+   325→    say "  leg 2/${VARIANT} wall: $(phase_secs) s"
+   326→}
+   327→if [ "${SKIP_LINUX}" = "1" ]; then
+   328→    say ""
+   329→    say "[LEG 2] SKIPPED (--skip-linux)"
+   330→else
+   331→    variant_leg2 LAGRANGE6  OctavoxRE_Lagrange6
+   332→    variant_leg2 OBSKERNEL6 OctavoxRE_ObsKernel6
+   333→
+   334→    # ---- the R19 dual-module null test (FRESH R19 Linux modules) ----------
+   335→    # Both bundles are loaded SIMULTANEOUSLY in one process (two real dlopens
+   336→    # through the pinned SDK's module loader); unity must be bit-identical,
+   337→    # non-unity MUST differ. Exit code 0 is the gate.
+   338→    say ""
+   339→    say "[LEG 2] dual-module null test on the fresh R19 Linux modules"
+   340→    phase_start
+   341→    mkdir -p "${EVID_OUT}/r19_dual_nulltest"
+   342→    if "${LIN_LAG}/bin/Release/octavox_dual_nulltest" \
+   343→        --lagrange6 "${LIN_LAG}/VST3/Release/OctavoxRE_Lagrange6.vst3" \
+   344→        --obskernel6 "${LIN_OBS}/VST3/Release/OctavoxRE_ObsKernel6.vst3" \
+   345→        --out "${EVID_OUT}/r19_dual_nulltest" \
+   346→        --json "${EVID_OUT}/r19_dual_nulltest/dual_nulltest.json" \
+   347→        > "${EVID_OUT}/r19_dual_nulltest.txt" 2>&1; then
+   348→        rg -q "verdict: PASS" "${EVID_OUT}/r19_dual_nulltest.txt" \
+   349→            && say "  dual-module null test: PASS (exit 0; see r19_dual_nulltest.txt + dual_nulltest.json)" \
+   350→            || fail "dual-module null test verdict line"
+   351→    else
+   352→        fail "dual-module null test (nonzero exit code)"
+   353→    fi
+   354→    [ -f "${EVID_OUT}/r19_dual_nulltest/dual_nulltest.json" ] \
+   355→        && say "  dual_nulltest.json written" \
+   356→        || fail "dual_nulltest.json missing"
+   357→    say "  leg 2/dual-nulltest wall: $(phase_secs) s"
+   358→fi
+   359→
+   360→# ==============================================================================
+   361→# LEG 3: WINDOWS x64 cross-builds of BOTH variants (+ the auxiliary
+   362→# LAGRANGE6Q proof build and the Windows dual-nulltest tool build)
+   363→# ==============================================================================
+   364→export PATH="${WINSHIM_DIR}:${PATH}"   # no-op 'attrib' (cosmetic +s attribute)
+   365→variant_leg3() { # $1 = VARIANT $2 = bundle name
+   366→    local VARIANT="$1" BUNDLE="$2"
+   367→    local B
+   368→    case "${VARIANT}" in
+   369→        LAGRANGE6)  B="${WIN_LAG}" ;;
+   370→        OBSKERNEL6) B="${WIN_OBS}" ;;
+   371→    esac
+   372→    local MOD="${B}/VST3/Release/${BUNDLE}.vst3/Contents/x86_64-win/${BUNDLE}.vst3"
+   373→    say ""
+   374→    say "[LEG 3/${VARIANT}] WINDOWS x64 cross-build (llvm-mingw, PE32+ x86-64)"
+   375→    phase_start
+   376→    if win_mod_ok "${MOD}"; then
+   377→        say "  module already present + structurally valid (incremental resume) -- skipping configure/build"
+   378→    else
+   379→        rm -f "${MOD}"   # (re-do an interrupted link; Make relinks)
+   380→        win_configure "${B}" "${VARIANT}" > "${EVID_OUT}/r19_win_${VARIANT}_configure.log" 2>&1 || fail "win ${VARIANT} configure"
+   381→        cmake --build "${B}" -j2 > "${EVID_OUT}/r19_win_${VARIANT}_build.log" 2>&1 || fail "win ${VARIANT} build"
+   382→    fi
+   383→    if [ ! -f "${B}/bin/validator.exe" ]; then
+   384→        cmake --build "${B}" --target validator > "${EVID_OUT}/r19_win_${VARIANT}_validator_build.log" 2>&1 || fail "win ${VARIANT} validator build"
+   385→    fi
+   386→    if [ ! -f "${B}/bin/moduleinfotool.exe" ]; then
+   387→        cmake --build "${B}" --target moduleinfotool > "${EVID_OUT}/r19_win_${VARIANT}_moduleinfotool_build.log" 2>&1 || fail "win ${VARIANT} moduleinfotool build"
+   388→    fi
+   389→    file_pe_x64 "${MOD}" dll \
+   390→        && say "  module: PE32+ x86-64 DLL ($(stat -c%s "${MOD}") bytes)" \
+   391→        || fail "win ${VARIANT} module is not a PE32+ x86-64 DLL"
+   392→    say "  module sha256: $(sha256sum "${MOD}" | cut -d' ' -f1)"
+   393→    say "  leg 3/${VARIANT} wall: $(phase_secs) s"
+   394→}
+   395→variant_leg3 LAGRANGE6 OctavoxRE_Lagrange6
+   396→variant_leg3 OBSKERNEL6 OctavoxRE_ObsKernel6
+   397→
+   398→# ---- auxiliary LAGRANGE6Q Windows build (the LEG 6 compile-definition ------
+   399→# proof: same source, same FUIDs, ONLY the interpolation compile definition
+   400→# changed -> its bytes must differ from both delivered variants)
+   401→say ""
+   402→say "[LEG 3] auxiliary LAGRANGE6Q Windows build (compile-definition code-change proof)"
+   403→phase_start
+   404→MOD_Q="${WIN_LAGQ}/VST3/Release/OctavoxRE_Lagrange6Q.vst3/Contents/x86_64-win/OctavoxRE_Lagrange6Q.vst3"
+   405→if win_mod_ok "${MOD_Q}"; then
+   406→    say "  module already present + structurally valid (incremental resume) -- skipping configure/build"
+   407→else
+   408→    rm -f "${MOD_Q}"
+   409→    win_configure "${WIN_LAGQ}" LAGRANGE6Q > "${EVID_OUT}/r19_win_lagrange6q_configure.log" 2>&1 || fail "win lagrange6q configure"
+   410→    cmake --build "${WIN_LAGQ}" -j2 > "${EVID_OUT}/r19_win_lagrange6q_build.log" 2>&1 || fail "win lagrange6q build"
+   411→fi
+   412→file_pe_x64 "${MOD_Q}" dll \
+   413→    && say "  LAGRANGE6Q module: PE32+ x86-64 DLL ($(stat -c%s "${MOD_Q}") bytes)" \
+   414→    || fail "win lagrange6q module is not a PE32+ x86-64 DLL"
+   415→say "  LAGRANGE6Q module sha256: $(sha256sum "${MOD_Q}" | cut -d' ' -f1)"
+   416→say "  leg 3/lagrange6q wall: $(phase_secs) s"
+   417→
+   418→# ---- Windows cross-build of octavox_dual_nulltest (auxiliary kit extra; ----
+   419→# NOT a chain gate -- the tool is variant-independent, so ONE build in its
+   420→# own directory suffices; a compile failure is recorded honestly and the
+   421→# chain continues)
+   422→say ""
+   423→say "[LEG 3] Windows octavox_dual_nulltest cross-build (auxiliary kit extra; NOT a gate)"
+   424→phase_start
+   425→DN_EXE="${WIN_DN}/bin/octavox_dual_nulltest.exe"
+   426→DN_BUILT=0
+   427→if [ -f "${DN_EXE}" ] && file_pe_x64 "${DN_EXE}"; then
+   428→    say "  octavox_dual_nulltest.exe already present + valid (incremental resume)"
+   429→    DN_BUILT=1
+   430→else
+   431→    rm -f "${DN_EXE}"
+   432→    if win_configure "${WIN_DN}" LAGRANGE6 > "${EVID_OUT}/r19_win_dualnulltest_configure.log" 2>&1 \
+   433→       && cmake --build "${WIN_DN}" --target octavox_dual_nulltest -j2 \
+   434→              > "${EVID_OUT}/r19_win_dualnulltest_build.log" 2>&1; then
+   435→        DN_BUILT=1
+   436→        say "  built ${DN_EXE} ($(stat -c%s "${DN_EXE}") bytes)"
+   437→    else
+   438→        say "  !! FAILED: Windows octavox_dual_nulltest cross-build did not compile"
+   439→        say "     (recorded honestly in r19_win_dualnulltest_build.log; auxiliary"
+   440→        say "      validation-kit extra -- NOT a chain gate; continuing)"
+   441→        printf 'FAILED: the Windows cross-build of octavox_dual_nulltest did not compile\n(see r19_win_dualnulltest_build.log / r19_win_dualnulltest_configure.log).\nThe Linux dual-module null test (LEG 2) remains the executed gate.\n' \
+   442→            > "${EVID_OUT}/r19_win_dualnulltest_FAILED.txt"
+   443→    fi
+   444→fi
+   445→if [ "${DN_BUILT}" = "1" ]; then
+   446→    file_pe_x64 "${DN_EXE}" \
+   447→        && say "  octavox_dual_nulltest.exe: PE32+ x86-64 console executable" \
+   448→        || say "  (note: ${DN_EXE} does not parse as PE32+ x86-64)"
+   449→fi
+   450→say "  leg 3/dualnulltest wall: $(phase_secs) s"
+   451→
+   452→# ==============================================================================
+   453→# LEG 4: Windows build reproducibility (fresh directories, byte comparison)
+   454→# ==============================================================================
+   455→say ""
+   456→say "[LEG 4] Windows reproducibility: fresh clean builds -> byte-identical modules"
+   457→phase_start
+   458→variant_leg4() { # $1 = VARIANT $2 = bundle name
+   459→    local VARIANT="$1" BUNDLE="$2"
+   460→    local B M0 M1 DONE
+   461→    case "${VARIANT}" in
+   462→        LAGRANGE6)  B="${WIN_REPRO_LAG}"; M0="${WIN_LAG}/VST3/Release/${BUNDLE}.vst3/Contents/x86_64-win/${BUNDLE}.vst3" ;;
+   463→        OBSKERNEL6) B="${WIN_REPRO_OBS}"; M0="${WIN_OBS}/VST3/Release/${BUNDLE}.vst3/Contents/x86_64-win/${BUNDLE}.vst3" ;;
+   464→    esac
+   465→    M1="${B}/VST3/Release/${BUNDLE}.vst3/Contents/x86_64-win/${BUNDLE}.vst3"
+   466→    DONE="${EVID_OUT}/r19_repro_${VARIANT}_done.txt"
+   467→    if [ -f "${DONE}" ]; then
+   468→        say "  ${VARIANT}: reproducibility already recorded (byte-identical, sha256 $(cat "${DONE}"))"
+   469→        return 0
+   470→    fi
+   471→    if [ ! -f "${B}/CMakeCache.txt" ]; then
+   472→        # a genuinely FRESH directory (an existing partial dir from an
+   473→        # interrupted run of THIS chain is resumed -- it never saw the
+   474→        # primary build's objects)
+   475→        rm -rf "${B}"
+   476→        win_configure "${B}" "${VARIANT}" > /dev/null 2>&1
+   477→    fi
+   478→    cmake --build "${B}" -j2 > "${EVID_OUT}/r19_repro_${VARIANT}_build.log" 2>&1 || fail "repro ${VARIANT} build"
+   479→    if cmp -s "${M1}" "${M0}"; then
+   480→        say "  ${VARIANT}: fresh build byte-identical ($(sha256sum "${M0}" | cut -d' ' -f1))"
+   481→        sha256sum "${M0}" | cut -d' ' -f1 > "${DONE}"
+   482→        rm -rf "${B}"
+   483→    else
+   484→        fail "repro ${VARIANT}: fresh build DIFFERS from the primary module"
+   485→    fi
+   486→}
+   487→variant_leg4 LAGRANGE6 OctavoxRE_Lagrange6
+   488→variant_leg4 OBSKERNEL6 OctavoxRE_ObsKernel6
+   489→say "  leg 4 wall: $(phase_secs) s"
+   490→
+   491→# ==============================================================================
+   492→# LEG 5: assembly of the delivery layout + moduleinfo.json + validation kit
+   493→# ==============================================================================
+   494→say ""
+   495→say "[LEG 5] assembly: out/Builds/OctavoxRE_R19_Windows_x64 + the Windows validation kit"
+   496→phase_start
+   497→BUILDS="${OUT_ROOT}/Builds/OctavoxRE_R19_Windows_x64"
+   498→KIT="${OUT_ROOT}/Windows_Validation_Kit"
+   499→rm -rf "${BUILDS}" "${KIT}"
+   500→mkdir -p "${BUILDS}/Lagrange6" "${BUILDS}/ObsKernel6" \
+   501→         "${KIT}/Lagrange6" "${KIT}/ObsKernel6" "${KIT}/shared"
+   502→
+   503→variant_assemble() { # $1 = VARIANT $2 = bundle name $3 = kit dir name
+   504→    local VARIANT="$1" BUNDLE="$2" DIRNAME="$3"
+   505→    local SRC LIN
+   506→    case "${VARIANT}" in
+   507→        LAGRANGE6)  SRC="${WIN_LAG}"; LIN="${LIN_LAG}" ;;
+   508→        OBSKERNEL6) SRC="${WIN_OBS}"; LIN="${LIN_OBS}" ;;
+   509→    esac
+   510→    local DST="${BUILDS}/${DIRNAME}/${BUNDLE}.vst3"
+   511→    mkdir -p "${DST}/Contents/x86_64-win" "${DST}/Contents/Resources"
+   512→    cp "${SRC}/VST3/Release/${BUNDLE}.vst3/Contents/x86_64-win/${BUNDLE}.vst3" \
+   513→       "${DST}/Contents/x86_64-win/${BUNDLE}.vst3"
+   514→    cp "${SRC}/VST3/Release/${BUNDLE}.vst3/PlugIn.ico" "${DST}/PlugIn.ico"
+   515→    cp "${SRC}/VST3/Release/${BUNDLE}.vst3/desktop.ini" "${DST}/desktop.ini"
+   516→    # moduleinfo.json: copied from the equivalent LINUX variant build, where
+   517→    # the pinned SDK's own moduleinfotool GENERATED it from the real factory
+   518→    # of the same source + the same variant configuration (the moduleinfo
+   519→    # metadata is platform-independent; the class Version is 1.1.0 from the
+   520→    # source's kPluginVersion). The Windows validation kit ships
+   521→    # moduleinfotool.exe so a real Windows machine can regenerate/verify it
+   522→    # natively -- see the kit README.
+   523→    cp "${LIN}/VST3/Release/${BUNDLE}.vst3/Contents/Resources/moduleinfo.json" \
+   524→       "${DST}/Contents/Resources/moduleinfo.json"
+   525→    # validation kit: the variant-aware test executables
+   526→    cp "${SRC}/bin/octavox_vst3_wrapper_tests.exe" "${KIT}/${DIRNAME}/"
+   527→    cp "${SRC}/bin/octavox_module_integration_tests.exe" "${KIT}/${DIRNAME}/"
+   528→    # the kit's per-variant run script (R19 layout)
+   529→    cat > "${KIT}/${DIRNAME}/run_validation.cmd" <<EOF
+   530→@echo off
+   531→REM ===========================================================================
+   532→REM OCTAVOX R19 -- Windows-side validation kit (variant: ${VARIANT})
+   533→REM ===========================================================================
+   534→REM Run this on a REAL Windows x64 machine, from THIS directory
+   535→REM (Windows_Validation_Kit\\${DIRNAME}). Expected relative layout:
+   536→REM   ..\\..\\Builds\\OctavoxRE_R19_Windows_x64\\${DIRNAME}\\${BUNDLE}.vst3
+   537→REM Gates: validator 47/47, wrapper tests 15/15, integration tests 12/12.
+   538→REM ===========================================================================
+   539→setlocal
+   540→cd /d "%~dp0"
+   541→set MODULE=..\\..\\Builds\\OctavoxRE_R19_Windows_x64\\${DIRNAME}\\${BUNDLE}.vst3
+   542→
+   543→echo === [1/3] Steinberg VST3 validator (47 tests expected) ===
+   544→..\\shared\\validator.exe "%MODULE%"
+   545→if errorlevel 1 goto :fail
+   546→
+   547→echo === [2/3] octavox wrapper tests (15/15 expected) ===
+   548→octavox_vst3_wrapper_tests.exe
+   549→if errorlevel 1 goto :fail
+   550→
+   551→echo === [3/3] compiled-module integration tests (12/12 expected) ===
+   552→octavox_module_integration_tests.exe --module "%MODULE%" --json integration_results_${DIRNAME}.json
+   553→if errorlevel 1 goto :fail
+   554→
+   555→echo.
+   556→echo ALL WINDOWS-SIDE GATES PASSED (variant ${VARIANT})
+   557→exit /b 0
+   558→
+   559→:fail
+   560→echo VALIDATION FAILED (see the output above)
+   561→exit /b 1
+   562→EOF
+   563→    say "  assembled ${DST}"
+   564→}
+   565→variant_assemble LAGRANGE6  OctavoxRE_Lagrange6  Lagrange6
+   566→variant_assemble OBSKERNEL6 OctavoxRE_ObsKernel6 ObsKernel6
+   567→
+   568→# shared SDK tools (byte-identical across the two variant builds -- verified)
+   569→cp "${WIN_LAG}/bin/validator.exe"      "${KIT}/shared/"
+   570→cp "${WIN_LAG}/bin/moduleinfotool.exe" "${KIT}/shared/"
+   571→if ! cmp -s "${WIN_LAG}/bin/validator.exe" "${WIN_OBS}/bin/validator.exe"; then
+   572→    fail "validator.exe differs between the two variant builds (expected identical)"
+   573→fi
+   574→
+   575→# the Windows dual-nulltest tool (if it cross-compiled) + its run script
+   576→if [ "${DN_BUILT}" = "1" ]; then
+   577→    cp "${DN_EXE}" "${KIT}/shared/octavox_dual_nulltest.exe"
+   578→    cat > "${KIT}/run_dual_nulltest.cmd" <<'EOF'
+   579→@echo off
+   580→REM ===========================================================================
+   581→REM OCTAVOX R19 -- Windows-side dual-module null test (Lagrange6 vs ObsKernel6)
+   582→REM ===========================================================================
+   583→REM Run this on a REAL Windows x64 machine, from THIS directory (the kit
+   584→REM root, Windows_Validation_Kit). Loads BOTH delivered bundles
+   585→REM SIMULTANEOUSLY in one process through the pinned VST3 SDK's Windows
+   586→REM module loader (LoadLibraryA / GetProcAddress via module_win32.cpp) and
+   587→REM drives one processor instance from each factory in lockstep:
+   588→REM   * unity        : the outputs must be BIT-IDENTICAL;
+   589→REM   * non-unity    : the outputs MUST differ (different kernels engaged).
+   590→REM Gate: exit code 0 ("verdict: PASS"). Results: dual_nulltest_out\*.wav +
+   591→REM dual_nulltest_out\dual_nulltest.json next to this script.
+   592→REM ===========================================================================
+   593→setlocal
+   594→cd /d "%~dp0"
+   595→set LAG=..\..\Builds\OctavoxRE_R19_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3
+   596→set OBS=..\..\Builds\OctavoxRE_R19_Windows_x64\ObsKernel6\OctavoxRE_ObsKernel6.vst3
+   597→
+   598→echo === dual-module null test: Lagrange6 vs ObsKernel6 (exit code gates) ===
+   599→shared\octavox_dual_nulltest.exe --lagrange6 "%LAG%" --obskernel6 "%OBS%" --out dual_nulltest_out --json dual_nulltest_out\dual_nulltest.json
+   600→if errorlevel 1 goto :fail
+   601→
+   602→echo.
+   603→echo DUAL-MODULE NULL TEST PASSED (unity bit-identical; non-unity genuinely differs)
+   604→exit /b 0
+   605→
+   606→:fail
+   607→echo DUAL-MODULE NULL TEST FAILED (see the output above)
+   608→exit /b 1
+   609→EOF
+   610→    say "  kit extra: shared/octavox_dual_nulltest.exe + run_dual_nulltest.cmd"
+   611→else
+   612→    say "  (kit extra skipped: the Windows dual-nulltest tool did not cross-compile;"
+   613→    say "   see r19_win_dualnulltest_FAILED.txt -- the executed gate is the LEG 2"
+   614→    say "   Linux dual-module null test on the same source + configurations)"
+   615→fi
+   616→
+   617→# the kit README (R19)
+   618→cat > "${KIT}/README_WINDOWS_VALIDATION.md" <<'EOF'
+   619→# OCTAVOX R19 — Windows Validation Kit
+   620→
+   621→**What this is.** The Windows x64 validation executables for the two R19
+   622→plugin variants (`OctavoxRE_Lagrange6` / `OctavoxRE_ObsKernel6`, version
+   623→1.1.0 — the 16.0.0 core: decimated control-rate pitch detector + click-free
+   624→commit/base-delay crossfades + voice activation ramps), built from the SAME
+   625→source tree and the SAME `OCTAVOX_VST3_INTERPOLATION` configuration as the
+   626→delivered `.vst3` bundles. They exist so the Windows-side runtime gates (the
+   627→ones the Linux build environment could not execute — see “Why this kit
+   628→exists” below) can be run on a real Windows x64 machine, with the REAL
+   629→Windows module-loading implementation (`LoadLibraryA` / `GetProcAddress`
+   630→through the pinned VST3 SDK v3.7.12’s `module_win32.cpp`).
+   631→
+   632→## Why this kit exists (honest scope statement)
+   633→
+   634→The R19 build environment is a Linux sandbox:
+   635→
+   636→* the Windows `.vst3` modules are genuine PE32+ x86-64 DLLs (cross-built
+   637→  with LLVM/clang targeting `x86_64-w64-mingw32` — MSVC does not exist on
+   638→  that host; the deviation is recorded in the round reports. R19 toolchain
+   639→  note: this chain used llvm-mingw **clang 23.1.2**; R18 used 23.1.4 from a
+   640→  release that no longer exists on the host);
+   641→* the sandbox CANNOT execute Windows PE binaries: `wine` is terminated by
+   642→  the sandbox’s seccomp policy (`set_thread_area` → SIGSYS kill,
+   643→  diagnostically established in R18-WDB);
+   644→* therefore the full functional validation (93-case core suite, both
+   645→  variants’ wrapper tests 15/15, compiled-module integration 12/12, SDK
+   646→  validator 47/47, the three reference-hash records, and the
+   647→  **dual-module null test**) was executed on LINUX builds of the identical
+   648→  source + configuration, and the WINDOWS binaries were verified
+   649→  structurally (PE32+ x86-64, DLL flag, `GetPluginFactory` export, import
+   650→  allow-list, identity strings, PClassInfo CID, reproducible bytes, and the
+   651→  LAGRANGE6Q compile-definition code-change proof).
+   652→
+   653→**No DAW compatibility and no Windows runtime behaviour is claimed from the
+   654→Linux-side runs.** Running THIS kit on Windows closes the gap: it exercises
+   655→the actual Windows modules through the actual Windows loading path.
+   656→
+   657→## Contents
+   658→
+   659→```
+   660→Windows_Validation_Kit\
+   661→  Lagrange6\
+   662→    octavox_vst3_wrapper_tests.exe         (variant-aware: Lagrange6)
+   663→    octavox_module_integration_tests.exe   (variant-aware: Lagrange6 reference)
+   664→    run_validation.cmd
+   665→  ObsKernel6\
+   666→    octavox_vst3_wrapper_tests.exe         (variant-aware: ObsKernel6)
+   667→    octavox_module_integration_tests.exe   (compares vs an OBSKERNEL6 reference)
+   668→    run_validation.cmd
+   669→  shared\
+   670→    validator.exe                          (Steinberg VST3 SDK validator, pinned v3.7.12_build_20)
+   671→    moduleinfotool.exe                     (SDK moduleinfotool, pinned v3.7.12_build_20)
+   672→    octavox_dual_nulltest.exe              (R19 dual-module null test; see run_dual_nulltest.cmd)
+   673→  run_dual_nulltest.cmd                    (runs the dual-module null test against BOTH bundles)
+   674→  README_WINDOWS_VALIDATION.md             (this file)
+   675→```
+   676→
+   677→The `.exe` files are console applications (x64). Both variant builds’
+   678→`validator.exe` / `moduleinfotool.exe` were byte-identical, so one shared
+   679→copy ships for both. `octavox_dual_nulltest.exe` is deliberately NOT
+   680→variant-compiled (both expected processor class FUIDs are hardcoded inside
+   681→it), so one shared copy verifies both bundles.
+   682→
+   683→## How to run
+   684→
+   685→Keep the kit next to the `Builds\` directory as shipped:
+   686→
+   687→```
+   688→<extract dir>\
+   689→  Builds\OctavoxRE_R19_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3
+   690→  Builds\OctavoxRE_R19_Windows_x64\ObsKernel6\OctavoxRE_ObsKernel6.vst3
+   691→  Windows_Validation_Kit\...
+   692→```
+   693→
+   694→Then, in a command prompt (`cmd.exe`):
+   695→
+   696→```
+   697→cd Windows_Validation_Kit\Lagrange6
+   698→run_validation.cmd
+   699→cd ..\ObsKernel6
+   700→run_validation.cmd
+   701→cd ..
+   702→run_dual_nulltest.cmd
+   703→```
+   704→
+   705→Expected results:
+   706→
+   707→| gate | expected |
+   708→|---|---|
+   709→| Steinberg VST3 validator (per variant) | `47 tests passed, 0 tests failed` |
+   710→| octavox wrapper tests (per variant) | `15 passed, 0 failed` |
+   711→| octavox module integration (per variant) | `12 passed, 0 failed` (JSON written next to the cmd) |
+   712→| dual-module null test (both variants) | exit code 0, `verdict: PASS` — unity bit-identical, non-unity genuinely differs (JSON + A/B/diff WAVs in `dual_nulltest_out\`) |
+   713→
+   714→## Optional: regenerate + compare moduleinfo.json natively
+   715→
+   716→Each bundle ships `Contents\Resources\moduleinfo.json` (generated by the
+   717→pinned SDK’s `moduleinfotool` from the equivalent Linux build of the same
+   718→source + configuration; the metadata is platform-independent — the class
+   719→`Version` is 1.1.0 from the source’s `kPluginVersion`). On Windows you can
+   720→regenerate it from the ACTUAL Windows module and compare:
+   721→
+   722→```
+   723→cd Windows_Validation_Kit
+   724→shared\moduleinfotool.exe -create -version 1.0.0 ^
+   725→  -path "..\Builds\OctavoxRE_R19_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3" ^
+   726→  -output "%TEMP%\moduleinfo_lagrange6.json"
+   727→fc "%TEMP%\moduleinfo_lagrange6.json" "..\Builds\OctavoxRE_R19_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3\Contents\Resources\moduleinfo.json"
+   728→```
+   729→
+   730→(Repeat with the ObsKernel6 path.) A successful regeneration also proves
+   731→the module’s exported factory is loadable through the Windows path.
+   732→
+   733→## Optional: DAW smoke test
+   734→
+   735→If you have a VST3-capable DAW (e.g. REAPER) on this Windows machine:
+   736→
+   737→1. Copy both `.vst3` bundles into your VST3 plug-ins folder (commonly
+   738→   `C:\Program Files\Common Files\VST3`).
+   739→2. Verify they appear as TWO DISTINCT plug-ins: `OctavoxRE Lagrange6` and
+   740→   `OctavoxRE ObsKernel6` (distinct processor class IDs — they can be
+   741→   instantiated simultaneously on separate tracks).
+   742→3. Open the generic parameter editor and confirm all 38 parameters are
+   743→   exposed (Bypass, Pitch, Voices, Spread, Feedback, Wet/Dry + 4 per voice
+   744→   × 8 voices).
+   745→4. Process the same deterministic audio through both; both must produce
+   746→   pitch-shifted output, and the two variants must differ on non-unity
+   747→   transposition (they select different interpolation kernels) while unity
+   748→   output is nulled between them.
+   749→
+   750→These optional checks are conveniences for the user; the REQUIRED
+   751→Windows-side gates are the three `.cmd` scripts above.
+   752→EOF
+   753→if [ "${DN_BUILT}" != "1" ]; then
+   754→    printf '\n> NOTE (build-time fact): the Windows cross-build of\n> octavox_dual_nulltest.exe did not compile in the R19 chain, so the kit\n> ships WITHOUT shared/octavox_dual_nulltest.exe and run_dual_nulltest.cmd.\n> The dual-module null test was EXECUTED on the Linux builds of the same\n> source + configurations (LEG 2 of the R19 chain; evidence:\n> r19_dual_nulltest.txt / r19_dual_nulltest/dual_nulltest.json).\n' \
+   755→        >> "${KIT}/README_WINDOWS_VALIDATION.md"
+   756→fi
+   757→say "  assembled ${KIT}"
+   758→say "  leg 5 wall: $(phase_secs) s"
+   759→
+   760→# ==============================================================================
+   761→# LEG 6: structural verification of BOTH Windows modules -> JSON + summary
+   762→# (the R18_WDB_build_infrastructure verifier is reused UNCHANGED: it has no
+   763→# version-string expectations -- the R19 identity changes are only the class
+   764→# Version 1.1.0, which the verifier intentionally does not gate)
+   765→# ==============================================================================
+   766→say ""
+   767→say "[LEG 6] structural verification of the Windows modules"
+   768→phase_start
+   769→python3 "${VERIFY_SCRIPT}" \
+   770→    --builds "${BUILDS}" --out "${EVID_OUT}/r19_windows_verification.json" \
+   771→    > "${EVID_OUT}/r19_windows_verification.txt" 2>&1 \
+   772→    || fail "structural verification (see r19_windows_verification.json)"
+   773→rg "RESULT:" "${EVID_OUT}/r19_windows_verification.txt" | head -2 | sed 's/^/  /' || true
+   774→
+   775→MOD_LAG="${BUILDS}/Lagrange6/OctavoxRE_Lagrange6.vst3/Contents/x86_64-win/OctavoxRE_Lagrange6.vst3"
+   776→MOD_OBS="${BUILDS}/ObsKernel6/OctavoxRE_ObsKernel6.vst3/Contents/x86_64-win/OctavoxRE_ObsKernel6.vst3"
+   777→
+   778→# (a) the moduleinfo class version is 1.1.0 (from the source's kPluginVersion)
+   779→for v in Lagrange6 ObsKernel6; do
+   780→    mi="${BUILDS}/${v}/OctavoxRE_${v}.vst3/Contents/Resources/moduleinfo.json"
+   781→    rg -q '"Version": "1.1.0"' "${mi}" \
+   782→        && say "  moduleinfo class version (${v}): 1.1.0" \
+   783→        || fail "moduleinfo class version for ${v} is not 1.1.0"
+   784→done
+   785→
+   786→# (b) static variant proof, part 1: the ObsKernel6 kernel table's first-row
+   787→#     float bytes must be present in BOTH Windows modules (the core compiles
+   788→#     ALL interpolation modes; the table is emitted into .rdata regardless
+   789→#     of the variant) -- the sequence is derived FROM THE SOURCE HEADER, not
+   790→#     hardcoded here.
+   791→python3 - "${NATIVE_DIR}/src/obs_kernel_table.h" "${MOD_LAG}" "${MOD_OBS}" \
+   792→    > "${EVID_OUT}/r19_obs_kernel_bytes_check.txt" <<'PYEOF' \
+   793→    || fail "obs kernel table byte check (see r19_obs_kernel_bytes_check.txt)"
+   794→import re, struct, sys
+   795→hdr, lag, obs = sys.argv[1], sys.argv[2], sys.argv[3]
+   796→text = open(hdr).read()
+   797→i = text.index("kTable[256][6]")
+   798→row = re.search(r"\{([^{}]*?)\}", text[i:]).group(1)
+   799→vals = [v.strip() for v in row.split(",") if v.strip()][:6]
+   800→assert len(vals) == 6, "could not parse kTable[0][0..5] from %s" % hdr
+   801→rowf = [float.fromhex(v) for v in vals]
+   802→needle = b"".join(struct.pack("<f", v) for v in rowf)
+   803→print("source: %s" % hdr)
+   804→print("kTable[0][0..5] (float32 values): %r" % (rowf,))
+   805→print("little-endian 24-byte sequence: %s" % needle.hex())
+   806→def occurrences(path):
+   807→    with open(path, "rb") as f:
+   808→        data = f.read()
+   809→    return data.count(needle)
+   810→n_lag = occurrences(lag)
+   811→n_obs = occurrences(obs)
+   812→print("%s: %s (occurrences: %d)" % (lag, "FOUND" if n_lag else "NOT FOUND", n_lag))
+   813→print("%s: %s (occurrences: %d)" % (obs, "FOUND" if n_obs else "NOT FOUND", n_obs))
+   814→if n_lag > 0 and n_obs > 0:
+   815→    print("OBS_KERNEL_TABLE_BYTES: found in BOTH modules (the core compiles all"
+   816→          " interpolation modes -- the decisive variant proofs are the"
+   817→          " LAGRANGE6Q third-build hash difference, the dual-module null test,"
+   818→          " and the moduleinfo identity records)")
+   819→    sys.exit(0)
+   820→sys.exit(1)
+   821→PYEOF
+   822→rg "OBS_KERNEL_TABLE_BYTES:" "${EVID_OUT}/r19_obs_kernel_bytes_check.txt" | sed 's/^/  /' || true
+   823→
+   824→# (c) static variant proof, part 2: the three Windows module hashes. The two
+   825→#     delivered modules must differ, and the auxiliary LAGRANGE6Q build
+   826→#     (ONLY the interpolation compile definition changed) must differ from
+   827→#     BOTH -- proving the compile definition genuinely changes the emitted
+   828→#     code. (Informational: the dual-nulltest build directory also contains
+   829→#     a Lagrange6 module built in a THIRD directory -> same bytes expected.)
+   830→H_LAG="$(sha256sum "${MOD_LAG}" | cut -d' ' -f1)"
+   831→H_OBS="$(sha256sum "${MOD_OBS}" | cut -d' ' -f1)"
+   832→H_Q="$(sha256sum "${MOD_Q}" | cut -d' ' -f1)"
+   833→S_LAG="$(stat -c%s "${MOD_LAG}")"
+   834→S_OBS="$(stat -c%s "${MOD_OBS}")"
+   835→S_Q="$(stat -c%s "${MOD_Q}")"
+   836→{
+   837→    echo "OCTAVOX R19 -- Windows module SHA-256 record ($(date -u '+%Y-%m-%dT%H:%M:%SZ'))"
+   838→    echo "---------------------------------------------------------------------"
+   839→    printf 'Lagrange6   %s  %8d bytes\n' "${H_LAG}" "${S_LAG}"
+   840→    printf 'ObsKernel6  %s  %8d bytes\n' "${H_OBS}" "${S_OBS}"
+   841→    printf 'Lagrange6Q  %s  %8d bytes  (auxiliary compile-definition proof build)\n' "${H_Q}" "${S_Q}"
+   842→    echo "---------------------------------------------------------------------"
+   843→    if [ "${H_LAG}" != "${H_OBS}" ]; then
+   844→        echo "Lagrange6 != ObsKernel6 : DIFFER (sha256) -- OK"
+   845→    else
+   846→        echo "Lagrange6 == ObsKernel6 : IDENTICAL (sha256) -- DEFECT"
+   847→    fi
+   848→    if [ "${H_Q}" != "${H_LAG}" ] && [ "${H_Q}" != "${H_OBS}" ]; then
+   849→        echo "Lagrange6Q differs from BOTH delivered modules -- the compile definition (OCTAVOX_VST3_INTERP_*) genuinely changes the emitted code."
+   850→    else
+   851→        echo "Lagrange6Q hash COLLISION with a delivered module -- DEFECT"
+   852→    fi
+   853→    if [ -f "${WIN_DN}/VST3/Release/OctavoxRE_Lagrange6.vst3/Contents/x86_64-win/OctavoxRE_Lagrange6.vst3" ]; then
+   854→        H_DN="$(sha256sum "${WIN_DN}/VST3/Release/OctavoxRE_Lagrange6.vst3/Contents/x86_64-win/OctavoxRE_Lagrange6.vst3" | cut -d' ' -f1)"
+   855→        printf 'dualnulltest-dir Lagrange6 module (third directory): %s\n' "${H_DN}"
+   856→        if [ "${H_DN}" = "${H_LAG}" ]; then
+   857→            echo "  -> byte-identical to the primary Lagrange6 module (informational: same variant + deterministic link, different build directory)"
+   858→        else
+   859→            echo "  -> differs from the primary Lagrange6 module (informational note)"
+   860→        fi
+   861→    fi
+   862→} > "${EVID_OUT}/r19_win_module_hashes.txt"
+   863→rg "Lagrange6 |ObsKernel6 |Lagrange6Q " "${EVID_OUT}/r19_win_module_hashes.txt" | sed 's/^/  /' || true
+   864→[ "${H_LAG}" != "${H_OBS}" ] \
+   865→    && say "  delivered modules differ: sha256 Lagrange6 != ObsKernel6" \
+   866→    || fail "the two delivered Windows modules are byte-identical (must differ)"
+   867→if [ "${H_Q}" != "${H_LAG}" ] && [ "${H_Q}" != "${H_OBS}" ]; then
+   868→    say "  LAGRANGE6Q proof: its sha256 differs from BOTH delivered modules"
+   869→else
+   870→    fail "LAGRANGE6Q module hash collides with a delivered module (compile definition did not change the code)"
+   871→fi
+   872→say "  leg 6 wall: $(phase_secs) s"
+   873→
+   874→# ==============================================================================
+   875→# summary
+   876→# ==============================================================================
+   877→hr
+   878→TOTAL=$(( $(date +%s) - T0_GLOBAL ))
+   879→say "R19 chain evidence highlights:"
+   880→if [ -f "${EVID_OUT}/r19_dual_nulltest.txt" ]; then
+   881→    rg "cases:|verdict:" "${EVID_OUT}/r19_dual_nulltest.txt" | sed 's/^/  dual-nulltest: /' || true
+   882→fi
+   883→if [ -f "${EVID_OUT}/r19_win_module_hashes.txt" ]; then
+   884→    rg "Lagrange6 |ObsKernel6 |Lagrange6Q " "${EVID_OUT}/r19_win_module_hashes.txt" | sed 's/^/  /' || true
+   885→fi
+   886→hr
+   887→if [ "${FAILURES}" = "0" ]; then
+   888→    say "RESULT: ALL GATES PASSED (total wall ${TOTAL} s)"
+   889→    say "  evidence captured in: ${EVID_OUT}"
+   890→    say "  delivery layout at:  ${OUT_ROOT}"
+   891→    exit 0
+   892→else
+   893→    say "RESULT: ${FAILURES} FAILURE(S) (total wall ${TOTAL} s)"
+   894→    say "  evidence captured in: ${EVID_OUT}"
+   895→    exit 1
+   896→fi
+   897→

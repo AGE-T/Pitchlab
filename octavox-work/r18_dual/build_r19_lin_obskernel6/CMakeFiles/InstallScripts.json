@@ -1,0 +1,19 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/pluginterfaces/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/base/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/public.sdk/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/public.sdk/source/vst/interappaudio/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/public.sdk/samples/vst-hosting/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/public.sdk/samples/vst-hosting/audiohost/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/public.sdk/samples/vst-hosting/editorhost/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/public.sdk/samples/vst-hosting/validator/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/public.sdk/samples/vst-utilities/cmake_install.cmake",
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_obskernel6/vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

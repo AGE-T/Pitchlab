@@ -1932,15 +1932,17 @@ static void caseStateInvalidBlobs(CaseResult& c) {
               "failed to read back the valid blob");
     }
     // Self-verify the field offsets used below against known values
-    // (layout: magic@0, version@4, cfg@8 [sample_rate@8, ratio@16, voices@24,
-    // max_voices@28, spread@32, feedback@36, interpolation@44, grain@48,
-    // base_delay@56, fmin@64, ...], channels@120, surface doubles@124 [slot
-    // i == param id i: bypass@124, pitch@132, voices@140, ...]).
+    // (R19 v2 layout: magic@0, version@4, cfg@8 [sample_rate@8, ratio@16,
+    // voices@24, max_voices@28, spread@32, feedback@36, interpolation@44,
+    // grain@48, base_delay@56, fmin@64, ..., engagement@96, gain_ramp@104,
+    // bypass@112, detector_mode@120, commit_xf@124, delay_xf@132,
+    // voice_fade@140], channels@148, surface doubles@152 [slot i == param
+    // id i: bypass@152, pitch@160, voices@168, ...]).
     {
         const uint32_t magic = *reinterpret_cast<const uint32_t*>(&good[0]);
         check(c, magic == 0x3152564Fu, "blob magic offset self-check failed");
         const int32_t ver = *reinterpret_cast<const int32_t*>(&good[4]);
-        check(c, ver == 1, "blob version offset self-check failed");
+        check(c, ver == 2, "blob version offset self-check failed (R19 v2)");
         const double sr = *reinterpret_cast<const double*>(&good[8]);
         check(c, sr == 48000.0, "blob sample_rate offset self-check failed");
         const int32_t cfgVoices = *reinterpret_cast<const int32_t*>(&good[24]);
@@ -1953,11 +1955,17 @@ static void caseStateInvalidBlobs(CaseResult& c) {
         const double baseDelay = *reinterpret_cast<const double*>(&good[56]);
         check(c, baseDelay == octavox::Config{}.base_delay,
               "blob base_delay offset self-check failed");
-        const double surfVoices = *reinterpret_cast<const double*>(&good[140]);
+        const int32_t dmode = *reinterpret_cast<const int32_t*>(&good[120]);
+        check(c, dmode == static_cast<int>(octavox::DetectorMode::Decimated),
+              "blob detector_mode offset self-check failed (R19 v2)");
+        const double xf = *reinterpret_cast<const double*>(&good[124]);
+        check(c, xf == octavox::Config{}.commit_crossfade_seconds,
+              "blob commit_crossfade offset self-check failed (R19 v2)");
+        const double surfVoices = *reinterpret_cast<const double*>(&good[168]);
         check(c, surfVoices == 4.0,
               "blob surface voices offset self-check failed (got " +
                   std::to_string(surfVoices) + ", want 4)");
-        const double surfPitch = *reinterpret_cast<const double*>(&good[132]);
+        const double surfPitch = *reinterpret_cast<const double*>(&good[160]);
         check(c, surfPitch == toEnginePlain(ParamId::kPitch, 5.0),
               "blob surface pitch offset self-check failed");
     }
@@ -1993,10 +2001,11 @@ static void caseStateInvalidBlobs(CaseResult& c) {
         bad[0] = static_cast<char>(bad[0] ^ 0x5A);
         check(c, rejectsWith(bad), "wrong magic must be rejected");
     }
-    // (c) wrong version
+    // (c) wrong version (2 is now the CURRENT version; 1 is the supported
+    // legacy version -- an unsupported future version must be rejected)
     {
         std::vector<char> bad = good;
-        *reinterpret_cast<int32_t*>(&bad[4]) = 2;
+        *reinterpret_cast<int32_t*>(&bad[4]) = 3;
         check(c, rejectsWith(bad), "unsupported version must be rejected");
     }
     // (d) NaN sample_rate / NaN grain (non-finite, structurally unfixable:

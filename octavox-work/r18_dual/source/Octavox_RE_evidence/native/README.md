@@ -160,3 +160,38 @@ F ∈ [12.42, 15.85]) and positively reproduced under CPU contention — see
 `../evidence/analysis_round18/r18_suite_diagnostics.md`. The VST3 side
 gained the compiled-module integration harness (12/12, bit-exact vs this
 core) — see `vst3/VST3_WRAPPER.md` §7.]
+
+---
+
+## ROUND 19 (16.0.0) — real-time, clicks, dual-interpolation verification
+
+The core version is 16.0.0 (dsp.hpp ROUND-19 CONTRACT; every behavioural
+change is config-gated and the 15.0.0 behaviour reproduces BIT-EXACTLY
+under the legacy pins — gated by the 4+4 legacy hash records and the
+legacy-pinned default_neutrality case):
+
+* **Decimated control-rate pitch detector** (`DetectorMode::Decimated`,
+  the new default): 6th-order Butterworth anti-alias + decimation to
+  ~24 kHz, time-equivalent window law, identical cadence; 96 kHz stereo
+  8 voices drops from 100.6% to **13.2% CPU (86.8% headroom)**. FullRate
+  retained as the bit-exact reference mode. Worst battery error 0.19 cent.
+* **Click-free transitions**: spacing commits crossfade through a frozen
+  shadow grain (initial-lock/retune steps 0.55-0.79 -> 0.011-0.018,
+  32-67x), base-delay changes crossfade, voice activation rides the gain
+  ramps; the wet/dry instant mix step is bounded and documented.
+* **Read suppression** (bypass/zero-wet, fb==0): bit-identical by
+  construction, gated by a dedicated test.
+* **Stage profiler** (`OCTAVOX_STAGE_TIMERS`, opt-in compile definition)
+  + VoiceStats wrap/commit stream timestamps.
+* Suite: 85 -> **93 cases** (8 new r19 cases; no gate weakened). Release
+  93/93; ASan+UBSan 93/93 with zero sanitizer reports. New reference
+  record: r19_reference_hashes.txt (+ the r15/r18-obs legacy records still
+  reproduce exactly).
+* New tools: octavox_r19_clickscan (offline click suite), r19_nulltest
+  (dual-interpolation A/B, 32-bit float WAVs), r19_variant_metrics
+  (variant performance comparison), vst3/octavox_dual_nulltest (loads BOTH
+  variant bundles in one process). State blob v2 (v1-compatible). VST3
+  plugin version 1.1.0; wrapper/integration/validator 15/15, 12/12, 47/47
+  per variant.
+
+See docs/OCTAVOX_ROUND19_FINDINGS.md for the full measured record.

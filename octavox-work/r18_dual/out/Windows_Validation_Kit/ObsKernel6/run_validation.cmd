@@ -1,10 +1,10 @@
 @echo off
 REM ===========================================================================
-REM OCTAVOX R18-WDB -- Windows-side validation kit (variant: ObsKernel6)
+REM OCTAVOX R19 -- Windows-side validation kit (variant: ObsKernel6)
 REM ===========================================================================
 REM Run this on a REAL Windows x64 machine, from THIS directory
 REM (Windows_Validation_Kit\ObsKernel6). Expected relative layout:
-REM   ..\..\Builds\OctavoxRE_R18_Windows_x64\ObsKernel6\OctavoxRE_ObsKernel6.vst3
+REM   ..\..\Builds\OctavoxRE_R19_Windows_x64\ObsKernel6\OctavoxRE_ObsKernel6.vst3
 REM Gates: validator 47/47, wrapper tests 15/15, integration tests 12/12.
 REM NOTE: the integration harness of THIS variant compares the module's
 REM output against an OBSKERNEL6-configured core reference (never against a
@@ -12,7 +12,7 @@ REM Lagrange6 reference).
 REM ===========================================================================
 setlocal
 cd /d "%~dp0"
-set MODULE=..\..\Builds\OctavoxRE_R18_Windows_x64\ObsKernel6\OctavoxRE_ObsKernel6.vst3
+set MODULE=..\..\Builds\OctavoxRE_R19_Windows_x64\ObsKernel6\OctavoxRE_ObsKernel6.vst3
 
 echo === [1/3] Steinberg VST3 validator (47 tests expected) ===
 ..\shared\validator.exe "%MODULE%"

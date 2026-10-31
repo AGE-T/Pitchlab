@@ -365,3 +365,19 @@ Stage Summary:
   ASan 376s leg, wrapper 46s leg), module byte-identical.
 - Third sandbox reset at round start; recovery documented (325/326 -> 326/326
   manifest after byte-identical poc_run.log restore; from-scratch rebuilds).
+
+---
+
+## ROUND 19 DELIVERY (2026-10-31) — Real-Time Performance, Click Investigation and Dual Interpolation Verification
+
+**Core:** octavox-native 16.0.0 (config-gated behavioural deltas; 15.0.0 reproduces BIT-EXACTLY under legacy pins)
+**Windows delivery:** OctavoxRE_R19_Windows_x64_Dual_Build.zip (5 820 356 B, SHA-256 a0f02b994aa86ebfa9023207f206c03890940234007c747d57519a34e07eee73)
+**Evidence archive:** Octavox_RE_evidence_round19.zip (see checksums.txt in the zip root)
+
+- P1: stage attribution proved the FullRate YIN detector was 96.8% of all CPU at 96k (100.6% CPU stereo 8v, 739/750 deadline misses — matching the user's "offline only" report). New DetectorMode::Decimated (Butterworth 6th-order anti-alias + ~24 kHz decimation, time-equivalent window, identical cadence, warmed normalisation + raw-d refinement: 0.19-cent worst battery error). **96 kHz stereo 8 voices: 13.2% CPU, 86.8% headroom** (target ≥30%); 192k: 22.0%. Full 212-row matrix (5 rates × mono/stereo × 1/2/4/8 voices × 5 blocks) with per-block deadline stats; 0 allocations; misses are only ~22 ms host scheduler stalls (labelled honestly). Active-voice scope verified structurally + empirically + a test case.
+- P2: click scanner (16 scenarios × 2 interp × 3 rates × 3 blocks + 32 legacy renders; sample-accurate wrap/commit timestamps). Classified: initial spacing-lock steps 0.55-0.60 -> 0.011-0.017 (52x), vibrato retunes 0.79 -> 0.012 (67x), base-delay pops 0.73 -> 0.018 (40x) — ELIMINATED via the frozen-shadow commit crossfade / base-delay crossfade / voice activation ramps (all config-gated, 0 = legacy bit-exact). Wet/dry instant mix step 0.139 bounded (contract semantics). Read suppression (bypass/wet-0, fb==0) proven bit-identical by test.
+- P3: engine + MODULE-level null tests (task's canonical settings, 32-bit float WAVs): unity BIT-IDENTICAL (both levels); −24 st: max diff 0.0156, RMS −38.5 dB, corr 0.99993 — the variants genuinely differ but at −38 dB the user's "sounds identical" is the correct perception; NOT a build defect. Windows proof set: 3 distinct module hashes (L/O/LQ), state-restore forcing (interp + detector), identity records, validator 47/47 per variant, user-runnable octavox_dual_nulltest.exe in the kit. Toolchain deviation recorded (clang 23.1.2 vs R18's 23.1.4).
+- P4: variant metrics — CPU equal within 1%, pitch accuracy equal to 0.001 cent, THD+N equal to 0.01 dB, click metrics identical; the ONLY difference is the −38 dB null residual.
+- Validation: suite 85 -> 93 cases (gates unchanged; default_neutrality legacy-pinned); release 93/93 + ASan/UBSan 93/93 ZERO reports; 4/4 + 4/4 legacy hash records + 4/4 new r19 record; wrapper 15/15, integration 12/12, validator 47/47 per variant; dual-module null test PASS on fresh R19 Linux bundles; Windows chain all legs green (byte-reproducible modules).
+- Environment: 4th sandbox reset at round start (llvm-mingw + cmake lost; cmake reinstalled via pip, llvm-mingw re-acquired as release 20260922); the persistent octavox-work tree survived.
+

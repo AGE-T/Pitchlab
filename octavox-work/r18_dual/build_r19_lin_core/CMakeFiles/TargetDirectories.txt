@@ -1,0 +1,10 @@
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/octavox_dsp.dir
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/octavox_tests.dir
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/octavox_cli.dir
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/octavox_r15refcap.dir
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/octavox_r19_clickscan.dir
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/octavox_r19_nulltest.dir
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/octavox_r19_variant_metrics.dir
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/octavox_bench.dir
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/edit_cache.dir
+/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/CMakeFiles/rebuild_cache.dir

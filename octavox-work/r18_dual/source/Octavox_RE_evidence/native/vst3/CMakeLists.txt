@@ -226,3 +226,44 @@ if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
     target_compile_options(octavox_module_integration_tests PRIVATE -Wall -Wextra)
 endif()
 add_dependencies(octavox_module_integration_tests octavoxnative)
+
+# ---------------------------------------------------------------------------
+# R19-P3b: the DETERMINISTIC DUAL-MODULE VST3 NULL TEST tool.  Loads TWO
+# separately-built bundles (OctavoxRE_Lagrange6.vst3 + OctavoxRE_ObsKernel6.vst3)
+# SIMULTANEOUSLY in one process through the pinned SDK's VST3::Hosting::Module
+# loader (two real dlopens of distinct .so files with identical exported symbol
+# names) and drives one processor instance from each factory in lockstep with
+# identical stimulus; unity must be bit-identical (parked integer-tap path),
+# non-unity MUST differ (different interpolation kernels engaged; a
+# bit-identical non-unity result is a build-configuration defect -> exit 1).
+#
+# This tool is deliberately NOT variant-compiled (no
+# ${OCTAVOX_VST3_VARIANT_DEF}, no octavox_core_vst3 link, no wrapper headers):
+# both expected processor class FUIDs are hardcoded inside it, so ONE binary
+# verifies BOTH module builds.  It only needs the SDK hosting stack + the
+# harness wav_io (32-bit float A/B/diff output).
+# ---------------------------------------------------------------------------
+add_executable(octavox_dual_nulltest
+    octavox_dual_nulltest.cpp
+    ../tests/wav_io.cpp
+    ${VST3_SDK_ROOT}/public.sdk/source/common/memorystream.cpp
+)
+# the SDK keeps Module::create in the platform file
+if(WIN32)
+    target_sources(octavox_dual_nulltest PRIVATE
+        ${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/module_win32.cpp)
+elseif(APPLE)
+    target_sources(octavox_dual_nulltest PRIVATE
+        ${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/module_mac.mm)
+else()
+    target_sources(octavox_dual_nulltest PRIVATE
+        ${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/module_linux.cpp)
+endif()
+target_link_libraries(octavox_dual_nulltest PRIVATE sdk sdk_hosting)
+target_include_directories(octavox_dual_nulltest PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../tests)
+if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
+    target_compile_options(octavox_dual_nulltest PRIVATE -Wall -Wextra)
+endif()
+add_dependencies(octavox_dual_nulltest octavoxnative)

@@ -52,7 +52,10 @@ constexpr const char* kPluginName = build::kPluginDisplayName;
 constexpr const char* kVendorName = "Octavox RE Project";
 constexpr const char* kVendorWeb = "https://example.invalid/octavox-re";
 constexpr const char* kVendorEmail = "octavox-re@example.invalid";
-constexpr const char* kPluginVersion = "1.0.0";
+constexpr const char* kPluginVersion = "1.1.0";  // R19: the 16.0.0 core
+// (decimated detector + click-free transitions); same class identities as
+// 1.0.0 -- state blobs remain compatible (v1 restores with the build's
+// compile-time detector/interpolation selections).
 constexpr const char* kPluginSubcategory = "Fx|Pitch Shift";
 
 }  // namespace vst3wrap

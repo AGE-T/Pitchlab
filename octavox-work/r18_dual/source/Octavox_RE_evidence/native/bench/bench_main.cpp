@@ -362,14 +362,335 @@ static void usageExit(const std::string& msg) {
     std::exit(2);
 }
 
+
+// ===========================================================================
+// R19: the full real-time matrix + per-block deadline diagnostics + stage
+// attribution. Selected with --matrix (all rates x channels x voices x
+// blocks, the DEFAULT decimated detector, plus the FullRate comparison
+// rows) and --stages (representative configs through the OCTAVOX_STAGE_TIMERS
+// instrumented core; a no-op notice when the build is not instrumented).
+// ===========================================================================
+#include "octavox/stageprof.hpp"
+
+struct MatrixRow {
+    std::string name;
+    int voices, channels, block, sample_rate;
+    const char* detector;      // "decimated" | "fullrate"
+    double ns_per_frame;
+    double realtime_factor;    // audio seconds per wall second
+    double cpu_percent;        // 100 / realtime_factor
+    double deadline_budget_us; // block / sr in microseconds
+    double deadline_mean_us, deadline_max_us, deadline_p99_us;
+    long deadline_misses, n_blocks;
+    long steady_allocs;
+};
+
+struct StageRow {
+    std::string name;
+    int voices, channels, block, sample_rate;
+    const char* detector;
+    double total_wall_ms;
+    // per-stage corrected ticks and share of the sum
+    struct StageVal { const char* stage; double ticks; double share; uint64_t calls; };
+    std::vector<StageVal> stages;
+};
+
+// One matrix case: clean timed pass + per-block deadline pass.
+void runMatrixCase(const char* detName, DetectorMode detMode, int sr,
+                   int channels, int voices, int block,
+                   std::vector<MatrixRow>& rows) {
+    const int seconds = 1;
+    const int n = seconds * sr;
+    std::vector<float> xin(n);
+    {
+        Lcg rng(2025);
+        for (int i = 0; i < n; ++i) xin[i] = rng.noise() * 0.5f;
+    }
+    std::vector<std::vector<float>> in(channels), out(channels);
+    for (int c = 0; c < channels; ++c) {
+        in[c] = xin;
+        out[c].assign(n, 0.0f);
+    }
+    std::vector<const float*> inP(channels);
+    std::vector<float*> outP(channels);
+    for (int c = 0; c < channels; ++c) {
+        inP[c] = in[c].data();
+        outP[c] = out[c].data();
+    }
+
+    Config cfg;
+    cfg.sample_rate = sr;
+    cfg.ratio = std::pow(2.0, 400.0 / 1200.0);  // +4 st (non-trivial path)
+    cfg.voices = voices;
+    cfg.detector_mode = detMode;
+
+    MultichannelShifter m;
+    if (!m.prepare(cfg, channels)) {
+        std::fprintf(stderr, "prepare failed (matrix %s %d %dch %dv b%d)\n",
+                     detName, sr, channels, voices, block);
+        return;
+    }
+    // warm-up
+    {
+        int done = 0;
+        while (done < sr) {
+            const int k = std::min(block, sr - done);
+            m.process(inP.data(), outP.data(), channels, k);
+            done += k;
+        }
+        m.reset();
+    }
+    // pass 1: clean total (best of 2)
+    double best = 1e300;
+    for (int rep = 0; rep < 2; ++rep) {
+        m.reset();
+        allocs::reset();
+        allocs::arm(true);
+        const double t0 = nowSec();
+        int done = 0;
+        while (done < n) {
+            const int k = std::min(block, n - done);
+            m.process(inP.data(), outP.data(), channels, k);
+            done += k;
+        }
+        const double el = nowSec() - t0;
+        allocs::arm(false);
+        if (el < best) best = el;
+    }
+    // pass 2: per-block deadline diagnostics
+    double budget_us = 1e6 * static_cast<double>(block) / sr;
+    double sum_us = 0.0, max_us = 0.0;
+    long misses = 0, nb = 0;
+    std::vector<double> blockUs;
+    m.reset();
+    {
+        int done = 0;
+        while (done < n) {
+            const int k = std::min(block, n - done);
+            const double t0 = nowSec();
+            m.process(inP.data(), outP.data(), channels, k);
+            const double us = (nowSec() - t0) * 1e6;
+            done += k;
+            ++nb;
+            sum_us += us;
+            if (us > max_us) max_us = us;
+            if (us > budget_us) ++misses;
+            blockUs.push_back(us);
+        }
+    }
+    std::sort(blockUs.begin(), blockUs.end());
+    const double p99 = blockUs.empty()
+                           ? 0.0
+                           : blockUs[std::min(blockUs.size() - 1,
+                                              (size_t)(0.99 * blockUs.size()))];
+
+    MatrixRow r;
+    char nm[96];
+    std::snprintf(nm, sizeof(nm), "%s_%dv_%db%d_%dc", detName, voices, block, sr,
+                  channels);
+    r.name = nm;
+    r.voices = voices;
+    r.channels = channels;
+    r.block = block;
+    r.sample_rate = sr;
+    r.detector = detName;
+    r.ns_per_frame = best * 1e9 / n;
+    r.realtime_factor = static_cast<double>(n) / sr / best;
+    r.cpu_percent = 100.0 / r.realtime_factor;
+    r.deadline_budget_us = budget_us;
+    r.deadline_mean_us = nb ? sum_us / nb : 0.0;
+    r.deadline_max_us = max_us;
+    r.deadline_p99_us = p99;
+    r.deadline_misses = misses;
+    r.n_blocks = nb;
+    r.steady_allocs = allocs::count();
+    std::printf("matrix: %-28s %8.2f ns/frame  %7.2fx RT (%5.1f%% CPU)"
+                "  dl budget/mean/max/p99 = %.1f/%.1f/%.1f/%.1f us, misses %ld/%ld\n",
+                r.name.c_str(), r.ns_per_frame, r.realtime_factor,
+                r.cpu_percent, budget_us, r.deadline_mean_us, max_us, p99,
+                misses, nb);
+    std::fflush(stdout);
+    rows.push_back(std::move(r));
+}
+
+// One stage-attribution case (requires the OCTAVOX_STAGE_TIMERS build).
+void runStageCase(const char* detName, DetectorMode detMode, int sr,
+                  int channels, int voices, int block,
+                  std::vector<StageRow>& rows) {
+    const int seconds = 1;
+    const int n = seconds * sr;
+    std::vector<float> xin(n);
+    {
+        Lcg rng(2025);
+        for (int i = 0; i < n; ++i) xin[i] = rng.noise() * 0.5f;
+    }
+    std::vector<std::vector<float>> in(channels), out(channels);
+    for (int c = 0; c < channels; ++c) {
+        in[c] = xin;
+        out[c].assign(n, 0.0f);
+    }
+    std::vector<const float*> inP(channels);
+    std::vector<float*> outP(channels);
+    for (int c = 0; c < channels; ++c) {
+        inP[c] = in[c].data();
+        outP[c] = out[c].data();
+    }
+    Config cfg;
+    cfg.sample_rate = sr;
+    cfg.ratio = std::pow(2.0, 400.0 / 1200.0);
+    cfg.voices = voices;
+    cfg.detector_mode = detMode;
+    MultichannelShifter m;
+    if (!m.prepare(cfg, channels)) return;
+    // warm-up (tables, caches)
+    {
+        int done = 0;
+        while (done < sr) {
+            const int k = std::min(block, sr - done);
+            m.process(inP.data(), outP.data(), channels, k);
+            done += k;
+        }
+        m.reset();
+    }
+    stageprof::timerOverheadTicks();  // calibrate
+    stageprof::reset();
+    const double t0 = nowSec();
+    int done = 0;
+    while (done < n) {
+        const int k = std::min(block, n - done);
+        m.process(inP.data(), outP.data(), channels, k);
+        done += k;
+    }
+    const double wallMs = (nowSec() - t0) * 1e3;
+    StageRow r;
+    char nm[96];
+    std::snprintf(nm, sizeof(nm), "%s_%dv_%db%d_%dc", detName, voices, block, sr,
+                  channels);
+    r.name = nm;
+    r.voices = voices;
+    r.channels = channels;
+    r.block = block;
+    r.sample_rate = sr;
+    r.detector = detName;
+    r.total_wall_ms = wallMs;
+    const uint64_t ov = stageprof::timerOverheadTicks();
+    double sum = 0.0;
+    double corrected[stageprof::kStageCount];
+    for (int s = 0; s < stageprof::kStageCount; ++s) {
+        const uint64_t c = stageprof::calls(s);
+        double t = (double)stageprof::ticks(s);
+        // subtract the measured empty-scope overhead per call
+        if (c > 0 && ov > 0) {
+            const double sub = (double)c * (double)ov;
+            if (t > sub) t -= sub;
+        }
+        corrected[s] = t;
+        sum += t;
+    }
+    for (int s = 0; s < stageprof::kStageCount; ++s) {
+        StageRow::StageVal v;
+        v.stage = stageprof::stageName(s);
+        v.ticks = corrected[s];
+        v.share = (sum > 0.0) ? corrected[s] / sum : 0.0;
+        v.calls = stageprof::calls(s);
+        r.stages.push_back(v);
+    }
+    std::printf("stages: %-28s wall %8.1f ms  (overhead %llu ticks/scope)\n",
+                r.name.c_str(), wallMs,
+                (unsigned long long)ov);
+    for (const auto& v : r.stages) {
+        std::printf("    %-14s %14.0f ticks  %6.2f %%  (%llu calls)\n",
+                    v.stage, v.ticks, 100.0 * v.share,
+                    (unsigned long long)v.calls);
+    }
+    std::fflush(stdout);
+    rows.push_back(std::move(r));
+}
+
+static void writeMatrixJson(const std::string& path,
+                            const std::vector<MatrixRow>& rows,
+                            const std::vector<StageRow>& stageRows) {
+    std::string j = "{\n  \"bench\": \"octavox_native_matrix\",\n  \"version\": \"";
+    j += versionString();
+    j += "\",\n  \"environment\": {" + envJsonFragment() + "},\n";
+    j += "  \"note\": \"R19 matrix: rates x channels x voices x blocks with the"
+         " 16.0.0 DEFAULT (decimated) detector + FullRate comparison rows;"
+         " 1 s audio per case, clean pass best-of-2 for totals, second pass"
+         " for per-block deadline diagnostics\",\n";
+    j += "  \"rows\": [\n";
+    for (size_t i = 0; i < rows.size(); ++i) {
+        const auto& r = rows[i];
+        char buf[640];
+        std::snprintf(buf, sizeof(buf),
+                      "    {\"name\": \"%s\", \"detector\": \"%s\", "
+                      "\"sample_rate\": %d, \"channels\": %d, \"voices\": %d, "
+                      "\"block\": %d, \"ns_per_frame\": %.3f, "
+                      "\"realtime_factor\": %.4f, \"cpu_percent\": %.3f, "
+                      "\"deadline_budget_us\": %.2f, \"deadline_mean_us\": %.2f, "
+                      "\"deadline_max_us\": %.2f, \"deadline_p99_us\": %.2f, "
+                      "\"deadline_misses\": %ld, \"n_blocks\": %ld, "
+                      "\"steady_allocs\": %ld}",
+                      jsonEscape(r.name).c_str(), r.detector, r.sample_rate,
+                      r.channels, r.voices, r.block, r.ns_per_frame,
+                      r.realtime_factor, r.cpu_percent, r.deadline_budget_us,
+                      r.deadline_mean_us, r.deadline_max_us, r.deadline_p99_us,
+                      r.deadline_misses, r.n_blocks, r.steady_allocs);
+        j += buf;
+        if (i + 1 < rows.size()) j += ",";
+        j += "\n";
+    }
+    j += "  ],\n  \"stages\": [\n";
+    for (size_t i = 0; i < stageRows.size(); ++i) {
+        const auto& r = stageRows[i];
+        char buf[256];
+        std::snprintf(buf, sizeof(buf),
+                      "    {\"name\": \"%s\", \"detector\": \"%s\", "
+                      "\"sample_rate\": %d, \"channels\": %d, \"voices\": %d, "
+                      "\"block\": %d, \"total_wall_ms\": %.3f, "
+                      "\"stageprof_active\": %s, \"timer_overhead_ticks\": %llu, "
+                      "\"stages\": [",
+                      jsonEscape(r.name).c_str(), r.detector, r.sample_rate,
+                      r.channels, r.voices, r.block, r.total_wall_ms,
+                      stageprof::active() ? "true" : "false",
+                      (unsigned long long)stageprof::timerOverheadTicks());
+        j += buf;
+        for (size_t k = 0; k < r.stages.size(); ++k) {
+            char b2[256];
+            std::snprintf(b2, sizeof(b2),
+                          "{\"stage\": \"%s\", \"ticks\": %.0f, "
+                          "\"share\": %.6f, \"calls\": %llu}%s",
+                          r.stages[k].stage, r.stages[k].ticks,
+                          r.stages[k].share,
+                          (unsigned long long)r.stages[k].calls,
+                          (k + 1 < r.stages.size()) ? "," : "");
+            j += b2;
+        }
+        j += "]}";
+        if (i + 1 < stageRows.size()) j += ",";
+        j += "\n";
+    }
+    j += "  ]\n}\n";
+    FILE* f = std::fopen(path.c_str(), "wb");
+    if (f) {
+        std::fwrite(j.data(), 1, j.size(), f);
+        std::fclose(f);
+        std::printf("matrix json written: %s\n", path.c_str());
+    }
+}
+
 int main(int argc, char** argv) {
     std::string jsonPath;
     std::vector<std::string> wanted;
     bool list = false;
+    bool matrix = false, stages = false;
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a == "--json" && i + 1 < argc) {
             jsonPath = argv[++i];
+        } else if (a == "--matrix") {
+            matrix = true;
+        } else if (a == "--stages") {
+            stages = true;
         } else if (a == "--case" && i + 1 < argc) {
             wanted.push_back(argv[++i]);
         } else if (a == "--cases" && i + 1 < argc) {
@@ -406,6 +727,59 @@ int main(int argc, char** argv) {
     if (list) {  // static case dump; nothing runs
         for (int i = 0; i < kBenchCaseCount; ++i)
             std::printf("%s\n", kBenchCases[i].name);
+        return 0;
+    }
+
+    if (matrix || stages) {
+        // R19 modes: the full matrix and/or stage attribution.
+        std::vector<MatrixRow> rows;
+        std::vector<StageRow> stageRows;
+        const int rates[5] = {44100, 48000, 88200, 96000, 192000};
+        const int blocks[5] = {64, 128, 256, 512, 1024};
+        const int voicesx[4] = {1, 2, 4, 8};
+        if (matrix) {
+            std::printf("== R19 matrix: 5 rates x 2 channel counts x 4 voice"
+                        " counts x 5 block sizes (decimated detector) ==\n");
+            for (int ri = 0; ri < 5; ++ri)
+                for (int ch = 1; ch <= 2; ++ch)
+                    for (int vi = 0; vi < 4; ++vi)
+                        for (int bi = 0; bi < 5; ++bi)
+                            runMatrixCase("dec", DetectorMode::Decimated,
+                                          rates[ri], ch, voicesx[vi],
+                                          blocks[bi], rows);
+            std::printf("== R19 matrix: FullRate comparison rows (the"
+                        " 15.00 detector cost) ==\n");
+            const int frRates[3] = {48000, 96000, 192000};
+            for (int ri = 0; ri < 3; ++ri)
+                for (int ch = 1; ch <= 2; ++ch)
+                    for (int vi = 0; vi < 4; vi += 3)  // 1 and 8 voices
+                        runMatrixCase("full", DetectorMode::FullRate,
+                                      frRates[ri], ch, voicesx[vi], 128,
+                                      rows);
+        }
+        if (stages) {
+            if (!stageprof::active()) {
+                std::printf("== R19 stages: this build is NOT instrumented"
+                            " (rebuild with -DOCTAVOX_STAGE_TIMERS on"
+                            " octavox_dsp + octavox_bench to collect stage"
+                            " attribution; the plain build is the"
+                            " bit-exact shipped configuration) ==\n");
+            } else {
+                for (int sr : {48000, 96000})
+                    for (int vi = 0; vi < 4; vi += 3)
+                        runStageCase("dec", DetectorMode::Decimated, sr, 2,
+                                     voicesx[vi], 128, stageRows);
+                for (int vi = 0; vi < 4; vi += 3)
+                    runStageCase("full", DetectorMode::FullRate, 96000, 2,
+                                 voicesx[vi], 128, stageRows);
+            }
+        }
+        if (!jsonPath.empty()) {
+            writeMatrixJson(jsonPath, rows, stageRows);
+        } else {
+            writeMatrixJson("bench_matrix.json", rows, stageRows);
+        }
+        std::printf("%s\n", versionString());
         return 0;
     }
 

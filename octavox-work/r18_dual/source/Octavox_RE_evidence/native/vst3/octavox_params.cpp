@@ -241,7 +241,13 @@ void plainArrayToSurface(const double in[kNumParams], Surface& s) {
 namespace {
 
 constexpr uint32_t kStateMagic = 0x3152564Fu;  // 'O','V','R','1' (LE byte order)
-constexpr int32_t kStateVersion = 1;
+// R19: version 2 adds the four 16.0.0 Config fields after bypass_seconds
+// (detector_mode + the three transition-time fields). Version 1 blobs (the
+// R16-R18 'OctavoxNative' and R18-WDB variant blobs) remain READABLE: the
+// new fields take the 16.0.0 defaults and the caller (the processor) forces
+// the compile-time selections on top.
+constexpr int32_t kStateVersion = 2;
+constexpr int32_t kStateVersionLegacy = 1;
 
 bool finiteD(double x) { return std::isfinite(x); }
 
@@ -271,11 +277,22 @@ bool sanitizeConfig(Config& c) {
     if (!finiteD(c.gain_ramp_seconds) || c.gain_ramp_seconds < 0.0)
         c.gain_ramp_seconds = 0.0;
     if (!finiteD(c.bypass_seconds) || c.bypass_seconds < 0.0) c.bypass_seconds = 0.0;
+    // R19 fields (v2 blobs; v1 blobs carry the 16.0.0 defaults already)
+    if (!finiteD(c.commit_crossfade_seconds) || c.commit_crossfade_seconds < 0.0)
+        c.commit_crossfade_seconds = 0.0;
+    if (!finiteD(c.delay_crossfade_seconds) || c.delay_crossfade_seconds < 0.0)
+        c.delay_crossfade_seconds = 0.0;
+    if (!finiteD(c.voice_fade_seconds) || c.voice_fade_seconds < 0.0)
+        c.voice_fade_seconds = 0.0;
     if (!finiteD(c.feedback)) c.feedback = 0.0;
     if (c.feedback > 0.999999) c.feedback = 0.999999;
     if (c.feedback < -0.999999) c.feedback = -0.999999;
     const int interp = static_cast<int>(c.interpolation);
     if (interp < 0 || interp > 3) return false;  // reject unknown modes
+    const int dmode = static_cast<int>(c.detector_mode);
+    if (dmode != static_cast<int>(DetectorMode::FullRate) &&
+        dmode != static_cast<int>(DetectorMode::Decimated))
+        return false;  // reject unknown detector modes
     return true;
 }
 
@@ -306,6 +323,11 @@ bool writeStateData(Steinberg::IBStream* stream, const StateData& st) {
     if (!w.writeDouble(st.cfg.engagement_seconds)) return false;
     if (!w.writeDouble(st.cfg.gain_ramp_seconds)) return false;
     if (!w.writeDouble(st.cfg.bypass_seconds)) return false;
+    // R19 (version 2): the 16.0.0 fields
+    if (!w.writeInt32(static_cast<int32>(st.cfg.detector_mode))) return false;
+    if (!w.writeDouble(st.cfg.commit_crossfade_seconds)) return false;
+    if (!w.writeDouble(st.cfg.delay_crossfade_seconds)) return false;
+    if (!w.writeDouble(st.cfg.voice_fade_seconds)) return false;
 
     if (!w.writeInt32(st.channels)) return false;
 
@@ -323,7 +345,10 @@ bool readStateData(Steinberg::IBStream* stream, StateData& out) {
     uint32_t magic = 0;
     int32_t version = 0;
     if (!r.readInt32u(magic) || magic != kStateMagic) return false;
-    if (!r.readInt32(version) || version != kStateVersion) return false;
+    if (!r.readInt32(version) ||
+        (version != kStateVersion && version != kStateVersionLegacy))
+        return false;
+    const bool v2 = (version == kStateVersion);
 
     Config c{};
     int32_t i32 = 0;
@@ -346,6 +371,14 @@ bool readStateData(Steinberg::IBStream* stream, StateData& out) {
     if (!r.readDouble(c.engagement_seconds)) return false;
     if (!r.readDouble(c.gain_ramp_seconds)) return false;
     if (!r.readDouble(c.bypass_seconds)) return false;
+    if (v2) {
+        // R19 (version 2): the 16.0.0 fields
+        if (!r.readInt32(i32)) return false;
+        c.detector_mode = static_cast<DetectorMode>(i32);
+        if (!r.readDouble(c.commit_crossfade_seconds)) return false;
+        if (!r.readDouble(c.delay_crossfade_seconds)) return false;
+        if (!r.readDouble(c.voice_fade_seconds)) return false;
+    }  // else: the 16.0.0 defaults stand (Config{} initialisation)
     if (!r.readInt32(i32)) return false;
     const int32_t channels = i32;
 

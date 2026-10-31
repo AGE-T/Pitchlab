@@ -23,3 +23,9 @@ void writeWav(const std::string& path, const float* x, int n, int channels,
 
 }  // namespace wav
 }  // namespace octavox
+
+/// R19: write a 32-bit IEEE-float WAV (format tag 3). NO quantisation at
+/// all -- the file carries the exact float bits (the deterministic A/B
+/// null-test output format). Deterministic, endian-explicit.
+void writeWavF32(const std::string& path, const float* x, int n, int channels,
+                 int sr);

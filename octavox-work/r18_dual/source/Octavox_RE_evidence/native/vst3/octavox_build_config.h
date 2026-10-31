@@ -122,12 +122,27 @@ DECLARE_UID(OctavoxNativeFactoryUID, 0x7C5F93E2, 0x4B184D7A, 0x9E6C3A2B, 0x8F1D5
 #endif
 
 //--------------------------------------------------------------------------
+// The compile-time detector selection (R19)
+//--------------------------------------------------------------------------
+
+// Both interpolation variants use the R19 decimated control-rate pitch
+// detector (~24 kHz, anti-alias filtered) -- the real-time fix of round 19
+// applies to BOTH variants; the interpolation choice remains the ONLY
+// variant axis. The FullRate reference mode stays available in the CORE
+// (Config::detector_mode, gated by the legacy record) but is NOT a
+// host-visible parameter and is never selected by the wrapper.
+constexpr DetectorMode kDefaultDetectorMode = DetectorMode::Decimated;
+
+//--------------------------------------------------------------------------
 // The single engine-configuration helper every consumer uses
 //--------------------------------------------------------------------------
 
 /// The engine configuration for THIS build variant: the pure core defaults
-/// (Config{} -- the generic DSP core default, UNCHANGED) with the wrapper's
-/// compile-time interpolation selection substituted. Used by:
+/// (Config{} -- the 16.0.0 core defaults, whose detector default IS the
+/// decimated mode) with the wrapper's compile-time interpolation selection
+/// substituted and the compile-time detector selection pinned EXPLICITLY
+/// (both are compile-time properties of the module, never host-visible
+/// parameters). Used by:
 ///   * the processor constructor / initialization paths,
 ///   * state restore (the variant selection is authoritative),
 ///   * the wrapper reference tests' hand-driven core references,
@@ -135,8 +150,9 @@ DECLARE_UID(OctavoxNativeFactoryUID, 0x7C5F93E2, 0x4B184D7A, 0x9E6C3A2B, 0x8F1D5
 ///     (an OBSKERNEL6 module is never compared against a LAGRANGE6
 ///     reference).
 inline Config referenceConfig() {
-    Config c{};  // core defaults (frozen core tree)
+    Config c{};  // core defaults (16.0.0: decimated detector default)
     c.interpolation = kDefaultInterpolation;
+    c.detector_mode = kDefaultDetectorMode;
     return c;
 }
 

@@ -32,9 +32,14 @@
 # evidence/analysis_round16/R16_P1_RECONCILIATION_LOG.md.]
 
 cmake_minimum_required(VERSION 3.16)
-project(octavox_native LANGUAGES CXX VERSION 15.0.0)
+project(octavox_native LANGUAGES CXX VERSION 16.0.0)
 
 option(ENABLE_SANITIZERS "Build with ASan+UBSan" OFF)
+# R19: stage-attribution instrumentation (a SEPARATE profiling build; the
+# default/plain build is bit-exact and ships). Adds OCTAVOX_STAGE_TIMERS to
+# the DSP core and the bench so bench --stages collects per-stage cycle
+# counters (pure observer; see include/octavox/stageprof.hpp).
+option(OCTAVOX_STAGE_TIMERS "Instrument the core with stage cycle counters" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -46,6 +51,9 @@ endif()
 
 add_library(octavox_dsp STATIC src/dsp.cpp)
 target_include_directories(octavox_dsp PUBLIC include src)
+if(OCTAVOX_STAGE_TIMERS)
+    target_compile_definitions(octavox_dsp PUBLIC OCTAVOX_STAGE_TIMERS=1)
+endif()
 
 if(ENABLE_SANITIZERS)
     message(STATUS "octavox: sanitizers ON (address+undefined)")
@@ -106,6 +114,46 @@ add_executable(octavox_r15refcap
 target_link_libraries(octavox_r15refcap PRIVATE octavox_dsp)
 if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
     target_compile_options(octavox_r15refcap PRIVATE -Wall -Wextra)
+endif()
+
+# ---------------------------------------------------------------------------
+# R19 offline click scanner (discontinuity + wrap/commit correlation report;
+# WAV + JSON outputs). Harness tool like the CLI above.
+# ---------------------------------------------------------------------------
+add_executable(octavox_r19_clickscan
+    cli/r19_clickscan.cpp
+    tests/wav_io.cpp
+)
+target_link_libraries(octavox_r19_clickscan PRIVATE octavox_dsp)
+target_include_directories(octavox_r19_clickscan PRIVATE tests)
+if(NOT MSVC)
+    target_compile_options(octavox_r19_clickscan PRIVATE -Wall -Wextra)
+endif()
+
+# ---------------------------------------------------------------------------
+# R19 deterministic Lagrange6-vs-ObsKernel6 null test (32-bit float WAVs +
+# metric JSON; the dual-interpolation verification tool).
+# ---------------------------------------------------------------------------
+add_executable(octavox_r19_nulltest
+    cli/r19_nulltest.cpp
+    tests/wav_io.cpp
+)
+target_link_libraries(octavox_r19_nulltest PRIVATE octavox_dsp)
+target_include_directories(octavox_r19_nulltest PRIVATE tests)
+if(NOT MSVC)
+    target_compile_options(octavox_r19_nulltest PRIVATE -Wall -Wextra)
+endif()
+
+# ---------------------------------------------------------------------------
+# R19 dual-variant performance/quality comparison (interp-specific CPU,
+# total CPU, pitch accuracy, THD+N, max step -- Lagrange6 vs ObsKernel6).
+# ---------------------------------------------------------------------------
+add_executable(octavox_r19_variant_metrics
+    cli/r19_variant_metrics.cpp
+)
+target_link_libraries(octavox_r19_variant_metrics PRIVATE octavox_dsp)
+if(NOT MSVC)
+    target_compile_options(octavox_r19_variant_metrics PRIVATE -Wall -Wextra)
 endif()
 
 # ---------------------------------------------------------------------------

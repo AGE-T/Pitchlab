@@ -1,7 +1,17 @@
-// OCTAVOX independent native DSP core (public API) -- version 15.0.0
+// OCTAVOX independent native DSP core (public API) -- version 16.0.0
 // ============================================================================
+// [R19 note, 2026-10-31: version 16.0.0 -- the round-19 real-time/click
+// round. The 15.0.0 contract below is preserved VERBATIM; the round-19
+// additions (decimated control-rate detector with the FullRate reference
+// mode, click-free spacing commits, voice activation/deactivation ramps,
+// crossfaded per-voice base-delay changes, the bypass/wet==0 read
+// suppression and the stage-attribution profiler) are specified in the
+// ROUND-19 CONTRACT block further below. Every 15.0.0 law that round 19
+// changes is config-gated and the LEGACY configuration reproduces the
+// 15.0.0 output BIT-EXACTLY (gated by the four r15 reference hashes, which
+// are re-captured every round since R15-REB1).]
 // [R16-P1 note, 2026-10-28: the title line previously read "rounds 13/14
-// recovery"; superseded — this header is the normative 15.0.0 contract. The
+// recovery"; superseded — this header is the normative contract. The
 // version-history block below records the recovery lineage.]
 // Version 15.0.0 = round-15 P1 per-voice harmonizer parameter surface:
 //   * per-voice ABSOLUTE ratio / gain / mute / base-delay overrides
@@ -248,6 +258,54 @@
 //   delay, applied to the voice state at the top of process(). Per-voice
 //   ratio changes ride the per-voice geometric glide; large ratio jumps are
 //   handled by that same glide.
+//
+// ROUND-19 CONTRACT (16.0.0) -- real-time, clicks, and the legacy gate
+// ---------------------------------------------------------------------
+// (a) DETECTOR (see DetectorMode above). The estimate cadence (every
+//     `detection_interval` STREAM samples), the median-history law, the
+//     hysteresis/commit law and the [60,1200] Hz validity gate are IDENTICAL
+//     in both modes; only the estimate VALUES differ (the decimated window
+//     sees a low-passed waveform at a coarser lag resolution -- measured
+//     accuracy/tracking deltas are recorded in evidence/analysis_round19).
+//     detector_mode is buffer-determining for re-prepare (a mode change
+//     reconfigures the detector, so it takes the allocate-and-rebuild path).
+// (b) CLICK-FREE SPACING COMMITS: at a grain wrap whose hysteresis gate
+//     fires, the engine snapshots the voice's read state into a frozen
+//     SHADOW (S frozen at the old value; the shadow never commits) and
+//     crossfades shadow -> new law over commit_crossfade_seconds (clamped
+//     to 40 percent of the wrap period; a fully parked voice needs no
+//     crossfade because its integer read is S-independent). The blended
+//     output is continuous at the commit instant BY CONSTRUCTION (weight 0
+//     on the new law at the boundary). commit_crossfade_seconds == 0
+//     restores the legacy instant commit bit-exactly.
+// (c) VOICE ACTIVATION/DEACTIVATION RAMPS: setVoices(n) activates voices
+//     [0,n) and deactivates [n,max); each affected voice's EFFECTIVE gain
+//     target (active && !mute ? user gain : 0) ramps over
+//     gain_ramp_seconds through the existing linear ramp machinery, while
+//     the voice-count normalisation ramps as before. A deactivated voice
+//     keeps processing (DSP state stays warm) until its ramped gain reaches
+//     exactly 0; re-activation is seamless by the same ramp. The settled
+//     state is bit-identical to 15.0.0 (gains and norm reach their exact
+//     targets); only the transition is new.
+// (d) CROSSFADED BASE-DELAY CHANGES: a pending per-voice base delay now
+//     blends the voice's read between the old-base and new-base read laws
+//     over delay_crossfade_seconds (0 = the legacy instant re-align,
+//     bit-exact). The final state equals the legacy law exactly.
+// (e) READ SUPPRESSION (bypass / zero wet): when the feedback coefficient
+//     is 0 AND the output is exactly the dry signal (wet == 0 with no
+//     bypass blend running, or the bypass blend has fully reached 1), the
+//     engine skips the interpolated READS while advancing every piece of
+//     voice state, the detector, the rings and all slews. With fb == 0 the
+//     suppression is BIT-IDENTICAL by construction (the rings receive the
+//     same input, voice state evolution is read-independent, and the
+//     output stage ignores the wet sample) -- gated by an explicit
+//     bit-identity test. With fb != 0 the suppression never engages.
+// (f) LEGACY BIT-EXACTNESS: the configuration {detector_mode = FullRate,
+//     commit_crossfade_seconds = 0, delay_crossfade_seconds = 0,
+//     voice_fade_seconds = 0} (the reference-hash configs perform no
+//     voice-count transitions, so their records are unaffected either way)
+//     reproduces the 15.0.0 output BIT-EXACTLY, gated by the four r15
+//     reference hashes and the 85-case suite's behavioural gates.
 
 #pragma once
 
@@ -262,6 +320,37 @@ enum class Interpolation : int {
     Lagrange6 = 1,  ///< 6-point Lagrange, 2048 bin-centre phases (v2 default)
     Lagrange6Q = 2, ///< 6-point Lagrange, 256 bin-centre phases ("lagrange6_q")
     ObsKernel6 = 3, ///< target's observed static 256x6 .rdata kernel (OBS data)
+};
+
+/// Pitch-detector architecture (R19). Both modes implement the same
+/// YIN-family estimator (identical threshold law, cumulative-mean
+/// normalisation, parabolic refinement and the [60,1200] Hz validity
+/// gate); they differ in the rate at which the analysis window is sampled.
+enum class DetectorMode : int {
+    /// Full-rate reference detector (the R12--R18 behaviour, verbatim):
+    /// the sliding window holds RAW input samples at the host rate and the
+    /// analysis window follows the R13-b law win = max(2048, ceil(2.5*tau))
+    /// with tau at the host rate. Retained unchanged as the reference mode.
+    FullRate = 0,
+    /// R19 DEFAULT: a properly low-pass filtered, decimated control-rate
+    /// detector. The input is filtered by a 6th-order Butterworth low-pass
+    /// (three TDF2 biquads, fc = 0.35 * sr_dec) and decimated by D to a
+    /// control rate near 24 kHz (D = max(1, lround(sr/24000)); at the
+    /// canonical rates 44.1/48/88.2/96/176.4/192 kHz this is 2/2/4/4/7/8,
+    /// giving sr_dec in [22050, 25200]). The analysis window then holds
+    /// DEcimated samples with the time-equivalent law
+    ///     win_dec = max(1024, ceil(2.5 * tau_dec)),  tau at sr_dec,
+    /// which preserves the R13-b difference-support immunity
+    ///     m = win/2 - tau_max >= tau_max/4
+    /// at every rate and keeps the SAME ~42.7 ms window TIME SPAN and the
+    /// SAME detection-update cadence (one estimate every
+    /// `detection_interval` STREAM samples) as the full-rate detector at
+    /// 44.1/48 kHz. The audio path (ring, voices, interpolators, output)
+    /// always runs at the host's original sample rate; only the detector's
+    /// input is filtered and decimated. Valid detection range stays
+    /// 60..1200 Hz. Cost at 96 kHz drops by ~14x (see
+    /// evidence/analysis_round19 for the measured profile).
+    Decimated = 1,
 };
 
 /// Engine configuration (all values validated by prepare()).
@@ -279,12 +368,44 @@ struct Config {
     double fmax = 1200.0;             ///< spacing-accept gate (Hz)
     double s_hysteresis = 0.005;      ///< S commit hysteresis (relative)
     int f0_history = 8;               ///< period median window
-    int detection_interval = 64;      ///< control-rate period, stream samples
+    int detection_interval = 64;      ///< control-rate period, STREAM samples
+    /// R19: detector architecture (see DetectorMode). Default = the
+    /// decimated control-rate detector; FullRate reproduces the R12--R18
+    /// reference behaviour bit-exactly. Buffer-determining for re-prepare.
+    DetectorMode detector_mode = DetectorMode::Decimated;
     double engagement_seconds = 0.010;///< unity enter/exit morph time
     double gain_ramp_seconds = 0.015; ///< per-voice gain/mute ramp (linear
                                        ///< in amplitude; validated >= 0)
     double bypass_seconds = 0.010;    ///< bypass enter/exit crossfade time
                                        ///< (validated >= 0)
+    /// R19: click-free spacing-commit crossfade (seconds, >= 0; validated
+    /// exactly like the other time fields). When a grain wrap commits a new
+    /// tap spacing S, the engine crossfades from the old grain law (a frozen
+    /// shadow voice) to the new law over this duration instead of stepping
+    /// the read position (the 15.0.0 step was the dominant click source:
+    /// every initial spacing lock and every retune produced a step of
+    /// (S_new - S_old) samples in read position). 0 = the legacy instant
+    /// commit (bit-exact 15.0.0 behaviour, clicks included). The length is
+    /// additionally clamped to 40 percent of the current wrap period so a
+    /// second commit can never begin while a crossfade is still running.
+    double commit_crossfade_seconds = 0.008;
+    /// R19: crossfaded per-voice base-delay changes (seconds, >= 0). A
+    /// pending per-voice base delay is applied by crossfading the voice's
+    /// read between the old and the new base delay (the voice's grain
+    /// phase/spacing are shared) instead of translating the read point
+    /// instantly; 0 = the legacy instant re-align (bit-exact 15.0.0). The
+    /// eventual state (base delay, phase, spacing, park position) is
+    /// IDENTICAL to the legacy law; only the transition differs.
+    double delay_crossfade_seconds = 0.012;
+    /// R19: voice activation/deactivation fade (seconds, >= 0; validated
+    /// like the other time fields). setVoices() transitions ramp the
+    /// affected voices' contributions over this duration through the
+    /// per-voice gain ramp machinery (the settled state is bit-identical
+    /// to 15.0.0). 0 = the legacy INSTANT activation/deactivation
+    /// (bit-exact 15.0.0, including its voice-count transition step: new
+    /// voices entered at full amplitude while the normalisation had not
+    /// yet ramped).
+    double voice_fade_seconds = 0.012;
     /// Geometric glide multiplier per sample (reference parity: 0.9995).
     static constexpr double kGlideMult = 0.9995;
 };
@@ -301,6 +422,10 @@ struct VoiceStats {
     double ratio = 0.0;        ///< current gliding ratio (diagnostics; round-14
                                ///< recovery: exposes the geometric glide for
                                ///< the tracker/rate-limiter parity harness)
+    long last_wrap_at = -1;    ///< R19: stream sample index of the most recent
+                               ///< grain wrap (-1 = none yet; diagnostics)
+    long last_commit_at = -1;  ///< R19: stream sample index of the most recent
+                               ///< tap-spacing commit (-1 = none; diagnostics)
 };
 
 /// One mono engine with 1..max_voices voices (port of the Python
@@ -412,7 +537,19 @@ private:
     MImpl* mimpl_ = nullptr;
 };
 
-/// Library version string ("octavox-native 15.0.0").
+/// Library version string ("octavox-native 16.0.0").
 const char* versionString();
 
 }  // namespace octavox
+
+// ---------------------------------------------------------------------------
+// ROUND-19 STAGE ATTRIBUTION PROFILER (opt-in, compile-time gated)
+// ---------------------------------------------------------------------------
+// The core can be compiled with -DOCTAVOX_STAGE_TIMERS to accumulate
+// per-stage cycle counters (detector buffering / estimate / median update,
+// per-voice loop, interpolation reads, output stage, input+feedback stage).
+// Collection is a pure observer: it never touches the DSP data flow, and
+// the plain (macro-off) build is bit-identical to a build whose sources
+// never contained the instrumentation. See include/octavox/stageprof.hpp.
+// ---------------------------------------------------------------------------
+#include "stageprof.hpp"

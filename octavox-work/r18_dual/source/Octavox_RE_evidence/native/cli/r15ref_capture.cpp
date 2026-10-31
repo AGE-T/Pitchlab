@@ -1,4 +1,4 @@
-// OCTAVOX R15-REB1 -- default-config neutrality reference capture.
+// OCTAVOX R15-REB1 / R19 -- default-config neutrality reference capture.
 // ============================================================================
 // Runs FOUR deterministic configurations through the engine and prints
 // FNV-1a-64 hashes over the raw output float bits. This is the PRIMARY gate
@@ -13,19 +13,32 @@
 // against both the 12.0.0 and the 15.0.0 core. The recorded hashes live in
 // native/r15_reference_hashes.txt.
 //
-// Modes:
-//   (default)   capture the four reference hashes (core-default Lagrange6
-//               kernel -- the EXISTING gate; behaviour byte-identical to
-//               the R15 tool)
+// R19 (16.0.0): the core's DEFAULT behaviour changed (decimated detector,
+// click-free spacing commits -- see dsp.hpp's ROUND-19 CONTRACT), so this
+// tool now separates the two records:
+//   --legacy    pins {detector_mode = FullRate, commit_crossfade_seconds = 0,
+//               delay_crossfade_seconds = 0} -- the EXACT 15.0.0 behaviour.
+//               The four historical hashes (r15_reference_hashes.txt) MUST
+//               reproduce in this mode forever (the legacy-path gate).
+//   (default)  the 16.0.0 defaults -- the NEW reference record, written to
+//               native/r19_reference_hashes.txt this round (cfg1 is expected
+//               to be IDENTICAL to the legacy value: a unity voice parks and
+//               never wraps, so no detector estimate, commit or crossfade
+//               ever reaches the output; cfg2/3/4 legitimately change).
+//   --detector <fullrate|decimated> forces the detector mode alone (used to
+//               measure the estimate deltas between the two architectures).
+//
+// Modes (older flags preserved):
 //   --interpolation <lagrange6|lagrange6q|obskernel6>
 //               capture the four hashes with EVERY config's interpolation
 //               set to the named kernel (R18-WDB: establishes the separate,
 //               reproducible ObsKernel6 reference measurements WITHOUT
 //               touching the default gate or r15_reference_hashes.txt)
 //   --probe96   detector-at-96 kHz probe (steady 110 Hz sine, grain 8192 /
-//               base 512): prints the detector estimate; documents the R13-b
-//               sample-rate-relative window law (12.0.0 is blind there,
-//               m < 32; 15.0.0 tracks).
+//               base 512): prints the detector estimate for BOTH detector
+//               modes; documents the R13-b sample-rate-relative window law
+//               (12.0.0 is blind there, m < 32; 15.0.0+ tracks) and the R19
+//               decimated detector's accuracy at the same rate.
 //
 // Determinism: the LCG, tones and chirp are pure formulas (the shared
 // 64-bit LCG spec of the test harness); every block pattern is a fixed
@@ -119,10 +132,25 @@ uint64_t runMono(AlignedDelayLine& e, const std::vector<float>& in,
 // own default, Lagrange6, preserving the historical gate bit-exactly).
 Interpolation g_interpOverride = Interpolation::Lagrange6;
 bool g_interpForced = false;
+// R19: the behaviour-mode pins (see the header comment).
+bool g_legacy = false;                  // --legacy: pin the 15.0.0 behaviour
+bool g_detectorForced = false;          // --detector <mode>
+DetectorMode g_detectorMode = DetectorMode::Decimated;
 
 Config baseConfig() {
-    Config cfg;  // all defaults
+    Config cfg;  // all 16.0.0 defaults
     if (g_interpForced) cfg.interpolation = g_interpOverride;
+    if (g_legacy) {
+        // The EXACT 15.0.0 behaviour: full-rate detector, instant spacing
+        // commits, instant base-delay re-aligns. These three pins reproduce
+        // r15_reference_hashes.txt on the 16.0.0 core BIT-EXACTLY.
+        cfg.detector_mode = DetectorMode::FullRate;
+        cfg.commit_crossfade_seconds = 0.0;
+        cfg.delay_crossfade_seconds = 0.0;
+        cfg.voice_fade_seconds = 0.0;
+    } else if (g_detectorForced) {
+        cfg.detector_mode = g_detectorMode;
+    }
     return cfg;
 }
 
@@ -217,7 +245,7 @@ void captureFour() {
                                : "Lagrange6");
 }
 
-void probe96() {
+void probe96(DetectorMode mode) {
     // Detector-at-96 kHz probe: steady 110 Hz sine, grain 8192 / base 512
     // (the sample-domain rate-scaled acceptance config). The detector
     // estimate is sampled at every 1024-sample block boundary after 1 s of
@@ -230,6 +258,7 @@ void probe96() {
     cfg.sample_rate = 96000.0;
     cfg.grain = 8192.0;
     cfg.base_delay = 512.0;
+    cfg.detector_mode = mode;
     e.prepare(cfg);
     std::vector<float> out(n, 0.0f);
     int done = 0;
@@ -244,11 +273,11 @@ void probe96() {
             hi = std::max(hi, f);
         }
     }
-    std::printf("probe96 (110 Hz sine, grain 8192, base 512, 96 kHz):\n");
-    std::printf("  estimate_min_hz = %.6f\n  estimate_max_hz = %.6f\n"
-                "  estimate_last_hz = %.6f\n",
+    std::printf("probe96 %s (110 Hz sine, grain 8192, base 512, 96 kHz):\n",
+                mode == DetectorMode::Decimated ? "decimated" : "fullrate");
+    std::printf("  estimate_min_hz = %.6f\n  estimate_max_hz = %.6f"
+                "\n  estimate_last_hz = %.6f\n",
                 lo, hi, e.lastEstimateHz());
-    std::printf("version: %s\n", versionString());
 }
 
 }  // namespace
@@ -256,8 +285,30 @@ void probe96() {
 int main(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--probe96") == 0) {
-            probe96();
+            probe96(DetectorMode::FullRate);
+            probe96(DetectorMode::Decimated);
+            std::printf("version: %s\n", versionString());
             return 0;
+        }
+        if (std::strcmp(argv[i], "--legacy") == 0) {
+            g_legacy = true;
+            continue;
+        }
+        if (std::strcmp(argv[i], "--detector") == 0 && i + 1 < argc) {
+            const char* m = argv[++i];
+            g_detectorForced = true;
+            if (std::strcmp(m, "decimated") == 0)
+                g_detectorMode = DetectorMode::Decimated;
+            else if (std::strcmp(m, "fullrate") == 0)
+                g_detectorMode = DetectorMode::FullRate;
+            else {
+                std::fprintf(stderr,
+                             "error: --detector must be fullrate | decimated "
+                             "(got '%s')\n",
+                             m);
+                return 2;
+            }
+            continue;
         }
         if (std::strcmp(argv[i], "--interpolation") == 0 && i + 1 < argc) {
             const char* m = argv[++i];
@@ -278,5 +329,9 @@ int main(int argc, char** argv) {
         }
     }
     captureFour();
+    std::printf("mode: %s\n", g_legacy
+                                  ? "legacy-15.0.0 (FullRate detector, instant "
+                                    "commits, instant base-delay re-align)"
+                                  : "16.0.0-defaults");
     return 0;
 }

@@ -140,3 +140,46 @@ void writeWav(const std::string& path, const float* x, int n, int channels,
 
 }  // namespace wav
 }  // namespace octavox
+
+void writeWavF32(const std::string& path, const float* x, int n, int channels,
+                 int sr) {
+    FILE* f = std::fopen(path.c_str(), "wb");
+    if (!f) throw std::runtime_error("cannot write " + path);
+    const uint32_t dataBytes = static_cast<uint32_t>(n) * channels * 4;
+    const uint32_t riffSize = 36 + dataBytes;
+    std::vector<unsigned char> hdr(44);
+    std::memcpy(hdr.data(), "RIFF", 4);
+    std::memcpy(hdr.data() + 4, &riffSize, 4);
+    std::memcpy(hdr.data() + 8, "WAVE", 4);
+    std::memcpy(hdr.data() + 12, "fmt ", 4);
+    const uint32_t fmtSz = 16;
+    std::memcpy(hdr.data() + 16, &fmtSz, 4);
+    const uint16_t af = 3, ch = static_cast<uint16_t>(channels),  // IEEE float
+                   bits = 32;
+    const uint32_t rate = static_cast<uint32_t>(sr);
+    const uint32_t byterate = rate * ch * 4;
+    const uint16_t block = static_cast<uint16_t>(ch * 4);
+    std::memcpy(hdr.data() + 20, &af, 2);
+    std::memcpy(hdr.data() + 22, &ch, 2);
+    std::memcpy(hdr.data() + 24, &rate, 4);
+    std::memcpy(hdr.data() + 28, &byterate, 4);
+    std::memcpy(hdr.data() + 32, &block, 2);
+    std::memcpy(hdr.data() + 34, &bits, 2);
+    std::memcpy(hdr.data() + 36, "data", 4);
+    std::memcpy(hdr.data() + 40, &dataBytes, 4);
+    std::fwrite(hdr.data(), 1, 44, f);
+    // little-endian explicit (the sandbox, Windows and all DAW targets of
+    // this evidence are little-endian; RIFF/WAVE float is LE by convention)
+    const size_t total = static_cast<size_t>(n) * channels;
+    std::vector<unsigned char> bytes(total * 4);
+    for (size_t i = 0; i < total; ++i) {
+        uint32_t b;
+        std::memcpy(&b, &x[i], 4);
+        bytes[i * 4 + 0] = static_cast<unsigned char>(b & 0xff);
+        bytes[i * 4 + 1] = static_cast<unsigned char>((b >> 8) & 0xff);
+        bytes[i * 4 + 2] = static_cast<unsigned char>((b >> 16) & 0xff);
+        bytes[i * 4 + 3] = static_cast<unsigned char>((b >> 24) & 0xff);
+    }
+    if (!bytes.empty()) std::fwrite(bytes.data(), 1, bytes.size(), f);
+    std::fclose(f);
+}

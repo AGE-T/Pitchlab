@@ -1,32 +1,36 @@
-# OCTAVOX R18-WDB — Windows Validation Kit
+# OCTAVOX R19 — Windows Validation Kit
 
-**What this is.** The Windows x64 validation executables for the two
-R18-WDB plugin variants (`OctavoxRE_Lagrange6` / `OctavoxRE_ObsKernel6`),
-built from the SAME source tree and the SAME `OCTAVOX_VST3_INTERPOLATION`
-configuration as the delivered `.vst3` bundles. They exist so that the
-Windows-side runtime gates (the ones the Linux build environment could not
-execute — see “Why this kit exists” below) can be run on a real Windows x64
-machine, with the REAL Windows module-loading implementation
-(`LoadLibraryA` / `GetProcAddress` through the pinned VST3 SDK v3.7.12’s
-`module_win32.cpp`).
+**What this is.** The Windows x64 validation executables for the two R19
+plugin variants (`OctavoxRE_Lagrange6` / `OctavoxRE_ObsKernel6`, version
+1.1.0 — the 16.0.0 core: decimated control-rate pitch detector + click-free
+commit/base-delay crossfades + voice activation ramps), built from the SAME
+source tree and the SAME `OCTAVOX_VST3_INTERPOLATION` configuration as the
+delivered `.vst3` bundles. They exist so the Windows-side runtime gates (the
+ones the Linux build environment could not execute — see “Why this kit
+exists” below) can be run on a real Windows x64 machine, with the REAL
+Windows module-loading implementation (`LoadLibraryA` / `GetProcAddress`
+through the pinned VST3 SDK v3.7.12’s `module_win32.cpp`).
 
 ## Why this kit exists (honest scope statement)
 
-The R18-WDB build environment is a Linux sandbox:
+The R19 build environment is a Linux sandbox:
 
 * the Windows `.vst3` modules are genuine PE32+ x86-64 DLLs (cross-built
-  with LLVM/clang 23.1.4 targeting `x86_64-w64-mingw32` — MSVC does not
-  exist on that host; the deviation is recorded in
-  `WINDOWS_DUAL_BUILD_REPORT.md`);
+  with LLVM/clang targeting `x86_64-w64-mingw32` — MSVC does not exist on
+  that host; the deviation is recorded in the round reports. R19 toolchain
+  note: this chain used llvm-mingw **clang 23.1.2**; R18 used 23.1.4 from a
+  release that no longer exists on the host);
 * the sandbox CANNOT execute Windows PE binaries: `wine` is terminated by
   the sandbox’s seccomp policy (`set_thread_area` → SIGSYS kill,
-  diagnostically established this round);
-* therefore the full functional validation (85-case core suite, both
+  diagnostically established in R18-WDB);
+* therefore the full functional validation (93-case core suite, both
   variants’ wrapper tests 15/15, compiled-module integration 12/12, SDK
-  validator 47/47, reference hashes) was executed on LINUX builds of the
-  identical source + configuration, and the WINDOWS binaries were verified
+  validator 47/47, the three reference-hash records, and the
+  **dual-module null test**) was executed on LINUX builds of the identical
+  source + configuration, and the WINDOWS binaries were verified
   structurally (PE32+ x86-64, DLL flag, `GetPluginFactory` export, import
-  allow-list, identity strings, PClassInfo CID, reproducible bytes).
+  allow-list, identity strings, PClassInfo CID, reproducible bytes, and the
+  LAGRANGE6Q compile-definition code-change proof).
 
 **No DAW compatibility and no Windows runtime behaviour is claimed from the
 Linux-side runs.** Running THIS kit on Windows closes the gap: it exercises
@@ -47,12 +51,16 @@ Windows_Validation_Kit\
   shared\
     validator.exe                          (Steinberg VST3 SDK validator, pinned v3.7.12_build_20)
     moduleinfotool.exe                     (SDK moduleinfotool, pinned v3.7.12_build_20)
+    octavox_dual_nulltest.exe              (R19 dual-module null test; see run_dual_nulltest.cmd)
+  run_dual_nulltest.cmd                    (runs the dual-module null test against BOTH bundles)
   README_WINDOWS_VALIDATION.md             (this file)
 ```
 
 The `.exe` files are console applications (x64). Both variant builds’
 `validator.exe` / `moduleinfotool.exe` were byte-identical, so one shared
-copy ships for both.
+copy ships for both. `octavox_dual_nulltest.exe` is deliberately NOT
+variant-compiled (both expected processor class FUIDs are hardcoded inside
+it), so one shared copy verifies both bundles.
 
 ## How to run
 
@@ -60,8 +68,8 @@ Keep the kit next to the `Builds\` directory as shipped:
 
 ```
 <extract dir>\
-  Builds\OctavoxRE_R18_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3
-  Builds\OctavoxRE_R18_Windows_x64\ObsKernel6\OctavoxRE_ObsKernel6.vst3
+  Builds\OctavoxRE_R19_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3
+  Builds\OctavoxRE_R19_Windows_x64\ObsKernel6\OctavoxRE_ObsKernel6.vst3
   Windows_Validation_Kit\...
 ```
 
@@ -72,41 +80,40 @@ cd Windows_Validation_Kit\Lagrange6
 run_validation.cmd
 cd ..\ObsKernel6
 run_validation.cmd
+cd ..
+run_dual_nulltest.cmd
 ```
 
-Expected results per variant:
+Expected results:
 
 | gate | expected |
 |---|---|
-| Steinberg VST3 validator | `47 tests passed, 0 tests failed` |
-| octavox wrapper tests | `15 passed, 0 failed` |
-| octavox module integration | `12 passed, 0 failed` (JSON written next to the cmd) |
-
-The integration harness prints its build variant and the loaded module path
-and writes a machine-readable JSON result
-(`integration_results_lagrange6.json` / `integration_results_obskernel6.json`).
+| Steinberg VST3 validator (per variant) | `47 tests passed, 0 tests failed` |
+| octavox wrapper tests (per variant) | `15 passed, 0 failed` |
+| octavox module integration (per variant) | `12 passed, 0 failed` (JSON written next to the cmd) |
+| dual-module null test (both variants) | exit code 0, `verdict: PASS` — unity bit-identical, non-unity genuinely differs (JSON + A/B/diff WAVs in `dual_nulltest_out\`) |
 
 ## Optional: regenerate + compare moduleinfo.json natively
 
 Each bundle ships `Contents\Resources\moduleinfo.json` (generated by the
 pinned SDK’s `moduleinfotool` from the equivalent Linux build of the same
-source + configuration; the metadata is platform-independent). On Windows
-you can regenerate it from the ACTUAL Windows module and compare:
+source + configuration; the metadata is platform-independent — the class
+`Version` is 1.1.0 from the source’s `kPluginVersion`). On Windows you can
+regenerate it from the ACTUAL Windows module and compare:
 
 ```
 cd Windows_Validation_Kit
 shared\moduleinfotool.exe -create -version 1.0.0 ^
-  -path "..\Builds\OctavoxRE_R18_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3" ^
+  -path "..\Builds\OctavoxRE_R19_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3" ^
   -output "%TEMP%\moduleinfo_lagrange6.json"
-fc "%TEMP%\moduleinfo_lagrange6.json" "..\Builds\OctavoxRE_R18_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3\Contents\Resources\moduleinfo.json"
+fc "%TEMP%\moduleinfo_lagrange6.json" "..\Builds\OctavoxRE_R19_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3\Contents\Resources\moduleinfo.json"
 ```
 
 (Repeat with the ObsKernel6 path.) A successful regeneration also proves
 the module’s exported factory is loadable through the Windows path.
 
-## Optional: DAW smoke test (the round task §7)
+## Optional: DAW smoke test
 
-The build environment had no DAW (and installing one was not permitted).
 If you have a VST3-capable DAW (e.g. REAPER) on this Windows machine:
 
 1. Copy both `.vst3` bundles into your VST3 plug-ins folder (commonly
@@ -118,22 +125,9 @@ If you have a VST3-capable DAW (e.g. REAPER) on this Windows machine:
    exposed (Bypass, Pitch, Voices, Spread, Feedback, Wet/Dry + 4 per voice
    × 8 voices).
 4. Process the same deterministic audio through both; both must produce
-   valid (non-silent, non-NaN) output.
-5. Save and reopen a test project — the state blob restores.
+   pitch-shifted output, and the two variants must differ on non-unity
+   transposition (they select different interpolation kernels) while unity
+   output is nulled between them.
 
-None of the DAW steps above were performed by the build environment; report
-results back if you run them.
-
-## Provenance + scope (standing rules)
-
-* These tools test OUR OWN independent harmonizer implementation around the
-  octavox native DSP core. They are NOT a reproduction of the original
-  Eventide Octavox plug-in; no target code is contained here and the
-  original binary was never executed.
-* The ObsKernel6 variant uses the static 256×6 interpolation kernel
-  OBSERVED in the original binary’s `.rdata` as a comparison mode in our
-  independent DSP engine; it is NOT a complete reproduction of Eventide
-  Octavox.
-* Pinned VST3 SDK: v3.7.12_build_20 (main `cc2adc90382dded9e347caf74e4532f1458715db`
-  + component gitlinks — see `native/vst3/VST3_WRAPPER.md` §2 and
-  `native/tools/get_vst3_sdk.sh`).
+These optional checks are conveniences for the user; the REQUIRED
+Windows-side gates are the three `.cmd` scripts above.

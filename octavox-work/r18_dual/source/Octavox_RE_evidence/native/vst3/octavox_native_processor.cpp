@@ -458,6 +458,13 @@ tresult PLUGIN_API OctavoxNativeProcessor::setState(IBStream* state) {
     // interpolation field (same variant: identical value) round-trips
     // bit-unchanged.
     cfg_.interpolation = build::kDefaultInterpolation;
+    // R19 (detector authoritativeness): exactly the same law for the
+    // detector architecture -- the module's compile-time selection (the
+    // decimated control-rate detector) is authoritative; a v1 blob (which
+    // carries no detector field) restores with the module's selection, and
+    // a v2 blob saved by a future module with a different default still
+    // restores every other field verbatim.
+    cfg_.detector_mode = build::kDefaultDetectorMode;
     // The engine is prepared at the HOST's current rate (a state saved at
     // another rate re-prepares here; the time-domain parameters -- grain,
     // base delay in the Config are sample-domain fields -- are restored

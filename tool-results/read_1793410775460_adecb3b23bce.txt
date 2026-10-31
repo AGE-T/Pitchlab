@@ -1,0 +1,556 @@
+     1→// OCTAVOX independent native DSP core (public API) -- version 16.0.0
+     2→// ============================================================================
+     3→// [R19 note, 2026-10-31: version 16.0.0 -- the round-19 real-time/click
+     4→// round. The 15.0.0 contract below is preserved VERBATIM; the round-19
+     5→// additions (decimated control-rate detector with the FullRate reference
+     6→// mode, click-free spacing commits, voice activation/deactivation ramps,
+     7→// crossfaded per-voice base-delay changes, the bypass/wet==0 read
+     8→// suppression and the stage-attribution profiler) are specified in the
+     9→// ROUND-19 CONTRACT block further below. Every 15.0.0 law that round 19
+    10→// changes is config-gated and the LEGACY configuration reproduces the
+    11→// 15.0.0 output BIT-EXACTLY (gated by the four r15 reference hashes, which
+    12→// are re-captured every round since R15-REB1).]
+    13→// [R16-P1 note, 2026-10-28: the title line previously read "rounds 13/14
+    14→// recovery"; superseded — this header is the normative contract. The
+    15→// version-history block below records the recovery lineage.]
+    16→// Version 15.0.0 = round-15 P1 per-voice harmonizer parameter surface:
+    17→//   * per-voice ABSOLUTE ratio / gain / mute / base-delay overrides
+    18→//     (setVoiceRatio / setVoiceGain / setVoiceMute / setVoiceBaseDelay),
+    19→//   * a wet/dry mix with a latency-ALIGNED dry path (setWetDry) and
+    20→//   * a click-free, state-transparent bypass (setBypass),
+    21→// all on the audio thread with the RT/block-boundary contract below.
+    22→// With the defaults (wet = 1.0, bypass off, no per-voice overrides, gain 1)
+    23→// the engine is BIT-IDENTICAL to version 14.0.0 (gated by the suite's
+    24→// default_neutrality case against pre-change reference hashes).
+    25→// Version 14.0.0 = recovered round-13/14 scope rebuilt on the round-12
+    26→// baseline after an environment reset (see worklog R15-R0 / R15-E1); the
+    27→// original rounds-13/14 artifacts were lost. The round-12 API and behaviour
+    28→// are preserved except for the two intentional, test-driven changes of the
+    29→// rebuilt rounds (both made against a failing test written first):
+    30→//   * R13-b: the pitch detector's analysis window is now SAMPLE-RATE
+    31→//     RELATIVE (win = max(2048, ceil(2.5*tau_max)), which implies the
+    32→//     win >= 2*tau_max + 128 law with floor 2048) instead of the fixed
+    33→//     2048 samples, which made the detector blind (m < 32) above 59.5 kHz
+    34→//     and, once m was merely restored, mirror-dip unstable at m << period.
+    35→//     The law keeps the difference support m = win/2 - tau_max >= tau_max/4
+    36→//     (value-mirror lag immunity; see src/dsp.cpp for the measurement).
+    37→//     44.1/48 kHz behaviour is bit-identical to round 12 (win == 2048 there).
+    38→//   * R13-c: prepare() with an equivalent config re-uses the existing
+    39→//     buffers (zero-allocation re-prepare) instead of delete/new.
+    40→// ============================================================================
+    41→//
+    42→// HISTORICAL SALVAGE NOTE (R15-P2, 2026-10-26 ~21:00 UTC — incident record,
+    43→// kept unchanged): the live tree at /home/z/octavox/work/Octavox_RE_evidence
+    44→// was wiped by a second environment reset DURING the round-15 P2 session
+    45→// (the first minutes of the session verified 78/78 green at 15.0.0 on the
+    46→// intact tree; the reset followed). This header is restored VERBATIM from
+    47→// the session's read of the intact 15.0.0 file. See
+    48→// evidence/analysis_round15/NOTES_R15P2.md.
+    49→//
+    50→// [R16-P1 note, 2026-10-28 — final implementation status, distinguishing the
+    51→// incident record above: the header text above is the ORIGINAL 15.0.0
+    52→// contract (verbatim restore, unchanged since); the IMPLEMENTATION it
+    53→// specifies was subsequently re-built (worklog R15-REB1) and verified
+    54→// bit-neutral vs 12.0.0 by the four reference hashes
+    55→// (native/r15_reference_hashes.txt); the delivered acceptance suite is
+    56→// 85/85 (release + ASan/UBSan). The salvage note is therefore HISTORY, not
+    57→// a statement about the current tree.]
+    58→//
+    59→// PROVENANCE
+    60→// ----------
+    61→// This library is OUR OWN implementation of the round-11 "delayline_aligned"
+    62→// design (poc/octavox_v2.py, preserved untouched as the Python reference
+    63→// baseline) ported to C++17, plus the round-12 unity engagement fix.
+    64→// It contains no target code. The single exception is documented data: the
+    65→// optional Interpolation::ObsKernel6 mode uses the 256x6 float kernel table
+    66→// OBSERVED in the target's .rdata (evidence/analysis_round12/
+    67→// r12_obs_kernel_table.h, extraction script r12_interp_table.py) for research
+    68→// comparison; that mode is opt-in and clearly labelled.
+    69→//
+    70→// Nothing here is a VST3 plugin and nothing here claims to reproduce the
+    71→// original plugin's runtime behaviour. The target was never executed.
+    72→//
+    73→// ARCHITECTURE (see native/ARCHITECTURE.md for the full note)
+    74→// -----------------------------------------------------------
+    75→//  AlignedDelayLine   one mono engine, 1..8 voices, planar float in/out.
+    76→//  MultichannelShifter N AlignedDelayLine engines (one per channel) with a
+    77→//                     shared parameter surface -- channel isolation is
+    78→//                     structural, not conventional.
+    79→//  prepare()          allocates every buffer (ring, detector window, work
+    80→//                     arrays, per-voice state). A prepare() whose
+    81→//                     buffer-determining fields (sample_rate, max_voices,
+    82→//                     f0_history, detection_interval) match the current
+    83→//                     engine re-configures IN PLACE: zero allocations, zero
+    84→//                     locks, identical result to a fresh engine (verified by
+    85→//                     the acceptance suite's global-new counter). Other
+    86→//                     prepare() calls take the allocate-and-rebuild path.
+    87→//                     After prepare() returns, no allocation happens again:
+    88→//                     process(), reset() and every parameter setter are
+    89→//                     steady-state allocation-free (counter-gated tests).
+    90→//  reset()            returns the engine to the post-prepare state
+    91→//                     (allocation-free).
+    92→//  process()          block size agnostic: the control-rate detector fires
+    93→//                     every `detection_interval` STREAM samples, so the
+    94→//                     output is invariant to how the caller splits the
+    95→//                     stream into blocks (an intentional improvement over
+    96→//                     the Python reference, which restarts its 64-sample
+    97→//                     control loop at every process() call).
+    98→//
+    99→// REAL-TIME (RT) CONTRACT -- which call runs on which thread
+   100→// -----------------------------------------------------------
+   101→// * AUDIO THREAD (the process() caller): process(), reset(), setRatio(),
+   102→//   setVoices(), setSpread(), setFeedback(), voiceStats(), lastEstimateHz(),
+   103→//   latencySamples(), config(), ready(). All of these are wait-free and
+   104→//   allocation-free after the first prepare(); none of them throw; none of
+   105→//   them take locks or touch shared mutable state (the interpolator tables
+   106→//   are immutable after first use -- thread-safe magic static, built once
+   107→//   during warm-up, not per block).
+   108→// * NON-REAL-TIME / controller thread: construction/destruction, prepare()
+   109→//   in its allocate-and-rebuild path, and any first-use table construction.
+   110→//   prepare() with matching buffer-determining fields IS safe on the audio
+   111→//   thread (zero allocation) and is the supported "rate change confirmed
+   112→//   same size" fast path; a mismatched prepare() allocates and frees and
+   113→//   must be synchronised off-thread or during a pause by the host.
+   114→// * One engine = one thread at a time. MultichannelShifter::process() runs
+   115→//   its per-channel engines sequentially on the calling thread; engines are
+   116→//   independent (structural channel isolation) and MAY be farmed out to
+   117→//   other threads by the host, one engine per thread, without locks.
+   118→// * VoiceStats is returned by reference into thread-local scratch: copy the
+   119→//   value out if it must survive the next call on the same thread.
+   120→// * No exceptions escape any entry point of this library (the process path
+   121→//   is noexcept by construction; prepare() signals failure by return value).
+   122→//
+   123→// COLD-START ALIGNMENT LAW (round-13 recovery, R13-a; measured by the
+   124→// cold_start_* suite cases)
+   125→// ---------------------------------------------------------------
+   126→// Let L = latencySamples() = base_delay + grain/2 (the nominal mid-grain
+   127→// read delay at reset; every voice starts at grain phase frac = 0.5). A
+   128→// UNITY voice parks before the first sample, so its first read is exactly
+   129→// at delay L_v = base_v + grain/2; a SHIFTED voice's grain phase advances
+   130→// by (1 - r)/S BEFORE the read at every sample -- including the first one
+   131→// (processVoiceSample updates frac, then reads) -- so its first read is at
+   132→// L_v + (1 - r) (exactly L_v when r == 1).
+   133→// * Unity (ratio == 1.0 bit-exact): the voice parks on the integer delay
+   134→//   d_park = round(base + grain/2) and the output is the bit-exact delayed
+   135→//   copy out[k] == in[k - d_park + 1]; with the default config d_park == L,
+   136→//   so the FIRST non-zero output sample for an impulse at t=0 is exactly
+   137→//   k = L - 1 (the -1 is the reference ring convention: a read at delay d
+   138→//   returns the sample pushed d-1 samples ago). Output before k = L - 1 is
+   139→//   exactly zero -- the ring is pre-zeroed, standing in for "silence before
+   140→//   t = 0"; the engine behaves like the same engine running forever.
+   141→// * Ratio r != 1.0 from the very first sample (no glide at cold start: the
+   142→//   gliding ratio is initialised AT its target): before the first grain
+   143→//   wrap (S == grain, no commits yet) the read delay of output sample k is
+   144→//         d(k) = L + (1 - r) * (k + 1),
+   145→//   i.e. the output sample k interpolates the input at time
+   146→//   tau(k) = r * (k + 1) - L. In the age-indexed ring the input's first
+   147→//   sample (t = 0) sits at delay k+1 while output sample k is produced, so
+   148→//   it first appears at output k0 = the first k whose interpolation kernel
+   149→//   window (6-tap Lagrange: ring delays [floor(d)-2, floor(d)+3]; linear:
+   150→//   [floor(d), floor(d)+1]) contains the ring delay k+1 -- the window's
+   151→//   earliest reach is floor(d) - 2. The output is EXACTLY zero for every
+   152→//   k < k0: the ring is pre-zeroed and no other read exists at cold start
+   153→//   (a shifted voice starts fully engaged, e = 1 and a = 0, so the only
+   154→//   reads are the A tap at d and the B tap at d + S >= d). Up-shifts
+   155→//   contact the signal start EARLIER than unity's L - 1 (the read point
+   156→//   starts mid-grain and walks toward the write point at closing speed r),
+   157→//   down-shifts LATER; both follow the same law, and the cold_start_* cases
+   158→//   gate the measured first non-zero sample, the exact zeros before it and
+   159→//   the value at k0 against an independent re-derivation of this law inside
+   160→//   the test, at block sizes 1/64/512, for 1 and 8 voices.
+   161→// * No spurious transient: the engagement state is sane from sample 0
+   162→//   (unity starts parked, shifted starts fully engaged) and the output is
+   163→//   exactly zero everywhere before the kernel can possibly reach the input
+   164→//   start (gated to max|out| == 0 before the contact point, on step and
+   165→//   sine onsets, 1 and 8 voices).
+   166→//
+   167→// UNITY BEHAVIOUR (round-12 fix)
+   168→// ------------------------------
+   169→// The Python reference keeps a continuous complementary two-tap blend whose
+   170→// phase freezes at unity -> a measured comb (-2.42 dB @ 220 Hz). The target
+   171→// (static evidence, round 12, Finding 3) rests on a SINGLE interpolated tap
+   172→// and only crossfades transiently after a re-arm. This core mirrors that
+   173→// architecture: when a voice's target ratio is EXACTLY 1.0 (bit-exact) it
+   174→// engages a single-tap path morphed in/out over `engagement_seconds`, and
+   175→// parks on the nearest INTEGER delay so that exact unity is a bit-exact
+   176→// delayed copy of the input (out[k] == in[k - d_park], neutral processing).
+   177→// There is no bypass region: any ratio != 1.0 -- including +-1 cent -- gets
+   178→// the full dual-tap processing path. Departing unity also refreshes the tap
+   179→// spacing S from the live period estimate when the read point can be
+   180→// preserved exactly.
+   181→//
+   182→// ROUND-15 PARAMETER SURFACE (P1) -- per-voice overrides, wet/dry, bypass
+   183→// ----------------------------------------------------------------------
+   184→// Config additions (validated exactly like engagement_seconds: negative
+   185→// values are rejected by prepare()):
+   186→//   gain_ramp_seconds   per-voice gain / mute ramp time (linear-in-amplitude)
+   187→//   bypass_seconds      bypass enter/exit crossfade time
+   188→//
+   189→// PER-VOICE RATIO (setVoiceRatio(v, r)):
+   190→//   v in [0, max_voices); r > 0. Sets voice v's ABSOLUTE target ratio: the
+   191→//   geometric glide toward the target applies per voice exactly as for the
+   192→//   global ratio (a large jump is handled by the same glide -- no
+   193→//   special-casing), and a per-voice target of exactly 1.0 engages that
+   194→//   voice's unity parking, exactly as the global ratio would. Each voice
+   195→//   carries an override flag: setVoiceRatio sets it; setRatio(), setSpread()
+   196→//   and prepare() RE-DERIVE every voice's target from (ratio, spread) and
+   197→//   CLEAR all overrides (a cleared override voice loses its absolute value
+   198→//   and returns to the spread table). reset() PRESERVES overrides.
+   199→//
+   200→// PER-VOICE GAIN (setVoiceGain(v, g)): linear amplitude target, g >= 0,
+   201→//   rejected otherwise. The current gain ramps LINEARLY toward the target at
+   202→//   a rate of |target - start| / (gain_ramp_seconds * sample_rate) per sample
+   203→//   (the ramp restarts from the current gain whenever the target changes), so
+   204→//   a change of size D completes in exactly gain_ramp_seconds. The per-voice
+   205→//   gain multiplies AFTER the existing voice-count normalisation:
+   206→//   final voice gain = normalisation * user_gain[v].
+   207→//   At the default (all user gains 1.0) the multiplication is bit-neutral.
+   208→//
+   209→// PER-VOICE MUTE (setVoiceMute(v, on)): forces the voice's EFFECTIVE gain
+   210→//   target to 0 through the SAME ramp (unmute ramps back to user_gain[v]).
+   211→//   The voice's DSP state (ring phase, glide, spacing, engagement) keeps
+   212→//   running while muted; only its contribution to the mix is removed. A voice
+   213→//   whose ramped gain is exactly 0 contributes exactly nothing (its sample is
+   214→//   not even added), so a mute/unmute cycle is bit-transparent once the ramps
+   215→//   have completed.
+   216→//
+   217→// PER-VOICE BASE DELAY (setVoiceBaseDelay(v, d)): d > 0 and the voice's whole
+   218→//   read range (B tap at d + S, S <= 1.5*grain, plus the 6-tap kernel margin)
+   219→//   must stay inside the 2^18 ring -- invalid values are rejected (no-op).
+   220→//   The new delay is applied at the START of the next process() call by
+   221→//   re-aligning ONLY voice v's read position: the fractional grain phase and
+   222→//   tap spacing are preserved (the read point translates by (new - old) base
+   223→//   delay); a parked voice re-parks on the nearest integer of its new range.
+   224→//   No other voice's output is touched (isolation is structural: base_delay is
+   225→//   per-voice state). reset() preserves the override; prepare() clears it.
+   226→//
+   227→// WET/DRY MIX (setWetDry(w)): w clamped to [0, 1], default 1.0.
+   228→//   out = w * wet_signal + (1 - w) * dry_signal,
+   229→//   dry_signal[k] = the RAW input delayed to align with the wet path's
+   230→//   intrinsic latency: dry[k] = in[k - (latencySamples() - 1)] (the ring
+   231→//   convention read(d) = sample d-1 ago; implemented as an exact masked
+   232→//   integer read of a dedicated raw-input ring, so it is bit-exact).
+   233→//   MIX LAW: linear in amplitude (documented, no equal-power curve).
+   234→//   Endpoints: w = 1 is the bit-identical 14.0.0 output path (special-cased,
+   235→//   no dry read happens); w = 0 is the bit-exact delayed copy. The global
+   236→//   feedback stays WET-PATH-ONLY: it taps the pre-mix wet signal, so the
+   237→//   wet path's state evolves identically at every mix setting (and the dry
+   238→//   path never carries feedback).
+   239→//
+   240→// BYPASS (setBypass(on)): click-free output bypass. The OUTPUT crossfades
+   241→//   between the normal signal (the wet/dry mix at the current setting) and
+   242→//   the dry delayed signal over bypass_seconds, in BOTH directions
+   243→//   (fixed-slope blend, full range = exactly bypass_seconds). While bypassed
+   244→//   the engine keeps processing -- every voice's DSP state, the detector and
+   245→//   the (wet-path-only) feedback advance exactly as non-bypassed, because the
+   246→//   bypass blend only touches the final output sample -- so a full
+   247→//   enter+exit cycle is BIT-IDENTICAL to a never-bypassed run outside the two
+   248→//   ramp regions.
+   249→//
+   250→// SEMANTICS CONTRACT (all new setters, like the existing ones): audio-thread
+   251→//   safe, allocation-free, lock-free, no exceptions. A parameter change is
+   252→//   picked up at the START of the next process() call (block-boundary
+   253→//   application, not sample-accurate): the setters only store targets, and the
+   254→//   per-sample machinery reads them inside process(). Simultaneous
+   255→//   multi-parameter updates made between process() calls are therefore all
+   256→//   applied atomically at that boundary -- no partial states are observable.
+   257→//   The only quantity with an explicit pending stage is the per-voice base
+   258→//   delay, applied to the voice state at the top of process(). Per-voice
+   259→//   ratio changes ride the per-voice geometric glide; large ratio jumps are
+   260→//   handled by that same glide.
+   261→//
+   262→// ROUND-19 CONTRACT (16.0.0) -- real-time, clicks, and the legacy gate
+   263→// ---------------------------------------------------------------------
+   264→// (a) DETECTOR (see DetectorMode above). The estimate cadence (every
+   265→//     `detection_interval` STREAM samples), the median-history law, the
+   266→//     hysteresis/commit law and the [60,1200] Hz validity gate are IDENTICAL
+   267→//     in both modes; only the estimate VALUES differ (the decimated window
+   268→//     sees a low-passed waveform at a coarser lag resolution -- measured
+   269→//     accuracy/tracking deltas are recorded in evidence/analysis_round19).
+   270→//     detector_mode is buffer-determining for re-prepare (a mode change
+   271→//     reconfigures the detector, so it takes the allocate-and-rebuild path).
+   272→// (b) CLICK-FREE SPACING COMMITS: at a grain wrap whose hysteresis gate
+   273→//     fires, the engine snapshots the voice's read state into a frozen
+   274→//     SHADOW (S frozen at the old value; the shadow never commits) and
+   275→//     crossfades shadow -> new law over commit_crossfade_seconds (clamped
+   276→//     to 40 percent of the wrap period; a fully parked voice needs no
+   277→//     crossfade because its integer read is S-independent). The blended
+   278→//     output is continuous at the commit instant BY CONSTRUCTION (weight 0
+   279→//     on the new law at the boundary). commit_crossfade_seconds == 0
+   280→//     restores the legacy instant commit bit-exactly.
+   281→// (c) VOICE ACTIVATION/DEACTIVATION RAMPS: setVoices(n) activates voices
+   282→//     [0,n) and deactivates [n,max); each affected voice's EFFECTIVE gain
+   283→//     target (active && !mute ? user gain : 0) ramps over
+   284→//     gain_ramp_seconds through the existing linear ramp machinery, while
+   285→//     the voice-count normalisation ramps as before. A deactivated voice
+   286→//     keeps processing (DSP state stays warm) until its ramped gain reaches
+   287→//     exactly 0; re-activation is seamless by the same ramp. The settled
+   288→//     state is bit-identical to 15.0.0 (gains and norm reach their exact
+   289→//     targets); only the transition is new.
+   290→// (d) CROSSFADED BASE-DELAY CHANGES: a pending per-voice base delay now
+   291→//     blends the voice's read between the old-base and new-base read laws
+   292→//     over delay_crossfade_seconds (0 = the legacy instant re-align,
+   293→//     bit-exact). The final state equals the legacy law exactly.
+   294→// (e) READ SUPPRESSION (bypass / zero wet): when the feedback coefficient
+   295→//     is 0 AND the output is exactly the dry signal (wet == 0 with no
+   296→//     bypass blend running, or the bypass blend has fully reached 1), the
+   297→//     engine skips the interpolated READS while advancing every piece of
+   298→//     voice state, the detector, the rings and all slews. With fb == 0 the
+   299→//     suppression is BIT-IDENTICAL by construction (the rings receive the
+   300→//     same input, voice state evolution is read-independent, and the
+   301→//     output stage ignores the wet sample) -- gated by an explicit
+   302→//     bit-identity test. With fb != 0 the suppression never engages.
+   303→// (f) LEGACY BIT-EXACTNESS: the configuration {detector_mode = FullRate,
+   304→//     commit_crossfade_seconds = 0, delay_crossfade_seconds = 0,
+   305→//     voice_fade_seconds = 0} (the reference-hash configs perform no
+   306→//     voice-count transitions, so their records are unaffected either way)
+   307→//     reproduces the 15.0.0 output BIT-EXACTLY, gated by the four r15
+   308→//     reference hashes and the 85-case suite's behavioural gates.
+   309→
+   310→#pragma once
+   311→
+   312→#include <cstddef>
+   313→#include <cstdint>
+   314→
+   315→namespace octavox {
+   316→
+   317→/// Interpolation for the fractional delay reads.
+   318→enum class Interpolation : int {
+   319→    Linear = 0,     ///< 2-point linear (the reference CLI's "linear")
+   320→    Lagrange6 = 1,  ///< 6-point Lagrange, 2048 bin-centre phases (v2 default)
+   321→    Lagrange6Q = 2, ///< 6-point Lagrange, 256 bin-centre phases ("lagrange6_q")
+   322→    ObsKernel6 = 3, ///< target's observed static 256x6 .rdata kernel (OBS data)
+   323→};
+   324→
+   325→/// Pitch-detector architecture (R19). Both modes implement the same
+   326→/// YIN-family estimator (identical threshold law, cumulative-mean
+   327→/// normalisation, parabolic refinement and the [60,1200] Hz validity
+   328→/// gate); they differ in the rate at which the analysis window is sampled.
+   329→enum class DetectorMode : int {
+   330→    /// Full-rate reference detector (the R12--R18 behaviour, verbatim):
+   331→    /// the sliding window holds RAW input samples at the host rate and the
+   332→    /// analysis window follows the R13-b law win = max(2048, ceil(2.5*tau))
+   333→    /// with tau at the host rate. Retained unchanged as the reference mode.
+   334→    FullRate = 0,
+   335→    /// R19 DEFAULT: a properly low-pass filtered, decimated control-rate
+   336→    /// detector. The input is filtered by a 6th-order Butterworth low-pass
+   337→    /// (three TDF2 biquads, fc = 0.35 * sr_dec) and decimated by D to a
+   338→    /// control rate near 24 kHz (D = max(1, lround(sr/24000)); at the
+   339→    /// canonical rates 44.1/48/88.2/96/176.4/192 kHz this is 2/2/4/4/7/8,
+   340→    /// giving sr_dec in [22050, 25200]). The analysis window then holds
+   341→    /// DEcimated samples with the time-equivalent law
+   342→    ///     win_dec = max(1024, ceil(2.5 * tau_dec)),  tau at sr_dec,
+   343→    /// which preserves the R13-b difference-support immunity
+   344→    ///     m = win/2 - tau_max >= tau_max/4
+   345→    /// at every rate and keeps the SAME ~42.7 ms window TIME SPAN and the
+   346→    /// SAME detection-update cadence (one estimate every
+   347→    /// `detection_interval` STREAM samples) as the full-rate detector at
+   348→    /// 44.1/48 kHz. The audio path (ring, voices, interpolators, output)
+   349→    /// always runs at the host's original sample rate; only the detector's
+   350→    /// input is filtered and decimated. Valid detection range stays
+   351→    /// 60..1200 Hz. Cost at 96 kHz drops by ~14x (see
+   352→    /// evidence/analysis_round19 for the measured profile).
+   353→    Decimated = 1,
+   354→};
+   355→
+   356→/// Engine configuration (all values validated by prepare()).
+   357→struct Config {
+   358→    double sample_rate = 48000.0;
+   359→    double ratio = 1.0;               ///< target pitch ratio (1.0 = unity)
+   360→    int voices = 1;                   ///< active voices (1..max_voices)
+   361→    int max_voices = 8;               ///< allocated voices
+   362→    bool spread = true;               ///< musical spread table for voices > 1
+   363→    double feedback = 0.0;            ///< wet feedback in (-1, 1), 0 = off
+   364→    Interpolation interpolation = Interpolation::Lagrange6;
+   365→    double grain = 4096.0;            ///< G, samples (delay-line grain)
+   366→    double base_delay = 256.0;        ///< first voice base delay, samples
+   367→    double fmin = 55.0;               ///< spacing-accept gate (Hz)
+   368→    double fmax = 1200.0;             ///< spacing-accept gate (Hz)
+   369→    double s_hysteresis = 0.005;      ///< S commit hysteresis (relative)
+   370→    int f0_history = 8;               ///< period median window
+   371→    int detection_interval = 64;      ///< control-rate period, STREAM samples
+   372→    /// R19: detector architecture (see DetectorMode). Default = the
+   373→    /// decimated control-rate detector; FullRate reproduces the R12--R18
+   374→    /// reference behaviour bit-exactly. Buffer-determining for re-prepare.
+   375→    DetectorMode detector_mode = DetectorMode::Decimated;
+   376→    double engagement_seconds = 0.010;///< unity enter/exit morph time
+   377→    double gain_ramp_seconds = 0.015; ///< per-voice gain/mute ramp (linear
+   378→                                       ///< in amplitude; validated >= 0)
+   379→    double bypass_seconds = 0.010;    ///< bypass enter/exit crossfade time
+   380→                                       ///< (validated >= 0)
+   381→    /// R19: click-free spacing-commit crossfade (seconds, >= 0; validated
+   382→    /// exactly like the other time fields). When a grain wrap commits a new
+   383→    /// tap spacing S, the engine crossfades from the old grain law (a frozen
+   384→    /// shadow voice) to the new law over this duration instead of stepping
+   385→    /// the read position (the 15.0.0 step was the dominant click source:
+   386→    /// every initial spacing lock and every retune produced a step of
+   387→    /// (S_new - S_old) samples in read position). 0 = the legacy instant
+   388→    /// commit (bit-exact 15.0.0 behaviour, clicks included). The length is
+   389→    /// additionally clamped to 40 percent of the current wrap period so a
+   390→    /// second commit can never begin while a crossfade is still running.
+   391→    double commit_crossfade_seconds = 0.008;
+   392→    /// R19: crossfaded per-voice base-delay changes (seconds, >= 0). A
+   393→    /// pending per-voice base delay is applied by crossfading the voice's
+   394→    /// read between the old and the new base delay (the voice's grain
+   395→    /// phase/spacing are shared) instead of translating the read point
+   396→    /// instantly; 0 = the legacy instant re-align (bit-exact 15.0.0). The
+   397→    /// eventual state (base delay, phase, spacing, park position) is
+   398→    /// IDENTICAL to the legacy law; only the transition differs.
+   399→    double delay_crossfade_seconds = 0.012;
+   400→    /// R19: voice activation/deactivation fade (seconds, >= 0; validated
+   401→    /// like the other time fields). setVoices() transitions ramp the
+   402→    /// affected voices' contributions over this duration through the
+   403→    /// per-voice gain ramp machinery (the settled state is bit-identical
+   404→    /// to 15.0.0). 0 = the legacy INSTANT activation/deactivation
+   405→    /// (bit-exact 15.0.0, including its voice-count transition step: new
+   406→    /// voices entered at full amplitude while the normalisation had not
+   407→    /// yet ramped).
+   408→    double voice_fade_seconds = 0.012;
+   409→    /// Geometric glide multiplier per sample (reference parity: 0.9995).
+   410→    static constexpr double kGlideMult = 0.9995;
+   411→};
+   412→
+   413→/// Per-voice diagnostics (snapshot after processing).
+   414→struct VoiceStats {
+   415→    long wraps = 0;    ///< grain-phase wraps
+   416→    long commits = 0;  ///< tap-spacing commits (wrap commits + unity-exit ones)
+   417→    int engaged = 0;   ///< 1 = normal dual-tap voice, 0 = unity single-tap
+   418→    int parked = 0;    ///< 1 = parked on an integer delay (bit-exact unity)
+   419→    double spacing = 0.0;      ///< current S
+   420→    double phase = 0.0;        ///< current frac
+   421→    int parked_delay = -1;     ///< d_park when parked, else -1
+   422→    double ratio = 0.0;        ///< current gliding ratio (diagnostics; round-14
+   423→                               ///< recovery: exposes the geometric glide for
+   424→                               ///< the tracker/rate-limiter parity harness)
+   425→    long last_wrap_at = -1;    ///< R19: stream sample index of the most recent
+   426→                               ///< grain wrap (-1 = none yet; diagnostics)
+   427→    long last_commit_at = -1;  ///< R19: stream sample index of the most recent
+   428→                               ///< tap-spacing commit (-1 = none; diagnostics)
+   429→};
+   430→
+   431→/// One mono engine with 1..max_voices voices (port of the Python
+   432→/// AlignedDelayLineShifter + the round-12 unity engagement).
+   433→class AlignedDelayLine {
+   434→public:
+   435→    AlignedDelayLine();
+   436→    ~AlignedDelayLine();
+   437→    AlignedDelayLine(const AlignedDelayLine&) = delete;
+   438→    AlignedDelayLine& operator=(const AlignedDelayLine&) = delete;
+   439→
+   440→    /// Validates the config, allocates all state, resets the engine.
+   441→    /// Returns false (and leaves the engine unusable) on invalid input.
+   442→    bool prepare(const Config& cfg);
+   443→
+   444→    /// Back to the freshly-prepared state (parameters keep their values).
+   445→    void reset();
+   446→
+   447→    // -- parameter updates (audio thread; no allocation, no locks) ---------
+   448→    void setRatio(double ratio);      ///< target ratio; exact 1.0 engages unity
+   449→    void setVoices(int n);            ///< 1..max_voices (normalisation ramps)
+   450→    void setSpread(bool on);
+   451→    void setFeedback(double fb);      ///< clamped to (-1, 1)
+   452→
+   453→    // -- round-15 P1 parameter surface (see the header contract above) ----
+   454→    /// Voice v's ABSOLUTE target ratio (v in [0, max_voices), ratio > 0);
+   455→    /// rides the per-voice geometric glide; overrides the spread table for
+   456→    /// that voice until the next setRatio()/setSpread()/prepare().
+   457→    void setVoiceRatio(int v, double ratio);
+   458→    /// Voice v's linear amplitude gain target (>= 0), ramped over
+   459→    /// gain_ramp_seconds; multiplies AFTER the voice normalisation.
+   460→    void setVoiceGain(int v, double gain);
+   461→    /// Mute voice v: effective gain target 0 via the SAME ramp; the voice's
+   462→    /// DSP state keeps running while muted.
+   463→    void setVoiceMute(int v, bool mute);
+   464→    /// Voice v's base delay in samples (> 0, ring-range validated); applied
+   465→    /// at the next process() boundary, re-aligning ONLY voice v.
+   466→    void setVoiceBaseDelay(int v, double delay);
+   467→    /// Wet/dry mix, wet in [0, 1] (default 1.0 = the 14.0.0 output).
+   468→    /// Linear law: out = wet*wet + (1-wet)*dry, dry latency-aligned,
+   469→    /// feedback wet-path-only.
+   470→    void setWetDry(double wet);
+   471→    /// Click-free bypass: crossfades the OUTPUT to/from the dry delayed
+   472→    /// signal over bypass_seconds; engine state keeps advancing.
+   473→    void setBypass(bool on);
+   474→
+   475→    const Config& config() const { return cfg_; }
+   476→    bool ready() const { return ready_; }
+   477→    /// Nominal intrinsic latency in samples: base_delay + grain/2 (the
+   478→    /// mid-grain read delay every voice starts at). At exact unity the
+   479→    /// parked copy appears at sample latencySamples()-1 (reference ring
+   480→    /// convention: read(d) = sample d-1 ago); for a shifted voice the output
+   481→    /// sample k tracks input time r*(k+1) - latencySamples() before the
+   482→    /// first grain wrap -- see the COLD-START ALIGNMENT LAW above.
+   483→    int latencySamples() const;
+   484→    int voices() const { return active_voices_; }
+   485→
+   486→    /// Process a planar mono block of n samples. in/out may not alias.
+   487→    /// Any n >= 0; the control rate follows the stream, not the call size.
+   488→    void process(const float* in, float* out, int n);
+   489→
+   490→    const VoiceStats& voiceStats(int v) const;
+   491→    /// Last detector estimate (Hz; 0 = none). Diagnostics only.
+   492→    double lastEstimateHz() const;
+   493→
+   494→private:
+   495→    struct Impl;
+   496→    Impl* impl_ = nullptr;
+   497→    Config cfg_{};
+   498→    bool ready_ = false;
+   499→    int active_voices_ = 1;
+   500→};
+   501→
+   502→/// N independent mono engines behind one parameter surface.
+   503→/// Channel isolation is structural: engine per channel, own ring/state.
+   504→class MultichannelShifter {
+   505→public:
+   506→    MultichannelShifter();
+   507→    ~MultichannelShifter();
+   508→    MultichannelShifter(const MultichannelShifter&) = delete;
+   509→    MultichannelShifter& operator=(const MultichannelShifter&) = delete;
+   510→
+   511→    bool prepare(const Config& cfg, int channels);
+   512→    void reset();
+   513→    void setRatio(double ratio);
+   514→    void setVoices(int n);
+   515→    void setSpread(bool on);
+   516→    void setFeedback(double fb);
+   517→    // round-15 P1 surface: broadcast to every channel engine (identical
+   518→    // semantics per channel; see AlignedDelayLine and the header contract).
+   519→    void setVoiceRatio(int v, double ratio);
+   520→    void setVoiceGain(int v, double gain);
+   521→    void setVoiceMute(int v, bool mute);
+   522→    void setVoiceBaseDelay(int v, double delay);
+   523→    void setWetDry(double wet);
+   524→    void setBypass(bool on);
+   525→
+   526→    bool ready() const;
+   527→    int channels() const;
+   528→    int latencySamples() const;
+   529→
+   530→    /// Planar multichannel block: in[c] / out[c] are per-channel pointers.
+   531→    void process(const float* const* in, float* const* out, int channels, int n);
+   532→
+   533→    const VoiceStats& voiceStats(int channel, int voice) const;
+   534→
+   535→private:
+   536→    struct MImpl;
+   537→    MImpl* mimpl_ = nullptr;
+   538→};
+   539→
+   540→/// Library version string ("octavox-native 16.0.0").
+   541→const char* versionString();
+   542→
+   543→}  // namespace octavox
+   544→
+   545→// ---------------------------------------------------------------------------
+   546→// ROUND-19 STAGE ATTRIBUTION PROFILER (opt-in, compile-time gated)
+   547→// ---------------------------------------------------------------------------
+   548→// The core can be compiled with -DOCTAVOX_STAGE_TIMERS to accumulate
+   549→// per-stage cycle counters (detector buffering / estimate / median update,
+   550→// per-voice loop, interpolation reads, output stage, input+feedback stage).
+   551→// Collection is a pure observer: it never touches the DSP data flow, and
+   552→// the plain (macro-off) build is bit-identical to a build whose sources
+   553→// never contained the instrumentation. See include/octavox/stageprof.hpp.
+   554→// ---------------------------------------------------------------------------
+   555→#include "stageprof.hpp"
+   556→

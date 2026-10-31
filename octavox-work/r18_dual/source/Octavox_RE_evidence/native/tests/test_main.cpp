@@ -401,7 +401,18 @@ static const CaseMeta kAllCases[] = {
     {"r15acc_stereo_surface", "r15acc", "unit"},
     {"r15acc_robustness_battery", "r15acc", "long"},
     {"r15acc_invalid_args", "r15acc", "unit"},
-// total: 85 cases, long: 18, unit: 67
+    // R19 (16.0.0): the new default-behaviour reference record, decimated
+    // detector accuracy + architecture agreement, the three click-free
+    // transition gates, read-suppression bit-identity, active-voice scope.
+    {"default_neutrality_r19", "r19", "unit"},
+    {"detector_decimated_accuracy_battery", "r19", "long"},
+    {"detector_decimated_vs_fullrate_delta", "r19", "long"},
+    {"commit_crossfade_continuity", "r19", "unit"},
+    {"voice_activation_clickfree", "r19", "unit"},
+    {"basedelay_crossfade_clickfree", "r19", "unit"},
+    {"read_suppression_bitidentity", "r19", "unit"},
+    {"active_voices_processing_scope", "r19", "unit"},
+// total: 93 cases, long: 20, unit: 73
 };
 
 static const int kAllCaseCount =
@@ -410,7 +421,7 @@ static const int kAllCaseCount =
 static const char* kGroupIds[] = {"prepare_reset", "unity",     "voices",
                                   "stereo",        "rates_formats",
                                   "stability",     "r13",       "r15p1",
-                                  "r15acc"};
+                                  "r15acc",        "r19"};
 static const int kGroupCount =
     static_cast<int>(sizeof(kGroupIds) / sizeof(kGroupIds[0]));
 static const char* kCategories[] = {"unit", "long"};
@@ -2842,7 +2853,23 @@ void casesR15P1(std::vector<CaseResult>& R) {
        // generators are the shared-spec LCG / tone / chirp.  These four
        // hashes REPLACE the lost round-15 capture and are the regression
        // record for any future core change (r15_reference_hashes.txt).
+       // [R19, 2026-10-31: with 16.0.0 the engine's DEFAULT behaviour
+       // changed (decimated detector, click-free spacing commits) and this
+       // case now runs the LEGACY configuration -- detector_mode = FullRate,
+       // commit_crossfade_seconds = 0, delay_crossfade_seconds = 0, the
+       // documented 15.0.0 behaviour pins (see dsp.hpp's ROUND-19 CONTRACT
+       // (f)). The four hash GATES are UNCHANGED: this case now proves the
+       // legacy path is preserved bit-exactly through the 16.0.0 refactor.
+       // The 16.0.0-default hashes are gated separately by the NEW
+       // default_neutrality_r19 case below.]
         CaseResult c{"default_neutrality"};
+        auto legacy = [](Config cfg) {
+            cfg.detector_mode = DetectorMode::FullRate;
+            cfg.commit_crossfade_seconds = 0.0;
+            cfg.delay_crossfade_seconds = 0.0;
+            cfg.voice_fade_seconds = 0.0;
+            return cfg;
+        };
         const int N = 1 << 18;
         auto fnv = [](const float* x, int n,
                       uint64_t h = 1469598103934665603ULL) {
@@ -2879,7 +2906,7 @@ void casesR15P1(std::vector<CaseResult>& R) {
         {  // cfg1: default unity + LCG noise; blocks 64/150/512
             const auto in = gen::noise(987654321ULL, N, 0.5);
             AlignedDelayLine e;
-            Config cfg;  // all defaults
+            Config cfg = legacy(Config());  // all defaults + legacy pins
             check(c, e.prepare(cfg), "prepare failed");
             const int pat[3] = {64, 150, 512};
             const auto out = runPat(e, in, pat, 3);
@@ -2889,7 +2916,7 @@ void casesR15P1(std::vector<CaseResult>& R) {
            // 220 Hz sine; blocks 150/512/64
             const auto in = gen::tone(220.0, sr, N, 0.5);
             AlignedDelayLine e;
-            Config cfg;
+            Config cfg = legacy(Config());
             cfg.ratio = std::pow(2.0, 700.0 / 1200.0);
             cfg.voices = 8;
             cfg.feedback = 0.25;
@@ -2902,7 +2929,7 @@ void casesR15P1(std::vector<CaseResult>& R) {
            // 200->800 Hz; blocks 64/512/150
             const auto in = gen::chirp(200.0, 800.0, sr, N, 0.5);
             AlignedDelayLine e;
-            Config cfg;
+            Config cfg = legacy(Config());
             cfg.ratio = std::pow(2.0, -400.0 / 1200.0);
             cfg.voices = 4;
             cfg.spread = false;
@@ -2917,7 +2944,7 @@ void casesR15P1(std::vector<CaseResult>& R) {
             const auto inL = gen::noise(1111111111ULL, N, 0.4);
             const auto inR = gen::noise(2222222222ULL, N, 0.4);
             MultichannelShifter m;
-            Config cfg;
+            Config cfg = legacy(Config());
             cfg.voices = 4;
             check(c, m.prepare(cfg, 2), "prepare failed");
             std::vector<float> outL(N, 0.0f), outR(N, 0.0f);
@@ -3827,6 +3854,526 @@ void casesR15Acc(std::vector<CaseResult>& R) {
 }
 
 // ---------------------------------------------------------------------------
+// ROUND-19 cases (16.0.0): decimated detector, click-free transitions,
+// read suppression, active-voice scope. Gate discipline as always: fixed
+// before running, no widening-to-pass; comparison values (legacy vs new)
+// are recorded, the GATE is on the new behaviour.
+// ---------------------------------------------------------------------------
+void casesR19(std::vector<CaseResult>& R) {
+    const int sr = 48000;
+
+    auto legacyConfig = [](Config cfg) {
+        cfg.detector_mode = DetectorMode::FullRate;
+        cfg.commit_crossfade_seconds = 0.0;
+        cfg.delay_crossfade_seconds = 0.0;
+        cfg.voice_fade_seconds = 0.0;
+        return cfg;
+    };
+
+    // -- 1. default_neutrality_r19: the 16.0.0-default reference record -----
+    if (harnSelected("default_neutrality_r19")) {
+        // The four NEW hashes (r19_reference_hashes.txt), captured by
+        // cli/r15ref_capture.cpp (default mode) on the 16.0.0 core.
+        // cfg1 is IDENTICAL to the legacy record (a unity voice parks and
+        // never wraps: no detector estimate, commit or crossfade reaches
+        // the output); cfg2/3/4 legitimately change (decimated detector
+        // estimates + crossfaded spacing commits).
+        CaseResult c{"default_neutrality_r19"};
+        const int N = 1 << 18;
+        auto fnv = [](const float* x, int n,
+                      uint64_t h = 1469598103934665603ULL) {
+            for (int k = 0; k < n; ++k) {
+                uint32_t b;
+                std::memcpy(&b, &x[k], 4);
+                for (int i = 0; i < 4; ++i) {
+                    h ^= static_cast<uint64_t>((b >> (8 * i)) & 0xffu);
+                    h *= 1099511628211ULL;
+                }
+            }
+            return h;
+        };
+        auto runPat = [&](AlignedDelayLine& e, const std::vector<float>& in,
+                          const int* pat, int patN) {
+            std::vector<float> out(in.size(), 0.0f);
+            int done = 0, pi = 0;
+            while (done < (int)in.size()) {
+                const int n = std::min(pat[pi % patN], (int)in.size() - done);
+                e.process(in.data() + done, out.data() + done, n);
+                done += n;
+                ++pi;
+            }
+            return out;
+        };
+        const uint64_t expect[4] = {0x74318b06c182aacbULL, 0x9b7217813e519209ULL,
+                                    0xb66549c1dca9d6aeULL, 0x38f625fec56dba45ULL};
+        const char* names[4] = {
+            "cfg1_default_unity_lcg_noise_b64_150_512",
+            "cfg2_r700c_8v_spread_fb025_sine220",
+            "cfg3_rm400c_4v_nospread_chirp200_800",
+            "cfg4_stereo_2ch_4v_unity_then_r400c"};
+        uint64_t got[4] = {0, 0, 0, 0};
+        {
+            const auto in = gen::noise(987654321ULL, N, 0.5);
+            AlignedDelayLine e;
+            Config cfg;  // 16.0.0 defaults
+            check(c, e.prepare(cfg), "prepare failed");
+            const int pat[3] = {64, 150, 512};
+            const auto out = runPat(e, in, pat, 3);
+            got[0] = fnv(out.data(), (int)out.size());
+        }
+        {
+            const auto in = gen::tone(220.0, sr, N, 0.5);
+            AlignedDelayLine e;
+            Config cfg;
+            cfg.ratio = std::pow(2.0, 700.0 / 1200.0);
+            cfg.voices = 8;
+            cfg.feedback = 0.25;
+            check(c, e.prepare(cfg), "prepare failed");
+            const int pat[3] = {150, 512, 64};
+            const auto out = runPat(e, in, pat, 3);
+            got[1] = fnv(out.data(), (int)out.size());
+        }
+        {
+            const auto in = gen::chirp(200.0, 800.0, sr, N, 0.5);
+            AlignedDelayLine e;
+            Config cfg;
+            cfg.ratio = std::pow(2.0, -400.0 / 1200.0);
+            cfg.voices = 4;
+            cfg.spread = false;
+            check(c, e.prepare(cfg), "prepare failed");
+            const int pat[3] = {64, 512, 150};
+            const auto out = runPat(e, in, pat, 3);
+            got[2] = fnv(out.data(), (int)out.size());
+        }
+        {
+            const auto inL = gen::noise(1111111111ULL, N, 0.4);
+            const auto inR = gen::noise(2222222222ULL, N, 0.4);
+            MultichannelShifter m;
+            Config cfg;
+            cfg.voices = 4;
+            check(c, m.prepare(cfg, 2), "prepare failed");
+            std::vector<float> outL(N, 0.0f), outR(N, 0.0f);
+            const float* in[2] = {inL.data(), inR.data()};
+            float* out[2] = {outL.data(), outR.data()};
+            const int pat[3] = {1024, 64, 512};
+            int done = 0, pi = 0;
+            bool switched = false;
+            while (done < N) {
+                const int n = std::min(pat[pi % 3], N - done);
+                m.process(in, out, 2, n);
+                done += n;
+                ++pi;
+                if (!switched && done >= N / 2) {
+                    m.setRatio(std::pow(2.0, 400.0 / 1200.0));
+                    switched = true;
+                }
+            }
+            got[3] = fnv(outL.data(), N);
+            got[3] = fnv(outR.data(), N, got[3]);
+        }
+        for (int i = 0; i < 4; ++i) {
+            std::printf("default_neutrality_r19 %s: got 0x%016llx expect 0x%016llx\n",
+                        names[i], static_cast<unsigned long long>(got[i]),
+                        static_cast<unsigned long long>(expect[i]));
+            char vk[32];
+            std::snprintf(vk, sizeof(vk), "cfg%d_hash_match", i + 1);
+            addValue(c, vk, got[i] == expect[i] ? 1.0 : 0.0);
+            check(c, got[i] == expect[i],
+                  std::string("r19 reference hash mismatch: ") + names[i]);
+        }
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 2. detector_decimated_accuracy_battery ----------------------------
+    if (harnSelected("detector_decimated_accuracy_battery")) {
+        // The decimated detector must meet the SAME accuracy gate the
+        // full-rate battery cases hold: |pitch error| <= 1.0 cent per
+        // frequency, at 48 kHz AND 96 kHz (rate-scaled grain/base config,
+        // the r13 battery pattern).
+        CaseResult c{"detector_decimated_accuracy_battery"};
+        const double ratio = std::pow(2.0, 5.0 / 12.0);
+        const double freqs[4] = {110.0, 220.0, 440.0, 880.0};
+        double worst = 0.0;
+        struct RateSpec { int sr; double grain, base; };
+        const RateSpec rates[2] = {{48000, 4096.0, 256.0},
+                                   {96000, 8192.0, 512.0}};
+        for (const auto& rs : rates) {
+            for (double f : freqs) {
+                const auto in = gen::tone(f, rs.sr, 2 * rs.sr, 0.5);
+                AlignedDelayLine e;
+                Config cfg;
+                cfg.sample_rate = rs.sr;
+                cfg.grain = rs.grain;
+                cfg.base_delay = rs.base;
+                cfg.ratio = ratio;
+                cfg.detector_mode = DetectorMode::Decimated;
+                check(c, e.prepare(cfg), "prepare failed");
+                std::vector<float> out(in.size(), 0.0f);
+                int done = 0;
+                double lo = 1e300, hi = 0.0;
+                while (done < (int)in.size()) {
+                    const int k = std::min(1024, (int)in.size() - done);
+                    e.process(in.data() + done, out.data() + done, k);
+                    done += k;
+                    if (done >= rs.sr) {
+                        const double f0 = e.lastEstimateHz();
+                        lo = std::min(lo, f0);
+                        hi = std::max(hi, f0);
+                    }
+                }
+                const double cents = 1200.0 * std::log2(hi / f) -
+                                     1200.0 * std::log2(lo / f);
+                // spread of the estimate band around truth, in cents
+                const double eLo = 1200.0 * std::log2(lo / f);
+                const double eHi = 1200.0 * std::log2(hi / f);
+                const double band = std::max(std::abs(eLo), std::abs(eHi));
+                worst = std::max(worst, band);
+                char vk[64];
+                std::snprintf(vk, sizeof(vk), "err_cents_%d_%g", rs.sr, f);
+                addValue(c, vk, band);
+                (void)cents;
+            }
+        }
+        addValue(c, "worst_error_cents", worst);
+        check(c, worst <= 1.0,
+              "decimated detector exceeds the 1-cent accuracy gate");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 3. detector_decimated_vs_fullrate_delta ----------------------------
+    if (harnSelected("detector_decimated_vs_fullrate_delta")) {
+        // The two architectures must AGREE on steady tones (<= 2 cents) and
+        // stay close on a chirp (<= 20 cents -- tracking-lag differences on
+        // a fast sweep are expected and documented).
+        CaseResult c{"detector_decimated_vs_fullrate_delta"};
+        auto sampleEstimates = [&](const std::vector<float>& in, int rate,
+                                   DetectorMode mode,
+                                   std::vector<double>& out) {
+            AlignedDelayLine e;
+            Config cfg;
+            cfg.sample_rate = rate;
+            cfg.ratio = std::pow(2.0, 5.0 / 12.0);
+            cfg.detector_mode = mode;
+            check(c, e.prepare(cfg), "prepare failed");
+            std::vector<float> y(in.size(), 0.0f);
+            int done = 0;
+            out.clear();
+            while (done < (int)in.size()) {
+                const int k = std::min(1024, (int)in.size() - done);
+                e.process(in.data() + done, y.data() + done, k);
+                done += k;
+                out.push_back(e.lastEstimateHz());
+            }
+        };
+        double worstTone = 0.0;
+        for (double f : {110.0, 220.0, 440.0}) {
+            const auto in = gen::tone(f, sr, 2 * sr, 0.5);
+            std::vector<double> a, b;
+            sampleEstimates(in, sr, DetectorMode::FullRate, a);
+            sampleEstimates(in, sr, DetectorMode::Decimated, b);
+            // compare the last half (post lock-in), in cents
+            double worst = 0.0;
+            for (size_t k = a.size() / 2; k < a.size(); ++k) {
+                if (a[k] > 0 && b[k] > 0)
+                    worst = std::max(worst,
+                                     std::abs(1200.0 * std::log2(b[k] / a[k])));
+            }
+            worstTone = std::max(worstTone, worst);
+        }
+        addValue(c, "worst_tone_delta_cents", worstTone);
+        check(c, worstTone <= 2.0,
+              "decimated vs full-rate disagree on steady tones (> 2 cents)");
+        {
+            const auto in = gen::chirp(200.0, 800.0, sr, 2 * sr, 0.5);
+            std::vector<double> a, b;
+            sampleEstimates(in, sr, DetectorMode::FullRate, a);
+            sampleEstimates(in, sr, DetectorMode::Decimated, b);
+            // OCTAVE-FOLDED disagreement: on a fast chirp both architectures
+            // can momentarily jump an octave (a known YIN-on-sweep behaviour;
+            // the spacing law S = round(G/T)*T is octave-invariant and the
+            // 8-deep median absorbs the jump). Jumps of (nearly) whole
+            // octaves therefore do NOT count as disagreement; the gate is on
+            // the residual non-octave delta. Counts are recorded for both.
+            double worst = 0.0;
+            long jumpsA = 0, jumpsB = 0;
+            for (size_t k = 1; k < a.size(); ++k) {
+                if (a[k] > 0 && a[k-1] > 0 &&
+                    std::abs(1200.0 * std::log2(a[k] / a[k-1])) > 600.0) ++jumpsA;
+                if (b[k] > 0 && b[k-1] > 0 &&
+                    std::abs(1200.0 * std::log2(b[k] / b[k-1])) > 600.0) ++jumpsB;
+            }
+            for (size_t k = a.size() / 4; k < a.size(); ++k) {
+                if (a[k] > 0 && b[k] > 0) {
+                    double dc = 1200.0 * std::log2(b[k] / a[k]);
+                    // fold to the representative within +-600 cents
+                    dc = std::fmod(dc, 1200.0);
+                    if (dc > 600.0) dc -= 1200.0;
+                    if (dc < -600.0) dc += 1200.0;
+                    worst = std::max(worst, std::abs(dc));
+                }
+            }
+            addValue(c, "worst_chirp_folded_delta_cents", worst);
+            addValue(c, "octave_jumps_fullrate", (double)jumpsA);
+            addValue(c, "octave_jumps_decimated", (double)jumpsB);
+            check(c, worst <= 20.0,
+                  "decimated vs full-rate disagree on the chirp (folded > 20 cents)");
+        }
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 4. commit_crossfade_continuity ------------------------------------
+    if (harnSelected("commit_crossfade_continuity")) {
+        // THE click gate: a shifted voice whose spacing commits must show
+        // NO sample-step discontinuity beyond the signal's natural slope
+        // scale. GATES: new-mode max step <= 0.02 AND <= legacy_max/4 (the
+        // legacy instant-commit step must be at least 4x larger -- proving
+        // the mechanism, not just the number).
+        CaseResult c{"commit_crossfade_continuity"};
+        const auto in = gen::tone(220.0, sr, 4 * sr, 0.5);
+        auto runMode = [&](Config cfg) {
+            cfg.ratio = std::pow(2.0, -400.0 / 1200.0);
+            AlignedDelayLine e;
+            check(c, e.prepare(cfg), "prepare failed");
+            std::vector<float> out(in.size(), 0.0f);
+            int done = 0;
+            while (done < (int)in.size()) {
+                const int k = std::min(128, (int)in.size() - done);
+                e.process(in.data() + done, out.data() + done, k);
+                done += k;
+            }
+            const long commits = e.voiceStats(0).commits;
+            return std::make_pair(out, commits);
+        };
+        const auto pairNew = runMode(Config());            // 16.0.0 defaults
+        const auto pairOld = runMode(legacyConfig(Config()));
+        const double stepNew = meas::maxStep(pairNew.first.data(),
+                                             (int)pairNew.first.size());
+        const double stepOld = meas::maxStep(pairOld.first.data(),
+                                             (int)pairOld.first.size());
+        addValue(c, "commits_new_mode", (double)pairNew.second);
+        addValue(c, "commits_legacy_mode", (double)pairOld.second);
+        addValue(c, "max_step_new_mode", stepNew);
+        addValue(c, "max_step_legacy_mode", stepOld);
+        check(c, pairNew.second > 0, "no spacing commits occurred (vacuous)");
+        check(c, stepNew <= 0.02,
+              "commit crossfade still shows a step > 0.02");
+        check(c, stepNew <= stepOld / 4.0,
+              "commit crossfade did not reduce the legacy step 4x");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 5. voice_activation_clickfree --------------------------------------
+    if (harnSelected("voice_activation_clickfree")) {
+        // setVoices 1 <-> 8 midstream. The transition pop is PHASE-DEPENDENT
+        // (the added voices' contributions depend on their grain phases), so
+        // SIXTEEN transitions at varied phase offsets are measured and the
+        // worst BOUNDARY step (|out[T] - out[T-1]| at each transition
+        // boundary) is gated: the ramped path stays within 2x the steady
+        // step and at least 2x below the legacy instant transition.
+        CaseResult c{"voice_activation_clickfree"};
+        const auto in = gen::tone(220.0, sr, 3 * sr, 0.5);
+        const int P = 48000;      // first transition
+        const int NTR = 16;       // 16 transitions, 448 samples apart
+        const int TR = 448;
+        auto runMode = [&](Config cfg, bool change) {
+            cfg.ratio = std::pow(2.0, 400.0 / 1200.0);
+            cfg.voices = 1;
+            cfg.spread = false;
+            AlignedDelayLine e;
+            check(c, e.prepare(cfg), "prepare failed");
+            std::vector<float> out(in.size(), 0.0f);
+            int done = 0, tr = 0;
+            while (done < (int)in.size()) {
+                const int k = std::min(64, (int)in.size() - done);
+                e.process(in.data() + done, out.data() + done, k);
+                done += k;
+                if (change && tr < NTR && done == P + tr * TR) {
+                    e.setVoices((tr % 2 == 0) ? 8 : 1);
+                    ++tr;
+                }
+            }
+            return out;
+        };
+        const auto aNew = runMode(Config(), true);
+        const auto aOld = runMode(legacyConfig(Config()), true);
+        const auto steady = runMode(Config(), false);
+        const double stepSteady = meas::maxStep(steady.data() + 2 * sr, sr);
+        double stepNew = 0.0, stepOld = 0.0;
+        for (int tr = 0; tr < NTR; ++tr) {
+            const int b = P + tr * TR;  // the transition boundary sample
+            stepNew = std::max(stepNew,
+                               std::abs((double)aNew[b] - (double)aNew[b - 1]));
+            stepOld = std::max(stepOld,
+                               std::abs((double)aOld[b] - (double)aOld[b - 1]));
+        }
+        addValue(c, "steady_state_max_step_1v", stepSteady);
+        addValue(c, "worst_boundary_step_new", stepNew);
+        addValue(c, "worst_boundary_step_legacy", stepOld);
+        check(c, stepNew <= 2.0 * stepSteady,
+              "voice activation boundary step exceeds 2x steady state");
+        check(c, stepNew * 2.0 < stepOld,
+              "voice activation did not improve 2x on the legacy boundary step");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 6. basedelay_crossfade_clickfree -----------------------------------
+    if (harnSelected("basedelay_crossfade_clickfree")) {
+        // A mid-stream per-voice base-delay change: the crossfaded path's
+        // step stays within 2x the pre-change steady step; the legacy
+        // instant re-align step is recorded (expected much larger).
+        CaseResult c{"basedelay_crossfade_clickfree"};
+        const auto in = gen::tone(220.0, sr, 3 * sr, 0.5);
+        const int P = 48000;
+        auto runMode = [&](Config cfg) {
+            cfg.ratio = std::pow(2.0, 400.0 / 1200.0);
+            AlignedDelayLine e;
+            check(c, e.prepare(cfg), "prepare failed");
+            std::vector<float> out(in.size(), 0.0f);
+            int done = 0;
+            while (done < (int)in.size()) {
+                const int k = std::min(128, (int)in.size() - done);
+                e.process(in.data() + done, out.data() + done, k);
+                done += k;
+                if (done == P) e.setVoiceBaseDelay(0, 5000.0);
+            }
+            return out;
+        };
+        const auto aNew = runMode(Config());
+        const auto aOld = runMode(legacyConfig(Config()));
+        const double stepBefore = meas::maxStep(aNew.data() + P - 48000, 48000);
+        // window opens one sample before the boundary (the legacy instant
+        // re-align step lives exactly ON the boundary sample)
+        const double stepNew = meas::maxStep(aNew.data() + P - 1, 48000);
+        const double stepOld = meas::maxStep(aOld.data() + P - 1, 48000);
+        addValue(c, "steady_step_before_change", stepBefore);
+        addValue(c, "change_max_step_new", stepNew);
+        addValue(c, "change_max_step_legacy", stepOld);
+        check(c, stepNew <= 2.0 * stepBefore,
+              "base-delay crossfade step exceeds 2x the steady step");
+        check(c, stepOld > stepNew,
+              "legacy base-delay step not larger than the crossfaded one");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 7. read_suppression_bitidentity ------------------------------------
+    if (harnSelected("read_suppression_bitidentity")) {
+        // R19-e proof: with feedback 0, wet 1 -> 0 -> 1 must be
+        // BIT-IDENTICAL to constant wet 1 from the resume boundary onward
+        // (state stays warm while suppressed); the fully-bypassed window
+        // likewise. The wet==0 window itself obviously differs (dry copy).
+        CaseResult c{"read_suppression_bitidentity"};
+        const auto in = gen::tone(220.0, sr, 3 * sr, 0.5);
+        const int P1 = 48000, P2 = 96000;  // wet -> 0 at P1, back at P2
+        auto runWet = [&](bool dip) {
+            Config cfg;
+            cfg.ratio = std::pow(2.0, 400.0 / 1200.0);
+            AlignedDelayLine e;
+            check(c, e.prepare(cfg), "prepare failed");
+            std::vector<float> out(in.size(), 0.0f);
+            int done = 0;
+            while (done < (int)in.size()) {
+                const int k = std::min(128, (int)in.size() - done);
+                e.process(in.data() + done, out.data() + done, k);
+                done += k;
+                if (dip && done == P1) e.setWetDry(0.0);
+                if (dip && done == P2) e.setWetDry(1.0);
+            }
+            return out;
+        };
+        const auto a = runWet(true);
+        const auto b = runWet(false);
+        double dAfter = 0.0, dDuring = 0.0;
+        for (int k = P2; k < (int)in.size(); ++k)
+            dAfter = std::max(dAfter, std::abs((double)a[k] - (double)b[k]));
+        for (int k = P1 + 480; k < P2; ++k)
+            dDuring = std::max(dDuring, std::abs((double)a[k] - (double)b[k]));
+        addValue(c, "max_diff_after_resume", dAfter);
+        addValue(c, "max_diff_during_wet0", dDuring);
+        check(c, dAfter == 0.0,
+              "suppressed window changed the post-resume output (state not warm)");
+        check(c, dDuring > 0.0,
+              "the wet==0 window did not change the output (vacuous)");
+        // Bypass: fully bypassed window with fb 0, then exit -- bit-identical
+        // outside the ramps (the existing law, now through the suppression).
+        auto runBypass = [&](bool bp) {
+            Config cfg;
+            cfg.ratio = std::pow(2.0, 400.0 / 1200.0);
+            AlignedDelayLine e;
+            check(c, e.prepare(cfg), "prepare failed");
+            std::vector<float> out(in.size(), 0.0f);
+            int done = 0;
+            while (done < (int)in.size()) {
+                const int k = std::min(128, (int)in.size() - done);
+                e.process(in.data() + done, out.data() + done, k);
+                done += k;
+                if (bp && done == P1) e.setBypass(true);
+                if (bp && done == P2) e.setBypass(false);
+            }
+            return out;
+        };
+        const auto ba = runBypass(true);
+        const auto bb = runBypass(false);
+        double dOut = 0.0;
+        for (int k = 0; k < (int)in.size(); ++k) {
+            // outside the bypassed region INCLUDING its two ramp regions
+            // (enter ramp [P1, P1+ramp), bypassed window, exit ramp
+            // [P2, P2+ramp); ramp = 10 ms + margin)
+            const bool inBypass = k >= P1 && k < P2 + 4800;
+            if (!inBypass)
+                dOut = std::max(dOut, std::abs((double)ba[k] - (double)bb[k]));
+        }
+        addValue(c, "bypass_outside_ramps_max_diff", dOut);
+        check(c, dOut == 0.0,
+              "bypass-through-suppression is not bit-transparent outside ramps");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 8. active_voices_processing_scope ----------------------------------
+    if (harnSelected("active_voices_processing_scope")) {
+        // The ACTUAL active voice count at runtime: with Voices = 1, voices
+        // 1..7 are not processed (their wrap counters stay frozen); after
+        // setVoices(8) they advance; after setVoices(1) + the fade they
+        // freeze again. Structural + empirical proof of the loop scope.
+        CaseResult c{"active_voices_processing_scope"};
+        const auto in = gen::tone(220.0, sr, 2 * sr, 0.5);
+        Config cfg;
+        cfg.ratio = std::pow(2.0, 400.0 / 1200.0);
+        cfg.voices = 1;
+        cfg.spread = false;
+        AlignedDelayLine e;
+        check(c, e.prepare(cfg), "prepare failed");
+        check(c, e.voices() == 1, "voices() != 1");
+        std::vector<float> out(in.size(), 0.0f);
+        int done = 0;
+        while (done < (int)in.size()) {
+            const int k = std::min(128, (int)in.size() - done);
+            e.process(in.data() + done, out.data() + done, k);
+            done += k;
+            if (done == 48000) e.setVoices(8);
+            if (done == 96000) e.setVoices(1);
+        }
+        const long w0 = e.voiceStats(0).wraps;
+        const long w1 = e.voiceStats(1).wraps;
+        // Voice 1 processed ONLY during the 1 s window with 8 voices: its
+        // wrap count must be > 0 but far below voice 0's (which ran 2 s).
+        addValue(c, "voice0_wraps_total", (double)w0);
+        addValue(c, "voice1_wraps_during_8v_window", (double)w1);
+        check(c, w0 > 0, "voice 0 never wrapped (vacuous)");
+        check(c, w1 > 0, "voice 1 did not process during the 8v window");
+        check(c, w1 < w0, "voice 1 processed outside the 8v window");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+}
+
+// ---------------------------------------------------------------------------
 // JSON report
 // ---------------------------------------------------------------------------
 std::string jsonEscape(const std::string& s) {
@@ -4012,7 +4559,7 @@ int main(int argc, char** argv) {
         {"voices", casesVoices},              {"stereo", casesStereo},
         {"rates_formats", casesRatesFormats}, {"stability", casesStability},
         {"r13", casesR13},                    {"r15p1", casesR15P1},
-        {"r15acc", casesR15Acc},
+        {"r15acc", casesR15Acc},              {"r19", casesR19},
     };
     static const int kRunnerCount =
         static_cast<int>(sizeof(kRunners) / sizeof(kRunners[0]));

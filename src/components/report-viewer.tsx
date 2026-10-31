@@ -79,18 +79,18 @@ export function ReportViewer({
   delivery,
 }: {
   markdown: string;
-  delivery?: Delivery | null;
+  delivery?: Delivery[] | null;
 }) {
   const headings = useMemo(() => extractHeadings(markdown), [markdown]);
   const [activeId, setActiveId] = useState<string>("");
-  const [shaCopied, setShaCopied] = useState(false);
+  const [shaCopied, setShaCopied] = useState<string | null>(null);
 
-  const copySha = async () => {
-    if (!delivery?.sha256) return;
+  const copySha = async (entry: Delivery) => {
+    if (!entry.sha256) return;
     try {
-      await navigator.clipboard.writeText(delivery.sha256);
-      setShaCopied(true);
-      window.setTimeout(() => setShaCopied(false), 2000);
+      await navigator.clipboard.writeText(entry.sha256);
+      setShaCopied(entry.fileName);
+      window.setTimeout(() => setShaCopied(null), 2000);
     } catch {
       /* clipboard unavailable — the hash remains selectable/copyable manually */
     }
@@ -122,7 +122,7 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 16. kör
+                Octavox Research — 19. kör
               </h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
                 Statikus rekonstrukció előrehaladás + a független natív C++17 DSP mag, az egységhangzás-javítással · Eventide Octavox RE projekt
@@ -146,8 +146,9 @@ export function ReportViewer({
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
-        {delivery ? (
-          <Card className="mb-6 border-emerald-600/40 bg-emerald-600/[0.04] dark:border-emerald-500/40 dark:bg-emerald-500/[0.06]">
+        {delivery && delivery.length > 0 ? (
+          delivery.map((entry, di) => (
+          <Card key={entry.fileName} className={di === 0 ? "mb-6 border-emerald-600/40 bg-emerald-600/[0.04] dark:border-emerald-500/40 dark:bg-emerald-500/[0.06]" : "mb-6 border-primary/30"}>
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
@@ -157,54 +158,51 @@ export function ReportViewer({
                       aria-hidden="true"
                     />
                     <h2 className="text-base font-semibold tracking-tight">
-                      Eredménycsomag — letöltés
+                      {di === 0 ? "Eredménycsomag — letöltés" : "Windows kettős VST3 build — letöltés"}
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                    A 16. körre frissített teljes kutatási csomag: a round-16 megállapítások, a
-                    kijavított és egyeztetett dokumentáció (16 dátumozott korrekció, az előzmények
-                    megőrzésével), a reprodukálható validációs munkafolyamat (per-teszt időtartamok,
-                    szűrők/csoportok, gépi olvasható JSON — release 85/85 41 másodperc alatt, ASan
-                    85/85 6,2 perc alatt), a 96 kHz-es profilozás — és a VALÓDI VST3 wrapper:
-                    az OctavoxNative.vst3 modul (a mag változatlan) a hivatalos validator 47/47
-                    eredményével és 8/8 wrapper-teszttel, bitespontos mintapontos-automatizálási
-                    és állapotmentés-egyenértékűségi bizonyítékokkal.
+                    {di === 0
+                      ? "A 19. körre frissített teljes kutatási csomag: a 16.0.0 mag (decimált, ~24 kHz-es kontroll-sebességű hangmagasság-detektor a FullRate referenciamóddal, kattanásmentes spacing-commit / base-delay / hangszámváltások), a 93 esetből álló elfogadó tesztcsomag (release 93/93, ASan+UBSan 93/93 nulla sanitizer-lelettel), a 212 soros teljesítmény-mátrix színenkénti attribúcióval (96 kHz sztereó 8 hang: 13,2% CPU = 86,8% tartalék), a 320 renderes kattanásvizsgálat WAV-okkal, valamint a null-teszt bizonyítékai motor- ÉS modulszinten."
+                      : "Az OctavoxRE_R19_Windows_x64_Dual_Build: a két egyidejűleg betölthető Windows x64 VST3 modul (Lagrange6 és ObsKernel6) a 16.0.0 maggal, bájtreprodukálható linkekkel, három eltérő modulhash-sel (az L/O/LQ fordítási definíció bizonyítéka) és a felhasználói oldalon futtatható dual null-teszttel a validációs készletben."}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
-                      {delivery.fileName}
+                      {entry.fileName}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      {formatBytes(delivery.sizeBytes)}
+                      {formatBytes(entry.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      326 fájl · sha256sum -c
+                      {di === 0 ? "531 fájl · sha256sum -c" : "2 modul + validációs készlet"}
                     </Badge>
                   </div>
-                  {delivery.sha256 ? (
+                  {entry.sha256 ? (
                     <div className="mt-3 flex items-start gap-2">
                       <p className="min-w-0 flex-1 break-all font-mono text-[11px] leading-relaxed text-muted-foreground">
                         <span className="sr-only">A csomag SHA-256 ellenőrző összege: </span>
-                        SHA-256: {delivery.sha256}
+                        SHA-256: {entry.sha256}
                       </p>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         className="size-7 shrink-0"
-                        onClick={copySha}
+                        onClick={() => copySha(entry)}
                         aria-label={
-                          shaCopied ? "SHA-256 a vágólapon" : "SHA-256 másolása a vágólapra"
+                          shaCopied === entry.fileName
+                            ? "SHA-256 a vágólapon"
+                            : "SHA-256 másolása a vágólapra"
                         }
                       >
-                        {shaCopied ? (
+                        {shaCopied === entry.fileName ? (
                           <Check className="size-3.5 text-emerald-600 dark:text-emerald-500" />
                         ) : (
                           <Copy className="size-3.5" />
                         )}
                       </Button>
                       <a
-                        href={`${delivery.url}.sha256`}
+                        href={`${entry.url}.sha256`}
                         download
                         className="shrink-0 self-center whitespace-nowrap text-[11px] font-medium underline underline-offset-4 hover:text-foreground"
                       >
@@ -218,7 +216,7 @@ export function ReportViewer({
                   size="lg"
                   className="bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 dark:bg-emerald-500 dark:text-primary-foreground dark:hover:bg-emerald-600"
                 >
-                  <a href={delivery.url} download>
+                  <a href={entry.url} download>
                     <Download aria-hidden="true" />
                     Letöltés · ZIP
                   </a>
@@ -226,6 +224,7 @@ export function ReportViewer({
               </div>
             </CardContent>
           </Card>
+          ))
         ) : null}
         <div className="flex gap-8">
           <aside className="hidden w-56 shrink-0 lg:block">
@@ -365,9 +364,10 @@ export function ReportViewer({
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            Octavox RE — 16. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
-            forrásfájl: <code className="font-mono">OCTAVOX_ROUND16_FINDINGS.md</code> · csomag:{" "}
-            <code className="font-mono">Octavox_RE_evidence_round16.zip</code>
+            Octavox RE — 19. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
+            forrásfájl: <code className="font-mono">OCTAVOX_ROUND19_FINDINGS.md</code> · csomag:{" "}
+            <code className="font-mono">Octavox_RE_evidence_round19.zip</code> +
+            <code className="font-mono">OctavoxRE_R19_Windows_x64_Dual_Build.zip</code>
           </p>
         </div>
       </footer>

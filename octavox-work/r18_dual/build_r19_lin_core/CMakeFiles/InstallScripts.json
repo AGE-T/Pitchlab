@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/z/my-project/octavox-work/r18_dual/build_r19_lin_core/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
