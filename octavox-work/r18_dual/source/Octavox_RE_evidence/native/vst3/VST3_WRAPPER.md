@@ -1,13 +1,19 @@
-# OCTAVOX native core — the VST3 wrapper (R16-P4b, extended R17-P3, R18-P6)
+# OCTAVOX native core — the VST3 wrapper (R16-P4b, extended R17-P3, R18-P6, R20-P0)
 
 **Status: IMPLEMENTED, BUILT AND VALIDATED** (2026-10-28; re-validated and
-extended 2026-10-29 — round 17). A real, minimal VST3 plug-in around the
-octavox-native 15.0.0 DSP core — not a placeholder: the module builds as a
-proper `OctavoxNative.vst3` bundle, passes the VST3 SDK's own conformance
-validator (47/47), and passes a **15-case** in-process wrapper test suite
-(8 cases in round 16 + 7 parameter/state-contract cases in round 17)
-including the **bit-exact sample-accurate-vs-block-boundary equivalence
-proof** and the full 38-parameter contract audit.
+extended 2026-10-29 — round 17; **round 20: the default-parameter
+initialisation contract fixed and gated — 20-case suite**). A real, minimal
+VST3 plug-in around the octavox-native 16.x DSP core — not a placeholder:
+the module builds as a proper `OctavoxRE_<Variant>.vst3` bundle, passes the
+VST3 SDK's own conformance validator (47/47), and passes a **20-case**
+in-process wrapper test suite (8 cases round 16 + 7 parameter/state cases
+round 17 + **5 default-initialisation cases round 20**) including the
+**bit-exact sample-accurate-vs-block-boundary equivalence proof**, the full
+38-parameter contract audit, and the R20-P0 default/state-sync gates
+(fresh instance, after prepare, save/restore, state-to-new-instance via
+BOTH `setState` and `setComponentState`, repeated initialize/terminate
+cycles — all without moving a control; see §4a and
+`docs/OCTAVOX_ROUND20_FINDINGS.md`).
 
 PROVENANCE: this wrapper is OUR OWN independent harmonizer implementation
 around our own DSP core (`../include/octavox/dsp.hpp`). It is **not** a
@@ -112,7 +118,7 @@ octavox_native_processor.h/.cpp the SingleComponentEffect: lifecycle, buses,
 factory.cpp                    the module factory (constexpr form)
 octavox_vst3_tests.cpp         the in-process test suite (host mocks = the
                                SDK's own hosting utilities; references =
-                               the hand-driven core; 15 cases, see §5)
+                               the hand-driven core; 20 cases, see §5)
 CMakeLists.txt                 the build (SDK external-consumer pattern)
 ../tools/get_vst3_sdk.{sh,ps1} R17-P2: pinned-SHA SDK acquisition + verification
 ../tools/build_and_test.{sh,ps1} R17-P2: the full build+validation chains
@@ -211,6 +217,38 @@ CURRENT rate/layout and re-applies the full surface in canonical order.
 * **Why `vstsinglecomponenteffect.cpp` is compiled into both targets:** the
   SDK's `sdk` library does not include it (only the "again" sample compiles
   it into its own target); consumers of the base class must compile it.
+
+## 4a. R20-P0 — the default-parameter initialisation contract
+
+The round-20 audit found the wrapper's fresh-instance parameter CURRENT
+values were **0-based** (the SDK `Parameter()` default ctor initialises
+`valueNormalized {0.}`, not the declared default — `vstparameters.cpp:48`,
+SDK 3.7.12): the Generic Editor showed Pitch −24.00, Wet/Dry 0.00, Spread
+off, voice gains 0.0, voice offsets −24.00, voice delays 0 ms while the
+engine ran the true `defaultSurface()` — the user-reported "wrong until the
+control is moved". Three coordinated fixes (all in-round, gated by the new
+test group):
+
+1. `OctavoxParameter`'s ctor ends with `setNormalized(info.defaultNormalizedValue)`
+   (no listeners exist yet — pure value initialisation). All 38 parameters
+   now REPORT the declared default as their CURRENT value on registration.
+2. `OctavoxNativeProcessor::initialize()` resets `surface_`/`cfg_`/processSetup
+   to the documented defaults — fresh-instance semantics for a host's
+   terminate→initialize cycle (previously the old surface survived as member
+   state: parameters would have shown defaults while the engine ran the
+   previous surface).
+3. `IEditController::setComponentState` is implemented (the SDK base returns
+   `kNotImplemented`): for a single-component effect the controller part IS
+   the component, so it aliases the authoritative `setState` (same 'OVR1'
+   blob, same silent parameter sync; idempotent if a host calls both paths).
+
+Gates: wrapper cases 16–20 (the S1–S6 scenarios, no control ever moved),
+including the engine-truth proof (the DSP bit-exactly runs the default
+surface with NO events ever delivered) and the automation-flush proof (a
+host sending all 38 CURRENT values through the queues leaves the engine at
+the defaults — the conversion chain is exactly idempotent for the default
+grid at 48 kHz). Sensitivity proof: with fix 1 disabled, exactly the three
+default-checking cases fail with the reported symptom.
 
 ## 5. Measured results (2026-10-28 R16; re-measured 2026-10-29 R17, this host: 2-core Xeon, GCC 14.2.0)
 

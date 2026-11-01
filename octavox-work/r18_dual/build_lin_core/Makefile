@@ -169,6 +169,71 @@ octavox_r15refcap/fast:
 .PHONY : octavox_r15refcap/fast
 
 #=============================================================================
+# Target rules for targets named octavox_r19_clickscan
+
+# Build rule for target.
+octavox_r19_clickscan: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 octavox_r19_clickscan
+.PHONY : octavox_r19_clickscan
+
+# fast build rule for target.
+octavox_r19_clickscan/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/build
+.PHONY : octavox_r19_clickscan/fast
+
+#=============================================================================
+# Target rules for targets named octavox_r19_nulltest
+
+# Build rule for target.
+octavox_r19_nulltest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 octavox_r19_nulltest
+.PHONY : octavox_r19_nulltest
+
+# fast build rule for target.
+octavox_r19_nulltest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/build
+.PHONY : octavox_r19_nulltest/fast
+
+#=============================================================================
+# Target rules for targets named octavox_r19_variant_metrics
+
+# Build rule for target.
+octavox_r19_variant_metrics: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 octavox_r19_variant_metrics
+.PHONY : octavox_r19_variant_metrics
+
+# fast build rule for target.
+octavox_r19_variant_metrics/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_variant_metrics.dir/build.make CMakeFiles/octavox_r19_variant_metrics.dir/build
+.PHONY : octavox_r19_variant_metrics/fast
+
+#=============================================================================
+# Target rules for targets named octavox_r20_detcompare
+
+# Build rule for target.
+octavox_r20_detcompare: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 octavox_r20_detcompare
+.PHONY : octavox_r20_detcompare
+
+# fast build rule for target.
+octavox_r20_detcompare/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_detcompare.dir/build.make CMakeFiles/octavox_r20_detcompare.dir/build
+.PHONY : octavox_r20_detcompare/fast
+
+#=============================================================================
+# Target rules for targets named octavox_r20_dualmono
+
+# Build rule for target.
+octavox_r20_dualmono: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 octavox_r20_dualmono
+.PHONY : octavox_r20_dualmono
+
+# fast build rule for target.
+octavox_r20_dualmono/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_dualmono.dir/build.make CMakeFiles/octavox_r20_dualmono.dir/build
+.PHONY : octavox_r20_dualmono/fast
+
+#=============================================================================
 # Target rules for targets named octavox_bench
 
 # Build rule for target.
@@ -253,6 +318,126 @@ cli/r15ref_capture.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r15refcap.dir/build.make CMakeFiles/octavox_r15refcap.dir/cli/r15ref_capture.cpp.s
 .PHONY : cli/r15ref_capture.cpp.s
 
+cli/r19_clickscan.o: cli/r19_clickscan.cpp.o
+.PHONY : cli/r19_clickscan.o
+
+# target to build an object file
+cli/r19_clickscan.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/cli/r19_clickscan.cpp.o
+.PHONY : cli/r19_clickscan.cpp.o
+
+cli/r19_clickscan.i: cli/r19_clickscan.cpp.i
+.PHONY : cli/r19_clickscan.i
+
+# target to preprocess a source file
+cli/r19_clickscan.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/cli/r19_clickscan.cpp.i
+.PHONY : cli/r19_clickscan.cpp.i
+
+cli/r19_clickscan.s: cli/r19_clickscan.cpp.s
+.PHONY : cli/r19_clickscan.s
+
+# target to generate assembly for a file
+cli/r19_clickscan.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/cli/r19_clickscan.cpp.s
+.PHONY : cli/r19_clickscan.cpp.s
+
+cli/r19_nulltest.o: cli/r19_nulltest.cpp.o
+.PHONY : cli/r19_nulltest.o
+
+# target to build an object file
+cli/r19_nulltest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/cli/r19_nulltest.cpp.o
+.PHONY : cli/r19_nulltest.cpp.o
+
+cli/r19_nulltest.i: cli/r19_nulltest.cpp.i
+.PHONY : cli/r19_nulltest.i
+
+# target to preprocess a source file
+cli/r19_nulltest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/cli/r19_nulltest.cpp.i
+.PHONY : cli/r19_nulltest.cpp.i
+
+cli/r19_nulltest.s: cli/r19_nulltest.cpp.s
+.PHONY : cli/r19_nulltest.s
+
+# target to generate assembly for a file
+cli/r19_nulltest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/cli/r19_nulltest.cpp.s
+.PHONY : cli/r19_nulltest.cpp.s
+
+cli/r19_variant_metrics.o: cli/r19_variant_metrics.cpp.o
+.PHONY : cli/r19_variant_metrics.o
+
+# target to build an object file
+cli/r19_variant_metrics.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_variant_metrics.dir/build.make CMakeFiles/octavox_r19_variant_metrics.dir/cli/r19_variant_metrics.cpp.o
+.PHONY : cli/r19_variant_metrics.cpp.o
+
+cli/r19_variant_metrics.i: cli/r19_variant_metrics.cpp.i
+.PHONY : cli/r19_variant_metrics.i
+
+# target to preprocess a source file
+cli/r19_variant_metrics.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_variant_metrics.dir/build.make CMakeFiles/octavox_r19_variant_metrics.dir/cli/r19_variant_metrics.cpp.i
+.PHONY : cli/r19_variant_metrics.cpp.i
+
+cli/r19_variant_metrics.s: cli/r19_variant_metrics.cpp.s
+.PHONY : cli/r19_variant_metrics.s
+
+# target to generate assembly for a file
+cli/r19_variant_metrics.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_variant_metrics.dir/build.make CMakeFiles/octavox_r19_variant_metrics.dir/cli/r19_variant_metrics.cpp.s
+.PHONY : cli/r19_variant_metrics.cpp.s
+
+cli/r20_detcompare.o: cli/r20_detcompare.cpp.o
+.PHONY : cli/r20_detcompare.o
+
+# target to build an object file
+cli/r20_detcompare.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_detcompare.dir/build.make CMakeFiles/octavox_r20_detcompare.dir/cli/r20_detcompare.cpp.o
+.PHONY : cli/r20_detcompare.cpp.o
+
+cli/r20_detcompare.i: cli/r20_detcompare.cpp.i
+.PHONY : cli/r20_detcompare.i
+
+# target to preprocess a source file
+cli/r20_detcompare.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_detcompare.dir/build.make CMakeFiles/octavox_r20_detcompare.dir/cli/r20_detcompare.cpp.i
+.PHONY : cli/r20_detcompare.cpp.i
+
+cli/r20_detcompare.s: cli/r20_detcompare.cpp.s
+.PHONY : cli/r20_detcompare.s
+
+# target to generate assembly for a file
+cli/r20_detcompare.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_detcompare.dir/build.make CMakeFiles/octavox_r20_detcompare.dir/cli/r20_detcompare.cpp.s
+.PHONY : cli/r20_detcompare.cpp.s
+
+cli/r20_dualmono.o: cli/r20_dualmono.cpp.o
+.PHONY : cli/r20_dualmono.o
+
+# target to build an object file
+cli/r20_dualmono.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_dualmono.dir/build.make CMakeFiles/octavox_r20_dualmono.dir/cli/r20_dualmono.cpp.o
+.PHONY : cli/r20_dualmono.cpp.o
+
+cli/r20_dualmono.i: cli/r20_dualmono.cpp.i
+.PHONY : cli/r20_dualmono.i
+
+# target to preprocess a source file
+cli/r20_dualmono.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_dualmono.dir/build.make CMakeFiles/octavox_r20_dualmono.dir/cli/r20_dualmono.cpp.i
+.PHONY : cli/r20_dualmono.cpp.i
+
+cli/r20_dualmono.s: cli/r20_dualmono.cpp.s
+.PHONY : cli/r20_dualmono.s
+
+# target to generate assembly for a file
+cli/r20_dualmono.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_dualmono.dir/build.make CMakeFiles/octavox_r20_dualmono.dir/cli/r20_dualmono.cpp.s
+.PHONY : cli/r20_dualmono.cpp.s
+
 src/dsp.o: src/dsp.cpp.o
 .PHONY : src/dsp.o
 
@@ -335,6 +520,8 @@ tests/wav_io.o: tests/wav_io.cpp.o
 tests/wav_io.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_tests.dir/build.make CMakeFiles/octavox_tests.dir/tests/wav_io.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_cli.dir/build.make CMakeFiles/octavox_cli.dir/tests/wav_io.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/tests/wav_io.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/tests/wav_io.cpp.o
 .PHONY : tests/wav_io.cpp.o
 
 tests/wav_io.i: tests/wav_io.cpp.i
@@ -344,6 +531,8 @@ tests/wav_io.i: tests/wav_io.cpp.i
 tests/wav_io.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_tests.dir/build.make CMakeFiles/octavox_tests.dir/tests/wav_io.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_cli.dir/build.make CMakeFiles/octavox_cli.dir/tests/wav_io.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/tests/wav_io.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/tests/wav_io.cpp.i
 .PHONY : tests/wav_io.cpp.i
 
 tests/wav_io.s: tests/wav_io.cpp.s
@@ -353,6 +542,8 @@ tests/wav_io.s: tests/wav_io.cpp.s
 tests/wav_io.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_tests.dir/build.make CMakeFiles/octavox_tests.dir/tests/wav_io.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_cli.dir/build.make CMakeFiles/octavox_cli.dir/tests/wav_io.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/tests/wav_io.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/tests/wav_io.cpp.s
 .PHONY : tests/wav_io.cpp.s
 
 # Help Target
@@ -367,6 +558,11 @@ help:
 	@echo "... octavox_cli"
 	@echo "... octavox_dsp"
 	@echo "... octavox_r15refcap"
+	@echo "... octavox_r19_clickscan"
+	@echo "... octavox_r19_nulltest"
+	@echo "... octavox_r19_variant_metrics"
+	@echo "... octavox_r20_detcompare"
+	@echo "... octavox_r20_dualmono"
 	@echo "... octavox_tests"
 	@echo "... bench/bench_main.o"
 	@echo "... bench/bench_main.i"
@@ -377,6 +573,21 @@ help:
 	@echo "... cli/r15ref_capture.o"
 	@echo "... cli/r15ref_capture.i"
 	@echo "... cli/r15ref_capture.s"
+	@echo "... cli/r19_clickscan.o"
+	@echo "... cli/r19_clickscan.i"
+	@echo "... cli/r19_clickscan.s"
+	@echo "... cli/r19_nulltest.o"
+	@echo "... cli/r19_nulltest.i"
+	@echo "... cli/r19_nulltest.s"
+	@echo "... cli/r19_variant_metrics.o"
+	@echo "... cli/r19_variant_metrics.i"
+	@echo "... cli/r19_variant_metrics.s"
+	@echo "... cli/r20_detcompare.o"
+	@echo "... cli/r20_detcompare.i"
+	@echo "... cli/r20_detcompare.s"
+	@echo "... cli/r20_dualmono.o"
+	@echo "... cli/r20_dualmono.i"
+	@echo "... cli/r20_dualmono.s"
 	@echo "... src/dsp.o"
 	@echo "... src/dsp.i"
 	@echo "... src/dsp.s"

@@ -169,6 +169,19 @@ octavox_module_integration_tests/fast:
 .PHONY : octavox_module_integration_tests/fast
 
 #=============================================================================
+# Target rules for targets named octavox_dual_nulltest
+
+# Build rule for target.
+octavox_dual_nulltest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 octavox_dual_nulltest
+.PHONY : octavox_dual_nulltest
+
+# fast build rule for target.
+octavox_dual_nulltest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/build
+.PHONY : octavox_dual_nulltest/fast
+
+#=============================================================================
 # Target rules for targets named cmake_modules
 
 # Build rule for target.
@@ -360,6 +373,30 @@ home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_vst3_wrapper_tests.dir/build.make CMakeFiles/octavox_vst3_wrapper_tests.dir/home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/alloc_counter.cpp.s
 .PHONY : home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/alloc_counter.cpp.s
 
+home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.o: home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.o
+.PHONY : home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.o
+
+# target to build an object file
+home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.o
+.PHONY : home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.o
+
+home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.i: home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.i
+.PHONY : home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.i
+
+# target to preprocess a source file
+home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.i
+.PHONY : home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.i
+
+home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.s: home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.s
+.PHONY : home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.s
+
+# target to generate assembly for a file
+home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.s
+.PHONY : home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.cpp.s
+
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.o: home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.o
 .PHONY : home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.o
 
@@ -367,6 +404,7 @@ home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.o: 
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_vst3_wrapper_tests.dir/build.make CMakeFiles/octavox_vst3_wrapper_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_module_integration_tests.dir/build.make CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.o
 .PHONY : home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.o
 
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.i: home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.i
@@ -376,6 +414,7 @@ home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.i: 
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_vst3_wrapper_tests.dir/build.make CMakeFiles/octavox_vst3_wrapper_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_module_integration_tests.dir/build.make CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.i
 .PHONY : home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.i
 
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.s: home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.s
@@ -385,6 +424,7 @@ home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.s: 
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_vst3_wrapper_tests.dir/build.make CMakeFiles/octavox_vst3_wrapper_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_module_integration_tests.dir/build.make CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.s
 .PHONY : home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.cpp.s
 
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/main/linuxmain.o: home/z/my-project/octavox-work/vst3sdk/public.sdk/source/main/linuxmain.cpp.o
@@ -417,6 +457,7 @@ home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linu
 # target to build an object file
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_module_integration_tests.dir/build.make CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.o
 .PHONY : home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.o
 
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.i: home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.i
@@ -425,6 +466,7 @@ home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linu
 # target to preprocess a source file
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_module_integration_tests.dir/build.make CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.i
 .PHONY : home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.i
 
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.s: home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.s
@@ -433,6 +475,7 @@ home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linu
 # target to generate assembly for a file
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_module_integration_tests.dir/build.make CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.s
 .PHONY : home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp.s
 
 home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/parameterchanges.o: home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/hosting/parameterchanges.cpp.o
@@ -485,6 +528,30 @@ home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/vstsinglecomponente
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavoxnative.dir/build.make CMakeFiles/octavoxnative.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/vstsinglecomponenteffect.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_vst3_wrapper_tests.dir/build.make CMakeFiles/octavox_vst3_wrapper_tests.dir/home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/vstsinglecomponenteffect.cpp.s
 .PHONY : home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/vstsinglecomponenteffect.cpp.s
+
+octavox_dual_nulltest.o: octavox_dual_nulltest.cpp.o
+.PHONY : octavox_dual_nulltest.o
+
+# target to build an object file
+octavox_dual_nulltest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/octavox_dual_nulltest.cpp.o
+.PHONY : octavox_dual_nulltest.cpp.o
+
+octavox_dual_nulltest.i: octavox_dual_nulltest.cpp.i
+.PHONY : octavox_dual_nulltest.i
+
+# target to preprocess a source file
+octavox_dual_nulltest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/octavox_dual_nulltest.cpp.i
+.PHONY : octavox_dual_nulltest.cpp.i
+
+octavox_dual_nulltest.s: octavox_dual_nulltest.cpp.s
+.PHONY : octavox_dual_nulltest.s
+
+# target to generate assembly for a file
+octavox_dual_nulltest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dual_nulltest.dir/build.make CMakeFiles/octavox_dual_nulltest.dir/octavox_dual_nulltest.cpp.s
+.PHONY : octavox_dual_nulltest.cpp.s
 
 octavox_module_integration_tests.o: octavox_module_integration_tests.cpp.o
 .PHONY : octavox_module_integration_tests.o
@@ -604,6 +671,7 @@ help:
 	@echo "... base"
 	@echo "... moduleinfotool"
 	@echo "... octavox_core_vst3"
+	@echo "... octavox_dual_nulltest"
 	@echo "... octavox_module_integration_tests"
 	@echo "... octavox_vst3_wrapper_tests"
 	@echo "... octavoxnative"
@@ -621,6 +689,9 @@ help:
 	@echo "... home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/alloc_counter.o"
 	@echo "... home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/alloc_counter.i"
 	@echo "... home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/alloc_counter.s"
+	@echo "... home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.o"
+	@echo "... home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.i"
+	@echo "... home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.s"
 	@echo "... home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.o"
 	@echo "... home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.i"
 	@echo "... home/z/my-project/octavox-work/vst3sdk/public.sdk/source/common/memorystream.s"
@@ -636,6 +707,9 @@ help:
 	@echo "... home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/vstsinglecomponenteffect.o"
 	@echo "... home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/vstsinglecomponenteffect.i"
 	@echo "... home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/vstsinglecomponenteffect.s"
+	@echo "... octavox_dual_nulltest.o"
+	@echo "... octavox_dual_nulltest.i"
+	@echo "... octavox_dual_nulltest.s"
 	@echo "... octavox_module_integration_tests.o"
 	@echo "... octavox_module_integration_tests.i"
 	@echo "... octavox_module_integration_tests.s"

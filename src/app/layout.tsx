@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Octavox Research — Round 19 Findings",
+  title: "Octavox Research — Round 20 Findings",
   description:
     "Round 19: the real-time fix (decimated ~24 kHz control-rate detector — 96 kHz stereo 8 voices at 13.2% CPU, 86.8% headroom; FullRate reference retained bit-exact), the click investigation (spacing-commit/base-delay/voice-transition pops eliminated 32-67x, measured), and the dual-interpolation verification (Lagrange6 vs ObsKernel6: a real -38.5 dB null difference, unity bit-identical, engine and module level) — Eventide Octavox reverse engineering, round 19.",
   keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting"],

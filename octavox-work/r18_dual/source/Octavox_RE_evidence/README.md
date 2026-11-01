@@ -1,4 +1,13 @@
-# Octavox (Eventide) - reverse-engineering evidence package - round 18
+# Octavox (Eventide) - reverse-engineering evidence package - round 20
+
+Round-20 delta: `docs/OCTAVOX_ROUND20_FINDINGS.md` (P0 VST3 default-init
+fix, the Hybrid detector, the real-material three-detector battery, the
+dual-mono/stereo integrity report), `docs/R20_FEATURE_RECONSTRUCTION_MATRIX.md`
+(the 40-element original-UI -> DSP matrix with the Crossfade/Randomize
+verdicts), `docs/R20_PARAMETER_SEMANTICS.md`, `evidence/analysis_round20/`
+(detcompare + dualmono JSONs, 39 trajectory CSVs, suite logs),
+`native/cli/r20_detcompare.cpp` + `native/cli/r20_dualmono.cpp`,
+`DELIVERY_ROUND20.md`. The round-18/19 content below is unchanged.
 
 Independent static analysis of `Ox.vst3` (Eventide Octavox), plus an independent DSP
 demonstration written from scratch. **The target binary was never modified and was never run.**

@@ -76,6 +76,10 @@ public:
     // component; they carry the SAME full state blob -- idempotent).
     Steinberg::tresult PLUGIN_API setEditorState(Steinberg::IBStream* state) SMTG_OVERRIDE;
     Steinberg::tresult PLUGIN_API getEditorState(Steinberg::IBStream* state) SMTG_OVERRIDE;
+    // R20-P0: IEditController::setComponentState -- the base returns
+    // kNotImplemented; aliased to the authoritative setState so hosts that
+    // drive the controller path get the parameter-value sync (idempotent).
+    Steinberg::tresult PLUGIN_API setComponentState(Steinberg::IBStream* state) SMTG_OVERRIDE;
 
     //--- from IAudioProcessor ----------------------------------------------
     Steinberg::tresult PLUGIN_API setBusArrangements(Steinberg::Vst::SpeakerArrangement* inputs,

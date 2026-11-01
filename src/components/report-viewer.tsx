@@ -67,11 +67,11 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 16 · egyeztetés + validáció + VST3" },
-  { label: "Egyeztetés", value: "16 javítás · történet megőrzve" },
-  { label: "Validáció", value: "85/85 · 41 s · ASan 6,2 perc" },
-  { label: "96 kHz", value: "detektor 83–95 % · no-change" },
-  { label: "VST3", value: "OctavoxNative.vst3 · 47/47 · 8/8" },
+  { label: "Kör", value: "Round 20 · funkció-rekonstrukció + adaptív YIN" },
+  { label: "P0 javítás", value: "38 paraméter · 20/20 · gyökérok SDK-szint" },
+  { label: "Három detektor", value: "FullRate / Decimated / Hybrid · 96 kHz: 12,4×" },
+  { label: "Dual-mono", value: "bit-azonos L/R · doubling = 0,67 ms" },
+  { label: "Kapuk", value: "96/96 · ASan 0 · 12/12 hash · mind zöld" },
 ];
 
 export function ReportViewer({
@@ -122,17 +122,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 19. kör
+                Octavox Research — 20. kör
               </h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                Statikus rekonstrukció előrehaladás + a független natív C++17 DSP mag, az egységhangzás-javítással · Eventide Octavox RE projekt
+                Funkció-rekonstrukciós mátrix + adaptív YIN hangmagasság-követés · P0 paraméter-inicializáció, három detektor, dual-mono integritás · Eventide Octavox RE projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 12 · KÉSZ
+              ROUND 20 · KÉSZ
             </Badge>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -163,8 +163,8 @@ export function ReportViewer({
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
                     {di === 0
-                      ? "A 19. körre frissített teljes kutatási csomag: a 16.0.0 mag (decimált, ~24 kHz-es kontroll-sebességű hangmagasság-detektor a FullRate referenciamóddal, kattanásmentes spacing-commit / base-delay / hangszámváltások), a 93 esetből álló elfogadó tesztcsomag (release 93/93, ASan+UBSan 93/93 nulla sanitizer-lelettel), a 212 soros teljesítmény-mátrix színenkénti attribúcióval (96 kHz sztereó 8 hang: 13,2% CPU = 86,8% tartalék), a 320 renderes kattanásvizsgálat WAV-okkal, valamint a null-teszt bizonyítékai motor- ÉS modulszinten."
-                      : "Az OctavoxRE_R19_Windows_x64_Dual_Build: a két egyidejűleg betölthető Windows x64 VST3 modul (Lagrange6 és ObsKernel6) a 16.0.0 maggal, bájtreprodukálható linkekkel, három eltérő modulhash-sel (az L/O/LQ fordítási definíció bizonyítéka) és a felhasználói oldalon futtatható dual null-teszttel a validációs készletben."}
+                      ? "A 20. körre frissített teljes kutatási csomag: a P0 VST3 alapértelmezett paraméter-inicializáció gyökérok-meghatározása és javítása (SDK Parameter() ctor — mind a 38 paraméter 0-alapú értéket jelentett a friss példányon), az új Hybrid durva-finom detektor (96 kHz-en 12,4× olcsóbb a FullRate-nál, a Decimatednél +14% CPU-val FullRate-szintű stabilitásért), a 13 korpuszos valós anyagú három-detektor összehasonlítás, a determinisztikus dual-mono/sztereó integritási jelentés (a „doubling” = 0,67 ms inter-voice echo), a 96 esetből álló tesztcsomag (release és ASan/UBSan egyaránt nulla lelettel) és a 40 elemű funkció-rekonstrukciós mátrix (Crossfade = grain-commit blend szélesség; Randomize = sebesség-véletlen-séta)."
+                      : "Az OctavoxRE_R20_Windows_x64_Dual_Build: a két egyidejűleg betölthető Windows x64 VST3 modul (Lagrange6 és ObsKernel6) a javított paraméter-inicializálással és a Hybrid detektor-támogatással, bájtreprodukálható linkekkel (ALL GATES PASSED) és a felhasználói oldalon futtatható dual null-teszttel a validációs készletben."}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
@@ -174,7 +174,7 @@ export function ReportViewer({
                       {formatBytes(entry.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      {di === 0 ? "531 fájl · sha256sum -c" : "2 modul + validációs készlet"}
+                      {di === 0 ? "616 fájl · sha256sum -c" : "2 modul + validációs készlet"}
                     </Badge>
                   </div>
                   {entry.sha256 ? (
@@ -364,10 +364,10 @@ export function ReportViewer({
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            Octavox RE — 19. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
-            forrásfájl: <code className="font-mono">OCTAVOX_ROUND19_FINDINGS.md</code> · csomag:{" "}
-            <code className="font-mono">Octavox_RE_evidence_round19.zip</code> +
-            <code className="font-mono">OctavoxRE_R19_Windows_x64_Dual_Build.zip</code>
+            Octavox RE — 20. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
+            forrásfájl: <code className="font-mono">OCTAVOX_ROUND20_FINDINGS.md</code> · csomag:{" "}
+            <code className="font-mono">Octavox_RE_evidence_round20.zip</code> +
+            <code className="font-mono">OctavoxRE_R20_Windows_x64_Dual_Build.zip</code>
           </p>
         </div>
       </footer>

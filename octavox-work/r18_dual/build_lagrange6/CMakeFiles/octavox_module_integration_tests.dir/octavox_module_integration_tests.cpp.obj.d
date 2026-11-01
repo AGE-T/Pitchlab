@@ -454,6 +454,7 @@ CMakeFiles/octavox_module_integration_tests.dir/octavox_module_integration_tests
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/../include/octavox/dsp.hpp \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/cstddef \
+  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/../include/octavox/stageprof.hpp \
   /home/z/my-project/octavox-work/vst3sdk/base/source/fstring.h \
   /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/istringresult.h \
   /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/ipersistent.h \

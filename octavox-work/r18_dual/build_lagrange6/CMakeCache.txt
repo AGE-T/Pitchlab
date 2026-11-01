@@ -113,8 +113,11 @@ CMAKE_INSTALL_PREFIX:PATH=/usr/local
 //Path to a program.
 CMAKE_LINKER:FILEPATH=/home/z/tools/llvm-mingw/bin/ld.lld
 
-//Path to a program.
-CMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/gmake
+//Tool that can launch the native build system. The value may be
+// the full path to an executable or just the tool name if it is
+// expected to be in the PATH. The tool selected depends on the
+// CMAKE_GENERATOR used to configure the project:
+CMAKE_MAKE_PROGRAM:UNINITIALIZED=/usr/bin/gmake
 
 //Flags used by the linker during the creation of modules during
 // all build types.
@@ -251,10 +254,8 @@ CMAKE_STRIP:FILEPATH=/home/z/tools/llvm-mingw/bin/llvm-strip
 //Path to a program.
 CMAKE_TAPI:FILEPATH=CMAKE_TAPI-NOTFOUND
 
-//Path to a CMake toolchain file, read early in the CMake run,
-// that specifies the compilers, toolchain utilities, and target-platform
-// information used when cross-compiling.
-CMAKE_TOOLCHAIN_FILE:UNINITIALIZED=/home/z/my-project/octavox-work/r18_dual/llvm-mingw-toolchain.cmake
+//The CMake toolchain file
+CMAKE_TOOLCHAIN_FILE:FILEPATH=/home/z/my-project/octavox-work/r18_dual/llvm-mingw-toolchain.cmake
 
 //If this value is on, makefiles will be generated without the
 // .SILENT directive, and all commands will be echoed to the console
@@ -484,8 +485,6 @@ CMAKE_HOME_DIRECTORY:INTERNAL=/home/z/my-project/octavox-work/r18_dual/source/Oc
 CMAKE_LINKER-ADVANCED:INTERNAL=1
 //Name of CMakeLists files to read
 CMAKE_LIST_FILE_NAME:INTERNAL=CMakeLists.txt
-//ADVANCED property for variable: CMAKE_MAKE_PROGRAM
-CMAKE_MAKE_PROGRAM-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MODULE_LINKER_FLAGS
 CMAKE_MODULE_LINKER_FLAGS-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MODULE_LINKER_FLAGS_DEBUG

@@ -52,6 +52,23 @@ tresult PLUGIN_API OctavoxNativeProcessor::initialize(Steinberg::FUnknown* conte
     const tresult r = SingleComponentEffect::initialize(context);
     if (r != Steinberg::kResultOk) return r;
 
+    // R20-P0 (fresh-instance semantics on re-initialization): initialize()
+    // must yield the DOCUMENTED DEFAULT state, not a carry-over of a
+    // previous lifecycle. A host may legally run terminate()->initialize()
+    // on the same instance (project reset / re-insert); EditController's
+    // terminate() removes all parameters and SingleComponentEffect removes
+    // the buses, but the engine config + the live surface SURVIVED as member
+    // state -- after re-initialization the parameter objects would report
+    // defaults while the engine still ran the previous surface (the same
+    // class of host-display/DSP divergence R20-P0 fixes at construction).
+    // Reset both to the documented defaults here; a host that wants the old
+    // state back re-sends it via setState (the restore path is unaffected:
+    // it always fully overwrites surface_/cfg_ from the stream).
+    surface_ = defaultSurface();
+    cfg_ = defaultConfig();
+    processSetup.sampleRate = 0;
+    processSetup.maxSamplesPerBlock = 0;
+
     // Buses: symmetric main in/out, stereo by default (mono negotiated via
     // setBusArrangements).
     addAudioInput(STR16("Audio Input"), SpeakerArr::kStereo);
@@ -506,6 +523,24 @@ tresult PLUGIN_API OctavoxNativeProcessor::setState(IBStream* state) {
 tresult PLUGIN_API OctavoxNativeProcessor::setEditorState(IBStream* state) {
     // Alias of the component state for hosts that use the controller path
     // on a single-component effect (idempotent with setState).
+    return setState(state);
+}
+
+tresult PLUGIN_API OctavoxNativeProcessor::setComponentState(IBStream* state) {
+    // R20-P0 (IEditController::setComponentState): the base implementation
+    // (EditController::setComponentState, vsteditcontroller.cpp:74) returns
+    // kNotImplemented. For a single-component effect the controller part is
+    // the same object as the component, and the VST3 contract documents
+    // setComponentState as "receive the component state" -- hosts that drive
+    // the controller interface (editor sync before setEditorState, project
+    // reload paths that separate the component/controller views of the same
+    // object) rely on it to sync the host-visible parameter CURRENT values
+    // with the restored DSP state. Aliasing to the authoritative setState
+    // (the same 'OVR1' blob, the same surface_/cfg_ overwrite, the same
+    // silent parameter-object sync) is the exact correct semantics; the
+    // restore is idempotent, so a host calling BOTH IComponent::setState and
+    // IEditController::setComponentState just restores twice with identical
+    // results.
     return setState(state);
 }
 

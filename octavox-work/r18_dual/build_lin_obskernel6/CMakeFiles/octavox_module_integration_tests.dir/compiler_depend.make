@@ -373,6 +373,7 @@ CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/v
 
 CMakeFiles/octavox_module_integration_tests.dir/octavox_module_integration_tests.cpp.o: /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_module_integration_tests.cpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp \
+  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_ids.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_params.h \
@@ -670,6 +671,7 @@ CMakeFiles/octavox_module_integration_tests.dir/octavox_module_integration_tests
 
 CMakeFiles/octavox_module_integration_tests.dir/octavox_params.cpp.o: /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_params.cpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp \
+  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_params.h \
   /home/z/my-project/octavox-work/vst3sdk/base/source/fdebug.h \
@@ -973,10 +975,6 @@ lib/Release/libbase.a:
 
 /usr/include/c++/14/tr1/poly_laguerre.tcc:
 
-/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
-
-/usr/include/c++/14/tr1/poly_hermite.tcc:
-
 /usr/include/c++/14/tr1/modified_bessel_func.tcc:
 
 /usr/include/c++/14/tr1/legendre_function.tcc:
@@ -1042,6 +1040,12 @@ CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/v
 /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_ids.h:
 
 /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h:
+
+/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
+
+/usr/include/c++/14/tr1/poly_hermite.tcc:
+
+/home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp:
 
 /usr/lib/linux/uapi/x86/asm/posix_types.h:
 

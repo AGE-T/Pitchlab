@@ -7,7 +7,7 @@
 # round-18 evidence tree:
 #
 #   LEG 0  environment + pinned-SDK verification (get_vst3_sdk.sh --verify)
-#   LEG 1  native core (Linux, Release): the 85-case acceptance suite +
+#   LEG 1  native core (Linux, Release): the acceptance suite (96 cases;
 #          the four Lagrange6 neutrality hashes (r15_reference_hashes.txt,
 #          UNCHANGED gate) + the four ObsKernel6 reference measurements
 #          (r18_obs_reference_hashes.txt, established this round) with a
@@ -39,7 +39,7 @@
 #   ./windows_dual_build.sh [--sdk-root <path>] [--evidence-out <dir>]
 #                           [--skip-linux] [--skip-core]
 #
-# Exit code 0 iff EVERY gate passes. Nothing is weakened: the 85-case suite
+# Exit code 0 iff EVERY gate passes. Nothing is weakened: the 96-case suite
 # and the four Lagrange6 neutrality hashes are the round-15/16/17/18 gates,
 # bit-identical; the ObsKernel6 measurements are a SEPARATE record.
 #
@@ -98,6 +98,7 @@ win_configure() { # $1 = build dir, $2 = VARIANT
         -DSMTG_RUN_VST_VALIDATOR=OFF \
         -DSMTG_CREATE_MODULE_INFO=OFF \
         -DSMTG_CREATE_PLUGIN_LINK=OFF \
+        -DCMAKE_MAKE_PROGRAM=/usr/bin/gmake \
         -DCMAKE_MODULE_LINKER_FLAGS="-static -Wl,--no-undefined -Wl,/Brepro" \
         -DCMAKE_SHARED_LINKER_FLAGS="-static -Wl,--no-undefined -Wl,/Brepro" \
         -DCMAKE_EXE_LINKER_FLAGS="-static -Wl,/Brepro"
@@ -141,7 +142,7 @@ if [ "${SKIP_CORE}" = "1" ]; then
     say "[LEG 1] SKIPPED (--skip-core)"
 else
     say ""
-    say "[LEG 1] native core -- Release: 85-case suite + 4+4 reference hashes"
+    say "[LEG 1] native core -- Release: 96-case suite + 4+4 reference hashes"
     phase_start
     CORE_BUILD="${R18_ROOT}/build_lin_core"
     cmake -S "${NATIVE_DIR}" -B "${CORE_BUILD}" -DCMAKE_BUILD_TYPE=Release \
@@ -149,12 +150,12 @@ else
     cmake --build "${CORE_BUILD}" -j2 > "${EVID_OUT}/wdb_core_build.log" 2>&1 || fail "core build"
 
     "${CORE_BUILD}/octavox_tests" > "${EVID_OUT}/wdb_core_suite.txt" 2>&1 \
-        || fail "85-case suite (85/85 required)"
-    rg -q "85 passed, 0 failed" "${EVID_OUT}/wdb_core_suite.txt" \
-        && say "  85-case suite: 85/85" || fail "85-case suite summary"
+        || fail "core suite (96/96 required)"
+    rg -q "96 passed, 0 failed" "${EVID_OUT}/wdb_core_suite.txt" \
+        && say "  core suite: 96/96 (93 R19 + 3 R20 Hybrid)" || fail "core suite summary"
 
     # the four EXISTING Lagrange6 neutrality hashes (unchanged gate)
-    "${CORE_BUILD}/octavox_r15refcap" > "${EVID_OUT}/wdb_refcap_lagrange6.txt" 2>&1 || fail "refcap lagrange6"
+    "${CORE_BUILD}/octavox_r15refcap" --legacy > "${EVID_OUT}/wdb_refcap_lagrange6.txt" 2>&1 || fail "refcap lagrange6 (legacy)"
     HASH_OK=1
     for cfg in cfg1_default_unity_lcg_noise_b64_150_512 \
                cfg2_r700c_8v_spread_fb025_sine220 \
@@ -166,11 +167,21 @@ else
     done
     [ "${HASH_OK}" = "1" ] && say "  Lagrange6 neutrality hashes: 4/4 exact vs r15_reference_hashes.txt"
 
+    # R20: the 16.0.0-DEFAULT record (the shipping behaviour) -- 4/4 exact
+    "${CORE_BUILD}/octavox_r15refcap" > "${EVID_OUT}/wdb_refcap_lagrange6_r19.txt" 2>&1 || fail "refcap lagrange6 (16.0.0 defaults)"
+    HASH_OK=1
+    for cfg in cfg1_default_unity_lcg_noise_b64_150_512                cfg2_r700c_8v_spread_fb025_sine220                cfg3_rm400c_4v_nospread_chirp200_800                cfg4_stereo_2ch_4v_unity_then_r400c; do
+        got="$(rg "${cfg}" "${EVID_OUT}/wdb_refcap_lagrange6_r19.txt" | rg -o '0x[0-9a-f]{16}' | head -1)"
+        want="$(rg "${cfg}" "${NATIVE_DIR}/r19_reference_hashes.txt" | rg -o '0x[0-9a-f]{16}' | head -1)"
+        [ "${got}" = "${want}" ] || { fail "lagrange6 r19-record hash ${cfg}: got ${got} want ${want}"; HASH_OK=0; }
+    done
+    [ "${HASH_OK}" = "1" ] && say "  Lagrange6 16.0.0-default hashes: 4/4 exact vs r19_reference_hashes.txt"
+
     # the four NEW ObsKernel6 reference measurements + reproducibility
-    "${CORE_BUILD}/octavox_r15refcap" --interpolation obskernel6 \
-        > "${EVID_OUT}/wdb_refcap_obskernel6_run1.txt" 2>&1 || fail "refcap obskernel6 run1"
-    "${CORE_BUILD}/octavox_r15refcap" --interpolation obskernel6 \
-        > "${EVID_OUT}/wdb_refcap_obskernel6_run2.txt" 2>&1 || fail "refcap obskernel6 run2"
+    "${CORE_BUILD}/octavox_r15refcap" --legacy --interpolation obskernel6 \
+        > "${EVID_OUT}/wdb_refcap_obskernel6_run1.txt" 2>&1 || fail "refcap obskernel6 run1 (legacy)"
+    "${CORE_BUILD}/octavox_r15refcap" --legacy --interpolation obskernel6 \
+        > "${EVID_OUT}/wdb_refcap_obskernel6_run2.txt" 2>&1 || fail "refcap obskernel6 run2 (legacy)"
     cmp -s "${EVID_OUT}/wdb_refcap_obskernel6_run1.txt" "${EVID_OUT}/wdb_refcap_obskernel6_run2.txt" \
         && say "  ObsKernel6 measurements: reproducible (run1 == run2)" \
         || fail "obskernel6 reproducibility"
@@ -206,8 +217,8 @@ variant_leg2() { # $1 = VARIANT (LAGRANGE6|OBSKERNEL6) $2 = bundle name
     "${B}/bin/Release/octavox_vst3_wrapper_tests" \
         > "${EVID_OUT}/wdb_lin_${VARIANT}_wrapper_tests.txt" 2>&1 \
         || fail "lin ${VARIANT} wrapper tests (15/15 required)"
-    rg -q "15 passed, 0 failed" "${EVID_OUT}/wdb_lin_${VARIANT}_wrapper_tests.txt" \
-        && say "  wrapper tests: 15/15" || fail "lin ${VARIANT} wrapper summary"
+    rg -q "20 passed, 0 failed" "${EVID_OUT}/wdb_lin_${VARIANT}_wrapper_tests.txt" \
+        && say "  wrapper tests: 20/20 (R16 8 + R17 7 + R20-P0 5)" || fail "lin ${VARIANT} wrapper summary"
 
     ( cd "${VST3_DIR}" && "${B}/bin/Release/octavox_module_integration_tests" \
         --module "${B}/VST3/Release/${BUNDLE}.vst3" \
@@ -243,6 +254,14 @@ variant_leg3() { # $1 = VARIANT $2 = bundle name
     say ""
     say "[LEG 3/${VARIANT}] WINDOWS x64 cross-build (llvm-mingw, PE32+ x86-64)"
     phase_start
+    # R20: FULL FRESH BUILD -- the round-19 build directories carry objects
+    # compiled by the PREVIOUS llvm-mingw release (clang 23.1.4; the sandbox
+    # reset forced re-acquisition -> 23.1.2), so an incremental build would
+    # mix two compiler generations (measured: 965632- vs 964608-byte modules
+    # and a failing LEG-4 byte comparison for exactly this reason). A clean
+    # directory makes every object come from the CURRENT toolchain and LEG 4
+    # byte-reproducibility meaningful again.
+    rm -rf "${B}"
     win_configure "${B}" "${VARIANT}" > "${EVID_OUT}/wdb_win_${VARIANT}_configure.log" 2>&1 || fail "win ${VARIANT} configure"
     cmake --build "${B}" -j2 > "${EVID_OUT}/wdb_win_${VARIANT}_build.log" 2>&1 || fail "win ${VARIANT} build"
     cmake --build "${B}" --target validator > "${EVID_OUT}/wdb_win_${VARIANT}_validator_build.log" 2>&1 || fail "win ${VARIANT} validator build"
@@ -289,7 +308,7 @@ say "  leg 4 wall: $(phase_secs) s"
 say ""
 say "[LEG 5] assembly: out/Builds/OctavoxRE_R18_Windows_x64 + the Windows validation kit"
 phase_start
-BUILDS="${OUT_ROOT}/Builds/OctavoxRE_R18_Windows_x64"
+BUILDS="${OUT_ROOT}/Builds/OctavoxRE_R20_Windows_x64"
 KIT="${OUT_ROOT}/Windows_Validation_Kit"
 rm -rf "${BUILDS}" "${KIT}"
 mkdir -p "${BUILDS}/Lagrange6" "${BUILDS}/ObsKernel6" \

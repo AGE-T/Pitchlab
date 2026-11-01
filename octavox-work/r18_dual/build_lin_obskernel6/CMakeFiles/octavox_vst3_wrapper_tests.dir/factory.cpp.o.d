@@ -27,6 +27,7 @@ CMakeFiles/octavox_vst3_wrapper_tests.dir/factory.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
+ /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/../include/octavox/stageprof.hpp \
  /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/funknown.h \
  /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/fplatform.h \
  /usr/include/endian.h /usr/include/x86_64-linux-gnu/bits/endian.h \

@@ -132,4 +132,5 @@ CMakeFiles/octavox_r15refcap.dir/cli/r15ref_capture.cpp.o: \
  /usr/include/c++/14/bits/memory_resource.h /usr/include/c++/14/cstddef \
  /usr/include/c++/14/bits/uses_allocator.h \
  /usr/include/c++/14/bits/uses_allocator_args.h /usr/include/c++/14/tuple \
- /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp
+ /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp \
+ /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp

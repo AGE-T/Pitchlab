@@ -4,6 +4,7 @@
 CMakeFiles/octavox_cli.dir/cli/octavox_cli.cpp.o
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/cli/octavox_cli.cpp
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp
+ /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/tests/wav_io.hpp
  /usr/include/alloca.h
  /usr/include/asm-generic/errno-base.h

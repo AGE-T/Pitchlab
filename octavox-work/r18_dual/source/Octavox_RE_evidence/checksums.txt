@@ -529,3 +529,11 @@ d8c07a2f019253dcb6baca22ef732b40f69c4b161318d8d6095f47d9f7dc11be  poc/example_ou
 8e8f9be5ffdd937d464bf8f4cc75ed21643fc857a9f0833bdecaa5dc481e7408  poc/offline_measurements.json
 5e5ecf01e84cfed1b540331626fc3850141faec6f8ead0a3ac726339316950b1  poc/poc_measurements.json
 24c10d0a0c9aa3bf3ad7d181028ef39aefba0f7cb57c96fb31d2f1c150bb5572  poc/poc_run.log
+
+# ROUND 20 (2026-11-01)
+OctavoxRE_R20_Windows_x64_Dual_Build.zip  5186196 B  sha256 2587e896bf69a57fe9721e384eafd8b19ca66b488f696a96f96d8696c85672da
+  Lagrange6  module  964608 B  sha256 d25902d6321950da4ddf622293132518768795a6c32ede3fc23a25cbb91aab50
+  ObsKernel6 module  964608 B  sha256 0040425897a6aea318c0c18065a169627d350a9dabcef4134aa7e6b73fe4b966
+# The ROUND-20 evidence zip's OWN sha256 is recorded OUTSIDE itself
+# (worklog + the delivery dashboard sidecar) — a zip cannot contain its own
+# hash; the archive's inner manifest is the file list itself (616 files).

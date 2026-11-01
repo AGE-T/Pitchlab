@@ -114,6 +114,7 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/octavoxnative.dir/DependInfo.cmake"
   "CMakeFiles/octavox_vst3_wrapper_tests.dir/DependInfo.cmake"
   "CMakeFiles/octavox_module_integration_tests.dir/DependInfo.cmake"
+  "CMakeFiles/octavox_dual_nulltest.dir/DependInfo.cmake"
   "vst3sdk/CMakeFiles/cmake_modules.dir/DependInfo.cmake"
   "vst3sdk/CMakeFiles/cmake_VST_modules.dir/DependInfo.cmake"
   "vst3sdk/pluginterfaces/CMakeFiles/pluginterfaces.dir/DependInfo.cmake"

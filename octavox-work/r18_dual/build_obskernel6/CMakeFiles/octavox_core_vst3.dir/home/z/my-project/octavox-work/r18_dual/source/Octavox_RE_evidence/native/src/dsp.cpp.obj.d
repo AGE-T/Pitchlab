@@ -49,6 +49,7 @@ CMakeFiles/octavox_core_vst3.dir/home/z/my-project/octavox-work/r18_dual/source/
   /home/z/tools/llvm-mingw/lib/clang/23/include/vadefs.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/vadefs.h \
   /home/z/tools/llvm-mingw/lib/clang/23/include/__stddef_wint_t.h \
+  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/../include/octavox/stageprof.hpp \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/algorithm \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__algorithm/adjacent_find.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__algorithm/comp.h \
@@ -399,6 +400,21 @@ CMakeFiles/octavox_core_vst3.dir/home/z/my-project/octavox-work/r18_dual/source/
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__algorithm/clamp.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__algorithm/pstl.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__algorithm/sample.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/chrono \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__chrono/duration.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/ratio \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__chrono/file_clock.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__chrono/system_clock.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__chrono/time_point.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/ctime \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/time.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/sys/timeb.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/_timeval.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/pthread_time.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/pthread_compat.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__chrono/high_resolution_clock.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__chrono/steady_clock.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/compare \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/cmath \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__math/hypot.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__math/abs.h \
@@ -456,7 +472,6 @@ CMakeFiles/octavox_core_vst3.dir/home/z/my-project/octavox-work/r18_dual/source/
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__tuple/tuple_like.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__type_traits/maybe_const.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__type_traits/reference_constructs_from_temporary.h \
-  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/compare \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__ranges/owning_view.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__ranges/empty.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__ranges/view_interface.h \
@@ -479,4 +494,135 @@ CMakeFiles/octavox_core_vst3.dir/home/z/my-project/octavox-work/r18_dual/source/
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__iterator/empty.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__iterator/reverse_access.h \
   /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/__iterator/size.h \
-  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/src/obs_kernel_table.h
+  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/src/obs_kernel_table.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/x86intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/ia32intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/immintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/x86gprintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/hresetintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/uintrintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/usermsrintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/crc32intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/prfchiintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/raointintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/cmpccxaddintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/mmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/xmmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/mm_malloc.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1/stdlib.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/stdlib.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/corecrt_malloc.h \
+  /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/malloc.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/emmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/pmmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/tmmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/smmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/popcntintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/wmmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/__wmmintrin_aes.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/__wmmintrin_pclmul.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/clflushoptintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/clwbintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avxintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx2intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/f16cintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/bmiintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/bmi2intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/lzcntintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/fmaintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512fintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vlintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512bwintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512bitalgintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512bmmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512bmmvlintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512cdintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vpopcntdqintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vpopcntdqvlintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vnniintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vlvnniintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avxvnniintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512dqintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vlbitalgintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vlbwintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vlcdintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vldqintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512ifmaintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512ifmavlintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avxifmaintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vbmiintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vbmivlintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vbmi2intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vlvbmi2intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512fp16intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vlfp16intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512bf16intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vlbf16intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/pkuintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/vpclmulqdqintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/vaesintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/gfniintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avxvnniint8intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avxneconvertintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/sha512intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/sm3intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/sm4intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avxvnniint16intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/rtmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/xtestintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/shaintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/fxsrintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/xsaveintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/xsaveoptintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/xsavecintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/xsavesintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/cetintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/adcintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/adxintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/rdseedintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/wbnoinvdintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/cldemoteintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/waitpkgintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/movdirintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/movrsintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/movrs_avx10_2intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/movrs_avx10_2_512intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/pconfigintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/sgxintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/ptwriteintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/invpcidintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/keylockerintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/amxintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/amxfp16intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/amxcomplexintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/amxfp8intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/amxmovrsintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/amxavx512intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vp2intersectintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx512vlvp2intersectintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2bf16intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2convertintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2copyintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2minmaxintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2niintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2satcvtdsintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2satcvtintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2_512bf16intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2_512convertintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2_512minmaxintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2_512niintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2_512satcvtdsintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/avx10_2_512satcvtintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/sm4evexintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/enqcmdintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/serializeintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/tsxldtrkintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/prfchwintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/ammintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/fma4intrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/xopintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/tbmintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/lwpintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/mwaitxintrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/clzerointrin.h \
+  /home/z/tools/llvm-mingw/lib/clang/23/include/rdpruintrin.h

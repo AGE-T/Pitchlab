@@ -1,15 +1,15 @@
 @echo off
 REM ===========================================================================
-REM OCTAVOX R19 -- Windows-side validation kit (variant: Lagrange6)
+REM OCTAVOX R18-WDB -- Windows-side validation kit (variant: Lagrange6)
 REM ===========================================================================
 REM Run this on a REAL Windows x64 machine, from THIS directory
 REM (Windows_Validation_Kit\Lagrange6). Expected relative layout:
-REM   ..\..\Builds\OctavoxRE_R19_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3
+REM   ..\..\Builds\OctavoxRE_R18_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3
 REM Gates: validator 47/47, wrapper tests 15/15, integration tests 12/12.
 REM ===========================================================================
 setlocal
 cd /d "%~dp0"
-set MODULE=..\..\Builds\OctavoxRE_R19_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3
+set MODULE=..\..\Builds\OctavoxRE_R18_Windows_x64\Lagrange6\OctavoxRE_Lagrange6.vst3
 
 echo === [1/3] Steinberg VST3 validator (47 tests expected) ===
 ..\shared\validator.exe "%MODULE%"

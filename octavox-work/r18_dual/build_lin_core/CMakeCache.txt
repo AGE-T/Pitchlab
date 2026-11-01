@@ -131,10 +131,10 @@ CMAKE_PROJECT_NAME:STATIC=octavox_native
 CMAKE_PROJECT_SPDX_LICENSE:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION:STATIC=15.0.0
+CMAKE_PROJECT_VERSION:STATIC=16.0.0
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION_MAJOR:STATIC=15
+CMAKE_PROJECT_VERSION_MAJOR:STATIC=16
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION_MINOR:STATIC=0
@@ -212,6 +212,9 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
 //Build with ASan+UBSan
 ENABLE_SANITIZERS:BOOL=OFF
+
+//Instrument the core with stage cycle counters
+OCTAVOX_STAGE_TIMERS:BOOL=OFF
 
 //Value Computed by CMake
 octavox_native_BINARY_DIR:STATIC=/home/z/my-project/octavox-work/r18_dual/build_lin_core

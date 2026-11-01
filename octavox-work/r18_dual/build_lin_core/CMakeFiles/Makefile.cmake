@@ -51,5 +51,10 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/octavox_tests.dir/DependInfo.cmake"
   "CMakeFiles/octavox_cli.dir/DependInfo.cmake"
   "CMakeFiles/octavox_r15refcap.dir/DependInfo.cmake"
+  "CMakeFiles/octavox_r19_clickscan.dir/DependInfo.cmake"
+  "CMakeFiles/octavox_r19_nulltest.dir/DependInfo.cmake"
+  "CMakeFiles/octavox_r19_variant_metrics.dir/DependInfo.cmake"
+  "CMakeFiles/octavox_r20_detcompare.dir/DependInfo.cmake"
+  "CMakeFiles/octavox_r20_dualmono.dir/DependInfo.cmake"
   "CMakeFiles/octavox_bench.dir/DependInfo.cmake"
   )

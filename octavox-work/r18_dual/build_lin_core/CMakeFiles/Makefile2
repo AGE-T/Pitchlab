@@ -67,6 +67,11 @@ all: CMakeFiles/octavox_dsp.dir/all
 all: CMakeFiles/octavox_tests.dir/all
 all: CMakeFiles/octavox_cli.dir/all
 all: CMakeFiles/octavox_r15refcap.dir/all
+all: CMakeFiles/octavox_r19_clickscan.dir/all
+all: CMakeFiles/octavox_r19_nulltest.dir/all
+all: CMakeFiles/octavox_r19_variant_metrics.dir/all
+all: CMakeFiles/octavox_r20_detcompare.dir/all
+all: CMakeFiles/octavox_r20_dualmono.dir/all
 all: CMakeFiles/octavox_bench.dir/all
 .PHONY : all
 
@@ -75,6 +80,11 @@ codegen: CMakeFiles/octavox_dsp.dir/codegen
 codegen: CMakeFiles/octavox_tests.dir/codegen
 codegen: CMakeFiles/octavox_cli.dir/codegen
 codegen: CMakeFiles/octavox_r15refcap.dir/codegen
+codegen: CMakeFiles/octavox_r19_clickscan.dir/codegen
+codegen: CMakeFiles/octavox_r19_nulltest.dir/codegen
+codegen: CMakeFiles/octavox_r19_variant_metrics.dir/codegen
+codegen: CMakeFiles/octavox_r20_detcompare.dir/codegen
+codegen: CMakeFiles/octavox_r20_dualmono.dir/codegen
 codegen: CMakeFiles/octavox_bench.dir/codegen
 .PHONY : codegen
 
@@ -87,6 +97,11 @@ clean: CMakeFiles/octavox_dsp.dir/clean
 clean: CMakeFiles/octavox_tests.dir/clean
 clean: CMakeFiles/octavox_cli.dir/clean
 clean: CMakeFiles/octavox_r15refcap.dir/clean
+clean: CMakeFiles/octavox_r19_clickscan.dir/clean
+clean: CMakeFiles/octavox_r19_nulltest.dir/clean
+clean: CMakeFiles/octavox_r19_variant_metrics.dir/clean
+clean: CMakeFiles/octavox_r20_detcompare.dir/clean
+clean: CMakeFiles/octavox_r20_dualmono.dir/clean
 clean: CMakeFiles/octavox_bench.dir/clean
 .PHONY : clean
 
@@ -129,7 +144,7 @@ CMakeFiles/octavox_dsp.dir/clean:
 CMakeFiles/octavox_tests.dir/all: CMakeFiles/octavox_dsp.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_tests.dir/build.make CMakeFiles/octavox_tests.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_tests.dir/build.make CMakeFiles/octavox_tests.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=11,12,13,14 "Built target octavox_tests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=23,24,25,26 "Built target octavox_tests"
 .PHONY : CMakeFiles/octavox_tests.dir/all
 
 # Build rule for subdir invocation for target.
@@ -146,7 +161,7 @@ octavox_tests: CMakeFiles/octavox_tests.dir/rule
 # codegen rule for target.
 CMakeFiles/octavox_tests.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_tests.dir/build.make CMakeFiles/octavox_tests.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=11,12,13,14 "Finished codegen for target octavox_tests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=23,24,25,26 "Finished codegen for target octavox_tests"
 .PHONY : CMakeFiles/octavox_tests.dir/codegen
 
 # clean rule for target.
@@ -217,6 +232,166 @@ CMakeFiles/octavox_r15refcap.dir/codegen:
 CMakeFiles/octavox_r15refcap.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r15refcap.dir/build.make CMakeFiles/octavox_r15refcap.dir/clean
 .PHONY : CMakeFiles/octavox_r15refcap.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/octavox_r19_clickscan.dir
+
+# All Build rule for target.
+CMakeFiles/octavox_r19_clickscan.dir/all: CMakeFiles/octavox_dsp.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=11,12,13 "Built target octavox_r19_clickscan"
+.PHONY : CMakeFiles/octavox_r19_clickscan.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/octavox_r19_clickscan.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 5
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/octavox_r19_clickscan.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 0
+.PHONY : CMakeFiles/octavox_r19_clickscan.dir/rule
+
+# Convenience name for target.
+octavox_r19_clickscan: CMakeFiles/octavox_r19_clickscan.dir/rule
+.PHONY : octavox_r19_clickscan
+
+# codegen rule for target.
+CMakeFiles/octavox_r19_clickscan.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=11,12,13 "Finished codegen for target octavox_r19_clickscan"
+.PHONY : CMakeFiles/octavox_r19_clickscan.dir/codegen
+
+# clean rule for target.
+CMakeFiles/octavox_r19_clickscan.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_clickscan.dir/build.make CMakeFiles/octavox_r19_clickscan.dir/clean
+.PHONY : CMakeFiles/octavox_r19_clickscan.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/octavox_r19_nulltest.dir
+
+# All Build rule for target.
+CMakeFiles/octavox_r19_nulltest.dir/all: CMakeFiles/octavox_dsp.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=14,15,16 "Built target octavox_r19_nulltest"
+.PHONY : CMakeFiles/octavox_r19_nulltest.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/octavox_r19_nulltest.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 5
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/octavox_r19_nulltest.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 0
+.PHONY : CMakeFiles/octavox_r19_nulltest.dir/rule
+
+# Convenience name for target.
+octavox_r19_nulltest: CMakeFiles/octavox_r19_nulltest.dir/rule
+.PHONY : octavox_r19_nulltest
+
+# codegen rule for target.
+CMakeFiles/octavox_r19_nulltest.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=14,15,16 "Finished codegen for target octavox_r19_nulltest"
+.PHONY : CMakeFiles/octavox_r19_nulltest.dir/codegen
+
+# clean rule for target.
+CMakeFiles/octavox_r19_nulltest.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_nulltest.dir/build.make CMakeFiles/octavox_r19_nulltest.dir/clean
+.PHONY : CMakeFiles/octavox_r19_nulltest.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/octavox_r19_variant_metrics.dir
+
+# All Build rule for target.
+CMakeFiles/octavox_r19_variant_metrics.dir/all: CMakeFiles/octavox_dsp.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_variant_metrics.dir/build.make CMakeFiles/octavox_r19_variant_metrics.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_variant_metrics.dir/build.make CMakeFiles/octavox_r19_variant_metrics.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=17,18 "Built target octavox_r19_variant_metrics"
+.PHONY : CMakeFiles/octavox_r19_variant_metrics.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/octavox_r19_variant_metrics.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 4
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/octavox_r19_variant_metrics.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 0
+.PHONY : CMakeFiles/octavox_r19_variant_metrics.dir/rule
+
+# Convenience name for target.
+octavox_r19_variant_metrics: CMakeFiles/octavox_r19_variant_metrics.dir/rule
+.PHONY : octavox_r19_variant_metrics
+
+# codegen rule for target.
+CMakeFiles/octavox_r19_variant_metrics.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_variant_metrics.dir/build.make CMakeFiles/octavox_r19_variant_metrics.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=17,18 "Finished codegen for target octavox_r19_variant_metrics"
+.PHONY : CMakeFiles/octavox_r19_variant_metrics.dir/codegen
+
+# clean rule for target.
+CMakeFiles/octavox_r19_variant_metrics.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r19_variant_metrics.dir/build.make CMakeFiles/octavox_r19_variant_metrics.dir/clean
+.PHONY : CMakeFiles/octavox_r19_variant_metrics.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/octavox_r20_detcompare.dir
+
+# All Build rule for target.
+CMakeFiles/octavox_r20_detcompare.dir/all: CMakeFiles/octavox_dsp.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_detcompare.dir/build.make CMakeFiles/octavox_r20_detcompare.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_detcompare.dir/build.make CMakeFiles/octavox_r20_detcompare.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=19,20 "Built target octavox_r20_detcompare"
+.PHONY : CMakeFiles/octavox_r20_detcompare.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/octavox_r20_detcompare.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 4
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/octavox_r20_detcompare.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 0
+.PHONY : CMakeFiles/octavox_r20_detcompare.dir/rule
+
+# Convenience name for target.
+octavox_r20_detcompare: CMakeFiles/octavox_r20_detcompare.dir/rule
+.PHONY : octavox_r20_detcompare
+
+# codegen rule for target.
+CMakeFiles/octavox_r20_detcompare.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_detcompare.dir/build.make CMakeFiles/octavox_r20_detcompare.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=19,20 "Finished codegen for target octavox_r20_detcompare"
+.PHONY : CMakeFiles/octavox_r20_detcompare.dir/codegen
+
+# clean rule for target.
+CMakeFiles/octavox_r20_detcompare.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_detcompare.dir/build.make CMakeFiles/octavox_r20_detcompare.dir/clean
+.PHONY : CMakeFiles/octavox_r20_detcompare.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/octavox_r20_dualmono.dir
+
+# All Build rule for target.
+CMakeFiles/octavox_r20_dualmono.dir/all: CMakeFiles/octavox_dsp.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_dualmono.dir/build.make CMakeFiles/octavox_r20_dualmono.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_dualmono.dir/build.make CMakeFiles/octavox_r20_dualmono.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=21,22 "Built target octavox_r20_dualmono"
+.PHONY : CMakeFiles/octavox_r20_dualmono.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/octavox_r20_dualmono.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 4
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/octavox_r20_dualmono.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles 0
+.PHONY : CMakeFiles/octavox_r20_dualmono.dir/rule
+
+# Convenience name for target.
+octavox_r20_dualmono: CMakeFiles/octavox_r20_dualmono.dir/rule
+.PHONY : octavox_r20_dualmono
+
+# codegen rule for target.
+CMakeFiles/octavox_r20_dualmono.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_dualmono.dir/build.make CMakeFiles/octavox_r20_dualmono.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/z/my-project/octavox-work/r18_dual/build_lin_core/CMakeFiles --progress-num=21,22 "Finished codegen for target octavox_r20_dualmono"
+.PHONY : CMakeFiles/octavox_r20_dualmono.dir/codegen
+
+# clean rule for target.
+CMakeFiles/octavox_r20_dualmono.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_r20_dualmono.dir/build.make CMakeFiles/octavox_r20_dualmono.dir/clean
+.PHONY : CMakeFiles/octavox_r20_dualmono.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/octavox_bench.dir

@@ -376,6 +376,7 @@ CMakeFiles/octavox_module_integration_tests.dir/home/z/my-project/octavox-work/v
 CMakeFiles/octavox_module_integration_tests.dir/octavox_module_integration_tests.cpp.o
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_module_integration_tests.cpp
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp
+ /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_ids.h
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_params.h
@@ -674,6 +675,7 @@ CMakeFiles/octavox_module_integration_tests.dir/octavox_module_integration_tests
 CMakeFiles/octavox_module_integration_tests.dir/octavox_params.cpp.o
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_params.cpp
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp
+ /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h
  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_params.h
  /home/z/my-project/octavox-work/vst3sdk/base/source/fdebug.h

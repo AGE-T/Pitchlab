@@ -365,3 +365,30 @@ hash-verified and the target binary enables fresh analysis).
 `/home/z/octavox/poc-run/offline_measurements.json` + `OFFLINE_COMPARISON.md`;
 this report at `/home/z/my-project/OCTAVOX_AGENT_HANDOVER_REPORT.md`
 (copy: `/home/z/octavox/OCTAVOX_AGENT_HANDOVER_REPORT.md`).
+
+---
+
+## Round 20 handover addendum (2026-11-01)
+
+Current state: the R20 specification was delivered in full (P0-P5). The
+three named product-level items are closed with measured evidence:
+P0 (VST3 default-parameter init — SDK-level root cause, 3-part fix,
+20/20 wrapper gates + sensitivity proof), P2 (the Hybrid detector — near-
+FullRate stability at Decimated-class cost; the three modes compared on a
+13-corpus real-material battery; Decimated stays the shipping default),
+P3 (dual-mono/stereo — deterministic dual-mono bit-identical; the user's
+"second zero-offset voice doubles the effect" is the default inter-voice
+base-delay law, echo = 32 samples = 0.667 ms at 48 kHz, a temporal
+mechanism, not an L/R one).
+
+Next-agent pointers:
+* R21-a: the harmony/tuning engine — every table and rule is already
+  dumped and CLOSED (R17 §1, R18 P4.1/P4.2; see
+  docs/R20_FEATURE_RECONSTRUCTION_MATRIX.md C-rows and its roadmap). The
+  core's setVoiceRatio per-voice override API is the ready consumer.
+* R21-b: Randomize (the rate-walk producer; consumer chain documented).
+* R21-c/d: host-sync delays; host-exposing commit_crossfade_seconds.
+* Any core change: re-run native/tools/windows_dual_build.sh — after the
+  5th sandbox reset it needs the pip cmake (explicit CMAKE_MAKE_PROGRAM is
+  now in the script) and the re-acquired llvm-mingw 20260922 (clang 23.1.2
+  — deviation vs R19's 23.1.4 recorded in the worklog).

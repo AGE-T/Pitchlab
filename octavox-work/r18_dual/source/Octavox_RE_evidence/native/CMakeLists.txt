@@ -157,6 +157,29 @@ if(NOT MSVC)
 endif()
 
 # ---------------------------------------------------------------------------
+# R20-P2: the real-material three-detector comparison tool (see the file
+# header for the corpus + metrics contract). Optional trajectory CSVs for
+# visualisation; JSON record for the evidence archive.
+# ---------------------------------------------------------------------------
+add_executable(octavox_r20_detcompare
+    cli/r20_detcompare.cpp
+)
+target_link_libraries(octavox_r20_detcompare PRIVATE octavox_dsp)
+if(NOT MSVC)
+    target_compile_options(octavox_r20_detcompare PRIVATE -Wall -Wextra)
+endif()
+
+# R20-P3: the deterministic dual-mono / stereo integrity tool.
+add_executable(octavox_r20_dualmono
+    cli/r20_dualmono.cpp
+)
+target_link_libraries(octavox_r20_dualmono PRIVATE octavox_dsp)
+if(NOT MSVC)
+    target_compile_options(octavox_r20_dualmono PRIVATE -Wall -Wextra)
+endif()
+
+
+# ---------------------------------------------------------------------------
 # Benchmark (release; deterministic LCG input identical to the Python side)
 # R15-P2: 96 kHz variants + the per-voice-surface case (see bench_main.cpp).
 # R16-P2: 13th case mono_8v_b128_96k_ctrl512 + case selection + the JSON

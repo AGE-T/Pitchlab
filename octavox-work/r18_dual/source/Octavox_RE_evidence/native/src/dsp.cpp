@@ -315,7 +315,7 @@ public:
     void configure(int sr, DetectorMode mode) {
         mode_ = mode;
         sr_ = sr;
-        if (mode == DetectorMode::Decimated) {
+        if (mode == DetectorMode::Decimated || mode == DetectorMode::Hybrid) {
             decim_ = decimationFor(sr);
             sr_dec_ = sr / decim_;  // (exact at the canonical rates)
             tau_min_ = std::max(2, static_cast<int>(sr_dec_ / 1200.0));
@@ -326,6 +326,27 @@ public:
             // (bounded by the absolute floor 2) -- see estimate().
             tau_lo_ = std::max(2, tau_min_ - 18);
             designAntiAlias(sr, sr_dec_);
+            if (mode == DetectorMode::Hybrid) {
+                // R20-P2: the FINE stage's own window -- the full-rate law
+                // at the HOST rate (the FullRate detector's own window),
+                // holding the UNFILTERED stream samples. Difference support
+                // m_raw = win_raw/2 - tau_max_raw keeps the refinement
+                // inside the window for every clamped neighborhood lag.
+                tau_min_raw_ = std::max(2, static_cast<int>(sr / 1200.0));
+                const int tau_max_raw = static_cast<int>(sr / 60.0);
+                win_raw_ = std::max(2048, static_cast<int>(std::ceil(2.5 * tau_max_raw)));
+                tau_max_raw_ = std::min(win_raw_ - 2, tau_max_raw);
+                m_raw_ = (win_raw_ / 2) - tau_max_raw_;
+                if (m_raw_ < 32) m_raw_ = 0;  // degenerate (never at the
+                                              // accepted rates; guards only)
+                buf_raw_.assign(win_raw_, 0.0);
+            } else {
+                win_raw_ = 0;
+                tau_min_raw_ = 2;
+                tau_max_raw_ = 2;
+                m_raw_ = 0;
+                buf_raw_.clear();
+            }
         } else {
             decim_ = 1;
             sr_dec_ = sr;
@@ -334,6 +355,11 @@ public:
             win_ = std::max(2048, static_cast<int>(std::ceil(2.5 * tau_max)));
             tau_max_ = std::min(win_ - 2, tau_max);
             tau_lo_ = tau_min_;  // FullRate: the exact 15.00 range
+            win_raw_ = 0;
+            tau_min_raw_ = 2;
+            tau_max_raw_ = 2;
+            m_raw_ = 0;
+            buf_raw_.clear();
         }
         buf_.assign(win_, 0.0);
         d_.assign(std::max(0, tau_max_ - tau_lo_), 0.0);
@@ -343,6 +369,7 @@ public:
 
     void reset() {
         std::fill(buf_.begin(), buf_.end(), 0.0);
+        if (!buf_raw_.empty()) std::fill(buf_raw_.begin(), buf_raw_.end(), 0.0);
         last_f0_ = 0.0;
         pos_ = 0;
         for (int s = 0; s < 3; ++s) {
@@ -368,8 +395,22 @@ public:
     // cascade, decimate by decim_ on the GLOBAL stream position grid, and
     // push the kept samples into the sliding window. Allocation-free (the
     // conversion scratch is a fixed member; window rolls happen per chunk).
+    // R20-P2: the Hybrid mode ALSO feeds the UNFILTERED stream samples into
+    // the fine-stage window (buf_raw_) -- one extra roll per call, the raw
+    // window ends at the same stream sample as the decimated one, so the
+    // coarse candidate lag maps 1:1 (x D) onto the raw window's frame.
     void pushDecimated(const float* x, int n) {
         OCTAVOX_PROF(pftim, stageprof::kDetBuffering);
+        if (mode_ == DetectorMode::Hybrid && n > 0) {
+            if (n >= win_raw_) {
+                for (int i = 0; i < win_raw_; ++i)
+                    buf_raw_[i] = static_cast<double>(x[n - win_raw_ + i]);
+            } else {
+                std::copy(buf_raw_.begin() + n, buf_raw_.end(), buf_raw_.begin());
+                for (int i = 0; i < n; ++i)
+                    buf_raw_[win_raw_ - n + i] = static_cast<double>(x[i]);
+            }
+        }
         if (decim_ <= 1) {  // no decimation: identical to the raw window feed
             pushBlockRaw(x, n);
             pos_ += n;
@@ -399,6 +440,7 @@ public:
 
     double estimate() {
         OCTAVOX_PROF(petim, stageprof::kDetEstimate);
+        if (mode_ == DetectorMode::Hybrid) return estimateHybrid();
         const std::vector<double>& x = buf_;
         double peak = 0.0;
         for (int i = 0; i < win_; ++i) peak = std::max(peak, std::abs(x[i]));
@@ -488,6 +530,151 @@ public:
     int controlRate() const { return sr_dec_; }
 
 private:
+    // R20-P2 (Hybrid): the coarse-to-fine estimate. The COARSE stage below
+    // duplicates the Decimated estimator's arithmetic VERBATIM (same peak
+    // gate on the filtered window, same difference function over
+    // [tau_lo_, tau_max_), same warmed cumulative mean, same threshold law
+    // with the same fallback argmin, same d-based parabolic refine) -- it
+    // must NOT share code with estimate() at the risk of instruction-level
+    // drift: the FullRate and Decimated paths above stay byte-for-byte the
+    // R19 code, bit-exact against their recorded reference hashes.
+    double estimateHybrid() {
+        // ---- stage 1: coarse (the decimated estimator) --------------------
+        const std::vector<double>& x = buf_;
+        double peak = 0.0;
+        for (int i = 0; i < win_; ++i) peak = std::max(peak, std::abs(x[i]));
+        if (peak < 1e-6 || tau_max_ <= tau_min_ || m_raw_ <= 0) {
+            last_f0_ = 0.0;
+            return 0.0;
+        }
+        const int seg0 = win_ / 2;
+        const int m = (win_ - seg0) - tau_max_;
+        if (m < 32) {
+            last_f0_ = 0.0;
+            return 0.0;
+        }
+        const int ntau = tau_max_ - tau_lo_;
+        for (int i = 0; i < ntau; ++i) {
+            const int tau = tau_lo_ + i;
+            double s = 0.0;
+            for (int j = 0; j < m; ++j) {
+                const double a = x[seg0 + j] - x[seg0 + tau + j];
+                s += a * a;
+            }
+            d_[i] = s;
+        }
+        double run = 0.0;
+        for (int i = 0; i < ntau; ++i) {
+            run += d_[i];
+            cmnd_[i] = (run > 0.0) ? d_[i] * static_cast<double>(i + 1) / run : 1.0;
+        }
+        const int base = tau_min_ - tau_lo_;
+        int idx = -1;
+        const double thr = 0.20;
+        for (int i = base + 1; i < ntau - 1; ++i) {
+            if (cmnd_[i] < thr && cmnd_[i] <= cmnd_[i - 1] && cmnd_[i] <= cmnd_[i + 1]) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx < 0) {
+            idx = base;
+            for (int i = base + 1; i < ntau; ++i)
+                if (cmnd_[i] < cmnd_[idx]) idx = i;
+        }
+        double tau_dec = static_cast<double>(tau_lo_ + idx);
+        {  // coarse parabolic refine on d_ (the Decimated law)
+            if (idx > 0 && idx < ntau - 1) {
+                const double y0 = d_[idx - 1];
+                const double y1 = d_[idx];
+                const double y2 = d_[idx + 1];
+                const double den = y0 - 2.0 * y1 + y2;
+                if (std::abs(den) > 1e-15) tau_dec += 0.5 * (y0 - y2) / den;
+            }
+        }
+        // ---- stage 2: fine (full-rate refinement on the RAW window) -------
+        // The candidate is first CLAMPED into the raw search domain (exactly
+        // the law the Decimated estimator follows when its own argmin hits
+        // a domain edge): a candidate below tau_min_raw_ searches at the
+        // floor, one above tau_max_raw_-1 (see the bound note below) at the
+        // ceiling -- so out-of-range signals (e.g. 55 Hz, below the 60 Hz
+        // validity gate) yield the SAME clamped-edge estimate the Decimated
+        // mode yields, instead of dropping to 0 (measured: the pre-clamp
+        // version dropped 51-61% of estimates on the 55 Hz corpus while
+        // Decimated held its edge-clamped ~60 Hz behaviour).
+        double tau_c = tau_dec * static_cast<double>(decim_);
+        if (tau_c < static_cast<double>(tau_min_raw_)) tau_c = static_cast<double>(tau_min_raw_);
+        if (tau_c > static_cast<double>(tau_max_raw_ - 1))
+            tau_c = static_cast<double>(tau_max_raw_ - 1);
+        const int W = decim_ + 2;
+        int i0 = static_cast<int>(std::ceil(tau_c - static_cast<double>(W)));
+        int i1 = static_cast<int>(std::floor(tau_c + static_cast<double>(W)));
+        if (i0 < tau_min_raw_) i0 = tau_min_raw_;
+        // Upper bound ONE below tau_max_raw_: the parabolic refine reads
+        // best+1 with the FULL m_raw difference support, whose last index
+        // is seg0r + (best+1) + m_raw - 1; at best == tau_max_raw_ that is
+        // exactly win_raw_ (one past the end -- caught by ASan at 48 kHz).
+        // Clamping the search one below keeps every neighbour read inside
+        // the window and costs only the topmost 1/799th of the lag domain
+        // (the [60, 1200] Hz gate is applied afterwards anyway).
+        if (i1 > tau_max_raw_ - 1) i1 = tau_max_raw_ - 1;
+        if (i1 - i0 < 2) {  // degenerate neighborhood (cannot happen at the
+            // accepted rates); keep the coarse-period mapping honest
+            const double f0c = static_cast<double>(sr_) / tau_c;
+            last_f0_ = (60.0 <= f0c && f0c <= 1200.0) ? f0c : 0.0;
+            return last_f0_;
+        }
+        const int seg0r = win_raw_ / 2;
+        const std::vector<double>& xr = buf_raw_;
+        int best = i0;
+        double bestD = 0.0;
+        for (int tau = i0; tau <= i1; ++tau) {
+            double s = 0.0;
+            for (int j = 0; j < m_raw_; ++j) {
+                const double a = xr[seg0r + j] - xr[seg0r + tau + j];
+                s += a * a;
+            }
+            if (tau == i0 || s < bestD) {
+                bestD = s;
+                best = tau;
+            }
+        }
+        double tau_host = static_cast<double>(best);
+        {  // full-resolution parabolic refine on the RAW difference values
+            // (evaluates the two neighbours even if the argmin sits at a
+            // neighborhood edge; both are inside [i0, i1] or the window's
+            // clamped domain). The vertex correction is CLAMPED to +-1 lag:
+            // on nearly-linear d sequences the raw vertex can fly several
+            // lags past the sample grid (measured: at a domain-edge argmin
+            // the unclamped correction pushed tau_host to 800+ and the
+            // [60,1200] Hz gate then rejected the estimate -- the 55 Hz
+            // corpus dropped 51-61% of its estimates for exactly this
+            // reason before the clamp; the Decimated mode never exhibits
+            // it because its own refinement is applied at an INTERIOR
+            // minimum).
+            const int t0 = best - 1, t2 = best + 1;
+            if (t0 >= 1 && t2 < win_raw_ - 1) {
+                double y0 = 0.0, y2 = 0.0;
+                for (int j = 0; j < m_raw_; ++j) {
+                    const double a0 = xr[seg0r + j] - xr[seg0r + t0 + j];
+                    y0 += a0 * a0;
+                    const double a2 = xr[seg0r + j] - xr[seg0r + t2 + j];
+                    y2 += a2 * a2;
+                }
+                const double den = y0 - 2.0 * bestD + y2;
+                if (std::abs(den) > 1e-15) {
+                    double corr = 0.5 * (y0 - y2) / den;
+                    if (corr > 1.0) corr = 1.0;
+                    if (corr < -1.0) corr = -1.0;
+                    tau_host += corr;
+                }
+            }
+        }
+        double f0 = static_cast<double>(sr_) / tau_host;
+        if (!(60.0 <= f0 && f0 <= 1200.0)) f0 = 0.0;
+        last_f0_ = f0;
+        return f0;
+    }
     static int decimationFor(int sr) {
         if (sr <= 24000) return 1;
         long d = std::lround(static_cast<double>(sr) / 24000.0);
@@ -547,6 +734,11 @@ private:
     int tau_min_ = 2, tau_max_ = 800;
     int tau_lo_ = 2;       // R19-a: computation floor (== tau_min_ when FullRate)
     std::vector<double> buf_, d_, cmnd_;
+    // R20-P2 (Hybrid): the fine-stage full-rate window + its lag law
+    int win_raw_ = 0;
+    int tau_min_raw_ = 2, tau_max_raw_ = 2;
+    int m_raw_ = 0;
+    std::vector<double> buf_raw_;
     double last_f0_ = 0.0;
     // R19-a: anti-alias cascade state (3 TDF2 biquads: b0,b1,b2,a1,a2 + z)
     double bq_[3][5] = {};
@@ -1103,7 +1295,8 @@ bool AlignedDelayLine::prepare(const Config& cfg) {
     {
         const int dm = static_cast<int>(cfg.detector_mode);
         if (dm != static_cast<int>(DetectorMode::FullRate) &&
-            dm != static_cast<int>(DetectorMode::Decimated))
+            dm != static_cast<int>(DetectorMode::Decimated) &&
+            dm != static_cast<int>(DetectorMode::Hybrid))
             return fail();
     }
 
@@ -1135,7 +1328,10 @@ bool AlignedDelayLine::prepare(const Config& cfg) {
                          ? 1.0 / (cfg.delay_crossfade_seconds * cfg.sample_rate)
                          : 0.0;
         m.voice_fade_n = cfg.voice_fade_seconds * cfg.sample_rate;
-        m.decimated = (cfg.detector_mode == DetectorMode::Decimated);
+        m.decimated = (cfg.detector_mode != DetectorMode::FullRate);
+        // (R20-P2: Hybrid rides the SAME filtered+decimated push path as
+        // Decimated -- pushDecimated additionally feeds its fine-stage raw
+        // window; FullRate alone uses the raw pushBlock path.)
         for (int i = 0; i < cfg.max_voices; ++i)
             m.vs[i].active = (i < cfg.voices);
         m.proc_hi = cfg.voices;
@@ -1184,7 +1380,7 @@ bool AlignedDelayLine::prepare(const Config& cfg) {
                               ? 1.0 / (cfg.delay_crossfade_seconds * cfg.sample_rate)
                               : 0.0;
         impl_->voice_fade_n = cfg.voice_fade_seconds * cfg.sample_rate;
-        impl_->decimated = (cfg.detector_mode == DetectorMode::Decimated);
+        impl_->decimated = (cfg.detector_mode != DetectorMode::FullRate);
     } catch (...) {
         delete impl_;
         impl_ = nullptr;

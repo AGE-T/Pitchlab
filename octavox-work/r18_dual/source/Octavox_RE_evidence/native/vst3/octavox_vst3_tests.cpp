@@ -61,6 +61,30 @@
 //                                          magic / version, NaN / ring-law
 //                                          violations: rejected, processor
 //                                          stays usable
+//  16. param_defaults_fresh_instance       R20-P0 S1/S6: after initialize
+//      (R20-P0)                           ONLY, all 38 CURRENT values ==
+//                                          declared defaults (info + knob +
+//                                          plain display + string), live
+//                                          surface == defaultSurface
+//  17. param_defaults_after_prepare        R20-P0 S2/S6: after full host
+//      (R20-P0)                           setup+activate the 38 values stay
+//                                          at defaults; the engine BIT-
+//                                          EXACTLY runs the default surface
+//                                          (no events ever); a host flush of
+//                                          the 38 current values keeps it
+//  18. param_defaults_state_roundtrip      R20-P0 S3: default state save ->
+//      (R20-P0)                           restore via setState /
+//                                          setEditorState /
+//                                          setComponentState stays default
+//  19. param_state_restore_new_instance    R20-P0 S4: NON-default blob ->
+//      (R20-P0)                           fresh instance via setState AND
+//                                          the new setComponentState: all 38
+//                                          current values == saved exactly;
+//                                          resave roundtrip
+//  20. param_defaults_reinit_cycles        R20-P0 S5: 6x initialize/terminate
+//      (R20-P0)                           cycles with a non-default life in
+//                                          between: every cycle returns to
+//                                          the documented defaults
 //
 // Exit code 0 iff every case passes. Every measurement is printed.
 // --dump-params prints the 38-parameter metadata table and exits 0.
@@ -2086,6 +2110,546 @@ static void caseStateInvalidBlobs(CaseResult& c) {
 }
 
 //==========================================================================
+// 16-20. R20-P0: default-parameter initialization contract. Every check in
+// this group runs WITHOUT moving any control (no setParamNormalized, no
+// performEdit, no hand-crafted parameter queue -- except case 19/20 where
+// the scenario itself IS a state restore / lifecycle cycle). The six R20
+// scenarios map onto the cases as follows:
+//   S1 new instance ............ case 16 (a)
+//   S2 after prepare ........... case 17 (a)
+//   S3 save-restore ............ case 18
+//   S4 state -> new instance ... case 19 (also the new
+//                                IEditController::setComponentState path)
+//   S5 repeated init cycles .... case 20
+//   S6 host display == DSP ..... case 16 (b/c: display-path reads) +
+//                                case 17 (b/c: the engine bit-exactly runs
+//                                the defaults; a host automation-flush of
+//                                the 38 CURRENT values keeps it there)
+//==========================================================================
+
+namespace {
+
+/// Compare a live surface against the spec-table defaults, field by field.
+/// Returns the worst absolute deviation; 0 == exactly the documented
+/// default surface.
+double surfaceVsDefault(const octavox::vst3wrap::Surface& s) {
+    using octavox::vst3wrap::kMaxVoices;
+    const octavox::vst3wrap::Surface d = octavox::vst3wrap::defaultSurface();
+    double w = 0.0;
+    auto upd = [&](double x) { w = std::max(w, std::fabs(x)); };
+    upd(s.bypass - d.bypass);
+    upd(s.pitchSemi - d.pitchSemi);
+    upd(s.voices - d.voices);
+    upd(s.spread - d.spread);
+    upd(s.feedback - d.feedback);
+    upd(s.wetDry - d.wetDry);
+    for (int v = 0; v < kMaxVoices; ++v) {
+        upd(s.offset[v] - d.offset[v]);
+        upd(s.gain[v] - d.gain[v]);
+        upd(s.mute[v] - d.mute[v]);
+        upd(s.baseMs[v] - d.baseMs[v]);
+    }
+    return w;
+}
+
+/// The core check of the whole group: for every one of the 38 parameters,
+/// the CURRENT host-visible value must equal the declared default through
+/// every reading path a host/Generic-Editor uses:
+///   * getParamNormalized(id)          (knob position)
+///   * ParameterInfo.defaultNormalized (metadata)
+///   * normalizedParamToPlain          (the plain value shown)
+///   * getParamStringByValue           (the string shown)
+/// Returns the worst |current - default| in normalized units.
+double defaultsCurrentVsSpec(OctavoxNativeProcessor* p) {
+    using octavox::vst3wrap::kNumParams;
+    using octavox::vst3wrap::paramSpec;
+    using octavox::vst3wrap::normalizedFromPlain;
+    using octavox::vst3wrap::plainFromNormalized;
+    double worst = 0.0;
+    for (uint32_t id = 0; id < static_cast<uint32_t>(kNumParams); ++id) {
+        const auto& sp = paramSpec(id);
+        const double wantNorm = normalizedFromPlain(id, sp.defaultPlain);
+        const double gotNorm = p->getParamNormalized(id);
+        worst = std::max(worst, std::fabs(gotNorm - wantNorm));
+    }
+    return worst;
+}
+
+}  // namespace
+
+//==========================================================================
+// 16. param_defaults_fresh_instance (S1 + S6 display-path reads)
+//==========================================================================
+static void caseParamDefaultsFresh(CaseResult& c) {
+    using octavox::vst3wrap::kNumParams;
+    using octavox::vst3wrap::paramSpec;
+    using octavox::vst3wrap::normalizedFromPlain;
+    using octavox::vst3wrap::plainFromNormalized;
+
+    // The PUREST fresh instance: create + initialize only. No bus
+    // negotiation, no setupProcessing, no activation, and above all NO
+    // control movement of any kind.
+    auto* p = new OctavoxNativeProcessor();
+    check(c, p->initialize(nullptr) == kResultOk, "initialize failed");
+    check(c, p->getParameterCount() == 38, "fresh instance must expose 38 parameters");
+
+    // (a) CURRENT value == declared default for all 38 (the R20-P0 fix;
+    //     before it, every parameter reported normalized 0: Pitch -24.00,
+    //     Wet/Dry 0.00, Spread off, voice gains 0.0, voice offsets -24.00,
+    //     voice delays 0 ms -- while the engine ran the true defaults).
+    const double worstNorm = defaultsCurrentVsSpec(p);
+    addValue(c, "fresh_current_vs_default_worst_norm", worstNorm);
+    check(c, worstNorm == 0.0,
+          "every parameter's CURRENT value must equal its declared default "
+          "on a fresh instance (host-visible reading path)");
+
+    // (b) Metadata agreement + the plain display value (what the Generic
+    //     Editor shows numerically) == the documented default plain.
+    double worstPlain = 0.0, worstInfo = 0.0;
+    int stringMismatches = 0;
+    for (uint32_t id = 0; id < static_cast<uint32_t>(kNumParams); ++id) {
+        const auto& sp = paramSpec(id);
+        ParameterInfo info;
+        if (p->getParameterInfo(static_cast<int32>(id), info) != kResultOk) {
+            check(c, false, "getParameterInfo failed at id " + std::to_string(id));
+            continue;
+        }
+        worstInfo = std::max(worstInfo,
+                             std::fabs(info.defaultNormalizedValue -
+                                       normalizedFromPlain(id, sp.defaultPlain)));
+        const double shown = p->normalizedParamToPlain(id, p->getParamNormalized(id));
+        worstPlain = std::max(worstPlain, std::fabs(shown - sp.defaultPlain));
+
+        // (c) The string the Generic Editor displays for the CURRENT value:
+        //     parse it back and require the same plain (display roundtrip).
+        String128 s16;
+        if (p->getParamStringByValue(id, p->getParamNormalized(id), s16) == kResultOk) {
+            char shown[64];
+            Steinberg::UString(s16, str16BufferSize(String128)).toAscii(shown, sizeof(shown));
+            char want[64];
+            std::snprintf(want, sizeof(want), "%lld",
+                          static_cast<long long>(std::llround(sp.defaultPlain)));
+            // integer-grain params print without decimals
+            if (std::strcmp(shown, want) != 0) {
+                // non-grain params print %.4g -- compare numerically instead
+                const double parsed = std::atof(shown);
+                if (!(std::fabs(parsed - sp.defaultPlain) <=
+                      1e-3 * (1.0 + std::fabs(sp.defaultPlain))))
+                    ++stringMismatches;
+            }
+        } else {
+            ++stringMismatches;
+        }
+    }
+    addValue(c, "fresh_info_defaultnorm_worst", worstInfo);
+    check(c, worstInfo == 0.0, "ParameterInfo.defaultNormalizedValue must match the spec table");
+    addValue(c, "fresh_display_plain_worst", worstPlain);
+    check(c, worstPlain == 0.0, "the displayed plain value must equal the default plain");
+    addValue(c, "fresh_display_string_mismatches", stringMismatches);
+    check(c, stringMismatches == 0, "displayed value strings must represent the defaults");
+
+    // (d) Processor state == controller state: the live surface (what the
+    //     engine would run) is EXACTLY the default surface (what the 38
+    //     parameter objects now report). One shared table of 38 values.
+    const double worstSurf = surfaceVsDefault(p->liveSurface());
+    addValue(c, "fresh_surface_vs_default_worst", worstSurf);
+    check(c, worstSurf == 0.0, "the live surface must be the default surface at construction");
+
+    p->terminate();
+    p->release();
+}
+
+//==========================================================================
+// 17. param_defaults_after_prepare (S2 + S6 engine truth + automation flush)
+//==========================================================================
+static void caseParamDefaultsAfterPrepare(CaseResult& c) {
+    using namespace octavox::vst3wrap;
+    const int N = 32768;
+    Lcg rng(909090);
+    std::vector<float> in(N);
+    rng.fill(in);
+
+    // (a) Full host lifecycle: initialize -> (stereo default) ->
+    //     setupProcessing -> setActive. The 38 CURRENT values must STILL be
+    //     the defaults (prepare/activate must not disturb them), and the
+    //     live surface must still be the default surface.
+    auto* p = makeProcessor(Setup{});
+    check(c, p->engineReady(), "processor not ready after full setup");
+    const double worstNorm = defaultsCurrentVsSpec(p);
+    addValue(c, "prepared_current_vs_default_worst_norm", worstNorm);
+    check(c, worstNorm == 0.0, "prepare/activate must leave all 38 current values at defaults");
+    const double worstSurf = surfaceVsDefault(p->liveSurface());
+    addValue(c, "prepared_surface_vs_default_worst", worstSurf);
+    check(c, worstSurf == 0.0, "prepare/activate must leave the live surface at defaults");
+
+    // (b) ENGINE TRUTH: with NO parameter events ever delivered, the audio
+    //     output must be bit-identical to a hand-driven core engine running
+    //     the DEFAULT surface applied exactly like applyFullSurface() does
+    //     (raw default plain values + the wrapper's own conversion helpers,
+    //     canonical order). This proves the DSP is actually AT the defaults
+    //     the parameters report -- the S6 "display == DSP state" contract.
+    std::vector<float> refOut(N);
+    {
+        const Surface d = defaultSurface();
+        const octavox::Config cfg = defaultConfig();
+        const double sr = cfg.sample_rate, grain = cfg.grain;
+        octavox::MultichannelShifter ref;
+        check(c, ref.prepare(cfg, 2), "reference prepare failed");
+        ref.setSpread(d.spread >= 0.5);
+        ref.setRatio(std::pow(2.0, d.pitchSemi / 12.0));
+        for (int v = 0; v < kMaxVoices; ++v)
+            if (d.offset[v] != 0.0)
+                ref.setVoiceRatio(v, std::pow(2.0, d.pitchSemi / 12.0) *
+                                          std::pow(2.0, d.offset[v] / 12.0));
+        for (int v = 0; v < kMaxVoices; ++v) ref.setVoiceGain(v, d.gain[v]);
+        for (int v = 0; v < kMaxVoices; ++v) ref.setVoiceMute(v, d.mute[v] >= 0.5);
+        for (int v = 0; v < kMaxVoices; ++v)
+            ref.setVoiceBaseDelay(v, msToBaseDelaySamples(d.baseMs[v], sr, grain));
+        ref.setVoices(static_cast<int>(std::lround(d.voices)));
+        ref.setFeedback(d.feedback);
+        ref.setWetDry(d.wetDry);
+        ref.setBypass(d.bypass >= 0.5);
+        float* rIn[2] = {in.data(), in.data()};
+        float* rOut[2] = {refOut.data(), refOut.data()};
+        ref.process(rIn, rOut, 2, N);
+    }
+    std::vector<float> out(N);
+    {
+        float* inP[2] = {in.data(), in.data()};
+        float* outP[2] = {out.data(), out.data()};
+        driveBlock(p, inP, outP, 2, N, nullptr);
+    }
+    const double dRaw = maxAbsDiff(out, refOut);
+    addValue(c, "prepared_engine_vs_default_reference_maxdiff", dRaw);
+    check(c, dRaw == 0.0, "the engine must bit-exactly run the default surface (display == DSP)");
+
+    // (c) AUTOMATION FLUSH: a host may send ALL 38 CURRENT values through
+    //     the parameter queues (state flush at activation). The queue path
+    //     applies plainFromNormalized(getParamNormalized(id)) -- the exact
+    //     values the host displayed -- so the engine must stay at the
+    //     defaults: bit-identical to a reference built through the same
+    //     normalized<->plain chain, and (measured) within float rounding of
+    //     the raw-default reference (the chain is idempotent for the default
+    //     values up to <=1 double ulp in the delay ms domain -- the
+    //     documented conversion semantics; see the header comment in
+    //     octavox_params.cpp "Base delay parameter semantics").
+    std::vector<float> out2(N);
+    {
+        auto* p2 = makeProcessor(Setup{});
+        ParameterChanges ch;
+        for (uint32_t id = 0; id < static_cast<uint32_t>(kNumParams); ++id)
+            addEvent(ch, id, 0, p2->getParamNormalized(id));
+        float* inP[2] = {in.data(), in.data()};
+        float* outP[2] = {out2.data(), out2.data()};
+        driveBlock(p2, inP, outP, 2, N, &ch);
+        const double worstSurf2 = surfaceVsDefault(p2->liveSurface());
+        addValue(c, "flush_surface_vs_default_worst", worstSurf2);
+        check(c, worstSurf2 == 0.0,
+              "flushing the 38 current values must keep the surface at defaults");
+        p2->terminate();
+        p2->release();
+    }
+    // reference through the normalized<->plain chain (the flush's own math)
+    std::vector<float> refOut2(N);
+    {
+        const octavox::Config cfg = defaultConfig();
+        const double sr = cfg.sample_rate, grain = cfg.grain;
+        octavox::MultichannelShifter ref;
+        check(c, ref.prepare(cfg, 2), "flush reference prepare failed");
+        const auto eng = [](uint32_t id, double plain) {
+            return plainFromNormalized(id, normalizedFromPlain(id, plain));
+        };
+        const double spread = eng(ParamId::kSpread, defaultSurface().spread);
+        const double pitch = eng(ParamId::kPitch, defaultSurface().pitchSemi);
+        ref.setSpread(spread >= 0.5);
+        ref.setRatio(std::pow(2.0, pitch / 12.0));
+        for (int v = 0; v < kMaxVoices; ++v) {
+            const double off = eng(voiceOffsetId(v), defaultSurface().offset[v]);
+            if (off != 0.0)
+                ref.setVoiceRatio(v, std::pow(2.0, pitch / 12.0) * std::pow(2.0, off / 12.0));
+        }
+        for (int v = 0; v < kMaxVoices; ++v)
+            ref.setVoiceGain(v, eng(voiceGainId(v), defaultSurface().gain[v]));
+        for (int v = 0; v < kMaxVoices; ++v)
+            ref.setVoiceMute(v, eng(voiceMuteId(v), defaultSurface().mute[v]) >= 0.5);
+        for (int v = 0; v < kMaxVoices; ++v)
+            ref.setVoiceBaseDelay(
+                v, msToBaseDelaySamples(eng(voiceDelayId(v), defaultSurface().baseMs[v]),
+                                        sr, grain));
+        ref.setVoices(static_cast<int>(std::lround(eng(ParamId::kVoices, defaultSurface().voices))));
+        ref.setFeedback(eng(ParamId::kFeedback, defaultSurface().feedback));
+        ref.setWetDry(eng(ParamId::kWetDry, defaultSurface().wetDry));
+        ref.setBypass(eng(ParamId::kBypass, defaultSurface().bypass) >= 0.5);
+        float* rIn[2] = {in.data(), in.data()};
+        float* rOut[2] = {refOut2.data(), refOut2.data()};
+        ref.process(rIn, rOut, 2, N);
+    }
+    const double dFlush = maxAbsDiff(out2, refOut2);
+    addValue(c, "flush_engine_vs_chain_reference_maxdiff", dFlush);
+    check(c, dFlush == 0.0,
+          "the flushed engine must be bit-identical to the chain-built default reference");
+    const double dFlushRaw = maxAbsDiff(out2, refOut);
+    addValue(c, "flush_engine_vs_raw_reference_maxdiff", dFlushRaw);
+    check(c, dFlushRaw <= 1e-6,
+          "the flushed engine must stay at the defaults (<= float rounding of the "
+          "normalized<->plain delay chain; measured)");
+
+    p->terminate();
+    p->release();
+}
+
+//==========================================================================
+// 18. param_defaults_state_roundtrip (S3): getState -> setState on a fresh
+// instance (and via BOTH controller aliases) -- the 38 values round-trip
+// the blob and stay exactly at the defaults. No control movement.
+//==========================================================================
+static void caseParamDefaultsStateRoundtrip(CaseResult& c) {
+    using namespace octavox::vst3wrap;
+
+    MemoryStream state;
+    {
+        auto* p = makeProcessor(Setup{});
+        check(c, p->getState(&state) == kResultOk, "getState failed on default instance");
+        p->terminate();
+        p->release();
+    }
+
+    // IComponent::setState path
+    {
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "init failed (setState path)");
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&state) == kResultOk, "setState of default state failed");
+        standardSetup(p);
+        check(c, p->setActive(true) == kResultOk, "activate failed (setState path)");
+        const double worstNorm = defaultsCurrentVsSpec(p);
+        addValue(c, "roundtrip_setstate_worst_norm", worstNorm);
+        check(c, worstNorm == 0.0, "save->restore of the DEFAULT state must keep all 38 at defaults");
+        const double worstSurf = surfaceVsDefault(p->liveSurface());
+        addValue(c, "roundtrip_setstate_surface_worst", worstSurf);
+        check(c, worstSurf == 0.0, "restored default surface must equal defaultSurface()");
+        p->terminate();
+        p->release();
+    }
+    // IEditController::setEditorState path (the pre-existing alias)
+    {
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "init failed (setEditorState path)");
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setEditorState(&state) == kResultOk, "setEditorState of default state failed");
+        standardSetup(p);
+        check(c, p->setActive(true) == kResultOk, "activate failed (setEditorState path)");
+        const double worstNorm = defaultsCurrentVsSpec(p);
+        addValue(c, "roundtrip_seteditorstate_worst_norm", worstNorm);
+        check(c, worstNorm == 0.0,
+              "setEditorState of the default state must keep all 38 at defaults");
+        p->terminate();
+        p->release();
+    }
+    // IEditController::setComponentState path (the R20-P0 implementation)
+    {
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "init failed (setComponentState path)");
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setComponentState(&state) == kResultOk,
+              "setComponentState of default state failed (R20-P0 path)");
+        standardSetup(p);
+        check(c, p->setActive(true) == kResultOk, "activate failed (setComponentState path)");
+        const double worstNorm = defaultsCurrentVsSpec(p);
+        addValue(c, "roundtrip_setcomponentstate_worst_norm", worstNorm);
+        check(c, worstNorm == 0.0,
+              "setComponentState of the default state must keep all 38 at defaults "
+              "(the controller-path restore R20-P0 implements)");
+        p->terminate();
+        p->release();
+    }
+}
+
+//==========================================================================
+// 19. param_state_restore_new_instance (S4): a NON-default state saved by
+// our own blob writer (what a host does when reloading a project) is
+// restored into a fresh instance BOTH via IComponent::setState and via
+// IEditController::setComponentState; every one of the 38 CURRENT values
+// must equal the saved value exactly -- with no control ever moved.
+//==========================================================================
+static void caseParamStateRestoreNewInstance(CaseResult& c) {
+    using namespace octavox::vst3wrap;
+
+    // The saved surface: every parameter off its default (bypass kept 0 so
+    // the wet path stays exercised).
+    Surface custom = defaultSurface();
+    custom.pitchSemi = -9.42;
+    custom.voices = 5.0;
+    custom.spread = 0.0;
+    custom.feedback = 0.37;
+    custom.wetDry = 0.71;
+    for (int v = 0; v < kMaxVoices; ++v) {
+        custom.offset[v] = 4.0 - v;
+        custom.gain[v] = 0.4 + 0.1 * v;
+        custom.mute[v] = (v % 4 == 3) ? 1.0 : 0.0;
+        custom.baseMs[v] = 3.0 + 6.0 * v;
+    }
+
+    MemoryStream state;
+    {
+        StateData st;
+        st.cfg = defaultConfig();
+        st.channels = 2;
+        st.surface = custom;
+        check(c, writeStateData(&state, st), "writeStateData failed");
+    }
+
+    auto checkRestored = [&](OctavoxNativeProcessor* p, const char* path,
+                             double& worstOut, double& worstSurfOut) {
+        // every one of the 38 current values == the saved plain exactly
+        // (through the same normalized<->plain chain the sync uses)
+        double worst = 0.0, worstSurf = 0.0;
+        double vals[kNumParams];
+        surfaceToPlainArray(custom, vals);
+        for (uint32_t id = 0; id < static_cast<uint32_t>(kNumParams); ++id) {
+            const double wantNorm = normalizedFromPlain(id, vals[id]);
+            const double gotNorm = p->getParamNormalized(id);
+            worst = std::max(worst, std::fabs(gotNorm - wantNorm));
+        }
+        double got[kNumParams];
+        surfaceToPlainArray(p->liveSurface(), got);
+        for (uint32_t id = 0; id < static_cast<uint32_t>(kNumParams); ++id)
+            worstSurf = std::max(worstSurf, std::fabs(got[id] - vals[id]));
+        worstOut = worst;
+        worstSurfOut = worstSurf;
+        addValue(c, std::string(path) + "_current_vs_saved_worst_norm", worst);
+        addValue(c, std::string(path) + "_surface_vs_saved_worst_plain", worstSurf);
+        check(c, worst == 0.0, std::string(path) + ": all 38 current values must equal the saved values");
+        check(c, worstSurf == 0.0, std::string(path) + ": the restored surface must equal the saved surface");
+    };
+
+    // (a) IComponent::setState on a fresh instance
+    {
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "init failed (fresh setState)");
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&state) == kResultOk, "fresh setState failed");
+        standardSetup(p);
+        check(c, p->setActive(true) == kResultOk, "activate failed (fresh setState)");
+        double w, ws;
+        checkRestored(p, "fresh_setstate", w, ws);
+        p->terminate();
+        p->release();
+    }
+    // (b) IEditController::setComponentState on a fresh instance (R20-P0)
+    {
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "init failed (fresh setComponentState)");
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setComponentState(&state) == kResultOk, "fresh setComponentState failed");
+        standardSetup(p);
+        check(c, p->setActive(true) == kResultOk, "activate failed (fresh setComponentState)");
+        double w, ws;
+        checkRestored(p, "fresh_setcomponentstate", w, ws);
+        p->terminate();
+        p->release();
+    }
+    // (c) a restored instance saves back the same 38 values
+    {
+        MemoryStream state2;
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "init failed (resave)");
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&state) == kResultOk, "setState failed (resave)");
+        check(c, p->getState(&state2) == kResultOk, "getState failed (resave)");
+        auto* q = new OctavoxNativeProcessor();
+        check(c, q->initialize(nullptr) == kResultOk, "init failed (resave restore)");
+        int64 spos2 = 0;
+        state2.seek(0, IBStream::kIBSeekSet, &spos2);
+        check(c, q->setState(&state2) == kResultOk, "second-generation restore failed");
+        double w, ws;
+        checkRestored(q, "resaved", w, ws);
+        q->terminate();
+        q->release();
+        p->terminate();
+        p->release();
+    }
+}
+
+//==========================================================================
+// 20. param_defaults_reinit_cycles (S5): repeated initialize/terminate
+// cycles on the SAME instance. After each cycle the 38 parameters must be
+// back at the DOCUMENTED defaults (fresh-instance semantics) even though
+// the previous cycle ran a fully non-default, activated, processing state.
+//==========================================================================
+static void caseParamDefaultsReinitCycles(CaseResult& c) {
+    using namespace octavox::vst3wrap;
+    const int N = 8192;
+    Lcg rng(43214321);
+    std::vector<float> in(N), out(N);
+    rng.fill(in);
+
+    // A non-default state blob for the "previous life" of each cycle.
+    Surface custom = defaultSurface();
+    custom.pitchSemi = 5.5;
+    custom.voices = 7.0;
+    custom.feedback = 0.5;
+    custom.wetDry = 0.3;
+    for (int v = 0; v < kMaxVoices; ++v) {
+        custom.offset[v] = -2.0 + v;
+        custom.gain[v] = 1.5;
+        custom.baseMs[v] = 20.0 + 5.0 * v;
+    }
+    MemoryStream state;
+    {
+        StateData st;
+        st.cfg = defaultConfig();
+        st.channels = 2;
+        st.surface = custom;
+        check(c, writeStateData(&state, st), "writeStateData failed (cycles)");
+    }
+
+    auto* p = new OctavoxNativeProcessor();
+    double worstEver = 0.0;
+    double worstSurfEver = 0.0;
+    int paramCountIssues = 0;
+    for (int cycle = 0; cycle < 6; ++cycle) {
+        check(c, p->initialize(nullptr) == kResultOk, "initialize failed in cycle " + std::to_string(cycle));
+        check(c, p->getParameterCount() == 38, "parameter count wrong in cycle " + std::to_string(cycle));
+        if (p->getParameterCount() != 38) ++paramCountIssues;
+
+        // after initialize: the documented DEFAULT state
+        const double w = defaultsCurrentVsSpec(p);
+        worstEver = std::max(worstEver, w);
+        const double ws = surfaceVsDefault(p->liveSurface());
+        worstSurfEver = std::max(worstSurfEver, ws);
+        if (w != 0.0 || ws != 0.0)
+            check(c, false, "cycle " + std::to_string(cycle) + " must start from the documented defaults");
+
+        // give the instance a non-default life: restore, activate, process
+        int64 spos = 0;
+        state.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&state) == kResultOk, "setState failed in cycle " + std::to_string(cycle));
+        standardSetup(p);
+        check(c, p->setActive(true) == kResultOk, "activate failed in cycle " + std::to_string(cycle));
+        float* inP[2] = {in.data(), in.data()};
+        float* outP[2] = {out.data(), out.data()};
+        driveBlock(p, inP, outP, 2, N, nullptr);
+        check(c, p->setActive(false) == kResultOk, "deactivate failed in cycle " + std::to_string(cycle));
+        check(c, p->terminate() == kResultOk, "terminate failed in cycle " + std::to_string(cycle));
+    }
+    addValue(c, "reinit_cycles", 6.0);
+    addValue(c, "reinit_worst_current_vs_default", worstEver);
+    addValue(c, "reinit_worst_surface_vs_default", worstSurfEver);
+    addValue(c, "reinit_paramcount_issues", paramCountIssues);
+    check(c, worstEver == 0.0, "every re-initialize must return all 38 values to the defaults");
+    check(c, worstSurfEver == 0.0, "every re-initialize must return the surface to the defaults");
+    check(c, paramCountIssues == 0, "parameter container must stay exactly 38 across cycles");
+    p->release();
+}
+
+//==========================================================================
 // main
 //==========================================================================
 int main(int argc, char** argv) {
@@ -2132,6 +2696,11 @@ int main(int argc, char** argv) {
         {"state_full_surface_restore", caseStateFullSurface},
         {"state_cross_rate_layout", caseStateCrossRateLayout},
         {"state_invalid_blobs", caseStateInvalidBlobs},
+        {"param_defaults_fresh_instance", caseParamDefaultsFresh},
+        {"param_defaults_after_prepare", caseParamDefaultsAfterPrepare},
+        {"param_defaults_state_roundtrip", caseParamDefaultsStateRoundtrip},
+        {"param_state_restore_new_instance", caseParamStateRestoreNewInstance},
+        {"param_defaults_reinit_cycles", caseParamDefaultsReinitCycles},
     };
 
     std::printf("%-42s %-6s %s\n", "CASE", "PASS", "MEASUREMENTS");

@@ -3,6 +3,7 @@
 
 CMakeFiles/octavox_vst3_wrapper_tests.dir/factory.cpp.o: /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/factory.cpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp \
+  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_ids.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_native_processor.h \
@@ -701,6 +702,7 @@ CMakeFiles/octavox_vst3_wrapper_tests.dir/home/z/my-project/octavox-work/vst3sdk
 
 CMakeFiles/octavox_vst3_wrapper_tests.dir/octavox_native_processor.cpp.o: /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_native_processor.cpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp \
+  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_ids.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_native_processor.h \
@@ -945,6 +947,7 @@ CMakeFiles/octavox_vst3_wrapper_tests.dir/octavox_native_processor.cpp.o: /home/
 
 CMakeFiles/octavox_vst3_wrapper_tests.dir/octavox_params.cpp.o: /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_params.cpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp \
+  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_params.h \
   /home/z/my-project/octavox-work/vst3sdk/base/source/fdebug.h \
@@ -1177,6 +1180,7 @@ CMakeFiles/octavox_vst3_wrapper_tests.dir/octavox_params.cpp.o: /home/z/my-proje
 
 CMakeFiles/octavox_vst3_wrapper_tests.dir/octavox_vst3_tests.cpp.o: /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_vst3_tests.cpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/dsp.hpp \
+  /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_build_config.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_ids.h \
   /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/vst3/octavox_native_processor.h \
@@ -1607,10 +1611,6 @@ lib/Release/libbase.a:
 
 /usr/include/c++/14/tr1/poly_laguerre.tcc:
 
-/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
-
-/usr/include/c++/14/tr1/poly_hermite.tcc:
-
 /usr/include/c++/14/tr1/modified_bessel_func.tcc:
 
 /usr/include/c++/14/tr1/legendre_function.tcc:
@@ -1709,6 +1709,10 @@ CMakeFiles/octavox_vst3_wrapper_tests.dir/factory.cpp.o:
 
 /usr/include/c++/14/bits/utility.h:
 
+/usr/include/c++/14/tr1/ell_integral.tcc:
+
+/usr/include/c++/14/bits/move.h:
+
 /usr/include/c++/14/bits/memoryfwd.h:
 
 /usr/include/c++/14/bits/memory_resource.h:
@@ -1736,18 +1740,6 @@ CMakeFiles/octavox_vst3_wrapper_tests.dir/factory.cpp.o:
 /usr/include/c++/14/bits/exception_defines.h:
 
 /usr/include/x86_64-linux-gnu/bits/locale.h:
-
-/usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
-
-/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/vst/ivsthostapplication.h:
-
-/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/vst/ivstcomponent.h:
-
-/usr/include/c++/14/bits/erase_if.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/error_t.h:
-
-/usr/include/c++/14/bits/alloc_traits.h:
 
 /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/vst/ivstaudioprocessor.h:
 
@@ -1787,9 +1779,33 @@ CMakeFiles/octavox_vst3_wrapper_tests.dir/factory.cpp.o:
 
 /usr/include/features.h:
 
+/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/vst/ivstcomponent.h:
+
+/usr/include/c++/14/bits/erase_if.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/error_t.h:
+
+/usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
+
+/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/vst/ivsthostapplication.h:
+
+/usr/include/c++/14/bits/alloc_traits.h:
+
+/usr/include/c++/14/bits/cxxabi_forced.h:
+
+lib/Release/libsdk_common.a:
+
+/usr/include/endian.h:
+
+/usr/include/stdint.h:
+
+/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/iupdatehandler.h:
+
 /usr/include/c++/14/ext/type_traits.h:
 
 /home/z/my-project/octavox-work/vst3sdk/base/source/fobject.h:
+
+/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/funknownimpl.h:
 
 /usr/include/c++/14/bits/char_traits.h:
 
@@ -1804,8 +1820,6 @@ CMakeFiles/octavox_vst3_wrapper_tests.dir/factory.cpp.o:
 /lib/x86_64-linux-gnu/libm.so.6:
 
 /usr/include/c++/14/iosfwd:
-
-/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/funknownimpl.h:
 
 /usr/include/c++/14/concepts:
 
@@ -1947,6 +1961,12 @@ lib/Release/libsdk_hosting.a:
 
 /home/z/my-project/octavox-work/vst3sdk/public.sdk/source/vst/vsteditcontroller.h:
 
+/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
+
+/usr/include/c++/14/tr1/poly_hermite.tcc:
+
+/home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/include/octavox/stageprof.hpp:
+
 /usr/include/c++/14/bits/functexcept.h:
 
 /usr/include/pthread.h:
@@ -1958,16 +1978,6 @@ lib/Release/libsdk_hosting.a:
 /usr/include/c++/14/bits/concept_check.h:
 
 /usr/include/x86_64-linux-gnu/bits/timesize.h:
-
-/home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/iupdatehandler.h:
-
-/usr/include/c++/14/bits/cxxabi_forced.h:
-
-lib/Release/libsdk_common.a:
-
-/usr/include/endian.h:
-
-/usr/include/stdint.h:
 
 /usr/include/c++/14/type_traits:
 
@@ -2076,10 +2086,6 @@ lib/Release/libsdk_common.a:
 /usr/include/c++/14/utility:
 
 /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h:
-
-/usr/include/c++/14/bits/move.h:
-
-/usr/include/c++/14/tr1/ell_integral.tcc:
 
 /usr/include/c++/14/bits/uniform_int_dist.h:
 

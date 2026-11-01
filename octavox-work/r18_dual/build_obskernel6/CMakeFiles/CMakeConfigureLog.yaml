@@ -20,8 +20,8 @@ events:
     names:
       - "uname"
     candidate_directories:
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -32,8 +32,8 @@ events:
       - "/bin/"
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
-      - "/home/z/.venv/bin/uname"
       - "/home/z/tools/winshims/uname"
+      - "/home/z/.venv/bin/uname"
       - "/home/z/.npm-global/bin/uname"
       - "/home/z/.bun/bin/uname"
       - "/usr/local/sbin/uname"
@@ -42,7 +42,6 @@ events:
     found: "/usr/bin/uname"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -63,63 +62,6 @@ events:
     message: |
       The target system is: Windows -  - x86_64
       The host system is: Linux - 5.10.134-013.15.kangaroo.al8.x86_64 - x86_64
-  -
-    kind: "find-v1"
-    backtrace:
-      - "/home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeUnixFindMake.cmake:5 (find_program)"
-      - "CMakeLists.txt:29 (project)"
-    mode: "program"
-    variable: "CMAKE_MAKE_PROGRAM"
-    description: "Path to a program."
-    settings:
-      SearchFramework: "NEVER"
-      SearchAppBundle: "NEVER"
-      CMAKE_FIND_USE_CMAKE_PATH: true
-      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
-      CMAKE_FIND_USE_INSTALL_PREFIX: true
-    names:
-      - "gmake"
-      - "make"
-      - "smake"
-    candidate_directories:
-      - "/home/z/.venv/bin/"
-      - "/home/z/tools/winshims/"
-      - "/home/z/.npm-global/bin/"
-      - "/home/z/.bun/bin/"
-      - "/usr/local/sbin/"
-      - "/usr/local/bin/"
-      - "/usr/sbin/"
-      - "/usr/bin/"
-      - "/sbin/"
-      - "/bin/"
-      - "/usr/local/bun-node-fallback-bin/"
-    searched_directories:
-      - "/home/z/.venv/bin/gmake"
-      - "/home/z/tools/winshims/gmake"
-      - "/home/z/.npm-global/bin/gmake"
-      - "/home/z/.bun/bin/gmake"
-      - "/usr/local/sbin/gmake"
-      - "/usr/local/bin/gmake"
-      - "/usr/sbin/gmake"
-    found: "/usr/bin/gmake"
-    search_context:
-      ENV{PATH}:
-        - "/home/z/.venv/bin"
-        - "/home/z/tools/winshims"
-        - "/home/z/.venv/bin"
-        - "/home/z/.venv/bin"
-        - "/home/z/.npm-global/bin"
-        - "/home/z/.bun/bin"
-        - "/usr/local/sbin"
-        - "/usr/local/bin"
-        - "/usr/sbin"
-        - "/usr/bin"
-        - "/sbin"
-        - "/bin"
-        - "/usr/local/bun-node-fallback-bin"
-      CMAKE_FIND_ROOT_PATH: "/home/z/tools/llvm-mingw/x86_64-w64-mingw32"
   -
     kind: "find-v1"
     backtrace:
@@ -147,7 +89,6 @@ events:
     found: "/home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerId.cpp.in"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -207,8 +148,8 @@ events:
       - "strip"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -220,8 +161,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-strip"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-strip"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-strip"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-strip"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-strip"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-strip"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-strip"
@@ -234,7 +175,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/llvm-strip"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -272,8 +212,8 @@ events:
       - "ld"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -285,8 +225,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-ld.lld"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-ld.lld"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-ld.lld"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-ld.lld"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-ld.lld"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-ld.lld"
       - "/usr/local/sbin/x86_64-w64-mingw32-ld.lld"
@@ -299,7 +239,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/ld.lld"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -337,8 +276,8 @@ events:
       - "nm"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -350,8 +289,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-nm"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-nm"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-nm"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-nm"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-nm"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-nm"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-nm"
@@ -364,7 +303,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/llvm-nm"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -402,8 +340,8 @@ events:
       - "objdump"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -415,8 +353,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-objdump"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-objdump"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-objdump"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-objdump"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-objdump"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-objdump"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-objdump"
@@ -429,7 +367,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/llvm-objdump"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -467,8 +404,8 @@ events:
       - "objcopy"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -480,8 +417,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-objcopy"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-objcopy"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-objcopy"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-objcopy"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-objcopy"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-objcopy"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-objcopy"
@@ -494,7 +431,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/llvm-objcopy"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -532,8 +468,8 @@ events:
       - "readelf"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -545,8 +481,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-readelf"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-readelf"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-readelf"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-readelf"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-readelf"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-readelf"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-readelf"
@@ -559,7 +495,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/llvm-readelf"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -597,8 +532,8 @@ events:
       - "dlltool"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -610,8 +545,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-dlltool"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-dlltool"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-dlltool"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-dlltool"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-dlltool"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-dlltool"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-dlltool"
@@ -624,7 +559,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/llvm-dlltool"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -662,8 +596,8 @@ events:
       - "addr2line"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -675,8 +609,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-addr2line"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-addr2line"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-addr2line"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-addr2line"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-addr2line"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-addr2line"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-addr2line"
@@ -689,7 +623,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/llvm-addr2line"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -725,8 +658,8 @@ events:
       - "tapi"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -738,8 +671,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-tapi"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-tapi"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-tapi"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-tapi"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-tapi"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-tapi"
       - "/usr/local/sbin/x86_64-w64-mingw32-tapi"
@@ -750,8 +683,8 @@ events:
       - "/bin/x86_64-w64-mingw32-tapi"
       - "/usr/local/bun-node-fallback-bin/x86_64-w64-mingw32-tapi"
       - "/home/z/tools/llvm-mingw/bin/tapi"
-      - "/home/z/.venv/bin/tapi"
       - "/home/z/tools/winshims/tapi"
+      - "/home/z/.venv/bin/tapi"
       - "/home/z/.npm-global/bin/tapi"
       - "/home/z/.bun/bin/tapi"
       - "/usr/local/sbin/tapi"
@@ -764,7 +697,6 @@ events:
     found: false
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -802,8 +734,8 @@ events:
       - "x86_64-w64-mingw32-llvm-ar"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -815,8 +747,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar-23.1"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ar-23.1"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ar-23.1"
@@ -827,8 +759,8 @@ events:
       - "/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/usr/local/bun-node-fallback-bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar-23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ar-23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ar-23"
@@ -839,8 +771,8 @@ events:
       - "/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/usr/local/bun-node-fallback-bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ar23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ar23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ar23"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ar23"
@@ -853,7 +785,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -891,8 +822,8 @@ events:
       - "x86_64-w64-mingw32-llvm-ranlib"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -904,8 +835,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ranlib-23.1"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ranlib-23.1"
@@ -916,8 +847,8 @@ events:
       - "/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/usr/local/bun-node-fallback-bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib-23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ranlib-23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ranlib-23"
@@ -928,8 +859,8 @@ events:
       - "/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/usr/local/bun-node-fallback-bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ranlib23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ranlib23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ranlib23"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ranlib23"
@@ -942,7 +873,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -984,8 +914,8 @@ events:
       - "clang-scan-deps"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -997,8 +927,8 @@ events:
       - "/usr/local/bun-node-fallback-bin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-clang-scan-deps-23.1"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/usr/local/sbin/x86_64-w64-mingw32-clang-scan-deps-23.1"
@@ -1009,8 +939,8 @@ events:
       - "/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/usr/local/bun-node-fallback-bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps-23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-clang-scan-deps-23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/usr/local/sbin/x86_64-w64-mingw32-clang-scan-deps-23"
@@ -1021,8 +951,8 @@ events:
       - "/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/usr/local/bun-node-fallback-bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-clang-scan-deps23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-clang-scan-deps23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-clang-scan-deps23"
       - "/usr/local/sbin/x86_64-w64-mingw32-clang-scan-deps23"
@@ -1035,7 +965,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -1058,34 +987,34 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx"
-      binary: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx"
+      source: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G"
+      binary: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps"
       CMAKE_CXX_FLAGS: ""
       CMAKE_CXX_FLAGS_DEBUG: "-g"
       CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
-      CMAKE_EXE_LINKER_FLAGS: "-static"
+      CMAKE_EXE_LINKER_FLAGS: "-static -Wl,/Brepro"
     buildResult:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: false
       stdout: |
-        Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx'
+        Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G'
         
-        Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_c8226/fast
-        /usr/bin/gmake  -f CMakeFiles/cmTC_c8226.dir/build.make CMakeFiles/cmTC_c8226.dir/build
-        gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx'
-        Building CXX object CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj
-        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++   -v -MD -MT CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj -c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp
-        clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)
+        Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_26977/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_26977.dir/build.make CMakeFiles/cmTC_26977.dir/build
+        gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G'
+        Building CXX object CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj
+        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++   -v -MD -MT CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj -c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp
+        clang version 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb)
         Target: x86_64-w64-windows-gnu
         Thread model: posix
         InstalledDir: /home/z/tools/llvm-mingw/bin
         Configuration file: /home/z/tools/llvm-mingw/bin/x86_64-w64-windows-gnu.cfg
          (in-process)
-         "/home/z/tools/llvm-mingw/bin/clang-23" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx -v -fcoverage-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx -resource-dir /home/z/tools/llvm-mingw/lib/clang/23 -dependency-file CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj.d -MT CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1 -internal-isystem /home/z/tools/llvm-mingw/include/c++/v1 -internal-isystem /home/z/tools/llvm-mingw/lib/clang/23/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include -fdeprecated-macro -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -exception-model=seh -fno-color-diagnostics -faddrsig -o CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj -x c++ /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp
-        clang -cc1 version 23.1.4 based upon LLVM 23.1.4 default target x86_64-unknown-linux-gnu
+         "/home/z/tools/llvm-mingw/bin/clang-23" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G -v -fcoverage-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G -resource-dir /home/z/tools/llvm-mingw/lib/clang/23 -dependency-file CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj.d -MT CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1 -internal-isystem /home/z/tools/llvm-mingw/include/c++/v1 -internal-isystem /home/z/tools/llvm-mingw/lib/clang/23/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include -fdeprecated-macro -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -exception-model=seh -fno-color-diagnostics -faddrsig -o CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj -x c++ /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 23.1.2 based upon LLVM 23.1.2 default target x86_64-unknown-linux-gnu
         ignoring nonexistent directory "/home/z/tools/llvm-mingw/include/c++/v1"
         ignoring nonexistent directory "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include"
         #include "..." search starts here:
@@ -1094,19 +1023,19 @@ events:
          /home/z/tools/llvm-mingw/lib/clang/23/include
          /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include
         End of search list.
-        Linking CXX executable cmTC_c8226.exe
-        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c8226.dir/link.txt --verbose=1
-        clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)
+        Linking CXX executable cmTC_26977.exe
+        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_26977.dir/link.txt --verbose=1
+        clang version 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb)
         Target: x86_64-w64-windows-gnu
         Thread model: posix
         InstalledDir: /home/z/tools/llvm-mingw/bin
         Configuration file: /home/z/tools/llvm-mingw/bin/x86_64-w64-windows-gnu.cfg
-         "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_c8226.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows -v --whole-archive CMakeFiles/cmTC_c8226.dir/objects.a --no-whole-archive --out-implib libcmTC_c8226.dll.a --major-image-version 0 --minor-image-version 0 -lc++ --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o
-        LLD 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5) (compatible with GNU linkers)
-        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E rm -f CMakeFiles/cmTC_c8226.dir/objects.a
-        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar qc CMakeFiles/cmTC_c8226.dir/objects.a @CMakeFiles/cmTC_c8226.dir/objects1.rsp
-        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++ -static -v -Wl,-v -Wl,--whole-archive CMakeFiles/cmTC_c8226.dir/objects.a -Wl,--no-whole-archive -o cmTC_c8226.exe -Wl,--out-implib,libcmTC_c8226.dll.a -Wl,--major-image-version,0,--minor-image-version,0
-        gmake[1]: Leaving directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx'
+         "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_26977.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows /Brepro -v --whole-archive CMakeFiles/cmTC_26977.dir/objects.a --no-whole-archive --out-implib libcmTC_26977.dll.a --major-image-version 0 --minor-image-version 0 -lc++ --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o
+        LLD 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb) (compatible with GNU linkers)
+        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E rm -f CMakeFiles/cmTC_26977.dir/objects.a
+        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar qc CMakeFiles/cmTC_26977.dir/objects.a @CMakeFiles/cmTC_26977.dir/objects1.rsp
+        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++ -static -Wl,/Brepro -v -Wl,-v -Wl,--whole-archive CMakeFiles/cmTC_26977.dir/objects.a -Wl,--no-whole-archive -o cmTC_26977.exe -Wl,--out-implib,libcmTC_26977.dll.a -Wl,--major-image-version,0,--minor-image-version,0
+        gmake[1]: Leaving directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G'
         
       exitCode: 0
   -
@@ -1139,21 +1068,21 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild))("|,| |$)]
-        ignore line: [Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx']
+        ignore line: [Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G']
         ignore line: []
-        ignore line: [Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_c8226/fast]
-        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_c8226.dir/build.make CMakeFiles/cmTC_c8226.dir/build]
-        ignore line: [gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx']
-        ignore line: [Building CXX object CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj]
-        ignore line: [/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++   -v -MD -MT CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj -c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp]
-        ignore line: [clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)]
+        ignore line: [Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_26977/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_26977.dir/build.make CMakeFiles/cmTC_26977.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G']
+        ignore line: [Building CXX object CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj]
+        ignore line: [/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++   -v -MD -MT CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj -c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang version 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb)]
         ignore line: [Target: x86_64-w64-windows-gnu]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /home/z/tools/llvm-mingw/bin]
         ignore line: [Configuration file: /home/z/tools/llvm-mingw/bin/x86_64-w64-windows-gnu.cfg]
         ignore line: [ (in-process)]
-        ignore line: [ "/home/z/tools/llvm-mingw/bin/clang-23" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx -v -fcoverage-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-0i2itx -resource-dir /home/z/tools/llvm-mingw/lib/clang/23 -dependency-file CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj.d -MT CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1 -internal-isystem /home/z/tools/llvm-mingw/include/c++/v1 -internal-isystem /home/z/tools/llvm-mingw/lib/clang/23/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include -fdeprecated-macro -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -exception-model=seh -fno-color-diagnostics -faddrsig -o CMakeFiles/cmTC_c8226.dir/CMakeCXXCompilerABI.cpp.obj -x c++ /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp]
-        ignore line: [clang -cc1 version 23.1.4 based upon LLVM 23.1.4 default target x86_64-unknown-linux-gnu]
+        ignore line: [ "/home/z/tools/llvm-mingw/bin/clang-23" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G -v -fcoverage-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-XxZt7G -resource-dir /home/z/tools/llvm-mingw/lib/clang/23 -dependency-file CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj.d -MT CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/c++/v1 -internal-isystem /home/z/tools/llvm-mingw/include/c++/v1 -internal-isystem /home/z/tools/llvm-mingw/lib/clang/23/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include -fdeprecated-macro -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -exception-model=seh -fno-color-diagnostics -faddrsig -o CMakeFiles/cmTC_26977.dir/CMakeCXXCompilerABI.cpp.obj -x c++ /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 23.1.2 based upon LLVM 23.1.2 default target x86_64-unknown-linux-gnu]
         ignore line: [ignoring nonexistent directory "/home/z/tools/llvm-mingw/include/c++/v1"]
         ignore line: [ignoring nonexistent directory "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include"]
         ignore line: [#include "..." search starts here:]
@@ -1162,33 +1091,34 @@ events:
         ignore line: [ /home/z/tools/llvm-mingw/lib/clang/23/include]
         ignore line: [ /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include]
         ignore line: [End of search list.]
-        ignore line: [Linking CXX executable cmTC_c8226.exe]
-        ignore line: [/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c8226.dir/link.txt --verbose=1]
-        ignore line: [clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)]
+        ignore line: [Linking CXX executable cmTC_26977.exe]
+        ignore line: [/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_26977.dir/link.txt --verbose=1]
+        ignore line: [clang version 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb)]
         ignore line: [Target: x86_64-w64-windows-gnu]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /home/z/tools/llvm-mingw/bin]
         ignore line: [Configuration file: /home/z/tools/llvm-mingw/bin/x86_64-w64-windows-gnu.cfg]
-        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_c8226.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows -v --whole-archive CMakeFiles/cmTC_c8226.dir/objects.a --no-whole-archive --out-implib libcmTC_c8226.dll.a --major-image-version 0 --minor-image-version 0 -lc++ --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o] ==> linker [/home/z/tools/llvm-mingw/bin/ld.lld]
-        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_c8226.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows -v --whole-archive CMakeFiles/cmTC_c8226.dir/objects.a --no-whole-archive --out-implib libcmTC_c8226.dll.a --major-image-version 0 --minor-image-version 0 -lc++ --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o] ==> linker architecture flags [-m;i386pep]
-        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_c8226.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows -v --whole-archive CMakeFiles/cmTC_c8226.dir/objects.a --no-whole-archive --out-implib libcmTC_c8226.dll.a --major-image-version 0 --minor-image-version 0 -lc++ --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o]
+        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_26977.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows /Brepro -v --whole-archive CMakeFiles/cmTC_26977.dir/objects.a --no-whole-archive --out-implib libcmTC_26977.dll.a --major-image-version 0 --minor-image-version 0 -lc++ --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o] ==> linker [/home/z/tools/llvm-mingw/bin/ld.lld]
+        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_26977.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows /Brepro -v --whole-archive CMakeFiles/cmTC_26977.dir/objects.a --no-whole-archive --out-implib libcmTC_26977.dll.a --major-image-version 0 --minor-image-version 0 -lc++ --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o] ==> linker architecture flags [-m;i386pep]
+        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_26977.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows /Brepro -v --whole-archive CMakeFiles/cmTC_26977.dir/objects.a --no-whole-archive --out-implib libcmTC_26977.dll.a --major-image-version 0 --minor-image-version 0 -lc++ --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o]
           arg [/home/z/tools/llvm-mingw/bin/ld.lld] ==> ignore
           arg [-m] ==> ignore
           arg [i386pep] ==> ignore
           arg [-Bstatic] ==> search static
           arg [-o] ==> ignore
-          arg [cmTC_c8226.exe] ==> ignore
+          arg [cmTC_26977.exe] ==> ignore
           arg [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o] ==> obj [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o]
           arg [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o] ==> obj [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o]
           arg [-L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib] ==> dir [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib]
           arg [-L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib] ==> dir [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib]
           arg [-L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows] ==> dir [/home/z/tools/llvm-mingw/lib/clang/23/lib/windows]
+          arg [/Brepro] ==> ignore
           arg [-v] ==> ignore
           arg [--whole-archive] ==> ignore
-          arg [CMakeFiles/cmTC_c8226.dir/objects.a] ==> ignore
+          arg [CMakeFiles/cmTC_26977.dir/objects.a] ==> ignore
           arg [--no-whole-archive] ==> ignore
           arg [--out-implib] ==> ignore
-          arg [libcmTC_c8226.dll.a] ==> ignore
+          arg [libcmTC_26977.dll.a] ==> ignore
           arg [--major-image-version] ==> ignore
           arg [0] ==> ignore
           arg [--minor-image-version] ==> ignore
@@ -1228,7 +1158,7 @@ events:
       - "CMakeLists.txt:29 (project)"
     message: |
       Running the CXX compiler's linker: "/home/z/tools/llvm-mingw/bin/ld.lld" "-v"
-      LLD 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5) (compatible with GNU linkers)
+      LLD 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb) (compatible with GNU linkers)
   -
     kind: "find-v1"
     backtrace:
@@ -1257,7 +1187,6 @@ events:
     found: "/home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerId.c.in"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -1322,8 +1251,8 @@ events:
       - "x86_64-w64-mingw32-llvm-ar"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -1343,8 +1272,8 @@ events:
       - "/sbin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar-23.1"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ar-23.1"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ar-23.1"
@@ -1363,8 +1292,8 @@ events:
       - "/bin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/sbin/x86_64-w64-mingw32-llvm-ar-23.1"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar-23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ar-23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ar-23"
@@ -1383,8 +1312,8 @@ events:
       - "/bin/x86_64-w64-mingw32-llvm-ar-23"
       - "/sbin/x86_64-w64-mingw32-llvm-ar-23"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ar23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ar23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ar23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ar23"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ar23"
@@ -1405,7 +1334,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -1448,8 +1376,8 @@ events:
       - "x86_64-w64-mingw32-llvm-ranlib"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -1469,8 +1397,8 @@ events:
       - "/sbin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ranlib-23.1"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ranlib-23.1"
@@ -1489,8 +1417,8 @@ events:
       - "/bin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/sbin/x86_64-w64-mingw32-llvm-ranlib-23.1"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib-23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ranlib-23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ranlib-23"
@@ -1509,8 +1437,8 @@ events:
       - "/bin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/sbin/x86_64-w64-mingw32-llvm-ranlib-23"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-llvm-ranlib23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-llvm-ranlib23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-llvm-ranlib23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-llvm-ranlib23"
       - "/usr/local/sbin/x86_64-w64-mingw32-llvm-ranlib23"
@@ -1531,7 +1459,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -1578,8 +1505,8 @@ events:
       - "clang-scan-deps"
     candidate_directories:
       - "/home/z/tools/llvm-mingw/bin/"
-      - "/home/z/.venv/bin/"
       - "/home/z/tools/winshims/"
+      - "/home/z/.venv/bin/"
       - "/home/z/.npm-global/bin/"
       - "/home/z/.bun/bin/"
       - "/usr/local/sbin/"
@@ -1599,8 +1526,8 @@ events:
       - "/sbin/"
     searched_directories:
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-clang-scan-deps-23.1"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/usr/local/sbin/x86_64-w64-mingw32-clang-scan-deps-23.1"
@@ -1619,8 +1546,8 @@ events:
       - "/bin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/sbin/x86_64-w64-mingw32-clang-scan-deps-23.1"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps-23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-clang-scan-deps-23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/usr/local/sbin/x86_64-w64-mingw32-clang-scan-deps-23"
@@ -1639,8 +1566,8 @@ events:
       - "/bin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/sbin/x86_64-w64-mingw32-clang-scan-deps-23"
       - "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps23"
-      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps23"
       - "/home/z/tools/winshims/x86_64-w64-mingw32-clang-scan-deps23"
+      - "/home/z/.venv/bin/x86_64-w64-mingw32-clang-scan-deps23"
       - "/home/z/.npm-global/bin/x86_64-w64-mingw32-clang-scan-deps23"
       - "/home/z/.bun/bin/x86_64-w64-mingw32-clang-scan-deps23"
       - "/usr/local/sbin/x86_64-w64-mingw32-clang-scan-deps23"
@@ -1661,7 +1588,6 @@ events:
     found: "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps"
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -1689,54 +1615,54 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x"
-      binary: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x"
+      source: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm"
+      binary: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
       CMAKE_C_FLAGS: ""
       CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: "-static"
+      CMAKE_EXE_LINKER_FLAGS: "-static -Wl,/Brepro"
       CMAKE_MODULE_PATH: "/home/z/my-project/octavox-work/vst3sdk/cmake/modules"
       CMAKE_OSX_DEPLOYMENT_TARGET: "10.13"
     buildResult:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: false
       stdout: |
-        Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x'
+        Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm'
         
-        Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_9d3d9/fast
-        /usr/bin/gmake  -f CMakeFiles/cmTC_9d3d9.dir/build.make CMakeFiles/cmTC_9d3d9.dir/build
-        gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x'
-        Building C object CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj
-        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang   -v -MD -MT CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj -c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c
-        clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)
+        Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_b8851/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_b8851.dir/build.make CMakeFiles/cmTC_b8851.dir/build
+        gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm'
+        Building C object CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj
+        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang   -v -MD -MT CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj -c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c
+        clang version 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb)
         Target: x86_64-w64-windows-gnu
         Thread model: posix
         InstalledDir: /home/z/tools/llvm-mingw/bin
         Configuration file: /home/z/tools/llvm-mingw/bin/x86_64-w64-windows-gnu.cfg
          (in-process)
-         "/home/z/tools/llvm-mingw/bin/clang-23" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x -v -fcoverage-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x -resource-dir /home/z/tools/llvm-mingw/lib/clang/23 -dependency-file CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj.d -MT CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem /home/z/tools/llvm-mingw/lib/clang/23/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -exception-model=seh -fno-color-diagnostics -faddrsig -o CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj -x c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c
-        clang -cc1 version 23.1.4 based upon LLVM 23.1.4 default target x86_64-unknown-linux-gnu
+         "/home/z/tools/llvm-mingw/bin/clang-23" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm -v -fcoverage-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm -resource-dir /home/z/tools/llvm-mingw/lib/clang/23 -dependency-file CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj.d -MT CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem /home/z/tools/llvm-mingw/lib/clang/23/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -exception-model=seh -fno-color-diagnostics -faddrsig -o CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj -x c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 23.1.2 based upon LLVM 23.1.2 default target x86_64-unknown-linux-gnu
         ignoring nonexistent directory "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include"
         #include "..." search starts here:
         #include <...> search starts here:
          /home/z/tools/llvm-mingw/lib/clang/23/include
          /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include
         End of search list.
-        Linking C executable cmTC_9d3d9.exe
-        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_9d3d9.dir/link.txt --verbose=1
-        clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)
+        Linking C executable cmTC_b8851.exe
+        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b8851.dir/link.txt --verbose=1
+        clang version 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb)
         Target: x86_64-w64-windows-gnu
         Thread model: posix
         InstalledDir: /home/z/tools/llvm-mingw/bin
         Configuration file: /home/z/tools/llvm-mingw/bin/x86_64-w64-windows-gnu.cfg
-         "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_9d3d9.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows -v --whole-archive CMakeFiles/cmTC_9d3d9.dir/objects.a --no-whole-archive --out-implib libcmTC_9d3d9.dll.a --major-image-version 0 --minor-image-version 0 --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o
-        LLD 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5) (compatible with GNU linkers)
-        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E rm -f CMakeFiles/cmTC_9d3d9.dir/objects.a
-        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar qc CMakeFiles/cmTC_9d3d9.dir/objects.a @CMakeFiles/cmTC_9d3d9.dir/objects1.rsp
-        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang -static -v -Wl,-v -Wl,--whole-archive CMakeFiles/cmTC_9d3d9.dir/objects.a -Wl,--no-whole-archive -o cmTC_9d3d9.exe -Wl,--out-implib,libcmTC_9d3d9.dll.a -Wl,--major-image-version,0,--minor-image-version,0
-        gmake[1]: Leaving directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x'
+         "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_b8851.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows /Brepro -v --whole-archive CMakeFiles/cmTC_b8851.dir/objects.a --no-whole-archive --out-implib libcmTC_b8851.dll.a --major-image-version 0 --minor-image-version 0 --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o
+        LLD 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb) (compatible with GNU linkers)
+        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E rm -f CMakeFiles/cmTC_b8851.dir/objects.a
+        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar qc CMakeFiles/cmTC_b8851.dir/objects.a @CMakeFiles/cmTC_b8851.dir/objects1.rsp
+        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang -static -Wl,/Brepro -v -Wl,-v -Wl,--whole-archive CMakeFiles/cmTC_b8851.dir/objects.a -Wl,--no-whole-archive -o cmTC_b8851.exe -Wl,--out-implib,libcmTC_b8851.dll.a -Wl,--major-image-version,0,--minor-image-version,0
+        gmake[1]: Leaving directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm'
         
       exitCode: 0
   -
@@ -1767,54 +1693,55 @@ events:
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild))("|,| |$)]
-        ignore line: [Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x']
+        ignore line: [Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm']
         ignore line: []
-        ignore line: [Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_9d3d9/fast]
-        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_9d3d9.dir/build.make CMakeFiles/cmTC_9d3d9.dir/build]
-        ignore line: [gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x']
-        ignore line: [Building C object CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj]
-        ignore line: [/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang   -v -MD -MT CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj -c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c]
-        ignore line: [clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)]
+        ignore line: [Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_b8851/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_b8851.dir/build.make CMakeFiles/cmTC_b8851.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm']
+        ignore line: [Building C object CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj]
+        ignore line: [/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang   -v -MD -MT CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj -c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang version 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb)]
         ignore line: [Target: x86_64-w64-windows-gnu]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /home/z/tools/llvm-mingw/bin]
         ignore line: [Configuration file: /home/z/tools/llvm-mingw/bin/x86_64-w64-windows-gnu.cfg]
         ignore line: [ (in-process)]
-        ignore line: [ "/home/z/tools/llvm-mingw/bin/clang-23" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x -v -fcoverage-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-6hF09x -resource-dir /home/z/tools/llvm-mingw/lib/clang/23 -dependency-file CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj.d -MT CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem /home/z/tools/llvm-mingw/lib/clang/23/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -exception-model=seh -fno-color-diagnostics -faddrsig -o CMakeFiles/cmTC_9d3d9.dir/CMakeCCompilerABI.c.obj -x c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c]
-        ignore line: [clang -cc1 version 23.1.4 based upon LLVM 23.1.4 default target x86_64-unknown-linux-gnu]
+        ignore line: [ "/home/z/tools/llvm-mingw/bin/clang-23" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm -v -fcoverage-compilation-dir=/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-ASL4Xm -resource-dir /home/z/tools/llvm-mingw/lib/clang/23 -dependency-file CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj.d -MT CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem /home/z/tools/llvm-mingw/lib/clang/23/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include -internal-isystem /home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -exception-model=seh -fno-color-diagnostics -faddrsig -o CMakeFiles/cmTC_b8851.dir/CMakeCCompilerABI.c.obj -x c /home/z/.venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 23.1.2 based upon LLVM 23.1.2 default target x86_64-unknown-linux-gnu]
         ignore line: [ignoring nonexistent directory "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/usr/include"]
         ignore line: [#include "..." search starts here:]
         ignore line: [#include <...> search starts here:]
         ignore line: [ /home/z/tools/llvm-mingw/lib/clang/23/include]
         ignore line: [ /home/z/tools/llvm-mingw/x86_64-w64-mingw32/include]
         ignore line: [End of search list.]
-        ignore line: [Linking C executable cmTC_9d3d9.exe]
-        ignore line: [/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_9d3d9.dir/link.txt --verbose=1]
-        ignore line: [clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)]
+        ignore line: [Linking C executable cmTC_b8851.exe]
+        ignore line: [/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b8851.dir/link.txt --verbose=1]
+        ignore line: [clang version 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb)]
         ignore line: [Target: x86_64-w64-windows-gnu]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /home/z/tools/llvm-mingw/bin]
         ignore line: [Configuration file: /home/z/tools/llvm-mingw/bin/x86_64-w64-windows-gnu.cfg]
-        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_9d3d9.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows -v --whole-archive CMakeFiles/cmTC_9d3d9.dir/objects.a --no-whole-archive --out-implib libcmTC_9d3d9.dll.a --major-image-version 0 --minor-image-version 0 --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o] ==> linker [/home/z/tools/llvm-mingw/bin/ld.lld]
-        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_9d3d9.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows -v --whole-archive CMakeFiles/cmTC_9d3d9.dir/objects.a --no-whole-archive --out-implib libcmTC_9d3d9.dll.a --major-image-version 0 --minor-image-version 0 --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o] ==> linker architecture flags [-m;i386pep]
-        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_9d3d9.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows -v --whole-archive CMakeFiles/cmTC_9d3d9.dir/objects.a --no-whole-archive --out-implib libcmTC_9d3d9.dll.a --major-image-version 0 --minor-image-version 0 --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o]
+        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_b8851.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows /Brepro -v --whole-archive CMakeFiles/cmTC_b8851.dir/objects.a --no-whole-archive --out-implib libcmTC_b8851.dll.a --major-image-version 0 --minor-image-version 0 --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o] ==> linker [/home/z/tools/llvm-mingw/bin/ld.lld]
+        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_b8851.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows /Brepro -v --whole-archive CMakeFiles/cmTC_b8851.dir/objects.a --no-whole-archive --out-implib libcmTC_b8851.dll.a --major-image-version 0 --minor-image-version 0 --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o] ==> linker architecture flags [-m;i386pep]
+        link line: [ "/home/z/tools/llvm-mingw/bin/ld.lld" -m i386pep -Bstatic -o cmTC_b8851.exe /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib -L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib -L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows /Brepro -v --whole-archive CMakeFiles/cmTC_b8851.dir/objects.a --no-whole-archive --out-implib libcmTC_b8851.dll.a --major-image-version 0 --minor-image-version 0 --start-group -lmingw32 /home/z/tools/llvm-mingw/lib/clang/23/lib/windows/libclang_rt.builtins-x86_64.a -l:libunwind.a -lmoldname -lmingwex -lmsvcrt -ladvapi32 -lshell32 -luser32 -lkernel32 --end-group /home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtend.o]
           arg [/home/z/tools/llvm-mingw/bin/ld.lld] ==> ignore
           arg [-m] ==> ignore
           arg [i386pep] ==> ignore
           arg [-Bstatic] ==> search static
           arg [-o] ==> ignore
-          arg [cmTC_9d3d9.exe] ==> ignore
+          arg [cmTC_b8851.exe] ==> ignore
           arg [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o] ==> obj [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crt2.o]
           arg [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o] ==> obj [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/crtbegin.o]
           arg [-L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib] ==> dir [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib]
           arg [-L/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib] ==> dir [/home/z/tools/llvm-mingw/x86_64-w64-mingw32/mingw/lib]
           arg [-L/home/z/tools/llvm-mingw/lib/clang/23/lib/windows] ==> dir [/home/z/tools/llvm-mingw/lib/clang/23/lib/windows]
+          arg [/Brepro] ==> ignore
           arg [-v] ==> ignore
           arg [--whole-archive] ==> ignore
-          arg [CMakeFiles/cmTC_9d3d9.dir/objects.a] ==> ignore
+          arg [CMakeFiles/cmTC_b8851.dir/objects.a] ==> ignore
           arg [--no-whole-archive] ==> ignore
           arg [--out-implib] ==> ignore
-          arg [libcmTC_9d3d9.dll.a] ==> ignore
+          arg [libcmTC_b8851.dll.a] ==> ignore
           arg [--major-image-version] ==> ignore
           arg [0] ==> ignore
           arg [--minor-image-version] ==> ignore
@@ -1853,7 +1780,7 @@ events:
       - "/home/z/my-project/octavox-work/vst3sdk/CMakeLists.txt:25 (project)"
     message: |
       Running the C compiler's linker: "/home/z/tools/llvm-mingw/bin/ld.lld" "-v"
-      LLD 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5) (compatible with GNU linkers)
+      LLD 23.1.2 (https://github.com/llvm/llvm-project.git 85ac560262434c9ccfc0c183ec22d4138ed647fb) (compatible with GNU linkers)
   -
     kind: "find-v1"
     backtrace:
@@ -1873,10 +1800,10 @@ events:
     names:
       - "jack/jack.h"
     candidate_directories:
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/include/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/include/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/include/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/include/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/include/"
@@ -1906,10 +1833,10 @@ events:
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/JACK2/include/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/include/"
     searched_directories:
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/include/jack/jack.h"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/jack/jack.h"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/include/jack/jack.h"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/jack/jack.h"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/include/jack/jack.h"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/jack/jack.h"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/include/jack/jack.h"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/jack/jack.h"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/include/jack/jack.h"
@@ -1941,7 +1868,6 @@ events:
     found: false
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -1981,10 +1907,10 @@ events:
       - "libjack"
       - "jack"
     candidate_directories:
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/lib/"
@@ -2016,10 +1942,10 @@ events:
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/"
     searched_directories:
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/lib/"
@@ -2050,10 +1976,10 @@ events:
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/lib/"
@@ -2084,10 +2010,10 @@ events:
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/lib/"
@@ -2121,7 +2047,6 @@ events:
     found: false
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -2165,10 +2090,10 @@ events:
       - "libjackserver"
       - "jackserver"
     candidate_directories:
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/lib/"
@@ -2200,10 +2125,10 @@ events:
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/"
     searched_directories:
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/lib/"
@@ -2234,10 +2159,10 @@ events:
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/lib/"
@@ -2268,10 +2193,10 @@ events:
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
-      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/tools/winshims/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/JACK2/lib/"
+      - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.venv/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/JACK2/lib/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.npm-global/bin/"
       - "/home/z/tools/llvm-mingw/x86_64-w64-mingw32/home/z/.bun/bin/JACK2/lib/"
@@ -2305,7 +2230,6 @@ events:
     found: false
     search_context:
       ENV{PATH}:
-        - "/home/z/.venv/bin"
         - "/home/z/tools/winshims"
         - "/home/z/.venv/bin"
         - "/home/z/.venv/bin"
@@ -2337,33 +2261,33 @@ events:
     checks:
       - "Performing Test SMTG_USE_STDATOMIC_H"
     directories:
-      source: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qM4b6f"
-      binary: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qM4b6f"
+      source: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qajESs"
+      binary: "/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qajESs"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang-scan-deps"
       CMAKE_CXX_FLAGS: " -Wno-multichar"
       CMAKE_CXX_FLAGS_DEBUG: "-g"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
-      CMAKE_EXE_LINKER_FLAGS: "-static"
+      CMAKE_EXE_LINKER_FLAGS: "-static -Wl,/Brepro"
       CMAKE_MODULE_PATH: "/home/z/my-project/octavox-work/vst3sdk/cmake/modules"
       CMAKE_OSX_DEPLOYMENT_TARGET: "10.13"
     buildResult:
       variable: "SMTG_USE_STDATOMIC_H"
       cached: true
       stdout: |
-        Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qM4b6f'
+        Change Dir: '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qajESs'
         
-        Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_892c1/fast
-        /usr/bin/gmake  -f CMakeFiles/cmTC_892c1.dir/build.make CMakeFiles/cmTC_892c1.dir/build
-        gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qM4b6f'
-        Building CXX object CMakeFiles/cmTC_892c1.dir/src.cxx.obj
-        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++ -DSMTG_USE_STDATOMIC_H  -Wno-multichar  -std=c++17 -MD -MT CMakeFiles/cmTC_892c1.dir/src.cxx.obj -MF CMakeFiles/cmTC_892c1.dir/src.cxx.obj.d -o CMakeFiles/cmTC_892c1.dir/src.cxx.obj -c /home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qM4b6f/src.cxx
-        Linking CXX executable cmTC_892c1.exe
-        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_892c1.dir/link.txt --verbose=1
-        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E rm -f CMakeFiles/cmTC_892c1.dir/objects.a
-        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar qc CMakeFiles/cmTC_892c1.dir/objects.a @CMakeFiles/cmTC_892c1.dir/objects1.rsp
-        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++  -Wno-multichar  -static  -Wl,--whole-archive CMakeFiles/cmTC_892c1.dir/objects.a -Wl,--no-whole-archive -o cmTC_892c1.exe -Wl,--out-implib,libcmTC_892c1.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_892c1.dir/linkLibs.rsp
-        gmake[1]: Leaving directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qM4b6f'
+        Run Build Command(s): /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_8c779/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_8c779.dir/build.make CMakeFiles/cmTC_8c779.dir/build
+        gmake[1]: Entering directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qajESs'
+        Building CXX object CMakeFiles/cmTC_8c779.dir/src.cxx.obj
+        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++ -DSMTG_USE_STDATOMIC_H  -Wno-multichar  -std=c++17 -MD -MT CMakeFiles/cmTC_8c779.dir/src.cxx.obj -MF CMakeFiles/cmTC_8c779.dir/src.cxx.obj.d -o CMakeFiles/cmTC_8c779.dir/src.cxx.obj -c /home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qajESs/src.cxx
+        Linking CXX executable cmTC_8c779.exe
+        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_8c779.dir/link.txt --verbose=1
+        /home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E rm -f CMakeFiles/cmTC_8c779.dir/objects.a
+        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar qc CMakeFiles/cmTC_8c779.dir/objects.a @CMakeFiles/cmTC_8c779.dir/objects1.rsp
+        /home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++  -Wno-multichar  -static -Wl,/Brepro  -Wl,--whole-archive CMakeFiles/cmTC_8c779.dir/objects.a -Wl,--no-whole-archive -o cmTC_8c779.exe -Wl,--out-implib,libcmTC_8c779.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_8c779.dir/linkLibs.rsp
+        gmake[1]: Leaving directory '/home/z/my-project/octavox-work/r18_dual/build_obskernel6/CMakeFiles/CMakeScratch/TryCompile-qajESs'
         
       exitCode: 0
 ...

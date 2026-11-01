@@ -291,7 +291,8 @@ bool sanitizeConfig(Config& c) {
     if (interp < 0 || interp > 3) return false;  // reject unknown modes
     const int dmode = static_cast<int>(c.detector_mode);
     if (dmode != static_cast<int>(DetectorMode::FullRate) &&
-        dmode != static_cast<int>(DetectorMode::Decimated))
+        dmode != static_cast<int>(DetectorMode::Decimated) &&
+        dmode != static_cast<int>(DetectorMode::Hybrid))
         return false;  // reject unknown detector modes
     return true;
 }
@@ -417,6 +418,22 @@ OctavoxParameter::OctavoxParameter(uint32_t id, const Steinberg::Vst::TChar* tit
     info.defaultNormalizedValue = normalizedFromPlain(id, defaultPlain);
     info.flags = flags;
     info.unitId = unitId;
+    // R20-P0 (default-parameter initialization): a freshly registered
+    // parameter must REPORT the declared default as its CURRENT value.
+    // The SDK's Parameter() default constructor initialises valueNormalized
+    // {0.} -- NOT the declared default (vstparameters.cpp:48, SDK 3.7.12) --
+    // and every host-visible reading path (IEditController::
+    // getParamNormalized, the Generic Editor, host automation-flush
+    // snapshots) reads the CURRENT value, not info.defaultNormalizedValue.
+    // Before this fix a fresh instance reported 0-based values (Pitch
+    // -24.00, Wet/Dry 0.00, Spread off, voice gains 0.0, voice offsets
+    // -24.00, voice delays 0 ms) while the engine ran the true defaults
+    // from defaultSurface() -- inconsistent until the first manual edit
+    // pushed a real value through the parameter queue. setNormalized() is
+    // called AFTER info is complete; the object is not yet added to any
+    // container, so it has no listeners and the changed() notification is
+    // a no-op (pure value initialisation, no host-visible side effect).
+    setNormalized(info.defaultNormalizedValue);
 }
 
 Steinberg::Vst::ParamValue PLUGIN_API OctavoxParameter::toPlain(

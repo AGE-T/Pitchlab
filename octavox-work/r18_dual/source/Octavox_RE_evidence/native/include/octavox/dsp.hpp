@@ -351,6 +351,33 @@ enum class DetectorMode : int {
     /// 60..1200 Hz. Cost at 96 kHz drops by ~14x (see
     /// evidence/analysis_round19 for the measured profile).
     Decimated = 1,
+    /// R20-P2: coarse-to-fine hybrid. Stage 1 (COARSE) runs the EXACT
+    /// decimated estimator above (same anti-alias cascade, same decimated
+    /// window, same threshold/search law, same d-based parabolic refine)
+    /// and produces a candidate period tau_dec at the control rate. The
+    /// candidate is mapped back to the HOST stream grid:
+    ///     tau_c = tau_dec * D   (stream samples).
+    /// Stage 2 (FINE) evaluates the ORIGINAL, UNFILTERED full-rate signal's
+    /// difference function in a candidate neighborhood
+    ///     [tau_c - W, tau_c + W],  W = D + 2  host samples,
+    /// (clamped into the [60, 1200] Hz lag domain), takes the argmin and
+    /// refines it with a 3-point parabola on the RAW difference values --
+    /// full host-rate lag resolution. The refinement window support uses
+    /// the full-rate window law win_raw = max(2048, ceil(2.5*tau_max)) at
+    /// the HOST rate with m_raw = win_raw/2 - tau_max difference support
+    /// (the FullRate detector's own law), so both stages see the SAME
+    /// ~42.7 ms analysis time span and the estimate cadence, the median
+    /// history, the hysteresis/commit law and the validity gate are
+    /// IDENTICAL to the other two modes. The coarse candidate's accuracy
+    /// (<= ~0.2 dec-lag ~ 0.2*D host samples after its own parabolic
+    /// refine) is fully covered by the W = D+2 half-width; a pathological
+    /// waveform whose decimated argmin differs from the full-rate argmin
+    /// by more than W locks the refinement to the LOCAL minimum near the
+    /// candidate (an honest, measured behavioural difference vs FullRate,
+    /// not a defect). Cost: the decimated coarse stage + ~(2W+1)*m_raw
+    /// MACs -- at 96 kHz roughly 12% over Decimated and ~9x under
+    /// FullRate (measured; see evidence/analysis_round20).
+    Hybrid = 2,
 };
 
 /// Engine configuration (all values validated by prepare()).

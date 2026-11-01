@@ -407,6 +407,9 @@ static const CaseMeta kAllCases[] = {
     {"default_neutrality_r19", "r19", "unit"},
     {"detector_decimated_accuracy_battery", "r19", "long"},
     {"detector_decimated_vs_fullrate_delta", "r19", "long"},
+    {"detector_hybrid_accuracy_battery", "r20", "long"},
+    {"detector_hybrid_vs_fullrate_delta", "r20", "long"},
+    {"detector_hybrid_lowrate_config", "r20", "long"},
     {"commit_crossfade_continuity", "r19", "unit"},
     {"voice_activation_clickfree", "r19", "unit"},
     {"basedelay_crossfade_clickfree", "r19", "unit"},
@@ -4120,6 +4123,179 @@ void casesR19(std::vector<CaseResult>& R) {
             check(c, worst <= 20.0,
                   "decimated vs full-rate disagree on the chirp (folded > 20 cents)");
         }
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 3b. detector_hybrid_accuracy_battery (R20-P2) ----------------------
+    if (harnSelected("detector_hybrid_accuracy_battery")) {
+        // The hybrid coarse-to-fine detector must meet the SAME accuracy
+        // gate as the other two architectures: |pitch error| <= 1.0 cent
+        // per frequency, at 48 kHz AND 96 kHz. At 48 kHz (D=2) the fine
+        // stage resolves at the FULL host rate -- the gate must hold with
+        // margin there; at 96 kHz (D=4) likewise.
+        CaseResult c{"detector_hybrid_accuracy_battery"};
+        const double ratio = std::pow(2.0, 5.0 / 12.0);
+        const double freqs[4] = {110.0, 220.0, 440.0, 880.0};
+        double worst = 0.0;
+        struct RateSpec { int sr; double grain, base; };
+        const RateSpec rates[2] = {{48000, 4096.0, 256.0},
+                                   {96000, 8192.0, 512.0}};
+        for (const auto& rs : rates) {
+            for (double f : freqs) {
+                const auto in = gen::tone(f, rs.sr, 2 * rs.sr, 0.5);
+                AlignedDelayLine e;
+                Config cfg;
+                cfg.sample_rate = rs.sr;
+                cfg.grain = rs.grain;
+                cfg.base_delay = rs.base;
+                cfg.ratio = ratio;
+                cfg.detector_mode = DetectorMode::Hybrid;
+                check(c, e.prepare(cfg), "prepare failed");
+                std::vector<float> out(in.size(), 0.0f);
+                int done = 0;
+                double lo = 1e300, hi = 0.0;
+                while (done < (int)in.size()) {
+                    const int k = std::min(1024, (int)in.size() - done);
+                    e.process(in.data() + done, out.data() + done, k);
+                    done += k;
+                    if (done >= rs.sr) {
+                        const double f0 = e.lastEstimateHz();
+                        lo = std::min(lo, f0);
+                        hi = std::max(hi, f0);
+                    }
+                }
+                const double eLo = 1200.0 * std::log2(lo / f);
+                const double eHi = 1200.0 * std::log2(hi / f);
+                const double band = std::max(std::abs(eLo), std::abs(eHi));
+                worst = std::max(worst, band);
+                char vk[64];
+                std::snprintf(vk, sizeof(vk), "err_cents_%d_%g", rs.sr, f);
+                addValue(c, vk, band);
+            }
+        }
+        addValue(c, "worst_error_cents", worst);
+        check(c, worst <= 1.0,
+              "hybrid detector exceeds the 1-cent accuracy gate");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 3c. detector_hybrid_vs_fullrate_delta (R20-P2) ---------------------
+    if (harnSelected("detector_hybrid_vs_fullrate_delta")) {
+        // The hybrid's FINE stage evaluates the full-rate difference
+        // function at host-rate lag resolution, so on steady tones it must
+        // agree with FullRate at least as tightly as Decimated does
+        // (gate: <= 0.5 cents vs the decimated case's <= 2 cents); on the
+        // fast chirp the same octave-folded <= 20 cent gate applies.
+        CaseResult c{"detector_hybrid_vs_fullrate_delta"};
+        auto sampleEstimatesH = [&](const std::vector<float>& in, int rate,
+                                    DetectorMode mode,
+                                    std::vector<double>& out) {
+            AlignedDelayLine e;
+            Config cfg;
+            cfg.sample_rate = rate;
+            cfg.ratio = std::pow(2.0, 5.0 / 12.0);
+            cfg.detector_mode = mode;
+            check(c, e.prepare(cfg), "prepare failed");
+            std::vector<float> y(in.size(), 0.0f);
+            int done = 0;
+            out.clear();
+            while (done < (int)in.size()) {
+                const int k = std::min(1024, (int)in.size() - done);
+                e.process(in.data() + done, y.data() + done, k);
+                done += k;
+                out.push_back(e.lastEstimateHz());
+            }
+        };
+        double worstTone48 = 0.0, worstTone96 = 0.0;
+        for (int rate : {48000, 96000}) {
+            for (double f : {110.0, 220.0, 440.0}) {
+                const auto in = gen::tone(f, rate, 2 * rate, 0.5);
+                std::vector<double> a, b;
+                sampleEstimatesH(in, rate, DetectorMode::FullRate, a);
+                sampleEstimatesH(in, rate, DetectorMode::Hybrid, b);
+                double worst = 0.0;
+                for (size_t k = a.size() / 2; k < a.size(); ++k) {
+                    if (a[k] > 0 && b[k] > 0)
+                        worst = std::max(worst,
+                                         std::abs(1200.0 * std::log2(b[k] / a[k])));
+                }
+                if (rate == 48000) worstTone48 = std::max(worstTone48, worst);
+                else worstTone96 = std::max(worstTone96, worst);
+            }
+        }
+        addValue(c, "worst_tone_delta_cents_48k", worstTone48);
+        addValue(c, "worst_tone_delta_cents_96k", worstTone96);
+        check(c, worstTone48 <= 0.5,
+              "hybrid vs full-rate disagree on steady tones at 48 kHz (> 0.5 cents)");
+        check(c, worstTone96 <= 0.5,
+              "hybrid vs full-rate disagree on steady tones at 96 kHz (> 0.5 cents)");
+        {
+            const int rate = 48000;
+            const auto in = gen::chirp(200.0, 800.0, rate, 2 * rate, 0.5);
+            std::vector<double> a, b;
+            sampleEstimatesH(in, rate, DetectorMode::FullRate, a);
+            sampleEstimatesH(in, rate, DetectorMode::Hybrid, b);
+            // OCTAVE-FOLDED disagreement (same law as the decimated case).
+            double worst = 0.0;
+            long jumpsA = 0, jumpsB = 0;
+            for (size_t k = 1; k < a.size(); ++k) {
+                if (a[k] > 0 && a[k-1] > 0 &&
+                    std::abs(1200.0 * std::log2(a[k] / a[k-1])) > 600.0) ++jumpsA;
+                if (b[k] > 0 && b[k-1] > 0 &&
+                    std::abs(1200.0 * std::log2(b[k] / b[k-1])) > 600.0) ++jumpsB;
+            }
+            for (size_t k = a.size() / 4; k < a.size(); ++k) {
+                if (a[k] > 0 && b[k] > 0) {
+                    double dc = 1200.0 * std::log2(b[k] / a[k]);
+                    dc = std::fmod(dc, 1200.0);
+                    if (dc > 600.0) dc -= 1200.0;
+                    if (dc < -600.0) dc += 1200.0;
+                    worst = std::max(worst, std::abs(dc));
+                }
+            }
+            addValue(c, "worst_chirp_folded_delta_cents", worst);
+            addValue(c, "octave_jumps_fullrate", (double)jumpsA);
+            addValue(c, "octave_jumps_hybrid", (double)jumpsB);
+            check(c, worst <= 20.0,
+                  "hybrid vs full-rate disagree on the chirp (folded > 20 cents)");
+        }
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 3d. detector_hybrid_lowrate_config (R20-P2) ------------------------
+    if (harnSelected("detector_hybrid_lowrate_config")) {
+        // 44.1 kHz boundary (D=2, sr_dec=22050): the hybrid must prepare,
+        // track a 110 Hz tone inside the 1-cent gate and expose the same
+        // diagnostics (control rate / decimation) as the decimated mode.
+        CaseResult c{"detector_hybrid_lowrate_config"};
+        const int sr = 44100;
+        const auto in = gen::tone(110.0, sr, 2 * sr, 0.5);
+        AlignedDelayLine e;
+        Config cfg;
+        cfg.sample_rate = sr;
+        cfg.ratio = std::pow(2.0, 5.0 / 12.0);
+        cfg.detector_mode = DetectorMode::Hybrid;
+        check(c, e.prepare(cfg), "prepare failed");
+        std::vector<float> out(in.size(), 0.0f);
+        int done = 0;
+        double lo = 1e300, hi = 0.0;
+        while (done < (int)in.size()) {
+            const int k = std::min(1024, (int)in.size() - done);
+            e.process(in.data() + done, out.data() + done, k);
+            done += k;
+            if (done >= sr) {
+                const double f0 = e.lastEstimateHz();
+                lo = std::min(lo, f0);
+                hi = std::max(hi, f0);
+            }
+        }
+        const double band = std::max(std::abs(1200.0 * std::log2(lo / 110.0)),
+                                     std::abs(1200.0 * std::log2(hi / 110.0)));
+        addValue(c, "err_cents_44100_110", band);
+        check(c, band <= 1.0, "hybrid 44.1 kHz 110 Hz error exceeds 1 cent");
         c.pass = c.note.empty();
         pushCase(R, std::move(c));
     }
