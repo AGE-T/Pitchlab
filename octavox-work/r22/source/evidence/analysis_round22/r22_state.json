@@ -1,0 +1,17 @@
+{
+  "tool": "octavox_r22_state",
+  "round": 22,
+  "cases": [
+    {"name": "v3_roundtrip", "ok": true, "note": ""},
+    {"name": "v2_migration", "ok": true, "note": ""},
+    {"name": "v1_migration", "ok": true, "note": ""},
+    {"name": "v2_processor_restore", "ok": true, "note": ""},
+    {"name": "legacy_inert_bitexact", "ok": true, "note": ""},
+    {"name": "mapper_armed_ratios", "ok": true, "note": ""},
+    {"name": "mapper_all_scales", "ok": true, "note": ""},
+    {"name": "mapper_all_intervals", "ok": true, "note": ""},
+    {"name": "mapper_disarmed", "ok": true, "note": ""},
+    {"name": "param_surface_74", "ok": true, "note": ""}
+  ],
+  "all_pass": true
+}

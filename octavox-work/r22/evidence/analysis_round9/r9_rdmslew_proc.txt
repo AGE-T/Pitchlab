@@ -1,0 +1,111 @@
+0000000180139790  488b81d0000000             mov      rax, qword ptr [rcx + 0xd0]              reg=35; [base=38 idx=0 scale=1 disp=0xd0]
+0000000180139797  f30f1081f0000000           movss    xmm0, dword ptr [rcx + 0xf0]             reg=122; [base=38 idx=0 scale=1 disp=0xf0]
+000000018013979F  f30f109120010000           movss    xmm2, dword ptr [rcx + 0x120]            reg=124; [base=38 idx=0 scale=1 disp=0x120]
+00000001801397A7  f30f108908010000           movss    xmm1, dword ptr [rcx + 0x108]            reg=123; [base=38 idx=0 scale=1 disp=0x108]
+00000001801397AF  4c8b00                     mov      r8, qword ptr [rax]                      reg=106; [base=35 idx=0 scale=1 disp=0x0]
+00000001801397B2  f3410f1018                 movss    xmm3, dword ptr [r8]                     reg=125; [base=106 idx=0 scale=1 disp=0x0]
+00000001801397B7  0f2fc3                     comiss   xmm0, xmm3                               reg=122; reg=125
+00000001801397BA  7608                       jbe      0x1801397c4                              imm=0x1801397c4
+00000001801397BC  f30f58c2                   addss    xmm0, xmm2                               reg=122; reg=124
+00000001801397C0  b201                       mov      dl, 1                                    reg=16; imm=0x1
+00000001801397C2  eb0f                       jmp      0x1801397d3                              imm=0x1801397d3
+00000001801397C4  0f2eca                     ucomiss  xmm1, xmm2                               reg=123; reg=124
+00000001801397C7  f30f58c1                   addss    xmm0, xmm1                               reg=122; reg=123
+00000001801397CB  7504                       jne      0x1801397d1                              imm=0x1801397d1
+00000001801397CD  b201                       mov      dl, 1                                    reg=16; imm=0x1
+00000001801397CF  eb02                       jmp      0x1801397d3                              imm=0x1801397d3
+00000001801397D1  32d2                       xor      dl, dl                                   reg=16; reg=16
+00000001801397D3  0f2fc3                     comiss   xmm0, xmm3                               reg=122; reg=125
+00000001801397D6  0f97c0                     seta     al                                       reg=2
+00000001801397D9  3ac2                       cmp      al, dl                                   reg=2; reg=16
+00000001801397DB  7403                       je       0x1801397e0                              imm=0x1801397e0
+00000001801397DD  0f28c3                     movaps   xmm0, xmm3                               reg=122; reg=125
+00000001801397E0  488b81e8000000             mov      rax, qword ptr [rcx + 0xe8]              reg=35; [base=38 idx=0 scale=1 disp=0xe8]
+00000001801397E7  f30f1100                   movss    dword ptr [rax], xmm0                    [base=35 idx=0 scale=1 disp=0x0]; reg=122
+00000001801397EB  f3410f105804               movss    xmm3, dword ptr [r8 + 4]                 reg=125; [base=106 idx=0 scale=1 disp=0x4]
+00000001801397F1  0f2fc3                     comiss   xmm0, xmm3                               reg=122; reg=125
+00000001801397F4  7608                       jbe      0x1801397fe                              imm=0x1801397fe
+00000001801397F6  f30f58c2                   addss    xmm0, xmm2                               reg=122; reg=124
+00000001801397FA  b201                       mov      dl, 1                                    reg=16; imm=0x1
+00000001801397FC  eb0f                       jmp      0x18013980d                              imm=0x18013980d
+00000001801397FE  0f2eca                     ucomiss  xmm1, xmm2                               reg=123; reg=124
+0000000180139801  f30f58c1                   addss    xmm0, xmm1                               reg=122; reg=123
+0000000180139805  7504                       jne      0x18013980b                              imm=0x18013980b
+0000000180139807  b201                       mov      dl, 1                                    reg=16; imm=0x1
+0000000180139809  eb02                       jmp      0x18013980d                              imm=0x18013980d
+000000018013980B  32d2                       xor      dl, dl                                   reg=16; reg=16
+000000018013980D  0f2fc3                     comiss   xmm0, xmm3                               reg=122; reg=125
+0000000180139810  0f97c0                     seta     al                                       reg=2
+0000000180139813  3ac2                       cmp      al, dl                                   reg=2; reg=16
+0000000180139815  7403                       je       0x18013981a                              imm=0x18013981a
+0000000180139817  0f28c3                     movaps   xmm0, xmm3                               reg=122; reg=125
+000000018013981A  488b81e8000000             mov      rax, qword ptr [rcx + 0xe8]              reg=35; [base=38 idx=0 scale=1 disp=0xe8]
+0000000180139821  f30f114004                 movss    dword ptr [rax + 4], xmm0                [base=35 idx=0 scale=1 disp=0x4]; reg=122
+0000000180139826  f3410f105808               movss    xmm3, dword ptr [r8 + 8]                 reg=125; [base=106 idx=0 scale=1 disp=0x8]
+000000018013982C  0f2fc3                     comiss   xmm0, xmm3                               reg=122; reg=125
+000000018013982F  7608                       jbe      0x180139839                              imm=0x180139839
+0000000180139831  f30f58c2                   addss    xmm0, xmm2                               reg=122; reg=124
+0000000180139835  b201                       mov      dl, 1                                    reg=16; imm=0x1
+0000000180139837  eb0f                       jmp      0x180139848                              imm=0x180139848
+0000000180139839  0f2eca                     ucomiss  xmm1, xmm2                               reg=123; reg=124
+000000018013983C  f30f58c1                   addss    xmm0, xmm1                               reg=122; reg=123
+0000000180139840  7504                       jne      0x180139846                              imm=0x180139846
+0000000180139842  b201                       mov      dl, 1                                    reg=16; imm=0x1
+0000000180139844  eb02                       jmp      0x180139848                              imm=0x180139848
+0000000180139846  32d2                       xor      dl, dl                                   reg=16; reg=16
+0000000180139848  0f2fc3                     comiss   xmm0, xmm3                               reg=122; reg=125
+000000018013984B  0f97c0                     seta     al                                       reg=2
+000000018013984E  3ac2                       cmp      al, dl                                   reg=2; reg=16
+0000000180139850  7403                       je       0x180139855                              imm=0x180139855
+0000000180139852  0f28c3                     movaps   xmm0, xmm3                               reg=122; reg=125
+0000000180139855  488b81e8000000             mov      rax, qword ptr [rcx + 0xe8]              reg=35; [base=38 idx=0 scale=1 disp=0xe8]
+000000018013985C  f30f114008                 movss    dword ptr [rax + 8], xmm0                [base=35 idx=0 scale=1 disp=0x8]; reg=122
+0000000180139861  f3410f10580c               movss    xmm3, dword ptr [r8 + 0xc]               reg=125; [base=106 idx=0 scale=1 disp=0xc]
+0000000180139867  0f2fc3                     comiss   xmm0, xmm3                               reg=122; reg=125
+000000018013986A  7608                       jbe      0x180139874                              imm=0x180139874
+000000018013986C  f30f58c2                   addss    xmm0, xmm2                               reg=122; reg=124
+0000000180139870  b201                       mov      dl, 1                                    reg=16; imm=0x1
+0000000180139872  eb0f                       jmp      0x180139883                              imm=0x180139883
+0000000180139874  0f2eca                     ucomiss  xmm1, xmm2                               reg=123; reg=124
+0000000180139877  f30f58c1                   addss    xmm0, xmm1                               reg=122; reg=123
+000000018013987B  7504                       jne      0x180139881                              imm=0x180139881
+000000018013987D  b201                       mov      dl, 1                                    reg=16; imm=0x1
+000000018013987F  eb02                       jmp      0x180139883                              imm=0x180139883
+0000000180139881  32d2                       xor      dl, dl                                   reg=16; reg=16
+0000000180139883  0f2fc3                     comiss   xmm0, xmm3                               reg=122; reg=125
+0000000180139886  0f97c0                     seta     al                                       reg=2
+0000000180139889  3ac2                       cmp      al, dl                                   reg=2; reg=16
+000000018013988B  7403                       je       0x180139890                              imm=0x180139890
+000000018013988D  0f28c3                     movaps   xmm0, xmm3                               reg=122; reg=125
+0000000180139890  488b81e8000000             mov      rax, qword ptr [rcx + 0xe8]              reg=35; [base=38 idx=0 scale=1 disp=0xe8]
+0000000180139897  f30f11400c                 movss    dword ptr [rax + 0xc], xmm0              [base=35 idx=0 scale=1 disp=0xc]; reg=122
+000000018013989C  f30f1181f0000000           movss    dword ptr [rcx + 0xf0], xmm0             [base=38 idx=0 scale=1 disp=0xf0]; reg=122
+00000001801398A4  c3                         ret                                               
+00000001801398A5  cc                         int3                                              
+00000001801398A6  cc                         int3                                              
+00000001801398A7  cc                         int3                                              
+00000001801398A8  cc                         int3                                              
+00000001801398A9  cc                         int3                                              
+00000001801398AA  cc                         int3                                              
+00000001801398AB  cc                         int3                                              
+00000001801398AC  cc                         int3                                              
+00000001801398AD  cc                         int3                                              
+00000001801398AE  cc                         int3                                              
+00000001801398AF  cc                         int3                                              
+00000001801398B0  48895c2408                 mov      qword ptr [rsp + 8], rbx                 [base=44 idx=0 scale=1 disp=0x8]; reg=37
+00000001801398B5  57                         push     rdi                                      reg=39
+00000001801398B6  4883ec20                   sub      rsp, 0x20                                reg=44; imm=0x20
+00000001801398BA  488bfa                     mov      rdi, rdx                                 reg=39; reg=40
+00000001801398BD  488bd9                     mov      rbx, rcx                                 reg=37; reg=38
+00000001801398C0  e84b06f9ff                 call     0x1800c9f10                              imm=0x1800c9f10
+00000001801398C5  488d4b78                   lea      rcx, [rbx + 0x78]                        reg=38; [base=37 idx=0 scale=1 disp=0x78]
+00000001801398C9  488bd7                     mov      rdx, rdi                                 reg=40; reg=39
+00000001801398CC  488b5c2430                 mov      rbx, qword ptr [rsp + 0x30]              reg=37; [base=44 idx=0 scale=1 disp=0x30]
+00000001801398D1  4883c420                   add      rsp, 0x20                                reg=44; imm=0x20
+00000001801398D5  5f                         pop      rdi                                      reg=39
+00000001801398D6  e97503f9ff                 jmp      0x1800c9c50                              imm=0x1800c9c50
+00000001801398DB  cc                         int3                                              
+00000001801398DC  cc                         int3                                              
+00000001801398DD  cc                         int3                                              
+00000001801398DE  cc                         int3                                              
+00000001801398DF  cc                         int3                                              

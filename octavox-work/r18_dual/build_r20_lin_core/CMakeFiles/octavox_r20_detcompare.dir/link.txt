@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/octavox_r20_detcompare.dir/link.d CMakeFiles/octavox_r20_detcompare.dir/cli/r20_detcompare.cpp.o CMakeFiles/octavox_r20_detcompare.dir/tests/wav_io.cpp.o -o octavox_r20_detcompare  liboctavox_dsp.a

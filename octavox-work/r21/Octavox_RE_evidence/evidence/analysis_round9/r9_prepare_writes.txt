@@ -1,0 +1,1 @@
+00000001800E2680  4483080f                   or       dword ptr [rax], 0xf                     [base=35 idx=0 scale=1 disp=0x0]; imm=0xf

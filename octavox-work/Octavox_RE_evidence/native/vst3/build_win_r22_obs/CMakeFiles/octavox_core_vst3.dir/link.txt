@@ -1,0 +1,2 @@
+/usr/bin/ar qc liboctavox_core_vst3.a "CMakeFiles/octavox_core_vst3.dir/home/z/my-project/octavox-work/Octavox_RE_evidence/native/src/dsp.cpp.obj" "CMakeFiles/octavox_core_vst3.dir/home/z/my-project/octavox-work/Octavox_RE_evidence/native/src/harmony.cpp.obj"
+/usr/bin/ranlib liboctavox_core_vst3.a

@@ -1,0 +1,10 @@
+OCTAVOX R19 -- Windows module SHA-256 record (2026-10-31T13:31:14Z)
+---------------------------------------------------------------------
+Lagrange6   54f5b392357c5f2334dedfb7c2f71a9abc9815ecaf3f2cb47d3f409314adbd6b    965632 bytes
+ObsKernel6  54caa89201f999ede8e26c45c467ff26d8bf3881e48d84d1a0e804c2efca4e9d    965632 bytes
+Lagrange6Q  c3baa6ea48c4ab31ef7cd13392aa50e1a9289d8c641192b6369b2fb9d768efd5    965632 bytes  (auxiliary compile-definition proof build)
+---------------------------------------------------------------------
+Lagrange6 != ObsKernel6 : DIFFER (sha256) -- OK
+Lagrange6Q differs from BOTH delivered modules -- the compile definition (OCTAVOX_VST3_INTERP_*) genuinely changes the emitted code.
+dualnulltest-dir Lagrange6 module (third directory): fefe9faf642f71932c997702572bfd64a24520dd0d2a9c036a8d012b829f19d2
+  -> differs from the primary Lagrange6 module (informational note)

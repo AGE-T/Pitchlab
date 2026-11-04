@@ -1,0 +1,6 @@
+source: /home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/src/obs_kernel_table.h
+kTable[0][0..5] (float32 values): [-0.010375977493822575, 0.0884704664349556, 0.8416749238967896, 0.0908203199505806, -0.010589600540697575, 3.051758176297881e-05]
+little-endian 24-byte sequence: 01002abc0130b53d0278573f0100ba3d01802dbc01000038
+/home/z/my-project/octavox-work/r18_dual/out/Builds/OctavoxRE_R20_Windows_x64/Lagrange6/OctavoxRE_Lagrange6.vst3/Contents/x86_64-win/OctavoxRE_Lagrange6.vst3: FOUND (occurrences: 1)
+/home/z/my-project/octavox-work/r18_dual/out/Builds/OctavoxRE_R20_Windows_x64/ObsKernel6/OctavoxRE_ObsKernel6.vst3/Contents/x86_64-win/OctavoxRE_ObsKernel6.vst3: FOUND (occurrences: 1)
+OBS_KERNEL_TABLE_BYTES: found in BOTH modules (the core compiles all interpolation modes -- the decisive variant proofs are the LAGRANGE6Q third-build hash difference, the dual-module null test, and the moduleinfo identity records)

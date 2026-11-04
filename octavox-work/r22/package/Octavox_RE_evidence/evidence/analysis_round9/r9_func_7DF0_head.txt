@@ -1,0 +1,43 @@
+00000001800E7DF0  48895c2408                 mov      qword ptr [rsp + 8], rbx                 [base=44 idx=0 scale=1 disp=0x8]; reg=37
+00000001800E7DF5  57                         push     rdi                                      reg=39
+00000001800E7DF6  4883ec20                   sub      rsp, 0x20                                reg=44; imm=0x20
+00000001800E7DFA  488d3dc71d3200             lea      rdi, [rip + 0x321dc7]                    reg=39; [base=41 idx=0 scale=1 disp=0x321dc7]
+00000001800E7E01  488bd9                     mov      rbx, rcx                                 reg=37; reg=38
+00000001800E7E04  4889b900450000             mov      qword ptr [rcx + 0x4500], rdi            [base=38 idx=0 scale=1 disp=0x4500]; reg=39
+00000001800E7E0B  4889b9e8440000             mov      qword ptr [rcx + 0x44e8], rdi            [base=38 idx=0 scale=1 disp=0x44e8]; reg=39
+00000001800E7E12  4889b9d0440000             mov      qword ptr [rcx + 0x44d0], rdi            [base=38 idx=0 scale=1 disp=0x44d0]; reg=39
+00000001800E7E19  4889b990440000             mov      qword ptr [rcx + 0x4490], rdi            [base=38 idx=0 scale=1 disp=0x4490]; reg=39
+00000001800E7E20  4889b960430000             mov      qword ptr [rcx + 0x4360], rdi            [base=38 idx=0 scale=1 disp=0x4360]; reg=39
+00000001800E7E27  4889b910430000             mov      qword ptr [rcx + 0x4310], rdi            [base=38 idx=0 scale=1 disp=0x4310]; reg=39
+00000001800E7E2E  4881c1f8420000             add      rcx, 0x42f8                              reg=38; imm=0x42f8
+00000001800E7E35  e8f68ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7E3A  488d8bd0420000             lea      rcx, [rbx + 0x42d0]                      reg=38; [base=37 idx=0 scale=1 disp=0x42d0]
+00000001800E7E41  4889bbe8420000             mov      qword ptr [rbx + 0x42e8], rdi            [base=37 idx=0 scale=1 disp=0x42e8]; reg=39
+00000001800E7E48  e8e38ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7E4D  488d8ba8420000             lea      rcx, [rbx + 0x42a8]                      reg=38; [base=37 idx=0 scale=1 disp=0x42a8]
+00000001800E7E54  4889bbc0420000             mov      qword ptr [rbx + 0x42c0], rdi            [base=37 idx=0 scale=1 disp=0x42c0]; reg=39
+00000001800E7E5B  e8d08ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7E60  488d8b80420000             lea      rcx, [rbx + 0x4280]                      reg=38; [base=37 idx=0 scale=1 disp=0x4280]
+00000001800E7E67  4889bb98420000             mov      qword ptr [rbx + 0x4298], rdi            [base=37 idx=0 scale=1 disp=0x4298]; reg=39
+00000001800E7E6E  e8bd8ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7E73  488d8b58420000             lea      rcx, [rbx + 0x4258]                      reg=38; [base=37 idx=0 scale=1 disp=0x4258]
+00000001800E7E7A  4889bb70420000             mov      qword ptr [rbx + 0x4270], rdi            [base=37 idx=0 scale=1 disp=0x4270]; reg=39
+00000001800E7E81  e8aa8ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7E86  488d8b30420000             lea      rcx, [rbx + 0x4230]                      reg=38; [base=37 idx=0 scale=1 disp=0x4230]
+00000001800E7E8D  4889bb48420000             mov      qword ptr [rbx + 0x4248], rdi            [base=37 idx=0 scale=1 disp=0x4248]; reg=39
+00000001800E7E94  e8978ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7E99  488d8b08420000             lea      rcx, [rbx + 0x4208]                      reg=38; [base=37 idx=0 scale=1 disp=0x4208]
+00000001800E7EA0  4889bb20420000             mov      qword ptr [rbx + 0x4220], rdi            [base=37 idx=0 scale=1 disp=0x4220]; reg=39
+00000001800E7EA7  e8848ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7EAC  4889bbf8410000             mov      qword ptr [rbx + 0x41f8], rdi            [base=37 idx=0 scale=1 disp=0x41f8]; reg=39
+00000001800E7EB3  488d8ba0410000             lea      rcx, [rbx + 0x41a0]                      reg=38; [base=37 idx=0 scale=1 disp=0x41a0]
+00000001800E7EBA  4889bbd8410000             mov      qword ptr [rbx + 0x41d8], rdi            [base=37 idx=0 scale=1 disp=0x41d8]; reg=39
+00000001800E7EC1  e86a8ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7EC6  488d8b88410000             lea      rcx, [rbx + 0x4188]                      reg=38; [base=37 idx=0 scale=1 disp=0x4188]
+00000001800E7ECD  e8ce8af2ff                 call     0x1800109a0                              imm=0x1800109a0
+00000001800E7ED2  488d8b70410000             lea      rcx, [rbx + 0x4170]                      reg=38; [base=37 idx=0 scale=1 disp=0x4170]
+00000001800E7ED9  e8528ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7EDE  488d8b58410000             lea      rcx, [rbx + 0x4158]                      reg=38; [base=37 idx=0 scale=1 disp=0x4158]
+00000001800E7EE5  e8468ff2ff                 call     0x180010e30                              imm=0x180010e30
+00000001800E7EEA  488d8b40410000             lea      rcx, [rbx + 0x4140]                      reg=38; [base=37 idx=0 scale=1 disp=0x4140]
+00000001800E7EF1  e83a8ff2ff                 call     0x180010e30                              imm=0x180010e30

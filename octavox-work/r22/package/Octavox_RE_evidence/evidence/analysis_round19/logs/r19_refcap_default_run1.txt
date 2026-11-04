@@ -1,0 +1,7 @@
+cfg1_default_unity_lcg_noise_b64_150_512  0x74318b06c182aacb
+cfg2_r700c_8v_spread_fb025_sine220       0x9b7217813e519209
+cfg3_rm400c_4v_nospread_chirp200_800    0xb66549c1dca9d6ae
+cfg4_stereo_2ch_4v_unity_then_r400c     0x38f625fec56dba45
+version: octavox-native 16.0.0
+interpolation: core-default-Lagrange6
+mode: 16.0.0-defaults

@@ -1,0 +1,49 @@
+OCTAVOX round 12 scan A -- raw-byte displacement scan (round-9 method)
+target: /home/z/octavox/original/Ox.vst3 (sha256 7bb260f6... verified)
+.text VA 0x180001000 size 0x37B200, .pdata functions 13116
+
+=== +0x40F0 : 4 instruction hits ===
+  FUN_0  (1 hits):
+    0x180365261  lea      ecx, [rdx + 0x40f0]
+  FUN_1800E18B0  (1 hits):
+    0x1800E1FBC  mov      dword ptr [rsi + 0x40f0], eax
+  FUN_1800E2105  (2 hits):
+    0x1800E24C5  mov      edi, dword ptr [rsi + 0x40f0]
+    0x1800E2858  mov      edx, dword ptr [rsi + 0x40f0]
+
+=== +0x4110 : 7 instruction hits ===
+  FUN_0  (1 hits):
+    0x180365271  lea      ecx, [rdx + 0x4110]
+  FUN_1800E0360  (3 hits):
+    0x1800E07B2  mov      dword ptr [rdi + 0x4110], esi
+    0x1800E07EF  mov      dword ptr [rdi + 0x4110], eax
+    0x1800E0800  mov      ecx, dword ptr [rdi + 0x4110]
+  FUN_1800E2105  (2 hits):
+    0x1800E23F7  mov      eax, dword ptr [rsi + 0x4110]
+    0x1800E26E1  mov      eax, dword ptr [rsi + 0x4110]
+  FUN_1800E7DF0  (1 hits):
+    0x1800E7F03  lea      ecx, [rbx + 0x4110]
+
+=== +0x4158 : 6 instruction hits ===
+  FUN_1800E0360  (3 hits):
+    0x1800E08EE  mov      dword ptr [rdi + 0x4158], esi
+    0x1800E092B  mov      dword ptr [rdi + 0x4158], eax
+    0x1800E093C  mov      ecx, dword ptr [rdi + 0x4158]
+  FUN_1800E2105  (2 hits):
+    0x1800E245C  mov      edi, dword ptr [rsi + 0x4158]
+    0x1800E2803  mov      eax, dword ptr [rsi + 0x4158]
+  FUN_1800E7DF0  (1 hits):
+    0x1800E7EDF  lea      ecx, [rbx + 0x4158]
+
+=== +0x4140 : 6 instruction hits ===
+  FUN_0  (1 hits):
+    0x180361211  lea      ecx, [rdx + 0x4140]
+  FUN_1800E0360  (1 hits):
+    0x1800E08C7  lea      ecx, [rdi + 0x4140]
+  FUN_1800E2105  (2 hits):
+    0x1800E275F  mov      eax, dword ptr [rsi + 0x4140]
+    0x1800E27F8  mov      eax, dword ptr [rsi + 0x4140]
+  FUN_1800E7DF0  (1 hits):
+    0x1800E7EEB  lea      ecx, [rbx + 0x4140]
+  FUN_18015FBB4  (1 hits):
+    0x18015FC3E  lea      eax, [rip + 0x4140]

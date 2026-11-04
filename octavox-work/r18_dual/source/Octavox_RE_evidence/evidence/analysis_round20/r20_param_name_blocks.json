@@ -1,0 +1,224 @@
+[
+ {
+  "addr": "0x18038eb70",
+  "names": [
+   "Invalid Snapshot Chunk",
+   ""
+  ]
+ },
+ {
+  "addr": "0x18038ebb0",
+  "names": [
+   "Tempo Enable",
+   "TempEn",
+   "TEn"
+  ]
+ },
+ {
+  "addr": "0x18038ebc8",
+  "names": [
+   "Session Tempo Enable",
+   "SesTmp",
+   "STmp"
+  ]
+ },
+ {
+  "addr": "0x18038ec00",
+  "names": [
+   "Master Tune",
+   "Tune"
+  ]
+ },
+ {
+  "addr": "0x18038ec28",
+  "names": [
+   "Pitch Tracking Enable",
+   "PitTrEn",
+   "PtTkEn",
+   "PtkEn"
+  ]
+ },
+ {
+  "addr": "0x18038ec58",
+  "names": [
+   "Instrument",
+   "Inst"
+  ]
+ },
+ {
+  "addr": "0x18038ec68",
+  "names": [
+   "Minimum Pitch",
+   "MinPit",
+   "MPit"
+  ]
+ },
+ {
+  "addr": "0x18038ec88",
+  "names": [
+   "Crossfade",
+   "XFade",
+   "XFad"
+  ]
+ },
+ {
+  "addr": "0x18038eca0",
+  "names": [
+   "Input Level",
+   "InLev",
+   "InLv"
+  ]
+ },
+ {
+  "addr": "0x18038ecb8",
+  "names": [
+   "Output Level",
+   "OutLev",
+   "OutL"
+  ]
+ },
+ {
+  "addr": "0x18038ece0",
+  "names": [
+   "Wet/Dry Mix",
+   "Mix"
+  ]
+ },
+ {
+  "addr": "0x18038ecf0",
+  "names": [
+   "Loop Feedback",
+   "MFbk",
+   "Fbm"
+  ]
+ },
+ {
+  "addr": "0x18038ed08",
+  "names": [
+   "Loop Delay",
+   "MDelay",
+   "MDly"
+  ]
+ },
+ {
+  "addr": "0x18038ed20",
+  "names": [
+   "Beat Loop",
+   "BL",
+   ""
+  ]
+ },
+ {
+  "addr": "0x18038ed30",
+  "names": [
+   "Randomize",
+   "Random",
+   "Rand"
+  ]
+ },
+ {
+  "addr": "0x18038ed48",
+  "names": [
+   "Live Mode Enable",
+   "LiveMd",
+   "Live"
+  ]
+ },
+ {
+  "addr": "0x18038ed68",
+  "names": [
+   "Key Lock Enable",
+   "KyLock",
+   "KyLk"
+  ]
+ },
+ {
+  "addr": "0x18038ed88",
+  "names": [
+   "Mix Lock Enable",
+   "MxLock",
+   "MxLk"
+  ]
+ },
+ {
+  "addr": "0x18038eda8",
+  "names": [
+   "Level%d",
+   "Lev%d"
+  ]
+ },
+ {
+  "addr": "0x18038edb8",
+  "names": [
+   "Feedback%d",
+   "Fbk%d",
+   "Fb%d"
+  ]
+ },
+ {
+  "addr": "0x18038edd0",
+  "names": [
+   "Delay%d",
+   "Dly%d"
+  ]
+ },
+ {
+  "addr": "0x18038ede0",
+  "names": [
+   "Shift%d",
+   "Shf%d"
+  ]
+ },
+ {
+  "addr": "0x18038edf0",
+  "names": [
+   "Interval%d",
+   "Int%d"
+  ]
+ },
+ {
+  "addr": "0x18038ee10",
+  "names": [
+   "Enable%d",
+   "Enabl%d",
+   "En%d"
+  ]
+ },
+ {
+  "addr": "0x18038ee28",
+  "names": [
+   "Beat%d",
+   "Bt%d"
+  ]
+ },
+ {
+  "addr": "0x18038ee38",
+  "names": [
+   "Voice Select",
+   "VoiceS"
+  ]
+ },
+ {
+  "addr": "0x18038ee50",
+  "names": [
+   "MIDI Control",
+   "MidCtl",
+   "MCtl",
+   "Mid"
+  ]
+ },
+ {
+  "addr": "0x18038ee70",
+  "names": [
+   "Meter Numerator",
+   "MtrNum"
+  ]
+ },
+ {
+  "addr": "0x18038ee88",
+  "names": [
+   "Meter Denominator",
+   "MtrDen"
+  ]
+ }
+]

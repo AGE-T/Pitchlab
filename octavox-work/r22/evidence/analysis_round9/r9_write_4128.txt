@@ -1,0 +1,35 @@
+00000001800E2694  284100                     sub      byte ptr [rcx], al                       [base=38 idx=0 scale=1 disp=0x0]; reg=2
+00000001800E2697  000f                       add      byte ptr [rdi], cl                       [base=39 idx=0 scale=1 disp=0x0]; reg=10
+00000001800E2699  28c3                       sub      bl, al                                   reg=5; reg=2
+00000001800E269B  f30f5cc6                   subss    xmm0, xmm6                               reg=122; reg=128
+00000001800E269F  f3410f110c04               movss    dword ptr [r12 + rax], xmm1              [base=110 idx=35 scale=1 disp=0x0]; reg=123
+00000001800E26A5  b81f000000                 mov      eax, 0x1f                                reg=19; imm=0x1f
+00000001800E26AA  f30f5905b6f83200           mulss    xmm0, dword ptr [rip + 0x32f8b6]         reg=122; [base=41 idx=0 scale=1 disp=0x32f8b6]
+00000001800E26B2  0f2f05a7ff3200             comiss   xmm0, dword ptr [rip + 0x32ffa7]         reg=122; [base=41 idx=0 scale=1 disp=0x32ffa7]
+00000001800E26B9  7304                       jae      0x1800e26bf                              imm=0x1800e26bf
+00000001800E26BB  f30f2cc0                   cvttss2si eax, xmm0                                reg=19; reg=122
+00000001800E26BF  f3410f104328               movss    xmm0, dword ptr [r11 + 0x28]             reg=122; [base=109 idx=0 scale=1 disp=0x28]
+00000001800E26C5  488b96f8400000             mov      rdx, qword ptr [rsi + 0x40f8]            reg=40; [base=43 idx=0 scale=1 disp=0x40f8]
+00000001800E26CC  4898                       cdqe                                              
+00000001800E26CE  f3410f110414               movss    dword ptr [r12 + rdx], xmm0              [base=110 idx=40 scale=1 disp=0x0]; reg=122
+00000001800E26D4  ba01000000                 mov      edx, 1                                   reg=24; imm=0x1
+00000001800E26D9  f3410f104c8330             movss    xmm1, dword ptr [r11 + rax*4 + 0x30]     reg=123; [base=109 idx=35 scale=4 disp=0x30]
+00000001800E26E0  488b8610410000             mov      rax, qword ptr [rsi + 0x4110]            reg=35; [base=43 idx=0 scale=1 disp=0x4110]
+00000001800E26E7  0f28c1                     movaps   xmm0, xmm1                               reg=122; reg=123
+00000001800E26EA  f30f590562f73200           mulss    xmm0, dword ptr [rip + 0x32f762]         reg=122; [base=41 idx=0 scale=1 disp=0x32f762]
+00000001800E26F2  f3410f10632c               movss    xmm4, dword ptr [r11 + 0x2c]             reg=126; [base=109 idx=0 scale=1 disp=0x2c]
+00000001800E26F8  f30f2cc9                   cvttss2si ecx, xmm1                                reg=22; reg=123
+00000001800E26FC  f3410f110404               movss    dword ptr [r12 + rax], xmm0              [base=110 idx=35 scale=1 disp=0x0]; reg=122
+00000001800E2702  83e10f                     and      ecx, 0xf                                 reg=22; imm=0xf
+00000001800E2705  d3e2                       shl      edx, cl                                  reg=24; reg=10
+00000001800E2707  660f6ed2                   movd     xmm2, edx                                reg=124; reg=24
+00000001800E270B  0f5bd2                     cvtdq2ps xmm2, xmm2                               reg=124; reg=124
+00000001800E270E  f30f59d3                   mulss    xmm2, xmm3                               reg=124; reg=125
+00000001800E2712  f3410f58d1                 addss    xmm2, xmm9                               reg=124; reg=131
+00000001800E2717  f30f2cca                   cvttss2si ecx, xmm2                                reg=22; reg=124
+00000001800E271B  81f900000080               cmp      ecx, 0x80000000                          reg=22; imm=0x80000000
+00000001800E2721  741e                       je       0x1800e2741                              imm=0x1800e2741
+00000001800E2723  660f6ec1                   movd     xmm0, ecx                                reg=122; reg=22
+00000001800E2727  0f5bc0                     cvtdq2ps xmm0, xmm0                               reg=122; reg=122
+00000001800E272A  0f2ec2                     ucomiss  xmm0, xmm2                               reg=122; reg=124
+00000001800E272D  7412                       je       0x1800e2741                              imm=0x1800e2741

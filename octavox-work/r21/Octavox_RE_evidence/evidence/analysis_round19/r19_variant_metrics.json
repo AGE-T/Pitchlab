@@ -1,0 +1,12 @@
+{
+  "tool": "octavox_r19_variant_metrics",
+  "version": "octavox-native 16.0.0",
+  "rows": [
+    {"case": "shift_minus24st", "variant": "Lagrange6", "ns_per_frame": 352.423, "realtime_factor": 59.1145, "pitch_hz_est": 110.001224, "pitch_err_cents": 0.0193, "thdn_db": -34.641, "max_step": 0.007200, "rms_out": 0.353308},
+    {"case": "shift_minus24st", "variant": "ObsKernel6", "ns_per_frame": 355.599, "realtime_factor": 58.5866, "pitch_hz_est": 110.001222, "pitch_err_cents": 0.0192, "thdn_db": -34.636, "max_step": 0.007210, "rms_out": 0.353278},
+    {"case": "shift_plus4st", "variant": "Lagrange6", "ns_per_frame": 354.382, "realtime_factor": 58.7878, "pitch_hz_est": 554.365005, "pitch_err_cents": -0.0008, "thdn_db": -39.052, "max_step": 0.036285, "rms_out": 0.353514},
+    {"case": "shift_plus4st", "variant": "ObsKernel6", "ns_per_frame": 354.825, "realtime_factor": 58.7144, "pitch_hz_est": 554.365005, "pitch_err_cents": -0.0008, "thdn_db": -39.052, "max_step": 0.036334, "rms_out": 0.353483},
+    {"case": "shift_minus1st", "variant": "Lagrange6", "ns_per_frame": 352.651, "realtime_factor": 59.0764, "pitch_hz_est": 415.291842, "pitch_err_cents": -0.0536, "thdn_db": -13.406, "max_step": 0.027192, "rms_out": 0.342039},
+    {"case": "shift_minus1st", "variant": "ObsKernel6", "ns_per_frame": 356.777, "realtime_factor": 58.3932, "pitch_hz_est": 415.291842, "pitch_err_cents": -0.0536, "thdn_db": -13.406, "max_step": 0.027222, "rms_out": 0.342010}
+  ]
+}

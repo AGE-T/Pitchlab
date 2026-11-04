@@ -1,0 +1,2369 @@
+=== mimo (395 modules)
+  [None] igan                     add=0x1800CA340 slot=0x1F0 rec=0x1804A8990
+        rec: statement=input gain:%3.0f dB; name=knob; min=-96; max=12; res=1; default=0
+  [None] inch                     add=0x1800CA340 slot=0x2A8 rec=0x1804AA600
+        rec: statement=knob: %f; name=knob; min=1; max=2; res=1; default=1
+  [None] c_subtract1              add=0x1800DCDC0 slot=0x360 rec=0x1804AA710
+        rec: in1=inch-out; in2=1
+  [None] live                     add=0x1800D4B70 slot=0x3F8 rec=0x1804A7760
+        rec: statement=Live Mode %s; nchoices=2; default=0; choices1=off; choices2=on
+  [None] live mode delay comp     add=0x1800CB200 slot=0x4B0 rec=0x1804A93E0
+        rec: value=40
+  [None] c_switch                 add=0x1800D6940 slot=0x4E8 rec=0x1804A8AA0
+        rec: ninputs=2; select=live-out; in1=live mode delay comp-out; in2=0
+  [None] mfbk                     add=0x1800CA340 slot=0x570 rec=0x1804B52B0
+        rec: statement=feedback: %f %; name=percent; min=0; max=100; res=1; default=0
+  [None] fbkd                     add=0x1800CA340 slot=0x628 rec=0x1804A6FB0
+        rec: statement=fback dly: %f ms; name=knob; min=0; max=5000; res=1; default=0
+  [None] c_minmax                 add=0x1800D15D0 slot=0x6E0 rec=0x1804B3180
+        rec: ninputs=2; in1=fbkd-out; in2=50
+  [10] rdep                     add=0x18013AB90 slot=0x758 rec=0x1804B1980
+        rec: statement=rnd dpth: %f; name=knob; min=0; max=200; res=1; default=50
+  [11] c_divide26               add=0x18013A110 slot=0x810 rec=0x1804B1590
+        rec: in1=rdep-out; in2=2400
+  [12] c_fltr_a36               add=0x18013AAC0 slot=0x8A8 rec=0x1804B1510
+        rec: time_constant=20; in=c_divide26-out
+  [13] keys                     add=0x18013AD00 slot=0x980 rec=0x1804AA080
+        rec: statement=key  :   %s; nchoices=17; default=0; choices1= C; choices2=C#; choices3=Db; choices4= D; choices5=D#; choices6=Eb; choices7= E; choices8= F; choices9=F#; choices10=Gb; choices11= G; choices12=G#; choices13=Ab; choices14= A; choices15=A#; choices16=Bb; choices17= B
+  [14] scal                     add=0x18013AD00 slot=0xA38 rec=0x1804AA260
+        rec: statement=scale: %s; nchoices=16; default=0; choices1=ionian (maj); choices2=dorian; choices3=phrygian; choices4=lydian; choices5=mixolydian; choices6=relative minor; choices7=locrian; choices8=harmonic min; choices9=melodic min; choices10=chromatic; choices11=whole tone; choices12=penta maj; choices13=penta min; choices14=enigmatic; choices15=neapolitan; choices16=hungarian
+  [15] ptrk                     add=0x18013AB90 slot=0xAF0 rec=0x1804B1690
+        rec: statement=Pitch Track; name=0; min=0; max=1; res=1; default=1
+  [16] scal table               add=0x18013A8D0 slot=0xBA8 rec=0x1804AE940
+        rec: nentries=15; select=scal-out; in1=1; in2=2; in3=3; in4=4; in5=5; in6=6; in7=7; in8=10; in9=11; in10=14; in11=15; in12=16; in13=17; in14=18; in15=13
+  [17] c_cmp2                   add=0x18013A760 slot=0xC30 rec=0x1804ADC80
+        rec: in1=scal table-out; in2=14
+  [18] c_cmp3                   add=0x18013A760 slot=0xD68 rec=0x1804B0800
+        rec: in1=scal table-out; in2=15
+  [19] c_or                     add=0x18013A110 slot=0xEA0 rec=0x1804ADA80
+        rec: in1=c_cmp2-eq; in2=c_cmp3-eq
+  [20] minp                     add=0x18013AD00 slot=0xF38 rec=0x1804B6BD0
+        rec: statement=minpitch: %s; nchoices=48; default=24; choices1= C0; choices2=C#0; choices3= D0; choices4=D#0; choices5= E0; choices6= F0; choices7=F#0; choices8= G0; choices9=G#0; choices10= A0; choices11=A#0; choices12= B0; choices13= C1; choices14=C#1; choices15= D1; choices16=D#1; choices17= E1; choices18= F1; choices19=F#1; choices20= G1; choices21=G#1
+  [21] xfad                     add=0x18013AB90 slot=0xFF0 rec=0x1804B0880
+        rec: statement=xfade   : %3.0f ms; min=0; max=100; res=1; default=10
+  [22] tune                     add=0x18013AB90 slot=0x10A8 rec=0x1804AF910
+        rec: statement=tune: %3.0f; name=knob; min=392; max=494; res=1; default=440
+  [23] fbk1                     add=0x18013AB90 slot=0x1160 rec=0x1804A9080
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [24] msw1                     add=0x18013AD00 slot=0x1218 rec=0x1804B3BA0
+        rec: statement=voice 1: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [25] m switch 1               add=0x18013ABD0 slot=0x12D0 rec=0x1804AB420
+        rec: ninputs=2; select=msw1-out; in1=-100; in2=ogn1-out
+  [26] ogn1                     add=0x18013AB90 slot=0x1358 rec=0x1804ACEC0
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [27] fback switch 1           add=0x18013ABD0 slot=0x1410 rec=0x1804B2A00
+        rec: ninputs=2; select=msw1-out; in1=-100; in2=fbk1-out
+  [28] pan1                     add=0x18013AB90 slot=0x1498 rec=0x1804B1710
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [29] dly1                     add=0x18013AB90 slot=0x1550 rec=0x1804B0490
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [30] c_adder8                 add=0x18013A510 slot=0x1608 rec=0x1804A8CA0
+        rec: ninputs=2; in1=dly1-out; in2=c_switch-out
+  [31] int1                     add=0x18013AD00 slot=0x1660 rec=0x1804A7050
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [32] int table 1              add=0x18013A8D0 slot=0x1718 rec=0x1804ABFB0
+        rec: nentries=29; select=int1-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [33] int table switch 1       add=0x18013ABD0 slot=0x17A0 rec=0x1804B6A60
+        rec: ninputs=2; select=c_or-out; in1=int1-out; in2=int table 1-out
+  [34] int sub 1                add=0x18013A110 slot=0x1828 rec=0x1804AD560
+        rec: in1=int table switch 1-out; in2=14
+  [35] c_multiply 1             add=0x18013A390 slot=0x18C0 rec=0x1804B1770
+        rec: in1=int sub 1-out; in2=-1
+  [36] sht1                     add=0x18013AB90 slot=0x1980 rec=0x1804A93F0
+        rec: statement=fshift: %f; name=knob; min=-2400; max=2400; res=1; default=0
+  [37] fbk2                     add=0x18013AB90 slot=0x1A38 rec=0x1804B22E0
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [38] msw2                     add=0x18013AD00 slot=0x1AF0 rec=0x1804B1250
+        rec: statement=voice 2: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [39] m switch 2               add=0x18013ABD0 slot=0x1BA8 rec=0x1804A9560
+        rec: ninputs=2; select=msw2-out; in1=-100; in2=ogn2-out
+  [40] ogn2                     add=0x18013AB90 slot=0x1C30 rec=0x1804AD520
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [41] fback switch 2           add=0x18013ABD0 slot=0x1CE8 rec=0x1804B6D70
+        rec: ninputs=2; select=msw2-out; in1=-100; in2=fbk2-out
+  [42] pan2                     add=0x18013AB90 slot=0x1D70 rec=0x1804B4820
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [43] dly2                     add=0x18013AB90 slot=0x1E28 rec=0x1804A8840
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [44] c_adder9                 add=0x18013A510 slot=0x1EE0 rec=0x1804AE3D0
+        rec: ninputs=2; in1=dly2-out; in2=c_switch-out
+  [45] int2                     add=0x18013AD00 slot=0x1F38 rec=0x1804B05D0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [46] int table 2              add=0x18013A8D0 slot=0x1FF0 rec=0x1804B1EF0
+        rec: nentries=29; select=int2-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [47] int table switch 2       add=0x18013ABD0 slot=0x2078 rec=0x1804B12D0
+        rec: ninputs=2; select=c_or-out; in1=int2-out; in2=int table 2-out
+  [48] int sub 2                add=0x18013A110 slot=0x2100 rec=0x1804AB520
+        rec: in1=int table switch 2-out; in2=14
+  [49] c_multiply 2             add=0x18013A390 slot=0x2198 rec=0x1804B1410
+        rec: in1=int sub 2-out; in2=-1
+  [50] sht2                     add=0x18013AB90 slot=0x2258 rec=0x1804AD2F0
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [51] fbk3                     add=0x18013AB90 slot=0x2310 rec=0x1804A7AB0
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [52] msw3                     add=0x18013AD00 slot=0x23C8 rec=0x1804A6CA0
+        rec: statement=voice 3: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [53] m switch 3               add=0x18013ABD0 slot=0x2480 rec=0x1804ACAA0
+        rec: ninputs=2; select=msw3-out; in1=-100; in2=ogn3-out
+  [54] ogn3                     add=0x18013AB90 slot=0x2508 rec=0x1804AF8D0
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [55] fback switch 3           add=0x18013ABD0 slot=0x25C0 rec=0x1804A6DA0
+        rec: ninputs=2; select=msw3-out; in1=-100; in2=fbk3-out
+  [56] pan3                     add=0x18013AB90 slot=0x2648 rec=0x1804A90E0
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [57] dly3                     add=0x18013AB90 slot=0x2700 rec=0x1804A7E10
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [58] c_adder10                add=0x18013A510 slot=0x27B8 rec=0x1804AA1E0
+        rec: ninputs=2; in1=dly3-out; in2=c_switch-out
+  [59] int3                     add=0x18013AD00 slot=0x2810 rec=0x1804B3460
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [60] int table 3              add=0x18013A8D0 slot=0x28C8 rec=0x1804B50A0
+        rec: nentries=29; select=int3-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [61] int table switch 3       add=0x18013ABD0 slot=0x2950 rec=0x1804A8550
+        rec: ninputs=2; select=c_or-out; in1=int3-out; in2=int table 3-out
+  [62] int sub 3                add=0x18013A110 slot=0x29D8 rec=0x1804A8D80
+        rec: in1=int table switch 3-out; in2=14
+  [63] c_multiply 3             add=0x18013A390 slot=0x2A70 rec=0x1804A7530
+        rec: in1=int sub 3-out; in2=-1
+  [64] sht3                     add=0x18013AB90 slot=0x2B30 rec=0x1804B5460
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [65] fbk4                     add=0x18013AB90 slot=0x2BE8 rec=0x1804B4250
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [66] msw4                     add=0x18013AD00 slot=0x2CA0 rec=0x1804AC4F0
+        rec: statement=voice 4: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [67] m switch 4               add=0x18013ABD0 slot=0x2D58 rec=0x1804A8ED0
+        rec: ninputs=2; select=msw4-out; in1=-100; in2=ogn4-out
+  [68] ogn4                     add=0x18013AB90 slot=0x2DE0 rec=0x1804AEF50
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [69] fback switch 4           add=0x18013ABD0 slot=0x2E98 rec=0x1804A9C50
+        rec: ninputs=2; select=msw4-out; in1=-100; in2=fbk4-out
+  [70] pan4                     add=0x18013AB90 slot=0x2F20 rec=0x1804AAD50
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [71] dly4                     add=0x18013AB90 slot=0x2FD8 rec=0x1804AA5C0
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [72] c_adder11                add=0x18013A510 slot=0x3090 rec=0x1804A7430
+        rec: ninputs=2; in1=dly4-out; in2=c_switch-out
+  [73] int4                     add=0x18013AD00 slot=0x30E8 rec=0x1804AA3F0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [74] int table 4              add=0x18013A8D0 slot=0x31A0 rec=0x1804AA920
+        rec: nentries=29; select=int4-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [75] int table switch 4       add=0x18013ABD0 slot=0x3228 rec=0x1804B5510
+        rec: ninputs=2; select=c_or-out; in1=int4-out; in2=int table 4-out
+  [76] int sub 4                add=0x18013A110 slot=0x32B0 rec=0x1804ACE70
+        rec: in1=int table switch 4-out; in2=14
+  [77] c_multiply 4             add=0x18013A390 slot=0x3348 rec=0x1804B31A0
+        rec: in1=int sub 4-out; in2=-1
+  [78] sht4                     add=0x18013AB90 slot=0x3408 rec=0x1804A7800
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [79] fbk5                     add=0x18013AB90 slot=0x34C0 rec=0x1804B3C50
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [80] msw5                     add=0x18013AD00 slot=0x3578 rec=0x1804B5380
+        rec: statement=voice 5: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [81] m switch 5               add=0x18013ABD0 slot=0x3630 rec=0x1804A7700
+        rec: ninputs=2; select=msw5-out; in1=-100; in2=ogn5-out
+  [82] ogn5                     add=0x18013AB90 slot=0x36B8 rec=0x1804B6A20
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [83] fback switch 5           add=0x18013ABD0 slot=0x3770 rec=0x1804AA590
+        rec: ninputs=2; select=msw5-out; in1=-100; in2=fbk5-out
+  [84] pan5                     add=0x18013AB90 slot=0x37F8 rec=0x1804AABF0
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [85] dly5                     add=0x18013AB90 slot=0x38B0 rec=0x1804B4170
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [86] c_adder12                add=0x18013A510 slot=0x3968 rec=0x1804A7C00
+        rec: ninputs=2; in1=dly5-out; in2=c_switch-out
+  [87] int5                     add=0x18013AD00 slot=0x39C0 rec=0x1804B0BB0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [88] int table 5              add=0x18013A8D0 slot=0x3A78 rec=0x1804A9CA0
+        rec: nentries=29; select=int5-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [89] int table switch 5       add=0x18013ABD0 slot=0x3B00 rec=0x1804B5920
+        rec: ninputs=2; select=c_or-out; in1=int5-out; in2=int table 5-out
+  [90] int sub 5                add=0x18013A110 slot=0x3B88 rec=0x1804A7620
+        rec: in1=int table switch 5-out; in2=14
+  [91] c_multiply 5             add=0x18013A390 slot=0x3C20 rec=0x1804B6910
+        rec: in1=int sub 5-out; in2=-1
+  [92] sht5                     add=0x18013AB90 slot=0x3CE0 rec=0x1804A6FF0
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [93] fbk6                     add=0x18013AB90 slot=0x3D98 rec=0x1804ADA40
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [94] msw6                     add=0x18013AD00 slot=0x3E50 rec=0x1804B5400
+        rec: statement=voice 6: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [95] m switch 6               add=0x18013ABD0 slot=0x3F08 rec=0x1804B6650
+        rec: ninputs=2; select=msw6-out; in1=-100; in2=ogn6-out
+  [96] ogn6                     add=0x18013AB90 slot=0x3F90 rec=0x1804B68A0
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [97] fback switch 6           add=0x18013ABD0 slot=0x4048 rec=0x1804ABF80
+        rec: ninputs=2; select=msw6-out; in1=-100; in2=fbk6-out
+  [98] pan6                     add=0x18013AB90 slot=0x40D0 rec=0x1804A8CE0
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [99] dly6                     add=0x18013AB90 slot=0x4188 rec=0x1804ABD10
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [100] c_adder13                add=0x18013A510 slot=0x4240 rec=0x1804B2710
+        rec: ninputs=2; in1=dly6-out; in2=c_switch-out
+  [101] int6                     add=0x18013AD00 slot=0x4298 rec=0x1804B1790
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [102] int table 6              add=0x18013A8D0 slot=0x4350 rec=0x1804B57D0
+        rec: nentries=29; select=int6-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [103] int table switch 6       add=0x18013ABD0 slot=0x43D8 rec=0x1804B5AB0
+        rec: ninputs=2; select=c_or-out; in1=int6-out; in2=int table 6-out
+  [104] int sub 6                add=0x18013A110 slot=0x4460 rec=0x1804A75F0
+        rec: in1=int table switch 6-out; in2=14
+  [105] c_multiply 6             add=0x18013A390 slot=0x44F8 rec=0x1804B1960
+        rec: in1=int sub 6-out; in2=-1
+  [106] sht6                     add=0x18013AB90 slot=0x45B8 rec=0x1804ADB50
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [107] fbk7                     add=0x18013AB90 slot=0x4670 rec=0x1804AC930
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [108] msw7                     add=0x18013AD00 slot=0x4728 rec=0x1804B2DF0
+        rec: statement=voice 7: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [109] m switch 7               add=0x18013ABD0 slot=0x47E0 rec=0x1804B6DB0
+        rec: ninputs=2; select=msw7-out; in1=-100; in2=ogn7-out
+  [110] ogn7                     add=0x18013AB90 slot=0x4868 rec=0x1804AF740
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [111] fback switch 7           add=0x18013ABD0 slot=0x4920 rec=0x1804B0FE0
+        rec: ninputs=2; select=msw7-out; in1=-100; in2=fbk7-out
+  [112] pan7                     add=0x18013AB90 slot=0x49A8 rec=0x1804B2150
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [113] dly7                     add=0x18013AB90 slot=0x4A60 rec=0x1804AED40
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [114] c_adder14                add=0x18013A510 slot=0x4B18 rec=0x1804B38C0
+        rec: ninputs=2; in1=dly7-out; in2=c_switch-out
+  [115] int7                     add=0x18013AD00 slot=0x4B70 rec=0x1804B4D20
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [116] int table 7              add=0x18013A8D0 slot=0x4C28 rec=0x1804B67A0
+        rec: nentries=29; select=int7-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [117] int table switch 7       add=0x18013ABD0 slot=0x4CB0 rec=0x1804B5E70
+        rec: ninputs=2; select=c_or-out; in1=int7-out; in2=int table 7-out
+  [118] int sub 7                add=0x18013A110 slot=0x4D38 rec=0x1804B62D0
+        rec: in1=int table switch 7-out; in2=14
+  [119] c_multiply 7             add=0x18013A390 slot=0x4DD0 rec=0x1804A76E0
+        rec: in1=int sub 7-out; in2=-1
+  [120] sht7                     add=0x18013AB90 slot=0x4E90 rec=0x1804B2C10
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [121] fbk8                     add=0x18013AB90 slot=0x4F48 rec=0x1804B3360
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [122] msw8                     add=0x18013AD00 slot=0x5000 rec=0x1804B1B40
+        rec: statement=voice 8: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [123] m switch 8               add=0x18013ABD0 slot=0x50B8 rec=0x1804A73D0
+        rec: ninputs=2; select=msw8-out; in1=-100; in2=ogn8-out
+  [124] ogn8                     add=0x18013AB90 slot=0x5140 rec=0x1804AEF90
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [125] fback switch 8           add=0x18013ABD0 slot=0x51F8 rec=0x1804A6D30
+        rec: ninputs=2; select=msw8-out; in1=-100; in2=fbk8-out
+  [126] c_divide18               add=0x18013A110 slot=0x5280 rec=0x1804ACAD0
+        rec: in1=fback switch 1-out; in2=20
+  [127] c_power9                 add=0x18013A110 slot=0x5318 rec=0x1804AF7B0
+        rec: in1=10; in2=c_divide18-out
+  [128] c_divide19               add=0x18013A110 slot=0x53B0 rec=0x1804A74C0
+        rec: in1=fback switch 2-out; in2=20
+  [129] c_power10                add=0x18013A110 slot=0x5448 rec=0x1804B4800
+        rec: in1=10; in2=c_divide19-out
+  [130] c_divide20               add=0x18013A110 slot=0x54E0 rec=0x1804AE4B0
+        rec: in1=fback switch 3-out; in2=20
+  [131] c_power11                add=0x18013A110 slot=0x5578 rec=0x1804A8110
+        rec: in1=10; in2=c_divide20-out
+  [132] c_divide21               add=0x18013A110 slot=0x5610 rec=0x1804A6D80
+        rec: in1=fback switch 4-out; in2=20
+  [133] c_power12                add=0x18013A110 slot=0x56A8 rec=0x1804AA020
+        rec: in1=10; in2=c_divide21-out
+  [134] c_divide22               add=0x18013A110 slot=0x5740 rec=0x1804AF800
+        rec: in1=fback switch 5-out; in2=20
+  [135] c_power13                add=0x18013A110 slot=0x57D8 rec=0x1804B6680
+        rec: in1=10; in2=c_divide22-out
+  [136] c_divide23               add=0x18013A110 slot=0x5870 rec=0x1804B4F10
+        rec: in1=fback switch 6-out; in2=20
+  [137] c_power14                add=0x18013A110 slot=0x5908 rec=0x1804B25C0
+        rec: in1=10; in2=c_divide23-out
+  [138] c_divide24               add=0x18013A110 slot=0x59A0 rec=0x1804ABB10
+        rec: in1=fback switch 7-out; in2=20
+  [139] c_power15                add=0x18013A110 slot=0x5A38 rec=0x1804AD840
+        rec: in1=10; in2=c_divide24-out
+  [140] c_divide25               add=0x18013A110 slot=0x5AD0 rec=0x1804B0F60
+        rec: in1=fback switch 8-out; in2=20
+  [141] c_power16                add=0x18013A110 slot=0x5B68 rec=0x1804B23C0
+        rec: in1=10; in2=c_divide25-out
+  [142] pan8                     add=0x18013AB90 slot=0x5C00 rec=0x1804AB940
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [143] dly8                     add=0x18013AB90 slot=0x5CB8 rec=0x1804B4620
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [144] c_adder15                add=0x18013A510 slot=0x5D70 rec=0x1804B4660
+        rec: ninputs=2; in1=dly8-out; in2=c_switch-out
+  [145] int8                     add=0x18013AD00 slot=0x5DC8 rec=0x1804B6190
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [146] int table 8              add=0x18013A8D0 slot=0x5E80 rec=0x1804AB6C0
+        rec: nentries=29; select=int8-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [147] int table switch 8       add=0x18013ABD0 slot=0x5F08 rec=0x1804B2210
+        rec: ninputs=2; select=c_or-out; in1=int8-out; in2=int table 8-out
+  [148] int sub 8                add=0x18013A110 slot=0x5F90 rec=0x1804B5D60
+        rec: in1=int table switch 8-out; in2=14
+  [149] c_multiply 8             add=0x18013A390 slot=0x6028 rec=0x1804AFA10
+        rec: in1=int sub 8-out; in2=-1
+  [150] sht8                     add=0x18013AB90 slot=0x60E8 rec=0x1804B6980
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [151] c_abs                    add=0x180139EC0 slot=0x61A0 rec=0x1804A77E0
+        rec: input=sht1-out
+  [152] c_abs1                   add=0x180139EC0 slot=0x6208 rec=0x1804B5BD0
+        rec: input=sht2-out
+  [153] c_abs2                   add=0x180139EC0 slot=0x6270 rec=0x1804AA250
+        rec: input=sht3-out
+  [154] c_abs3                   add=0x180139EC0 slot=0x62D8 rec=0x1804B07B0
+        rec: input=sht4-out
+  [155] c_abs4                   add=0x180139EC0 slot=0x6340 rec=0x1804ABD00
+        rec: input=sht5-out
+  [156] c_abs5                   add=0x180139EC0 slot=0x63A8 rec=0x1804ACA90
+        rec: input=sht6-out
+  [157] c_abs6                   add=0x180139EC0 slot=0x6410 rec=0x1804A9BF0
+        rec: input=sht7-out
+  [158] c_abs7                   add=0x180139EC0 slot=0x6478 rec=0x1804ADAA0
+        rec: input=sht8-out
+  [159] c_adder                  add=0x18013A510 slot=0x64E0 rec=0x1804AC5B0
+        rec: ninputs=2; in1=c_abs-output; in2=200
+  [160] c_adder1                 add=0x18013A510 slot=0x6538 rec=0x1804B4350
+        rec: ninputs=2; in1=c_abs1-output; in2=200
+  [161] c_adder2                 add=0x18013A510 slot=0x6590 rec=0x1804A8460
+        rec: ninputs=2; in1=c_abs2-output; in2=200
+  [162] c_adder3                 add=0x18013A510 slot=0x65E8 rec=0x1804AEE30
+        rec: ninputs=2; in1=c_abs3-output; in2=200
+  [163] c_adder4                 add=0x18013A510 slot=0x6640 rec=0x1804B1450
+        rec: ninputs=2; in1=c_abs4-output; in2=200
+  [164] c_adder5                 add=0x18013A510 slot=0x6698 rec=0x1804AF970
+        rec: ninputs=2; in1=c_abs5-output; in2=200
+  [165] c_adder6                 add=0x18013A510 slot=0x66F0 rec=0x1804A94C0
+        rec: ninputs=2; in1=c_abs6-output; in2=200
+  [166] c_adder7                 add=0x18013A510 slot=0x6748 rec=0x1804AB1B0
+        rec: ninputs=2; in1=c_abs7-output; in2=200
+  [167] c_divide3                add=0x18013A110 slot=0x67A0 rec=0x1804B1E80
+        rec: in1=sht1-out; in2=c_adder-out
+  [168] c_fltr_a13               add=0x18013AAC0 slot=0x6838 rec=0x1804AEB50
+        rec: time_constant=0; in=c_divide3-out
+  [169] c_divide4                add=0x18013A110 slot=0x6910 rec=0x1804B3340
+        rec: in1=sht2-out; in2=c_adder1-out
+  [170] c_fltr_a15               add=0x18013AAC0 slot=0x69A8 rec=0x1804AE710
+        rec: time_constant=0; in=c_divide4-out
+  [171] c_divide5                add=0x18013A110 slot=0x6A80 rec=0x1804AEBB0
+        rec: in1=sht3-out; in2=c_adder2-out
+  [172] c_fltr_a16               add=0x18013AAC0 slot=0x6B18 rec=0x1804ACBB0
+        rec: time_constant=0; in=c_divide5-out
+  [173] c_divide6                add=0x18013A110 slot=0x6BF0 rec=0x1804B1090
+        rec: in1=sht4-out; in2=c_adder3-out
+  [174] c_fltr_a17               add=0x18013AAC0 slot=0x6C88 rec=0x1804B52F0
+        rec: time_constant=0; in=c_divide6-out
+  [175] c_divide7                add=0x18013A110 slot=0x6D60 rec=0x1804AD7E0
+        rec: in1=sht5-out; in2=c_adder4-out
+  [176] c_fltr_a18               add=0x18013AAC0 slot=0x6DF8 rec=0x1804B0060
+        rec: time_constant=0; in=c_divide7-out
+  [177] c_divide8                add=0x18013A110 slot=0x6ED0 rec=0x1804B15D0
+        rec: in1=sht6-out; in2=c_adder5-out
+  [178] c_fltr_a19               add=0x18013AAC0 slot=0x6F68 rec=0x1804ABC90
+        rec: time_constant=0; in=c_divide8-out
+  [179] c_divide9                add=0x18013A110 slot=0x7040 rec=0x1804B4740
+        rec: in1=sht7-out; in2=c_adder6-out
+  [180] c_fltr_a20               add=0x18013AAC0 slot=0x70D8 rec=0x1804B3F80
+        rec: time_constant=0; in=c_divide9-out
+  [181] c_divide10               add=0x18013A110 slot=0x71B0 rec=0x1804ADC00
+        rec: in1=sht8-out; in2=c_adder7-out
+  [182] c_fltr_a21               add=0x18013AAC0 slot=0x7248 rec=0x1804B3110
+        rec: time_constant=0; in=c_divide10-out
+  [183] rdm div 1                add=0x18013A110 slot=0x7320 rec=0x1804AE300
+        rec: in1=rdm a-c 1-out; in2=1.5
+  [184] rdm add 1                add=0x18013A510 slot=0x73B8 rec=0x1804AB920
+        rec: ninputs=2; in1=rdm div 1-out; in2=0.5
+  [185] rdm mult 2               add=0x18013A390 slot=0x7410 rec=0x1804A6F90
+        rec: in1=2000; in2=rdm add 1-out
+  [186] rdm div 2                add=0x18013A110 slot=0x74D0 rec=0x1804B0A10
+        rec: in1=rdm a-c 2-out; in2=1.5
+  [187] rdm add 2                add=0x18013A510 slot=0x7568 rec=0x1804B4F80
+        rec: ninputs=2; in1=rdm div 2-out; in2=0.5
+  [188] rdm mult 3               add=0x18013A390 slot=0x75C0 rec=0x1804B2D70
+        rec: in1=2000; in2=rdm add 2-out
+  [189] rdm div 3                add=0x18013A110 slot=0x7680 rec=0x1804AA3B0
+        rec: in1=rdm a-c 3-out; in2=1.5
+  [190] rdm add 3                add=0x18013A510 slot=0x7718 rec=0x1804AE200
+        rec: ninputs=2; in1=rdm div 3-out; in2=0.5
+  [191] rdm mult 4               add=0x18013A390 slot=0x7770 rec=0x1804B15B0
+        rec: in1=2000; in2=rdm add 3-out
+  [192] rdm div 4                add=0x18013A110 slot=0x7830 rec=0x1804B3290
+        rec: in1=rdm a-c 4-out; in2=1.5
+  [193] rdm add 4                add=0x18013A510 slot=0x78C8 rec=0x1804B63D0
+        rec: ninputs=2; in1=rdm div 4-out; in2=0.5
+  [194] rdm mult 5               add=0x18013A390 slot=0x7920 rec=0x1804B25A0
+        rec: in1=2000; in2=rdm add 4-out
+  [195] rdm div 5                add=0x18013A110 slot=0x79E0 rec=0x1804ACA20
+        rec: in1=rdm a-c 5-out; in2=1.5
+  [196] rdm add 5                add=0x18013A510 slot=0x7A78 rec=0x1804B3FA0
+        rec: ninputs=2; in1=rdm div 5-out; in2=0.5
+  [197] rdm mult 6               add=0x18013A390 slot=0x7AD0 rec=0x1804A8170
+        rec: in1=2000; in2=rdm add 5-out
+  [198] rdm div 6                add=0x18013A110 slot=0x7B90 rec=0x1804A6AD0
+        rec: in1=rdm a-c 6-out; in2=1.5
+  [199] rdm add 6                add=0x18013A510 slot=0x7C28 rec=0x1804ACD70
+        rec: ninputs=2; in1=rdm div 6-out; in2=0.5
+  [200] rdm mult 7               add=0x18013A390 slot=0x7C80 rec=0x1804AFEB0
+        rec: in1=2000; in2=rdm add 6-out
+  [201] rdm div 7                add=0x18013A110 slot=0x7D40 rec=0x1804A9800
+        rec: in1=rdm a-c 7-out; in2=1.5
+  [202] rdm add 7                add=0x18013A510 slot=0x7DD8 rec=0x1804B2630
+        rec: ninputs=2; in1=rdm div 7-out; in2=0.5
+  [203] rdm mult 8               add=0x18013A390 slot=0x7E30 rec=0x1804B3B50
+        rec: in1=2000; in2=rdm add 7-out
+  [204] rdm div 8                add=0x18013A110 slot=0x7EF0 rec=0x1804B5A70
+        rec: in1=rdm a-c 8-out; in2=1.5
+  [205] rdm add 8                add=0x18013A510 slot=0x7F88 rec=0x1804AEF30
+        rec: ninputs=2; in1=rdm div 8-out; in2=0.5
+  [206] rdm mult 1               add=0x18013A390 slot=0x7FE0 rec=0x1804AF020
+        rec: in1=2000; in2=rdm add 8-out
+  [207] mmix                     add=0x18013AB90 slot=0x80A0 rec=0x1804B5B90
+        rec: statement=mix:%3.0f %%; name=mix; min=0; max=100; res=1; default=100
+  [208] ouch                     add=0x18013AB90 slot=0x8158 rec=0x1804AC970
+        rec: statement=knob: %f; name=knob; min=1; max=2; res=1; default=1
+  [209] c_subtract3              add=0x18013A110 slot=0x8210 rec=0x1804B2060
+        rec: in1=ouch-out; in2=1
+  [210] ogan                     add=0x18013AB90 slot=0x82A8 rec=0x1804B3250
+        rec: statement=Out Gain:%3.0f dB; name=knob; min=-96; max=24; res=1; default=0
+  [211] bypa                     add=0x18013AD00 slot=0x8360 rec=0x1804B68E0
+        rec: statement=input: %s; nchoices=2; default=0; choices1=normal; choices2=bypass
+  [213] rdm abs                  add=0x180139A30 slot=0x8450 rec=0x1804AADB0
+        rec: in=rdm noise-out
+  [214] rdm sh 1                 add=0x1801390D0 slot=0x84A8 rec=0x1804ACA00
+        rec: in=rdm abs-out; newsamp=rdm comp 1-out
+  [215] rdm slew 1               add=0x1801398E0 slot=0x8518 rec=0x1804B6930
+        rec: in=rdm sh 1-out; pslew=rdm mult 1-out; nslew=rdm mult 1-out
+  [216] rdm comp 1               add=0x1801395F0 slot=0x8648 rec=0x1804ABBF0
+        rec: in1=rdm slew 1-out; in2=rdm sh 1-out; inspread=0; constval=0; outspread=0
+  [217] rdm a-c 1                add=0x180139270 slot=0x8750 rec=0x1804B58F0
+        rec: in=rdm slew 1-out
+  [218] rdm sh 2                 add=0x1801390D0 slot=0x87F8 rec=0x1804AC6C0
+        rec: in=rdm abs-out; newsamp=rdm comp 2-out
+  [219] rdm slew 2               add=0x1801398E0 slot=0x8868 rec=0x1804B6130
+        rec: in=rdm sh 2-out; pslew=rdm mult 2-out; nslew=rdm mult 2-out
+  [220] rdm comp 2               add=0x1801395F0 slot=0x8998 rec=0x1804A8B90
+        rec: in1=rdm slew 2-out; in2=rdm sh 2-out; inspread=0; constval=0; outspread=0
+  [221] rdm a-c 2                add=0x180139270 slot=0x8AA0 rec=0x1804A9300
+        rec: in=rdm slew 2-out
+  [222] rdm sh 3                 add=0x1801390D0 slot=0x8B48 rec=0x1804AED20
+        rec: in=rdm abs-out; newsamp=rdm comp 3-out
+  [223] rdm slew 3               add=0x1801398E0 slot=0x8BB8 rec=0x1804AE860
+        rec: in=rdm sh 3-out; pslew=rdm mult 3-out; nslew=rdm mult 3-out
+  [224] rdm comp 3               add=0x1801395F0 slot=0x8CE8 rec=0x1804B2450
+        rec: in1=rdm slew 3-out; in2=rdm sh 3-out; inspread=0; constval=0; outspread=0
+  [225] rdm a-c 3                add=0x180139270 slot=0x8DF0 rec=0x1804ACDB0
+        rec: in=rdm slew 3-out
+  [226] rdm sh 4                 add=0x1801390D0 slot=0x8E98 rec=0x1804A7640
+        rec: in=rdm abs-out; newsamp=rdm comp 4-out
+  [227] rdm slew 4               add=0x1801398E0 slot=0x8F08 rec=0x1804AB190
+        rec: in=rdm sh 4-out; pslew=rdm mult 4-out; nslew=rdm mult 4-out
+  [228] rdm comp 4               add=0x1801395F0 slot=0x9038 rec=0x1804B10D0
+        rec: in1=rdm slew 4-out; in2=rdm sh 4-out; inspread=0; constval=0; outspread=0
+  [229] rdm a-c 4                add=0x180139270 slot=0x9140 rec=0x1804B1350
+        rec: in=rdm slew 4-out
+  [230] rdm sh 5                 add=0x1801390D0 slot=0x91E8 rec=0x1804B3C90
+        rec: in=rdm abs-out; newsamp=rdm comp 5-out
+  [231] rdm slew 5               add=0x1801398E0 slot=0x9258 rec=0x1804ADB30
+        rec: in=rdm sh 5-out; pslew=rdm mult 5-out; nslew=rdm mult 5-out
+  [232] rdm comp 5               add=0x1801395F0 slot=0x9388 rec=0x1804B3980
+        rec: in1=rdm slew 5-out; in2=rdm sh 5-out; inspread=0; constval=0; outspread=0
+  [233] rdm a-c 5                add=0x180139270 slot=0x9490 rec=0x1804B1D60
+        rec: in=rdm slew 5-out
+  [234] rdm sh 6                 add=0x1801390D0 slot=0x9538 rec=0x1804AFDD0
+        rec: in=rdm abs-out; newsamp=rdm comp 6-out
+  [235] rdm slew 6               add=0x1801398E0 slot=0x95A8 rec=0x1804AB2F0
+        rec: in=rdm sh 6-out; pslew=rdm mult 6-out; nslew=rdm mult 6-out
+  [236] rdm comp 6               add=0x1801395F0 slot=0x96D8 rec=0x1804B2B60
+        rec: in1=rdm slew 6-out; in2=rdm sh 6-out; inspread=0; constval=0; outspread=0
+  [237] rdm a-c 6                add=0x180139270 slot=0x97E0 rec=0x1804AA340
+        rec: in=rdm slew 6-out
+  [238] rdm sh 7                 add=0x1801390D0 slot=0x9888 rec=0x1804B4790
+        rec: in=rdm abs-out; newsamp=rdm comp 7-out
+  [239] rdm slew 7               add=0x1801398E0 slot=0x98F8 rec=0x1804B4370
+        rec: in=rdm sh 7-out; pslew=rdm mult 7-out; nslew=rdm mult 7-out
+  [240] rdm comp 7               add=0x1801395F0 slot=0x9A28 rec=0x1804A92D0
+        rec: in1=rdm slew 7-out; in2=rdm sh 7-out; inspread=0; constval=0; outspread=0
+  [241] rdm a-c 7                add=0x180139270 slot=0x9B30 rec=0x1804A77F0
+        rec: in=rdm slew 7-out
+  [242] rdm sh 8                 add=0x1801390D0 slot=0x9BD8 rec=0x1804B2D50
+        rec: in=rdm abs-out; newsamp=rdm comp 8-out
+  [243] rdm slew 8               add=0x1801398E0 slot=0x9C48 rec=0x1804B4860
+        rec: in=rdm sh 8-out; pslew=rdm mult 8-out; nslew=rdm mult 8-out
+  [244] multiply12               add=0x1801390D0 slot=0x9D78 rec=0x1804A95F0
+        rec: in1=c_fltr_a36-out; in2=rdm slew 1-out
+  [245] rdm comp 8               add=0x1801395F0 slot=0x9DE0 rec=0x1804ABAC0
+        rec: in1=rdm slew 8-out; in2=rdm sh 8-out; inspread=0; constval=0; outspread=0
+  [246] rdm a-c 8                add=0x180139270 slot=0x9EE8 rec=0x1804A6E00
+        rec: in=rdm slew 8-out
+  [247] left in                  add=0x180139050 slot=0x9F90 rec=0x1804AC350
+        rec: in=adc-in1; gain=igan-out
+  [248] delay comp 1             add=0x180138D30 slot=0xA100 rec=0x1804AFE90
+        rec: maxdelay=51; in=left in-out; delayamt=live mode delay comp-out
+  [249] iswitch6                 add=0x1801389C0 slot=0xA278 rec=0x1804A8B60
+        rec: numins=2; select=live-out; in1=delay comp 1-out; in2=left in-out
+  [250] right in                 add=0x180139050 slot=0xA398 rec=0x1804A6A10
+        rec: in=adc-in2; gain=igan-out
+  [251] delay comp 2             add=0x180138D30 slot=0xA508 rec=0x1804A9FC0
+        rec: maxdelay=51; in=right in-out; delayamt=live mode delay comp-out
+  [252] iswitch7                 add=0x1801389C0 slot=0xA680 rec=0x1804B63A0
+        rec: numins=2; select=live-out; in1=delay comp 2-out; in2=right in-out
+  [253] mix                      add=0x180138710 slot=0xA7A0 rec=0x1804ADC20
+        rec: time_constant=20; in1=left in-out; in2=right in-out; amp1=0.5; amp2=0.5
+  [254] iswitch4                 add=0x1801389C0 slot=0xA900 rec=0x1804AD9D0
+        rec: numins=2; select=c_subtract1-out; in1=left in-out; in2=mix-out
+  [255] iswitch5                 add=0x1801389C0 slot=0xAA20 rec=0x1804AC0B0
+        rec: numins=2; select=c_subtract1-out; in1=iswitch6-out; in2=iswitch7-out
+  [256] peak4                    add=0x180138570 slot=0xAB40 rec=0x1804AE7A0
+        rec: type=0; in=iswitch6-out; attackcntl=0.05; decaycntl=0.1
+  [257] LevMetrAtoC3             add=0x180139270 slot=0xAD08 rec=0x1804B23E0
+        rec: in=peak4-out
+  [258] inst                     add=0x18013AB90 slot=0xADB0 rec=0x1804B2650
+        rec: statement=knob: %f; name=knob; min=0; max=12; res=1; default=0
+  [259] MaxCut                   add=0x18013A8D0 slot=0xAE68 rec=0x1804B2090
+        rec: nentries=16; select=inst-out; in1=0; in2=0; in3=-14; in4=-14; in5=-14; in6=-14; in7=-14; in8=-18; in9=-14; in10=-7; in11=-14; in12=-14; in13=-7; in14=-18; in15=-7; in16=-7
+  [260] CutFreq                  add=0x18013A8D0 slot=0xAEF0 rec=0x1804AE110
+        rec: nentries=16; select=inst-out; in1=20000; in2=20000; in3=8000; in4=8000; in5=8000; in6=8000; in7=8000; in8=2000; in9=3500; in10=12000; in11=8000; in12=8000; in13=3500; in14=1200; in15=4000; in16=10000
+  [261] CutMultiplier            add=0x18013A8D0 slot=0xAF78 rec=0x1804B03C0
+        rec: nentries=16; select=inst-out; in1=0; in2=0; in3=-1; in4=-1; in5=-1; in6=-1; in7=-1; in8=-1.2857; in9=-1; in10=-0.5; in11=-1; in12=-1; in13=-0.5; in14=-1.2857; in15=-0.5; in16=-0.5
+  [262] AntiAliasOnOff           add=0x18013A8D0 slot=0xB000 rec=0x1804AD860
+        rec: nentries=16; select=inst-out; in1=0; in2=0; in3=1; in4=1; in5=1; in6=1; in7=1; in8=1; in9=1; in10=0; in11=1; in12=1; in13=0; in14=1; in15=0; in16=0
+  [263] c_minmax2                add=0x18013AB50 slot=0xB088 rec=0x1804B66A0
+        rec: ninputs=9; in1=c_multiply 1-out; in2=c_multiply 2-out; in3=c_multiply 3-out; in4=c_multiply 4-out; in5=c_multiply 5-out; in6=c_multiply 6-out; in7=c_multiply 7-out; in8=c_multiply 8-out; in9=0
+  [264] c_divide2                add=0x18013A110 slot=0xB100 rec=0x1804AC170
+        rec: in1=c_minmax2-maximum; in2=7
+  [265] c_multiply6              add=0x18013A390 slot=0xB198 rec=0x1804B36E0
+        rec: in1=c_divide2-out; in2=-1
+  [266] c_power1                 add=0x18013A110 slot=0xB258 rec=0x1804A9C80
+        rec: in1=2; in2=c_multiply6-out
+  [267] c_fltr_a14               add=0x18013AAC0 slot=0xB2F0 rec=0x1804A6E10
+        rec: time_constant=20; in=c_power1-out
+  [268] bound1                   add=0x1801384B0 slot=0xB3C8 rec=0x1804B0AA0
+        rec: in=c_fltr_a14-out; minimum=0; maximum=1
+  [269] c_fltr_a12               add=0x18013AAC0 slot=0xB4E8 rec=0x1804AFCD0
+        rec: time_constant=20; in=c_power9-out
+  [270] multiply4                add=0x1801390D0 slot=0xB5C0 rec=0x1804AB980
+        rec: in1=moddelay7-out; in2=c_fltr_a12-out
+  [271] modiirq                  add=0x180138200 slot=0xB628 rec=0x1804AB5A0
+        rec: in=iswitch4-out; modfreq=bound1-out; n_sections=2; qfactor=0.7; type=0; sections=2; processoff=0
+  [272] iswitch8                 add=0x1801389C0 slot=0xB858 rec=0x1804AD580
+        rec: numins=2; select=AntiAliasOnOff-out; in1=iswitch4-out; in2=modiirq-out
+  [273] softclip                 add=0x1801380C0 slot=0xB978 rec=0x1804B4140
+        rec: in=iswitch8-out; select=1; drive=0; order=1; processoff=0
+  [274] add8                     add=0x180137F40 slot=0xBF48 rec=0x1804A8EA0
+        rec: in1=c_fltr_a13-out; in2=multiply12-out
+  [275] dtonicii9                add=0x180137E20 slot=0xBFB8 rec=0x1804B0CC0
+        rec: maxdelay=2400; nvoices=8; steps=12; in=softclip-out; scale=scal table-out; key=keys-out; pitchtracking=ptrk-out; hysteresis=10; correctrate=1; mincorrect=0; intervalglide=1; tuning=0; tune=tune-out; quantization=0; minpitch=minp-out; gatelevel=-55; xfadetime=xfad-out; mod1=rdm slew 1-out; mod2=rdm slew 2-out; mod3=rdm slew 3-out; mod4=rdm slew 4-out; mod5=rdm slew 5-out; mod6=rdm slew 6-out; mod7=rdm slew 7-out
+  [276] modfilter8               add=0x180137C30 slot=0x16980 rec=0x1804A8F60
+        rec: in=dtonicii9-out1; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [277] eqn                      add=0x180137AC0 slot=0x16C28 rec=0x1804AE660
+        rec: neqs=1; in=modfilter8-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound2-out; type1=2
+  [278] add                      add=0x180137F40 slot=0x16F70 rec=0x1804B65E0
+        rec: in1=eqn-out; in2=multiply4-out
+  [279] moddelay7                add=0x180137930 slot=0x16FE0 rec=0x1804B5C30
+        rec: maxdelay=2000; declick=1; in=add-out; mod=adc-null; delayamt=dly1-out; modamt=0; glidespeed=0
+  [280] c_multiply8              add=0x18013A390 slot=0x17228 rec=0x1804A7370
+        rec: in1=c_multiply 1-out; in2=CutMultiplier-out
+  [281] c_bound2                 add=0x1801377A0 slot=0x172E8 rec=0x1804ACB10
+        rec: input=c_multiply8-out; minimum=MaxCut-out; maximum=0
+  [282] c_fltr_a23               add=0x18013AAC0 slot=0x173B0 rec=0x1804AD820
+        rec: time_constant=20; in=c_power10-out
+  [283] multiply5                add=0x1801390D0 slot=0x17488 rec=0x1804B4EF0
+        rec: in1=moddelay6-out; in2=c_fltr_a23-out
+  [284] modfilter9               add=0x180137C30 slot=0x174F0 rec=0x1804A7DA0
+        rec: in=dtonicii9-out2; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [285] eqn1                     add=0x180137AC0 slot=0x17798 rec=0x1804AFD70
+        rec: neqs=1; in=modfilter9-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound3-out; type1=2
+  [286] add1                     add=0x180137F40 slot=0x17AE0 rec=0x1804A9060
+        rec: in1=eqn1-out; in2=multiply5-out
+  [287] moddelay6                add=0x180137930 slot=0x17B50 rec=0x1804A87C0
+        rec: maxdelay=2000; declick=1; in=add1-out; mod=adc-null; delayamt=dly2-out; modamt=0; glidespeed=0
+  [288] c_multiply9              add=0x18013A390 slot=0x17D98 rec=0x1804A8C30
+        rec: in1=c_multiply 2-out; in2=CutMultiplier-out
+  [289] c_bound3                 add=0x1801377A0 slot=0x17E58 rec=0x1804B6150
+        rec: input=c_multiply9-out; minimum=MaxCut-out; maximum=0
+  [290] c_fltr_a25               add=0x18013AAC0 slot=0x17F20 rec=0x1804AB330
+        rec: time_constant=20; in=c_power11-out
+  [291] multiply6                add=0x1801390D0 slot=0x17FF8 rec=0x1804B6340
+        rec: in1=moddelay5-out; in2=c_fltr_a25-out
+  [292] modfilter10              add=0x180137C30 slot=0x18060 rec=0x1804A9430
+        rec: in=dtonicii9-out3; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [293] eqn2                     add=0x180137AC0 slot=0x18308 rec=0x1804B6760
+        rec: neqs=1; in=modfilter10-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound4-out; type1=2
+  [294] add2                     add=0x180137F40 slot=0x18650 rec=0x1804ABB90
+        rec: in1=eqn2-out; in2=multiply6-out
+  [295] moddelay5                add=0x180137930 slot=0x186C0 rec=0x1804AF220
+        rec: maxdelay=2000; declick=1; in=add2-out; mod=adc-null; delayamt=dly3-out; modamt=0; glidespeed=0
+  [296] c_multiply11             add=0x18013A390 slot=0x18908 rec=0x1804AEA90
+        rec: in1=c_multiply 3-out; in2=CutMultiplier-out
+  [297] c_bound4                 add=0x1801377A0 slot=0x189C8 rec=0x1804A7B50
+        rec: input=c_multiply11-out; minimum=MaxCut-out; maximum=0
+  [298] c_fltr_a27               add=0x18013AAC0 slot=0x18A90 rec=0x1804B1300
+        rec: time_constant=20; in=c_power12-out
+  [299] multiply7                add=0x1801390D0 slot=0x18B68 rec=0x1804B2CE0
+        rec: in1=moddelay4-out; in2=c_fltr_a27-out
+  [300] modfilter11              add=0x180137C30 slot=0x18BD0 rec=0x1804B0310
+        rec: in=dtonicii9-out4; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [301] eqn3                     add=0x180137AC0 slot=0x18E78 rec=0x1804A9590
+        rec: neqs=1; in=modfilter11-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound5-out; type1=2
+  [302] add3                     add=0x180137F40 slot=0x191C0 rec=0x1804AE460
+        rec: in1=eqn3-out; in2=multiply7-out
+  [303] moddelay4                add=0x180137930 slot=0x19230 rec=0x1804B1D90
+        rec: maxdelay=2000; declick=1; in=add3-out; mod=adc-null; delayamt=dly4-out; modamt=0; glidespeed=0
+  [304] c_multiply13             add=0x18013A390 slot=0x19478 rec=0x1804AB4C0
+        rec: in1=c_multiply 4-out; in2=CutMultiplier-out
+  [305] c_bound5                 add=0x1801377A0 slot=0x19538 rec=0x1804AB6A0
+        rec: input=c_multiply13-out; minimum=MaxCut-out; maximum=0
+  [306] c_fltr_a29               add=0x18013AAC0 slot=0x19600 rec=0x1804AB060
+        rec: time_constant=20; in=c_power13-out
+  [307] multiply8                add=0x1801390D0 slot=0x196D8 rec=0x1804AC4B0
+        rec: in1=moddelay3-out; in2=c_fltr_a29-out
+  [308] modfilter12              add=0x180137C30 slot=0x19740 rec=0x1804B6590
+        rec: in=dtonicii9-out5; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [309] eqn4                     add=0x180137AC0 slot=0x199E8 rec=0x1804A6B30
+        rec: neqs=1; in=modfilter12-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound6-out; type1=2
+  [310] add4                     add=0x180137F40 slot=0x19D30 rec=0x1804AA6B0
+        rec: in1=eqn4-out; in2=multiply8-out
+  [311] moddelay3                add=0x180137930 slot=0x19DA0 rec=0x1804A8DA0
+        rec: maxdelay=2000; declick=1; in=add4-out; mod=adc-null; delayamt=dly5-out; modamt=0; glidespeed=0
+  [312] c_multiply15             add=0x18013A390 slot=0x19FE8 rec=0x1804A9180
+        rec: in1=c_multiply 5-out; in2=CutMultiplier-out
+  [313] c_bound6                 add=0x1801377A0 slot=0x1A0A8 rec=0x1804AB7E0
+        rec: input=c_multiply15-out; minimum=MaxCut-out; maximum=0
+  [314] c_fltr_a31               add=0x18013AAC0 slot=0x1A170 rec=0x1804B2DD0
+        rec: time_constant=20; in=c_power14-out
+  [315] multiply9                add=0x1801390D0 slot=0x1A248 rec=0x1804A7BA0
+        rec: in1=moddelay2-out; in2=c_fltr_a31-out
+  [316] modfilter13              add=0x180137C30 slot=0x1A2B0 rec=0x1804B2010
+        rec: in=dtonicii9-out6; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [317] eqn5                     add=0x180137AC0 slot=0x1A558 rec=0x1804AE2C0
+        rec: neqs=1; in=modfilter13-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound7-out; type1=2
+  [318] add5                     add=0x180137F40 slot=0x1A8A0 rec=0x1804AB3D0
+        rec: in1=eqn5-out; in2=multiply9-out
+  [319] moddelay2                add=0x180137930 slot=0x1A910 rec=0x1804AECE0
+        rec: maxdelay=2000; declick=1; in=add5-out; mod=adc-null; delayamt=dly6-out; modamt=0; glidespeed=0
+  [320] c_multiply17             add=0x18013A390 slot=0x1AB58 rec=0x1804B0F80
+        rec: in1=c_multiply 6-out; in2=CutMultiplier-out
+  [321] c_bound7                 add=0x1801377A0 slot=0x1AC18 rec=0x1804B4390
+        rec: input=c_multiply17-out; minimum=MaxCut-out; maximum=0
+  [322] c_fltr_a33               add=0x18013AAC0 slot=0x1ACE0 rec=0x1804AC830
+        rec: time_constant=20; in=c_power15-out
+  [323] multiply10               add=0x1801390D0 slot=0x1ADB8 rec=0x1804B2480
+        rec: in1=moddelay1-out; in2=c_fltr_a33-out
+  [324] modfilter14              add=0x180137C30 slot=0x1AE20 rec=0x1804B3A40
+        rec: in=dtonicii9-out7; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [325] eqn6                     add=0x180137AC0 slot=0x1B0C8 rec=0x1804B3590
+        rec: neqs=1; in=modfilter14-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound8-out; type1=2
+  [326] add6                     add=0x180137F40 slot=0x1B410 rec=0x1804A8B40
+        rec: in1=eqn6-out; in2=multiply10-out
+  [327] moddelay1                add=0x180137930 slot=0x1B480 rec=0x1804B40C0
+        rec: maxdelay=2000; declick=1; in=add6-out; mod=adc-null; delayamt=dly7-out; modamt=0; glidespeed=0
+  [328] c_multiply19             add=0x18013A390 slot=0x1B6C8 rec=0x1804A8CC0
+        rec: in1=c_multiply 7-out; in2=CutMultiplier-out
+  [329] c_bound8                 add=0x1801377A0 slot=0x1B788 rec=0x1804B42C0
+        rec: input=c_multiply19-out; minimum=MaxCut-out; maximum=0
+  [330] c_fltr_a35               add=0x18013AAC0 slot=0x1B850 rec=0x1804AABD0
+        rec: time_constant=20; in=c_power16-out
+  [331] multiply11               add=0x1801390D0 slot=0x1B928 rec=0x1804B3900
+        rec: in1=moddelay-out; in2=c_fltr_a35-out
+  [332] modfilter15              add=0x180137C30 slot=0x1B990 rec=0x1804A8FC0
+        rec: in=dtonicii9-out8; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [333] eqn7                     add=0x180137AC0 slot=0x1BC38 rec=0x1804A9120
+        rec: neqs=1; in=modfilter15-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound9-out; type1=2
+  [334] add7                     add=0x180137F40 slot=0x1BF80 rec=0x1804B4FA0
+        rec: in1=eqn7-out; in2=multiply11-out
+  [335] moddelay                 add=0x180137930 slot=0x1BFF0 rec=0x1804B3400
+        rec: maxdelay=2000; declick=1; in=add7-out; mod=adc-null; delayamt=dly8-out; modamt=0; glidespeed=0
+  [336] c_multiply21             add=0x18013A390 slot=0x1C238 rec=0x1804AB490
+        rec: in1=c_multiply 8-out; in2=CutMultiplier-out
+  [337] c_bound9                 add=0x1801377A0 slot=0x1C2F8 rec=0x1804AC150
+        rec: input=c_multiply21-out; minimum=MaxCut-out; maximum=0
+  [338] stereomixer3             add=0x180137720 slot=0x1C3C0 rec=0x1804A9AF0
+        rec: ninputs=8; time_constant=25; in1=add-out; in2=add1-out; in3=add2-out; in4=add3-out; in5=add4-out; in6=add5-out; in7=add6-out; in8=add7-out; gain1=m switch 1-out; gain2=m switch 2-out; gain3=m switch 3-out; gain4=m switch 4-out; gain5=m switch 5-out; gain6=m switch 6-out; gain7=m switch 7-out; gain8=m switch 8-out; pan1=pan1-out; pan2=pan2-out; pan3=pan3-out; pan4=pan4-out; pan5=pan5-out; pan6=pan6-out
+  [339] feedback1                add=0x180138710 slot=0x1C620 rec=0x1804AA200
+        rec: time_constant=20; in1=stereomixer3-right; in2=subtract1-out; amp1=1; amp2=mfbk-out
+  [340] softclip2                add=0x1801380C0 slot=0x1C780 rec=0x1804B69F0
+        rec: in=feedback1-out; select=1; drive=0; order=1; processoff=0
+  [341] delay_xf1                add=0x180137630 slot=0x1CD50 rec=0x1804B47B0
+        rec: maxdelay=2400; noutputs=1; in=softclip2-out; xfadetime=20; mod1=adc-null; modamt1=0; tapdls1=c_minmax-maximum; gain1=0
+  [342] just for the filter2     add=0x1801374D0 slot=0x1D238 rec=0x1804A8880
+        rec: maxdelay=1; in=delay_xf1-out1; mod=adc-null; delayamt=0; modamt=0
+  [343] highcut1                 add=0x180137260 slot=0x1D3D8 rec=0x1804B5200
+        rec: in=just for the filter2-out; freq=5
+  [344] subtract1                add=0x180136FA0 slot=0x1D538 rec=0x1804B3FC0
+        rec: in1=just for the filter2-out; in2=highcut1-out
+  [345] feedback                 add=0x180138710 slot=0x1D5A8 rec=0x1804A7160
+        rec: time_constant=20; in1=stereomixer3-left; in2=subtract-out; amp1=1; amp2=mfbk-out
+  [346] softclip1                add=0x1801380C0 slot=0x1D708 rec=0x1804B0850
+        rec: in=feedback-out; select=1; drive=0; order=1; processoff=0
+  [347] delay_xf                 add=0x180137630 slot=0x1DCD8 rec=0x1804AE220
+        rec: maxdelay=2400; noutputs=1; in=softclip1-out; xfadetime=20; mod1=adc-null; modamt1=0; tapdls1=c_minmax-maximum; gain1=0
+  [348] just for the filter      add=0x1801374D0 slot=0x1E1C0 rec=0x1804AC650
+        rec: maxdelay=1; in=delay_xf-out1; mod=adc-null; delayamt=0; modamt=0
+  [349] highcut                  add=0x180137260 slot=0x1E360 rec=0x1804B2250
+        rec: in=just for the filter-out; freq=5
+  [350] subtract                 add=0x180136FA0 slot=0x1E4C0 rec=0x1804A9510
+        rec: in1=just for the filter-out; in2=highcut-out
+  [351] c_subtract2              add=0x18013A110 slot=0x1E530 rec=0x1804AAB60
+        rec: in1=1; in2=mmix-out
+  [352] c_fltr_a1                add=0x18013AAC0 slot=0x1E5C8 rec=0x1804A7410
+        rec: time_constant=10; in=mmix-out
+  [353] c_fltr_a                 add=0x18013AAC0 slot=0x1E6A0 rec=0x1804A84E0
+        rec: time_constant=10; in=c_subtract2-out
+  [354] c_fltr_a2                add=0x18013AAC0 slot=0x1E778 rec=0x1804B58D0
+        rec: time_constant=10; in=mmix-out
+  [355] c_fltr_a3                add=0x18013AAC0 slot=0x1E850 rec=0x1804A72B0
+        rec: time_constant=10; in=c_subtract2-out
+  [356] multiply                 add=0x1801390D0 slot=0x1E928 rec=0x1804ABCB0
+        rec: in1=iswitch6-out; in2=c_fltr_a-out
+  [357] monoSumWetChans          add=0x180138710 slot=0x1E990 rec=0x1804B5D30
+        rec: time_constant=20; in1=feedback-out; in2=feedback1-out; amp1=0.707; amp2=0.707
+  [358] iswitch3                 add=0x1801389C0 slot=0x1EAF0 rec=0x1804B6450
+        rec: numins=2; select=c_subtract1-out; in1=iswitch6-out; in2=iswitch7-out
+  [359] multiply3                add=0x1801390D0 slot=0x1EC10 rec=0x1804B3E00
+        rec: in1=iswitch3-out; in2=c_fltr_a3-out
+  [360] iswitch9                 add=0x1801389C0 slot=0x1EC78 rec=0x1804ABC60
+        rec: numins=2; select=c_subtract3-out; in1=monoSumWetChans-out; in2=feedback1-out
+  [361] multiply2                add=0x1801390D0 slot=0x1ED98 rec=0x1804B3DE0
+        rec: in1=iswitch9-out; in2=c_fltr_a2-out
+  [362] iswitch11                add=0x1801389C0 slot=0x1EE00 rec=0x1804AFD40
+        rec: numins=2; select=c_subtract3-out; in1=monoSumWetChans-out; in2=feedback-out
+  [363] multiply1                add=0x1801390D0 slot=0x1EF20 rec=0x1804AC530
+        rec: in1=iswitch11-out; in2=c_fltr_a1-out
+  [364] LWetDryMix               add=0x180137F40 slot=0x1EF88 rec=0x1804A9160
+        rec: in1=multiply-out; in2=multiply1-out
+  [365] RWetDryMix               add=0x180137F40 slot=0x1EFF8 rec=0x1804A98C0
+        rec: in1=multiply3-out; in2=multiply2-out
+  [366] left out                 add=0x180139050 slot=0x1F068 rec=0x1804B0020
+        rec: in=LWetDryMix-out; gain=ogan-out
+  [367] right out                add=0x180139050 slot=0x1F1D8 rec=0x1804B0700
+        rec: in=RWetDryMix-out; gain=ogan-out
+  [368] iswitch2                 add=0x1801389C0 slot=0x1F348 rec=0x1804B3020
+        rec: numins=2; select=c_subtract1-out; in1=adc-in1; in2=adc-in2
+  [369] iswitch                  add=0x1801389C0 slot=0x1F468 rec=0x1804AE9D0
+        rec: numins=2; select=bypa-out; in1=left out-out; in2=adc-in1
+  [370] iswitch1                 add=0x1801389C0 slot=0x1F588 rec=0x1804A8A30
+        rec: numins=2; select=bypa-out; in1=right out-out; in2=iswitch2-out
+  [371] peak1                    add=0x180138570 slot=0x1F6A8 rec=0x1804A9610
+        rec: type=0; in=left out-out; attackcntl=0.05; decaycntl=0.1
+  [372] peak2                    add=0x180138570 slot=0x1F870 rec=0x1804ACBD0
+        rec: type=0; in=right out-out; attackcntl=0.05; decaycntl=0.1
+  [373] LevLintodB3              add=0x180136DC0 slot=0x1FA38 rec=0x1804B6DA0
+        rec: linvalue=LevMetrAtoC3-out
+  [374] peak5                    add=0x180138570 slot=0x1FAA0 rec=0x1804B62A0
+        rec: type=0; in=iswitch5-out; attackcntl=0.05; decaycntl=0.1
+  [375] LevMetrAtoC4             add=0x180139270 slot=0x1FC68 rec=0x1804ACBA0
+        rec: in=peak5-out
+  [376] LevLintodB4              add=0x180136DC0 slot=0x1FD10 rec=0x1804ADF00
+        rec: linvalue=LevMetrAtoC4-out
+  [377] lipD                     add=0x180136C20 slot=0x1FD78 rec=0x1804AC1A0
+        rec: in=LevLintodB3-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [378] ripD                     add=0x180136C20 slot=0x1FE50 rec=0x1804AD960
+        rec: in=LevLintodB4-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [379] LevMetrAtoC              add=0x180139270 slot=0x1FF28 rec=0x1804B5A00
+        rec: in=peak1-out
+  [380] LevMetrAtoC1             add=0x180139270 slot=0x1FFD0 rec=0x1804B1660
+        rec: in=peak2-out
+  [381] LevLintodB               add=0x180136DC0 slot=0x20078 rec=0x1804B1E70
+        rec: linvalue=LevMetrAtoC-out
+  [382] LevLintodB1              add=0x180136DC0 slot=0x200E0 rec=0x1804ABBB0
+        rec: linvalue=LevMetrAtoC1-out
+  [383] lopD                     add=0x180136C20 slot=0x20148 rec=0x1804B69C0
+        rec: in=LevLintodB-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [384] ropD                     add=0x180136C20 slot=0x20220 rec=0x1804B2690
+        rec: in=LevLintodB1-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [385] overload1                add=0x180136980 slot=0x202F8 rec=0x1804B2320
+        rec: in=left out-out; thresh=-0.1
+  [386] overload3                add=0x180136980 slot=0x203F8 rec=0x1804A84C0
+        rec: in=right out-out; thresh=-0.1
+  [387] overload                 add=0x180136980 slot=0x204F8 rec=0x1804A9360
+        rec: in=iswitch6-out; thresh=-0.1
+  [388] overload2                add=0x180136980 slot=0x205F8 rec=0x1804AFCB0
+        rec: in=iswitch7-out; thresh=-0.1
+  [389] c_switch7                add=0x18013ABD0 slot=0x206F8 rec=0x1804B4760
+        rec: ninputs=2; select=c_subtract1-out; in1=overload-ol; in2=overload2-ol
+  [390] c_switch8                add=0x18013ABD0 slot=0x20780 rec=0x1804AE410
+        rec: ninputs=2; select=c_subtract3-out; in1=overload1-ol; in2=overload3-ol
+  [391] lopL                     add=0x180136750 slot=0x20808 rec=0x1804AF990
+        rec: in=overload1-ol; statement=monitor:%f; tag=monitor
+  [392] ropL                     add=0x180136750 slot=0x208B8 rec=0x1804B0460
+        rec: in=c_switch8-out; statement=monitor:%f; tag=monitor
+  [393] lipL                     add=0x180136750 slot=0x20968 rec=0x1804B1230
+        rec: in=overload-ol; statement=monitor:%f; tag=monitor
+  [394] ripL                     add=0x180136750 slot=0x20A18 rec=0x1804A88B0
+        rec: in=c_switch7-out; statement=monitor:%f; tag=monitor
+  [395] pitM                     add=0x180136750 slot=0x20AC8 rec=0x1804B5900
+        rec: in=dtonicii9-pitch; statement=pitch detect; tag=pitM
+  [396] tonM                     add=0x180136750 slot=0x20B78 rec=0x1804B2AE0
+        rec: in=dtonicii9-tonality; statement=tonality detect; tag=tonM
+=== miso (394 modules)
+  [None] igan                     add=0x1800CA340 slot=0x1F0 rec=0x1804A9920
+        rec: statement=input gain:%3.0f dB; name=knob; min=-96; max=12; res=1; default=0
+  [None] inch                     add=0x1800CA340 slot=0x2A8 rec=0x1804AB150
+        rec: statement=knob: %f; name=knob; min=1; max=2; res=1; default=1
+  [None] c_subtract1              add=0x1800DCDC0 slot=0x360 rec=0x1804A7E90
+        rec: in1=inch-out; in2=1
+  [None] live                     add=0x1800D4B70 slot=0x3F8 rec=0x1804B07C0
+        rec: statement=Live Mode %s; nchoices=2; default=0; choices1=off; choices2=on
+  [None] live mode delay comp     add=0x1800CB200 slot=0x4B0 rec=0x1804A7610
+        rec: value=40
+  [None] c_switch                 add=0x1800D6940 slot=0x4E8 rec=0x1804ACE90
+        rec: ninputs=2; select=live-out; in1=live mode delay comp-out; in2=0
+  [None] mfbk                     add=0x1800CA340 slot=0x570 rec=0x1804B0380
+        rec: statement=feedback: %f %; name=percent; min=0; max=100; res=1; default=0
+  [None] fbkd                     add=0x1800CA340 slot=0x628 rec=0x1804B4F30
+        rec: statement=fback dly: %f ms; name=knob; min=0; max=5000; res=1; default=0
+  [None] c_minmax                 add=0x1800D15D0 slot=0x6E0 rec=0x1804B4CE0
+        rec: ninputs=2; in1=fbkd-out; in2=50
+  [10] rdep                     add=0x18013AB90 slot=0x758 rec=0x1804AD920
+        rec: statement=rnd dpth: %f; name=knob; min=0; max=200; res=1; default=50
+  [11] c_divide26               add=0x18013A110 slot=0x810 rec=0x1804B13C0
+        rec: in1=rdep-out; in2=2400
+  [12] c_fltr_a36               add=0x18013AAC0 slot=0x8A8 rec=0x1804A6E70
+        rec: time_constant=20; in=c_divide26-out
+  [13] keys                     add=0x18013AD00 slot=0x980 rec=0x1804AB820
+        rec: statement=key  :   %s; nchoices=17; default=0; choices1= C; choices2=C#; choices3=Db; choices4= D; choices5=D#; choices6=Eb; choices7= E; choices8= F; choices9=F#; choices10=Gb; choices11= G; choices12=G#; choices13=Ab; choices14= A; choices15=A#; choices16=Bb; choices17= B
+  [14] scal                     add=0x18013AD00 slot=0xA38 rec=0x1804AF160
+        rec: statement=scale: %s; nchoices=16; default=0; choices1=ionian (maj); choices2=dorian; choices3=phrygian; choices4=lydian; choices5=mixolydian; choices6=relative minor; choices7=locrian; choices8=harmonic min; choices9=melodic min; choices10=chromatic; choices11=whole tone; choices12=penta maj; choices13=penta min; choices14=enigmatic; choices15=neapolitan; choices16=hungarian
+  [15] ptrk                     add=0x18013AB90 slot=0xAF0 rec=0x1804A9660
+        rec: statement=Pitch Track; name=0; min=0; max=1; res=1; default=1
+  [16] scal table               add=0x18013A8D0 slot=0xBA8 rec=0x1804AB0C0
+        rec: nentries=15; select=scal-out; in1=1; in2=2; in3=3; in4=4; in5=5; in6=6; in7=7; in8=10; in9=11; in10=14; in11=15; in12=16; in13=17; in14=18; in15=13
+  [17] c_cmp2                   add=0x18013A760 slot=0xC30 rec=0x1804B5A10
+        rec: in1=scal table-out; in2=14
+  [18] c_cmp3                   add=0x18013A760 slot=0xD68 rec=0x1804AED80
+        rec: in1=scal table-out; in2=15
+  [19] c_or                     add=0x18013A110 slot=0xEA0 rec=0x1804AA760
+        rec: in1=c_cmp2-eq; in2=c_cmp3-eq
+  [20] minp                     add=0x18013AD00 slot=0xF38 rec=0x1804B5630
+        rec: statement=minpitch: %s; nchoices=48; default=24; choices1= C0; choices2=C#0; choices3= D0; choices4=D#0; choices5= E0; choices6= F0; choices7=F#0; choices8= G0; choices9=G#0; choices10= A0; choices11=A#0; choices12= B0; choices13= C1; choices14=C#1; choices15= D1; choices16=D#1; choices17= E1; choices18= F1; choices19=F#1; choices20= G1; choices21=G#1
+  [21] xfad                     add=0x18013AB90 slot=0xFF0 rec=0x1804B6950
+        rec: statement=xfade   : %3.0f ms; min=0; max=100; res=1; default=10
+  [22] tune                     add=0x18013AB90 slot=0x10A8 rec=0x1804AC610
+        rec: statement=tune: %3.0f; name=knob; min=392; max=494; res=1; default=440
+  [23] fbk1                     add=0x18013AB90 slot=0x1160 rec=0x1804AFC50
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [24] msw1                     add=0x18013AD00 slot=0x1218 rec=0x1804A7E50
+        rec: statement=voice 1: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [25] m switch 1               add=0x18013ABD0 slot=0x12D0 rec=0x1804A8770
+        rec: ninputs=2; select=msw1-out; in1=-100; in2=ogn1-out
+  [26] ogn1                     add=0x18013AB90 slot=0x1358 rec=0x1804A80D0
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [27] fback switch 1           add=0x18013ABD0 slot=0x1410 rec=0x1804AB030
+        rec: ninputs=2; select=msw1-out; in1=-100; in2=fbk1-out
+  [28] pan1                     add=0x18013AB90 slot=0x1498 rec=0x1804A9020
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [29] dly1                     add=0x18013AB90 slot=0x1550 rec=0x1804B1920
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [30] c_adder8                 add=0x18013A510 slot=0x1608 rec=0x1804A9C30
+        rec: ninputs=2; in1=dly1-out; in2=c_switch-out
+  [31] int1                     add=0x18013AD00 slot=0x1660 rec=0x1804ACC60
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [32] int table 1              add=0x18013A8D0 slot=0x1718 rec=0x1804AB9A0
+        rec: nentries=29; select=int1-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [33] int table switch 1       add=0x18013ABD0 slot=0x17A0 rec=0x1804B6620
+        rec: ninputs=2; select=c_or-out; in1=int1-out; in2=int table 1-out
+  [34] int sub 1                add=0x18013A110 slot=0x1828 rec=0x1804B0AC0
+        rec: in1=int table switch 1-out; in2=14
+  [35] c_multiply 1             add=0x18013A390 slot=0x18C0 rec=0x1804AFDF0
+        rec: in1=int sub 1-out; in2=-1
+  [36] sht1                     add=0x18013AB90 slot=0x1980 rec=0x1804A7390
+        rec: statement=fshift: %f; name=knob; min=-2400; max=2400; res=1; default=0
+  [37] fbk2                     add=0x18013AB90 slot=0x1A38 rec=0x1804AD610
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [38] msw2                     add=0x18013AD00 slot=0x1AF0 rec=0x1804B2CA0
+        rec: statement=voice 2: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [39] m switch 2               add=0x18013ABD0 slot=0x1BA8 rec=0x1804AE480
+        rec: ninputs=2; select=msw2-out; in1=-100; in2=ogn2-out
+  [40] ogn2                     add=0x18013AB90 slot=0x1C30 rec=0x1804AFE10
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [41] fback switch 2           add=0x18013ABD0 slot=0x1CE8 rec=0x1804ABCD0
+        rec: ninputs=2; select=msw2-out; in1=-100; in2=fbk2-out
+  [42] pan2                     add=0x18013AB90 slot=0x1D70 rec=0x1804AC0E0
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [43] dly2                     add=0x18013AB90 slot=0x1E28 rec=0x1804B4AF0
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [44] c_adder9                 add=0x18013A510 slot=0x1EE0 rec=0x1804A6AA0
+        rec: ninputs=2; in1=dly2-out; in2=c_switch-out
+  [45] int2                     add=0x18013AD00 slot=0x1F38 rec=0x1804AEBD0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [46] int table 2              add=0x18013A8D0 slot=0x1FF0 rec=0x1804AB1D0
+        rec: nentries=29; select=int2-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [47] int table switch 2       add=0x18013ABD0 slot=0x2078 rec=0x1804ACDC0
+        rec: ninputs=2; select=c_or-out; in1=int2-out; in2=int table 2-out
+  [48] int sub 2                add=0x18013A110 slot=0x2100 rec=0x1804B31E0
+        rec: in1=int table switch 2-out; in2=14
+  [49] c_multiply 2             add=0x18013A390 slot=0x2198 rec=0x1804ABF10
+        rec: in1=int sub 2-out; in2=-1
+  [50] sht2                     add=0x18013AB90 slot=0x2258 rec=0x1804A9FE0
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [51] fbk3                     add=0x18013AB90 slot=0x2310 rec=0x1804B5A30
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [52] msw3                     add=0x18013AD00 slot=0x23C8 rec=0x1804ACFD0
+        rec: statement=voice 3: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [53] m switch 3               add=0x18013ABD0 slot=0x2480 rec=0x1804B5240
+        rec: ninputs=2; select=msw3-out; in1=-100; in2=ogn3-out
+  [54] ogn3                     add=0x18013AB90 slot=0x2508 rec=0x1804AAF30
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [55] fback switch 3           add=0x18013ABD0 slot=0x25C0 rec=0x1804B5310
+        rec: ninputs=2; select=msw3-out; in1=-100; in2=fbk3-out
+  [56] pan3                     add=0x18013AB90 slot=0x2648 rec=0x1804B1B00
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [57] dly3                     add=0x18013AB90 slot=0x2700 rec=0x1804B5060
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [58] c_adder10                add=0x18013A510 slot=0x27B8 rec=0x1804B3F60
+        rec: ninputs=2; in1=dly3-out; in2=c_switch-out
+  [59] int3                     add=0x18013AD00 slot=0x2810 rec=0x1804B4BD0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [60] int table 3              add=0x18013A8D0 slot=0x28C8 rec=0x1804B1A00
+        rec: nentries=29; select=int3-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [61] int table switch 3       add=0x18013ABD0 slot=0x2950 rec=0x1804B4090
+        rec: ninputs=2; select=c_or-out; in1=int3-out; in2=int table 3-out
+  [62] int sub 3                add=0x18013A110 slot=0x29D8 rec=0x1804AAA80
+        rec: in1=int table switch 3-out; in2=14
+  [63] c_multiply 3             add=0x18013A390 slot=0x2A70 rec=0x1804A8580
+        rec: in1=int sub 3-out; in2=-1
+  [64] sht3                     add=0x18013AB90 slot=0x2B30 rec=0x1804B18E0
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [65] fbk4                     add=0x18013AB90 slot=0x2BE8 rec=0x1804AAA20
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [66] msw4                     add=0x18013AD00 slot=0x2CA0 rec=0x1804A7D60
+        rec: statement=voice 4: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [67] m switch 4               add=0x18013ABD0 slot=0x2D58 rec=0x1804AA730
+        rec: ninputs=2; select=msw4-out; in1=-100; in2=ogn4-out
+  [68] ogn4                     add=0x18013AB90 slot=0x2DE0 rec=0x1804B32D0
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [69] fback switch 4           add=0x18013ABD0 slot=0x2E98 rec=0x1804A8500
+        rec: ninputs=2; select=msw4-out; in1=-100; in2=fbk4-out
+  [70] pan4                     add=0x18013AB90 slot=0x2F20 rec=0x1804A8B00
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [71] dly4                     add=0x18013AB90 slot=0x2FD8 rec=0x1804AA530
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [72] c_adder11                add=0x18013A510 slot=0x3090 rec=0x1804AC810
+        rec: ninputs=2; in1=dly4-out; in2=c_switch-out
+  [73] int4                     add=0x18013AD00 slot=0x30E8 rec=0x1804A8350
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [74] int table 4              add=0x18013A8D0 slot=0x31A0 rec=0x1804AFA90
+        rec: nentries=29; select=int4-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [75] int table switch 4       add=0x18013ABD0 slot=0x3228 rec=0x1804ABF30
+        rec: ninputs=2; select=c_or-out; in1=int4-out; in2=int table 4-out
+  [76] int sub 4                add=0x18013A110 slot=0x32B0 rec=0x1804B15F0
+        rec: in1=int table switch 4-out; in2=14
+  [77] c_multiply 4             add=0x18013A390 slot=0x3348 rec=0x1804ADE50
+        rec: in1=int sub 4-out; in2=-1
+  [78] sht4                     add=0x18013AB90 slot=0x3408 rec=0x1804A6F10
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [79] fbk5                     add=0x18013AB90 slot=0x34C0 rec=0x1804B00A0
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [80] msw5                     add=0x18013AD00 slot=0x3578 rec=0x1804A75B0
+        rec: statement=voice 5: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [81] m switch 5               add=0x18013ABD0 slot=0x3630 rec=0x1804A9C00
+        rec: ninputs=2; select=msw5-out; in1=-100; in2=ogn5-out
+  [82] ogn5                     add=0x18013AB90 slot=0x36B8 rec=0x1804A9F20
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [83] fback switch 5           add=0x18013ABD0 slot=0x3770 rec=0x1804A7B70
+        rec: ninputs=2; select=msw5-out; in1=-100; in2=fbk5-out
+  [84] pan5                     add=0x18013AB90 slot=0x37F8 rec=0x1804B14B0
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [85] dly5                     add=0x18013AB90 slot=0x38B0 rec=0x1804B4910
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [86] c_adder12                add=0x18013A510 slot=0x3968 rec=0x1804AEAB0
+        rec: ninputs=2; in1=dly5-out; in2=c_switch-out
+  [87] int5                     add=0x18013AD00 slot=0x39C0 rec=0x1804AA7E0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [88] int table 5              add=0x18013A8D0 slot=0x3A78 rec=0x1804B49A0
+        rec: nentries=29; select=int5-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [89] int table switch 5       add=0x18013ABD0 slot=0x3B00 rec=0x1804AEFD0
+        rec: ninputs=2; select=c_or-out; in1=int5-out; in2=int table 5-out
+  [90] int sub 5                add=0x18013A110 slot=0x3B88 rec=0x1804A9710
+        rec: in1=int table switch 5-out; in2=14
+  [91] c_multiply 5             add=0x18013A390 slot=0x3C20 rec=0x1804AC450
+        rec: in1=int sub 5-out; in2=-1
+  [92] sht5                     add=0x18013AB90 slot=0x3CE0 rec=0x1804B1030
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [93] fbk6                     add=0x18013AB90 slot=0x3D98 rec=0x1804AD990
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [94] msw6                     add=0x18013AD00 slot=0x3E50 rec=0x1804AC3F0
+        rec: statement=voice 6: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [95] m switch 6               add=0x18013ABD0 slot=0x3F08 rec=0x1804A7730
+        rec: ninputs=2; select=msw6-out; in1=-100; in2=ogn6-out
+  [96] ogn6                     add=0x18013AB90 slot=0x3F90 rec=0x1804B6B90
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [97] fback switch 6           add=0x18013ABD0 slot=0x4048 rec=0x1804B6560
+        rec: ninputs=2; select=msw6-out; in1=-100; in2=fbk6-out
+  [98] pan6                     add=0x18013AB90 slot=0x40D0 rec=0x1804B4B30
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [99] dly6                     add=0x18013AB90 slot=0x4188 rec=0x1804AA6D0
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [100] c_adder13                add=0x18013A510 slot=0x4240 rec=0x1804A89D0
+        rec: ninputs=2; in1=dly6-out; in2=c_switch-out
+  [101] int6                     add=0x18013AD00 slot=0x4298 rec=0x1804A7840
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [102] int table 6              add=0x18013A8D0 slot=0x4350 rec=0x1804A9E20
+        rec: nentries=29; select=int6-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [103] int table switch 6       add=0x18013ABD0 slot=0x43D8 rec=0x1804AEDA0
+        rec: ninputs=2; select=c_or-out; in1=int6-out; in2=int table 6-out
+  [104] int sub 6                add=0x18013A110 slot=0x4460 rec=0x1804AB500
+        rec: in1=int table switch 6-out; in2=14
+  [105] c_multiply 6             add=0x18013A390 slot=0x44F8 rec=0x1804AAC30
+        rec: in1=int sub 6-out; in2=-1
+  [106] sht6                     add=0x18013AB90 slot=0x45B8 rec=0x1804A9960
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [107] fbk7                     add=0x18013AB90 slot=0x4670 rec=0x1804AF2A0
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [108] msw7                     add=0x18013AD00 slot=0x4728 rec=0x1804B5C80
+        rec: statement=voice 7: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [109] m switch 7               add=0x18013ABD0 slot=0x47E0 rec=0x1804A9A90
+        rec: ninputs=2; select=msw7-out; in1=-100; in2=ogn7-out
+  [110] ogn7                     add=0x18013AB90 slot=0x4868 rec=0x1804A74F0
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [111] fback switch 7           add=0x18013ABD0 slot=0x4920 rec=0x1804B3AB0
+        rec: ninputs=2; select=msw7-out; in1=-100; in2=fbk7-out
+  [112] pan7                     add=0x18013AB90 slot=0x49A8 rec=0x1804A9230
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [113] dly7                     add=0x18013AB90 slot=0x4A60 rec=0x1804AEEC0
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [114] c_adder14                add=0x18013A510 slot=0x4B18 rec=0x1804B33A0
+        rec: ninputs=2; in1=dly7-out; in2=c_switch-out
+  [115] int7                     add=0x18013AD00 slot=0x4B70 rec=0x1804B3CD0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [116] int table 7              add=0x18013A8D0 slot=0x4C28 rec=0x1804A7C20
+        rec: nentries=29; select=int7-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [117] int table switch 7       add=0x18013ABD0 slot=0x4CB0 rec=0x1804AAFC0
+        rec: ninputs=2; select=c_or-out; in1=int7-out; in2=int table 7-out
+  [118] int sub 7                add=0x18013A110 slot=0x4D38 rec=0x1804B2980
+        rec: in1=int table switch 7-out; in2=14
+  [119] c_multiply 7             add=0x18013A390 slot=0x4DD0 rec=0x1804B4880
+        rec: in1=int sub 7-out; in2=-1
+  [120] sht7                     add=0x18013AB90 slot=0x4E90 rec=0x1804B3860
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [121] fbk8                     add=0x18013AB90 slot=0x4F48 rec=0x1804AFBD0
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [122] msw8                     add=0x18013AD00 slot=0x5000 rec=0x1804B4100
+        rec: statement=voice 8: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [123] m switch 8               add=0x18013ABD0 slot=0x50B8 rec=0x1804A9310
+        rec: ninputs=2; select=msw8-out; in1=-100; in2=ogn8-out
+  [124] ogn8                     add=0x18013AB90 slot=0x5140 rec=0x1804B2B00
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [125] fback switch 8           add=0x18013ABD0 slot=0x51F8 rec=0x1804AD370
+        rec: ninputs=2; select=msw8-out; in1=-100; in2=fbk8-out
+  [126] c_divide18               add=0x18013A110 slot=0x5280 rec=0x1804AF950
+        rec: in1=fback switch 1-out; in2=20
+  [127] c_power9                 add=0x18013A110 slot=0x5318 rec=0x1804A7190
+        rec: in1=10; in2=c_divide18-out
+  [128] c_divide19               add=0x18013A110 slot=0x53B0 rec=0x1804ADBE0
+        rec: in1=fback switch 2-out; in2=20
+  [129] c_power10                add=0x18013A110 slot=0x5448 rec=0x1804B3740
+        rec: in1=10; in2=c_divide19-out
+  [130] c_divide20               add=0x18013A110 slot=0x54E0 rec=0x1804A6B90
+        rec: in1=fback switch 3-out; in2=20
+  [131] c_power11                add=0x18013A110 slot=0x5578 rec=0x1804B0360
+        rec: in1=10; in2=c_divide20-out
+  [132] c_divide21               add=0x18013A110 slot=0x5610 rec=0x1804A9270
+        rec: in1=fback switch 4-out; in2=20
+  [133] c_power12                add=0x18013A110 slot=0x56A8 rec=0x1804B4EB0
+        rec: in1=10; in2=c_divide21-out
+  [134] c_divide22               add=0x18013A110 slot=0x5740 rec=0x1804AA380
+        rec: in1=fback switch 5-out; in2=20
+  [135] c_power13                add=0x18013A110 slot=0x57D8 rec=0x1804B3E20
+        rec: in1=10; in2=c_divide22-out
+  [136] c_divide23               add=0x18013A110 slot=0x5870 rec=0x1804B5360
+        rec: in1=fback switch 6-out; in2=20
+  [137] c_power14                add=0x18013A110 slot=0x5908 rec=0x1804AC8E0
+        rec: in1=10; in2=c_divide23-out
+  [138] c_divide24               add=0x18013A110 slot=0x59A0 rec=0x1804AEF00
+        rec: in1=fback switch 7-out; in2=20
+  [139] c_power15                add=0x18013A110 slot=0x5A38 rec=0x1804B2BF0
+        rec: in1=10; in2=c_divide24-out
+  [140] c_divide25               add=0x18013A110 slot=0x5AD0 rec=0x1804AFC90
+        rec: in1=fback switch 8-out; in2=20
+  [141] c_power16                add=0x18013A110 slot=0x5B68 rec=0x1804A7F60
+        rec: in1=10; in2=c_divide25-out
+  [142] pan8                     add=0x18013AB90 slot=0x5C00 rec=0x1804AF820
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [143] dly8                     add=0x18013AB90 slot=0x5CB8 rec=0x1804B0500
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [144] c_adder15                add=0x18013A510 slot=0x5D70 rec=0x1804AB620
+        rec: ninputs=2; in1=dly8-out; in2=c_switch-out
+  [145] int8                     add=0x18013AD00 slot=0x5DC8 rec=0x1804AADE0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [146] int table 8              add=0x18013A8D0 slot=0x5E80 rec=0x1804B6A90
+        rec: nentries=29; select=int8-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [147] int table switch 8       add=0x18013ABD0 slot=0x5F08 rec=0x1804AC9D0
+        rec: ninputs=2; select=c_or-out; in1=int8-out; in2=int table 8-out
+  [148] int sub 8                add=0x18013A110 slot=0x5F90 rec=0x1804AD2B0
+        rec: in1=int table switch 8-out; in2=14
+  [149] c_multiply 8             add=0x18013A390 slot=0x6028 rec=0x1804B4720
+        rec: in1=int sub 8-out; in2=-1
+  [150] sht8                     add=0x18013AB90 slot=0x60E8 rec=0x1804AA040
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [151] c_abs                    add=0x180139EC0 slot=0x61A0 rec=0x1804A8160
+        rec: input=sht1-out
+  [152] c_abs1                   add=0x180139EC0 slot=0x6208 rec=0x1804A82E0
+        rec: input=sht2-out
+  [153] c_abs2                   add=0x180139EC0 slot=0x6270 rec=0x1804AA500
+        rec: input=sht3-out
+  [154] c_abs3                   add=0x180139EC0 slot=0x62D8 rec=0x1804B04F0
+        rec: input=sht4-out
+  [155] c_abs4                   add=0x180139EC0 slot=0x6340 rec=0x1804B2240
+        rec: input=sht5-out
+  [156] c_abs5                   add=0x180139EC0 slot=0x63A8 rec=0x1804AEF20
+        rec: input=sht6-out
+  [157] c_abs6                   add=0x180139EC0 slot=0x6410 rec=0x1804ACE60
+        rec: input=sht7-out
+  [158] c_abs7                   add=0x180139EC0 slot=0x6478 rec=0x1804B59D0
+        rec: input=sht8-out
+  [159] c_adder                  add=0x18013A510 slot=0x64E0 rec=0x1804A7660
+        rec: ninputs=2; in1=c_abs-output; in2=200
+  [160] c_adder1                 add=0x18013A510 slot=0x6538 rec=0x1804AD3A0
+        rec: ninputs=2; in1=c_abs1-output; in2=200
+  [161] c_adder2                 add=0x18013A510 slot=0x6590 rec=0x1804B5220
+        rec: ninputs=2; in1=c_abs2-output; in2=200
+  [162] c_adder3                 add=0x18013A510 slot=0x65E8 rec=0x1804B5950
+        rec: ninputs=2; in1=c_abs3-output; in2=200
+  [163] c_adder4                 add=0x18013A510 slot=0x6640 rec=0x1804A87A0
+        rec: ninputs=2; in1=c_abs4-output; in2=200
+  [164] c_adder5                 add=0x18013A510 slot=0x6698 rec=0x1804AAB80
+        rec: ninputs=2; in1=c_abs5-output; in2=200
+  [165] c_adder6                 add=0x18013A510 slot=0x66F0 rec=0x1804AEA00
+        rec: ninputs=2; in1=c_abs6-output; in2=200
+  [166] c_adder7                 add=0x18013A510 slot=0x6748 rec=0x1804B5E50
+        rec: ninputs=2; in1=c_abs7-output; in2=200
+  [167] c_divide3                add=0x18013A110 slot=0x67A0 rec=0x1804B1490
+        rec: in1=sht1-out; in2=c_adder-out
+  [168] c_fltr_a13               add=0x18013AAC0 slot=0x6838 rec=0x1804B2430
+        rec: time_constant=0; in=c_divide3-out
+  [169] c_divide4                add=0x18013A110 slot=0x6910 rec=0x1804B01A0
+        rec: in1=sht2-out; in2=c_adder1-out
+  [170] c_fltr_a15               add=0x18013AAC0 slot=0x69A8 rec=0x1804B33E0
+        rec: time_constant=0; in=c_divide4-out
+  [171] c_divide5                add=0x18013A110 slot=0x6A80 rec=0x1804B5970
+        rec: in1=sht3-out; in2=c_adder2-out
+  [172] c_fltr_a16               add=0x18013AAC0 slot=0x6B18 rec=0x1804B51E0
+        rec: time_constant=0; in=c_divide5-out
+  [173] c_divide6                add=0x18013A110 slot=0x6BF0 rec=0x1804B3EA0
+        rec: in1=sht4-out; in2=c_adder3-out
+  [174] c_fltr_a17               add=0x18013AAC0 slot=0x6C88 rec=0x1804B1470
+        rec: time_constant=0; in=c_divide6-out
+  [175] c_divide7                add=0x18013A110 slot=0x6D60 rec=0x1804A8BC0
+        rec: in1=sht5-out; in2=c_adder4-out
+  [176] c_fltr_a18               add=0x18013AAC0 slot=0x6DF8 rec=0x1804B00E0
+        rec: time_constant=0; in=c_divide7-out
+  [177] c_divide8                add=0x18013A110 slot=0x6ED0 rec=0x1804B2DB0
+        rec: in1=sht6-out; in2=c_adder5-out
+  [178] c_fltr_a19               add=0x18013AAC0 slot=0x6F68 rec=0x1804B2D90
+        rec: time_constant=0; in=c_divide8-out
+  [179] c_divide9                add=0x18013A110 slot=0x7040 rec=0x1804AA320
+        rec: in1=sht7-out; in2=c_adder6-out
+  [180] c_fltr_a20               add=0x18013AAC0 slot=0x70D8 rec=0x1804AAD90
+        rec: time_constant=0; in=c_divide9-out
+  [181] c_divide10               add=0x18013A110 slot=0x71B0 rec=0x1804A7450
+        rec: in1=sht8-out; in2=c_adder7-out
+  [182] c_fltr_a21               add=0x18013AAC0 slot=0x7248 rec=0x1804A96C0
+        rec: time_constant=0; in=c_divide10-out
+  [183] rdm div 1                add=0x18013A110 slot=0x7320 rec=0x1804B59E0
+        rec: in1=rdm a-c 1-out; in2=1.5
+  [184] rdm add 1                add=0x18013A510 slot=0x73B8 rec=0x1804B5D80
+        rec: ninputs=2; in1=rdm div 1-out; in2=0.5
+  [185] rdm mult 2               add=0x18013A390 slot=0x7410 rec=0x1804B3570
+        rec: in1=2000; in2=rdm add 1-out
+  [186] rdm div 2                add=0x18013A110 slot=0x74D0 rec=0x1804B1160
+        rec: in1=rdm a-c 2-out; in2=1.5
+  [187] rdm add 2                add=0x18013A510 slot=0x7568 rec=0x1804B0080
+        rec: ninputs=2; in1=rdm div 2-out; in2=0.5
+  [188] rdm mult 3               add=0x18013A390 slot=0x75C0 rec=0x1804AA780
+        rec: in1=2000; in2=rdm add 2-out
+  [189] rdm div 3                add=0x18013A110 slot=0x7680 rec=0x1804A8720
+        rec: in1=rdm a-c 3-out; in2=1.5
+  [190] rdm add 3                add=0x18013A510 slot=0x7718 rec=0x1804AC4D0
+        rec: ninputs=2; in1=rdm div 3-out; in2=0.5
+  [191] rdm mult 4               add=0x18013A390 slot=0x7770 rec=0x1804B3A90
+        rec: in1=2000; in2=rdm add 3-out
+  [192] rdm div 4                add=0x18013A110 slot=0x7830 rec=0x1804B6600
+        rec: in1=rdm a-c 4-out; in2=1.5
+  [193] rdm add 4                add=0x18013A510 slot=0x78C8 rec=0x1804A94F0
+        rec: ninputs=2; in1=rdm div 4-out; in2=0.5
+  [194] rdm mult 5               add=0x18013A390 slot=0x7920 rec=0x1804AA510
+        rec: in1=2000; in2=rdm add 4-out
+  [195] rdm div 5                add=0x18013A110 slot=0x79E0 rec=0x1804AB8F0
+        rec: in1=rdm a-c 5-out; in2=1.5
+  [196] rdm add 5                add=0x18013A510 slot=0x7A78 rec=0x1804AFB90
+        rec: ninputs=2; in1=rdm div 5-out; in2=0.5
+  [197] rdm mult 6               add=0x18013A390 slot=0x7AD0 rec=0x1804A7F80
+        rec: in1=2000; in2=rdm add 5-out
+  [198] rdm div 6                add=0x18013A110 slot=0x7B90 rec=0x1804A9A10
+        rec: in1=rdm a-c 6-out; in2=1.5
+  [199] rdm add 6                add=0x18013A510 slot=0x7C28 rec=0x1804A7030
+        rec: ninputs=2; in1=rdm div 6-out; in2=0.5
+  [200] rdm mult 7               add=0x18013A390 slot=0x7C80 rec=0x1804AE500
+        rec: in1=2000; in2=rdm add 6-out
+  [201] rdm div 7                add=0x18013A110 slot=0x7D40 rec=0x1804B1610
+        rec: in1=rdm a-c 7-out; in2=1.5
+  [202] rdm add 7                add=0x18013A510 slot=0x7DD8 rec=0x1804AAAA0
+        rec: ninputs=2; in1=rdm div 7-out; in2=0.5
+  [203] rdm mult 8               add=0x18013A390 slot=0x7E30 rec=0x1804AC6A0
+        rec: in1=2000; in2=rdm add 7-out
+  [204] rdm div 8                add=0x18013A110 slot=0x7EF0 rec=0x1804B3810
+        rec: in1=rdm a-c 8-out; in2=1.5
+  [205] rdm add 8                add=0x18013A510 slot=0x7F88 rec=0x1804A8C50
+        rec: ninputs=2; in1=rdm div 8-out; in2=0.5
+  [206] rdm mult 1               add=0x18013A390 slot=0x7FE0 rec=0x1804B1C10
+        rec: in1=2000; in2=rdm add 8-out
+  [207] mmix                     add=0x18013AB90 slot=0x80A0 rec=0x1804B5020
+        rec: statement=mix:%3.0f %%; name=mix; min=0; max=100; res=1; default=100
+  [208] ouch                     add=0x18013AB90 slot=0x8158 rec=0x1804B3C10
+        rec: statement=knob: %f; name=knob; min=1; max=2; res=1; default=2
+  [209] c_subtract3              add=0x18013A110 slot=0x8210 rec=0x1804AD4C0
+        rec: in1=ouch-out; in2=1
+  [210] ogan                     add=0x18013AB90 slot=0x82A8 rec=0x1804AC550
+        rec: statement=Out Gain:%3.0f dB; name=knob; min=-96; max=24; res=1; default=0
+  [211] bypa                     add=0x18013AD00 slot=0x8360 rec=0x1804ABED0
+        rec: statement=input: %s; nchoices=2; default=0; choices1=normal; choices2=bypass
+  [213] rdm abs                  add=0x180139A30 slot=0x8450 rec=0x1804AB4B0
+        rec: in=rdm noise-out
+  [214] rdm sh 1                 add=0x1801390D0 slot=0x84A8 rec=0x1804B06E0
+        rec: in=rdm abs-out; newsamp=rdm comp 1-out
+  [215] rdm slew 1               add=0x1801398E0 slot=0x8518 rec=0x1804ABB50
+        rec: in=rdm sh 1-out; pslew=rdm mult 1-out; nslew=rdm mult 1-out
+  [216] rdm comp 1               add=0x1801395F0 slot=0x8648 rec=0x1804B2D00
+        rec: in1=rdm slew 1-out; in2=rdm sh 1-out; inspread=0; constval=0; outspread=0
+  [217] rdm a-c 1                add=0x180139270 slot=0x8750 rec=0x1804A8920
+        rec: in=rdm slew 1-out
+  [218] rdm sh 2                 add=0x1801390D0 slot=0x87F8 rec=0x1804A8950
+        rec: in=rdm abs-out; newsamp=rdm comp 2-out
+  [219] rdm slew 2               add=0x1801398E0 slot=0x8868 rec=0x1804ADCA0
+        rec: in=rdm sh 2-out; pslew=rdm mult 2-out; nslew=rdm mult 2-out
+  [220] rdm comp 2               add=0x1801395F0 slot=0x8998 rec=0x1804ADF10
+        rec: in1=rdm slew 2-out; in2=rdm sh 2-out; inspread=0; constval=0; outspread=0
+  [221] rdm a-c 2                add=0x180139270 slot=0x8AA0 rec=0x1804B4610
+        rec: in=rdm slew 2-out
+  [222] rdm sh 3                 add=0x1801390D0 slot=0x8B48 rec=0x1804ABAA0
+        rec: in=rdm abs-out; newsamp=rdm comp 3-out
+  [223] rdm slew 3               add=0x1801398E0 slot=0x8BB8 rec=0x1804B6110
+        rec: in=rdm sh 3-out; pslew=rdm mult 3-out; nslew=rdm mult 3-out
+  [224] rdm comp 3               add=0x1801395F0 slot=0x8CE8 rec=0x1804A86C0
+        rec: in1=rdm slew 3-out; in2=rdm sh 3-out; inspread=0; constval=0; outspread=0
+  [225] rdm a-c 3                add=0x180139270 slot=0x8DF0 rec=0x1804A94E0
+        rec: in=rdm slew 3-out
+  [226] rdm sh 4                 add=0x1801390D0 slot=0x8E98 rec=0x1804A72D0
+        rec: in=rdm abs-out; newsamp=rdm comp 4-out
+  [227] rdm slew 4               add=0x1801398E0 slot=0x8F08 rec=0x1804AFA70
+        rec: in=rdm sh 4-out; pslew=rdm mult 4-out; nslew=rdm mult 4-out
+  [228] rdm comp 4               add=0x1801395F0 slot=0x9038 rec=0x1804AC370
+        rec: in1=rdm slew 4-out; in2=rdm sh 4-out; inspread=0; constval=0; outspread=0
+  [229] rdm a-c 4                add=0x180139270 slot=0x9140 rec=0x1804A74E0
+        rec: in=rdm slew 4-out
+  [230] rdm sh 5                 add=0x1801390D0 slot=0x91E8 rec=0x1804B3B30
+        rec: in=rdm abs-out; newsamp=rdm comp 5-out
+  [231] rdm slew 5               add=0x1801398E0 slot=0x9258 rec=0x1804B04D0
+        rec: in=rdm sh 5-out; pslew=rdm mult 5-out; nslew=rdm mult 5-out
+  [232] rdm comp 5               add=0x1801395F0 slot=0x9388 rec=0x1804B1180
+        rec: in1=rdm slew 5-out; in2=rdm sh 5-out; inspread=0; constval=0; outspread=0
+  [233] rdm a-c 5                add=0x180139270 slot=0x9490 rec=0x1804AE8C0
+        rec: in=rdm slew 5-out
+  [234] rdm sh 6                 add=0x1801390D0 slot=0x9538 rec=0x1804B0B30
+        rec: in=rdm abs-out; newsamp=rdm comp 6-out
+  [235] rdm slew 6               add=0x1801398E0 slot=0x95A8 rec=0x1804B11F0
+        rec: in=rdm sh 6-out; pslew=rdm mult 6-out; nslew=rdm mult 6-out
+  [236] rdm comp 6               add=0x1801395F0 slot=0x96D8 rec=0x1804ADE70
+        rec: in1=rdm slew 6-out; in2=rdm sh 6-out; inspread=0; constval=0; outspread=0
+  [237] rdm a-c 6                add=0x180139270 slot=0x97E0 rec=0x1804B5600
+        rec: in=rdm slew 6-out
+  [238] rdm sh 7                 add=0x1801390D0 slot=0x9888 rec=0x1804A6F70
+        rec: in=rdm abs-out; newsamp=rdm comp 7-out
+  [239] rdm slew 7               add=0x1801398E0 slot=0x98F8 rec=0x1804AA3D0
+        rec: in=rdm sh 7-out; pslew=rdm mult 7-out; nslew=rdm mult 7-out
+  [240] rdm comp 7               add=0x1801395F0 slot=0x9A28 rec=0x1804ACFA0
+        rec: in1=rdm slew 7-out; in2=rdm sh 7-out; inspread=0; constval=0; outspread=0
+  [241] rdm a-c 7                add=0x180139270 slot=0x9B30 rec=0x1804A8BE0
+        rec: in=rdm slew 7-out
+  [242] rdm sh 8                 add=0x1801390D0 slot=0x9BD8 rec=0x1804AAB00
+        rec: in=rdm abs-out; newsamp=rdm comp 8-out
+  [243] rdm slew 8               add=0x1801398E0 slot=0x9C48 rec=0x1804B48A0
+        rec: in=rdm sh 8-out; pslew=rdm mult 8-out; nslew=rdm mult 8-out
+  [244] multiply12               add=0x1801390D0 slot=0x9D78 rec=0x1804A6F50
+        rec: in1=c_fltr_a36-out; in2=rdm slew 1-out
+  [245] rdm comp 8               add=0x1801395F0 slot=0x9DE0 rec=0x1804B3B00
+        rec: in1=rdm slew 8-out; in2=rdm sh 8-out; inspread=0; constval=0; outspread=0
+  [246] rdm a-c 8                add=0x180139270 slot=0x9EE8 rec=0x1804B07F0
+        rec: in=rdm slew 8-out
+  [247] left in                  add=0x180139050 slot=0x9F90 rec=0x1804B3EE0
+        rec: in=adc-in1; gain=igan-out
+  [248] delay comp 1             add=0x180138D30 slot=0xA100 rec=0x1804B4E90
+        rec: maxdelay=51; in=left in-out; delayamt=live mode delay comp-out
+  [249] iswitch6                 add=0x1801389C0 slot=0xA278 rec=0x1804B2ED0
+        rec: numins=2; select=live-out; in1=delay comp 1-out; in2=left in-out
+  [250] right in                 add=0x180139050 slot=0xA398 rec=0x1804A9BD0
+        rec: in=adc-in2; gain=igan-out
+  [251] delay comp 2             add=0x180138D30 slot=0xA508 rec=0x1804AE880
+        rec: maxdelay=51; in=right in-out; delayamt=live mode delay comp-out
+  [252] iswitch7                 add=0x1801389C0 slot=0xA680 rec=0x1804B0820
+        rec: numins=2; select=live-out; in1=delay comp 2-out; in2=right in-out
+  [253] mix                      add=0x180138710 slot=0xA7A0 rec=0x1804B3310
+        rec: time_constant=20; in1=left in-out; in2=right in-out; amp1=0.5; amp2=0.5
+  [254] iswitch4                 add=0x1801389C0 slot=0xA900 rec=0x1804A85F0
+        rec: numins=2; select=c_subtract1-out; in1=left in-out; in2=mix-out
+  [255] iswitch5                 add=0x1801389C0 slot=0xAA20 rec=0x1804AD040
+        rec: numins=2; select=c_subtract1-out; in1=iswitch6-out; in2=iswitch7-out
+  [256] peak4                    add=0x180138570 slot=0xAB40 rec=0x1804B3200
+        rec: type=0; in=iswitch6-out; attackcntl=0.05; decaycntl=0.1
+  [257] LevMetrAtoC3             add=0x180139270 slot=0xAD08 rec=0x1804AB910
+        rec: in=peak4-out
+  [258] inst                     add=0x18013AB90 slot=0xADB0 rec=0x1804B3E40
+        rec: statement=knob: %f; name=knob; min=0; max=12; res=1; default=0
+  [259] MaxCut                   add=0x18013A8D0 slot=0xAE68 rec=0x1804AF040
+        rec: nentries=16; select=inst-out; in1=0; in2=0; in3=-14; in4=-14; in5=-14; in6=-14; in7=-14; in8=-18; in9=-14; in10=-7; in11=-14; in12=-14; in13=-7; in14=-18; in15=-7; in16=-7
+  [260] CutFreq                  add=0x18013A8D0 slot=0xAEF0 rec=0x1804B0100
+        rec: nentries=16; select=inst-out; in1=20000; in2=20000; in3=8000; in4=8000; in5=8000; in6=8000; in7=8000; in8=2000; in9=3500; in10=12000; in11=8000; in12=8000; in13=3500; in14=1200; in15=4000; in16=10000
+  [261] CutMultiplier            add=0x18013A8D0 slot=0xAF78 rec=0x1804B4680
+        rec: nentries=16; select=inst-out; in1=0; in2=0; in3=-1; in4=-1; in5=-1; in6=-1; in7=-1; in8=-1.2857; in9=-1; in10=-0.5; in11=-1; in12=-1; in13=-0.5; in14=-1.2857; in15=-0.5; in16=-0.5
+  [262] AntiAliasOnOff           add=0x18013A8D0 slot=0xB000 rec=0x1804AE520
+        rec: nentries=16; select=inst-out; in1=0; in2=0; in3=1; in4=1; in5=1; in6=1; in7=1; in8=1; in9=1; in10=0; in11=1; in12=1; in13=0; in14=1; in15=0; in16=0
+  [263] c_minmax2                add=0x18013AB50 slot=0xB088 rec=0x1804B41F0
+        rec: ninputs=9; in1=c_multiply 1-out; in2=c_multiply 2-out; in3=c_multiply 3-out; in4=c_multiply 4-out; in5=c_multiply 5-out; in6=c_multiply 6-out; in7=c_multiply 7-out; in8=c_multiply 8-out; in9=0
+  [264] c_divide2                add=0x18013A110 slot=0xB100 rec=0x1804AB640
+        rec: in1=c_minmax2-maximum; in2=7
+  [265] c_multiply6              add=0x18013A390 slot=0xB198 rec=0x1804AAA60
+        rec: in1=c_divide2-out; in2=-1
+  [266] c_power1                 add=0x18013A110 slot=0xB258 rec=0x1804AE270
+        rec: in1=2; in2=c_multiply6-out
+  [267] c_fltr_a14               add=0x18013AAC0 slot=0xB2F0 rec=0x1804AE730
+        rec: time_constant=20; in=c_power1-out
+  [268] bound1                   add=0x1801384B0 slot=0xB3C8 rec=0x1804A86F0
+        rec: in=c_fltr_a14-out; minimum=0; maximum=1
+  [269] c_fltr_a12               add=0x18013AAC0 slot=0xB4E8 rec=0x1804A8530
+        rec: time_constant=20; in=c_power9-out
+  [270] multiply4                add=0x1801390D0 slot=0xB5C0 rec=0x1804B3AE0
+        rec: in1=moddelay7-out; in2=c_fltr_a12-out
+  [271] modiirq                  add=0x180138200 slot=0xB628 rec=0x1804B1DD0
+        rec: in=iswitch4-out; modfreq=bound1-out; n_sections=2; qfactor=0.7; type=0; sections=2; processoff=0
+  [272] iswitch8                 add=0x1801389C0 slot=0xB858 rec=0x1804B0740
+        rec: numins=2; select=AntiAliasOnOff-out; in1=iswitch4-out; in2=modiirq-out
+  [273] softclip                 add=0x1801380C0 slot=0xB978 rec=0x1804AC7E0
+        rec: in=iswitch8-out; select=1; drive=0; order=1; processoff=0
+  [274] add8                     add=0x180137F40 slot=0xBF48 rec=0x1804B5340
+        rec: in1=c_fltr_a13-out; in2=multiply12-out
+  [275] dtonicii9                add=0x180137E20 slot=0xBFB8 rec=0x1804B5EE0
+        rec: maxdelay=2400; nvoices=8; steps=12; in=softclip-out; scale=scal table-out; key=keys-out; pitchtracking=ptrk-out; hysteresis=10; correctrate=1; mincorrect=0; intervalglide=1; tuning=0; tune=tune-out; quantization=0; minpitch=minp-out; gatelevel=-55; xfadetime=xfad-out; mod1=rdm slew 1-out; mod2=rdm slew 2-out; mod3=rdm slew 3-out; mod4=rdm slew 4-out; mod5=rdm slew 5-out; mod6=rdm slew 6-out; mod7=rdm slew 7-out
+  [276] modfilter8               add=0x180137C30 slot=0x16980 rec=0x1804B0A30
+        rec: in=dtonicii9-out1; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [277] eqn                      add=0x180137AC0 slot=0x16C28 rec=0x1804A9820
+        rec: neqs=1; in=modfilter8-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound2-out; type1=2
+  [278] add                      add=0x180137F40 slot=0x16F70 rec=0x1804AE8A0
+        rec: in1=eqn-out; in2=multiply4-out
+  [279] moddelay7                add=0x180137930 slot=0x16FE0 rec=0x1804B3660
+        rec: maxdelay=2000; declick=1; in=add-out; mod=adc-null; delayamt=dly1-out; modamt=0; glidespeed=0
+  [280] c_multiply8              add=0x18013A390 slot=0x17228 rec=0x1804AD350
+        rec: in1=c_multiply 1-out; in2=CutMultiplier-out
+  [281] c_bound2                 add=0x1801377A0 slot=0x172E8 rec=0x1804ACB30
+        rec: input=c_multiply8-out; minimum=MaxCut-out; maximum=0
+  [282] c_fltr_a23               add=0x18013AAC0 slot=0x173B0 rec=0x1804B37F0
+        rec: time_constant=20; in=c_power10-out
+  [283] multiply5                add=0x1801390D0 slot=0x17488 rec=0x1804AFC30
+        rec: in1=moddelay6-out; in2=c_fltr_a23-out
+  [284] modfilter9               add=0x180137C30 slot=0x174F0 rec=0x1804A85A0
+        rec: in=dtonicii9-out2; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [285] eqn1                     add=0x180137AC0 slot=0x17798 rec=0x1804AE370
+        rec: neqs=1; in=modfilter9-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound3-out; type1=2
+  [286] add1                     add=0x180137F40 slot=0x17AE0 rec=0x1804AE3F0
+        rec: in1=eqn1-out; in2=multiply5-out
+  [287] moddelay6                add=0x180137930 slot=0x17B50 rec=0x1804B5DA0
+        rec: maxdelay=2000; declick=1; in=add1-out; mod=adc-null; delayamt=dly2-out; modamt=0; glidespeed=0
+  [288] c_multiply9              add=0x18013A390 slot=0x17D98 rec=0x1804AF880
+        rec: in1=c_multiply 2-out; in2=CutMultiplier-out
+  [289] c_bound3                 add=0x1801377A0 slot=0x17E58 rec=0x1804ABEB0
+        rec: input=c_multiply9-out; minimum=MaxCut-out; maximum=0
+  [290] c_fltr_a25               add=0x18013AAC0 slot=0x17F20 rec=0x1804B5BE0
+        rec: time_constant=20; in=c_power11-out
+  [291] multiply6                add=0x1801390D0 slot=0x17FF8 rec=0x1804ACD90
+        rec: in1=moddelay5-out; in2=c_fltr_a25-out
+  [292] modfilter10              add=0x180137C30 slot=0x18060 rec=0x1804A7AF0
+        rec: in=dtonicii9-out3; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [293] eqn2                     add=0x180137AC0 slot=0x18308 rec=0x1804B29A0
+        rec: neqs=1; in=modfilter10-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound4-out; type1=2
+  [294] add2                     add=0x180137F40 slot=0x18650 rec=0x1804A7BC0
+        rec: in1=eqn2-out; in2=multiply6-out
+  [295] moddelay5                add=0x180137930 slot=0x186C0 rec=0x1804AAC80
+        rec: maxdelay=2000; declick=1; in=add2-out; mod=adc-null; delayamt=dly3-out; modamt=0; glidespeed=0
+  [296] c_multiply11             add=0x18013A390 slot=0x18908 rec=0x1804B2850
+        rec: in1=c_multiply 3-out; in2=CutMultiplier-out
+  [297] c_bound4                 add=0x1801377A0 slot=0x189C8 rec=0x1804B36A0
+        rec: input=c_multiply11-out; minimum=MaxCut-out; maximum=0
+  [298] c_fltr_a27               add=0x18013AAC0 slot=0x18A90 rec=0x1804B1210
+        rec: time_constant=20; in=c_power12-out
+  [299] multiply7                add=0x1801390D0 slot=0x18B68 rec=0x1804AFCF0
+        rec: in1=moddelay4-out; in2=c_fltr_a27-out
+  [300] modfilter11              add=0x180137C30 slot=0x18BD0 rec=0x1804AACE0
+        rec: in=dtonicii9-out4; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [301] eqn3                     add=0x180137AC0 slot=0x18E78 rec=0x1804A8A60
+        rec: neqs=1; in=modfilter11-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound5-out; type1=2
+  [302] add3                     add=0x180137F40 slot=0x191C0 rec=0x1804B0720
+        rec: in1=eqn3-out; in2=multiply7-out
+  [303] moddelay4                add=0x180137930 slot=0x19230 rec=0x1804B21D0
+        rec: maxdelay=2000; declick=1; in=add3-out; mod=adc-null; delayamt=dly4-out; modamt=0; glidespeed=0
+  [304] c_multiply13             add=0x18013A390 slot=0x19478 rec=0x1804AE640
+        rec: in1=c_multiply 4-out; in2=CutMultiplier-out
+  [305] c_bound5                 add=0x1801377A0 slot=0x19538 rec=0x1804B31C0
+        rec: input=c_multiply13-out; minimum=MaxCut-out; maximum=0
+  [306] c_fltr_a29               add=0x18013AAC0 slot=0x19600 rec=0x1804A9A30
+        rec: time_constant=20; in=c_power13-out
+  [307] multiply8                add=0x1801390D0 slot=0x196D8 rec=0x1804AC5F0
+        rec: in1=moddelay3-out; in2=c_fltr_a29-out
+  [308] modfilter12              add=0x180137C30 slot=0x19740 rec=0x1804B2C50
+        rec: in=dtonicii9-out5; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [309] eqn4                     add=0x180137AC0 slot=0x199E8 rec=0x1804A9860
+        rec: neqs=1; in=modfilter12-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound6-out; type1=2
+  [310] add4                     add=0x180137F40 slot=0x19D30 rec=0x1804AD4A0
+        rec: in1=eqn4-out; in2=multiply8-out
+  [311] moddelay3                add=0x180137930 slot=0x19DA0 rec=0x1804A6C00
+        rec: maxdelay=2000; declick=1; in=add4-out; mod=adc-null; delayamt=dly5-out; modamt=0; glidespeed=0
+  [312] c_multiply15             add=0x18013A390 slot=0x19FE8 rec=0x1804AB080
+        rec: in1=c_multiply 5-out; in2=CutMultiplier-out
+  [313] c_bound6                 add=0x1801377A0 slot=0x1A0A8 rec=0x1804AAFA0
+        rec: input=c_multiply15-out; minimum=MaxCut-out; maximum=0
+  [314] c_fltr_a31               add=0x18013AAC0 slot=0x1A170 rec=0x1804AB010
+        rec: time_constant=20; in=c_power14-out
+  [315] multiply9                add=0x1801390D0 slot=0x1A248 rec=0x1804B4B70
+        rec: in1=moddelay2-out; in2=c_fltr_a31-out
+  [316] modfilter13              add=0x180137C30 slot=0x1A2B0 rec=0x1804AE6C0
+        rec: in=dtonicii9-out6; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [317] eqn5                     add=0x180137AC0 slot=0x1A558 rec=0x1804AD090
+        rec: neqs=1; in=modfilter13-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound7-out; type1=2
+  [318] add5                     add=0x180137F40 slot=0x1A8A0 rec=0x1804B5CC0
+        rec: in1=eqn5-out; in2=multiply9-out
+  [319] moddelay2                add=0x180137930 slot=0x1A910 rec=0x1804B2BB0
+        rec: maxdelay=2000; declick=1; in=add5-out; mod=adc-null; delayamt=dly6-out; modamt=0; glidespeed=0
+  [320] c_multiply17             add=0x18013A390 slot=0x1AB58 rec=0x1804AF860
+        rec: in1=c_multiply 6-out; in2=CutMultiplier-out
+  [321] c_bound7                 add=0x1801377A0 slot=0x1AC18 rec=0x1804AF000
+        rec: input=c_multiply17-out; minimum=MaxCut-out; maximum=0
+  [322] c_fltr_a33               add=0x18013AAC0 slot=0x1ACE0 rec=0x1804A99A0
+        rec: time_constant=20; in=c_power15-out
+  [323] multiply10               add=0x1801390D0 slot=0x1ADB8 rec=0x1804AA7A0
+        rec: in1=moddelay1-out; in2=c_fltr_a33-out
+  [324] modfilter14              add=0x180137C30 slot=0x1AE20 rec=0x1804B26C0
+        rec: in=dtonicii9-out7; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [325] eqn6                     add=0x180137AC0 slot=0x1B0C8 rec=0x1804A9A50
+        rec: neqs=1; in=modfilter14-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound8-out; type1=2
+  [326] add6                     add=0x180137F40 slot=0x1B410 rec=0x1804A9640
+        rec: in1=eqn6-out; in2=multiply10-out
+  [327] moddelay1                add=0x180137930 slot=0x1B480 rec=0x1804A8190
+        rec: maxdelay=2000; declick=1; in=add6-out; mod=adc-null; delayamt=dly7-out; modamt=0; glidespeed=0
+  [328] c_multiply19             add=0x18013A390 slot=0x1B6C8 rec=0x1804ACAF0
+        rec: in1=c_multiply 7-out; in2=CutMultiplier-out
+  [329] c_bound8                 add=0x1801377A0 slot=0x1B788 rec=0x1804A6ED0
+        rec: input=c_multiply19-out; minimum=MaxCut-out; maximum=0
+  [330] c_fltr_a35               add=0x18013AAC0 slot=0x1B850 rec=0x1804ADF90
+        rec: time_constant=20; in=c_power16-out
+  [331] multiply11               add=0x1801390D0 slot=0x1B928 rec=0x1804AB350
+        rec: in1=moddelay-out; in2=c_fltr_a35-out
+  [332] modfilter15              add=0x180137C30 slot=0x1B990 rec=0x1804B5E00
+        rec: in=dtonicii9-out8; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [333] eqn7                     add=0x180137AC0 slot=0x1BC38 rec=0x1804A7F20
+        rec: neqs=1; in=modfilter15-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound9-out; type1=2
+  [334] add7                     add=0x180137F40 slot=0x1BF80 rec=0x1804AA130
+        rec: in1=eqn7-out; in2=multiply11-out
+  [335] moddelay                 add=0x180137930 slot=0x1BFF0 rec=0x1804B08B0
+        rec: maxdelay=2000; declick=1; in=add7-out; mod=adc-null; delayamt=dly8-out; modamt=0; glidespeed=0
+  [336] c_multiply21             add=0x18013A390 slot=0x1C238 rec=0x1804A8930
+        rec: in1=c_multiply 8-out; in2=CutMultiplier-out
+  [337] c_bound9                 add=0x1801377A0 slot=0x1C2F8 rec=0x1804A90C0
+        rec: input=c_multiply21-out; minimum=MaxCut-out; maximum=0
+  [338] stereomixer3             add=0x180137720 slot=0x1C3C0 rec=0x1804AD3C0
+        rec: ninputs=8; time_constant=25; in1=add-out; in2=add1-out; in3=add2-out; in4=add3-out; in5=add4-out; in6=add5-out; in7=add6-out; in8=add7-out; gain1=m switch 1-out; gain2=m switch 2-out; gain3=m switch 3-out; gain4=m switch 4-out; gain5=m switch 5-out; gain6=m switch 6-out; gain7=m switch 7-out; gain8=m switch 8-out; pan1=pan1-out; pan2=pan2-out; pan3=pan3-out; pan4=pan4-out; pan5=pan5-out; pan6=pan6-out
+  [339] feedback1                add=0x180138710 slot=0x1C620 rec=0x1804B48C0
+        rec: time_constant=20; in1=stereomixer3-right; in2=subtract1-out; amp1=1; amp2=mfbk-out
+  [340] softclip2                add=0x1801380C0 slot=0x1C780 rec=0x1804ADC50
+        rec: in=feedback1-out; select=1; drive=0; order=1; processoff=0
+  [341] delay_xf1                add=0x180137630 slot=0x1CD50 rec=0x1804B4550
+        rec: maxdelay=2400; noutputs=1; in=softclip2-out; xfadetime=20; mod1=adc-null; modamt1=0; tapdls1=c_minmax-maximum; gain1=0
+  [342] just for the filter2     add=0x1801374D0 slot=0x1D238 rec=0x1804AE340
+        rec: maxdelay=1; in=delay_xf1-out1; mod=adc-null; delayamt=0; modamt=0
+  [343] highcut1                 add=0x180137260 slot=0x1D3D8 rec=0x1804AC3D0
+        rec: in=just for the filter2-out; freq=5
+  [344] subtract1                add=0x180136FA0 slot=0x1D538 rec=0x1804B4980
+        rec: in1=just for the filter2-out; in2=highcut1-out
+  [345] feedback                 add=0x180138710 slot=0x1D5A8 rec=0x1804B45A0
+        rec: time_constant=20; in1=stereomixer3-left; in2=subtract-out; amp1=1; amp2=mfbk-out
+  [346] softclip1                add=0x1801380C0 slot=0x1D708 rec=0x1804A8130
+        rec: in=feedback-out; select=1; drive=0; order=1; processoff=0
+  [347] delay_xf                 add=0x180137630 slot=0x1DCD8 rec=0x1804B0AE0
+        rec: maxdelay=2400; noutputs=1; in=softclip1-out; xfadetime=20; mod1=adc-null; modamt1=0; tapdls1=c_minmax-maximum; gain1=0
+  [348] just for the filter      add=0x1801374D0 slot=0x1E1C0 rec=0x1804A96E0
+        rec: maxdelay=1; in=delay_xf-out1; mod=adc-null; delayamt=0; modamt=0
+  [349] highcut                  add=0x180137260 slot=0x1E360 rec=0x1804ADEE0
+        rec: in=just for the filter-out; freq=5
+  [350] subtract                 add=0x180136FA0 slot=0x1E4C0 rec=0x1804AC8A0
+        rec: in1=just for the filter-out; in2=highcut-out
+  [351] c_subtract2              add=0x18013A110 slot=0x1E530 rec=0x1804A98E0
+        rec: in1=1; in2=mmix-out
+  [352] c_fltr_a1                add=0x18013AAC0 slot=0x1E5C8 rec=0x1804B32B0
+        rec: time_constant=10; in=mmix-out
+  [353] c_fltr_a                 add=0x18013AAC0 slot=0x1E6A0 rec=0x1804B3920
+        rec: time_constant=10; in=c_subtract2-out
+  [354] c_fltr_a2                add=0x18013AAC0 slot=0x1E778 rec=0x1804AFBB0
+        rec: time_constant=10; in=mmix-out
+  [355] c_fltr_a3                add=0x18013AAC0 slot=0x1E850 rec=0x1804A7DF0
+        rec: time_constant=10; in=c_subtract2-out
+  [356] multiply                 add=0x1801390D0 slot=0x1E928 rec=0x1804B0A80
+        rec: in1=iswitch6-out; in2=c_fltr_a-out
+  [357] iswitch3                 add=0x1801389C0 slot=0x1E990 rec=0x1804B4290
+        rec: numins=2; select=c_subtract1-out; in1=iswitch6-out; in2=iswitch7-out
+  [358] multiply3                add=0x1801390D0 slot=0x1EAB0 rec=0x1804AEB70
+        rec: in1=iswitch3-out; in2=c_fltr_a3-out
+  [359] multiply2                add=0x1801390D0 slot=0x1EB18 rec=0x1804AE620
+        rec: in1=feedback1-out; in2=c_fltr_a2-out
+  [360] RWetDryMix               add=0x180137F40 slot=0x1EB80 rec=0x1804AE780
+        rec: in1=multiply3-out; in2=multiply2-out
+  [361] monoSumWetChans          add=0x180138710 slot=0x1EBF0 rec=0x1804B37A0
+        rec: time_constant=20; in1=feedback-out; in2=feedback1-out; amp1=0.707; amp2=0.707
+  [362] iswitch11                add=0x1801389C0 slot=0x1ED50 rec=0x1804AD010
+        rec: numins=2; select=c_subtract3-out; in1=monoSumWetChans-out; in2=feedback-out
+  [363] multiply1                add=0x1801390D0 slot=0x1EE70 rec=0x1804B38A0
+        rec: in1=iswitch11-out; in2=c_fltr_a1-out
+  [364] LWetDryMix               add=0x180137F40 slot=0x1EED8 rec=0x1804B5000
+        rec: in1=multiply-out; in2=multiply1-out
+  [365] left out                 add=0x180139050 slot=0x1EF48 rec=0x1804A6B70
+        rec: in=LWetDryMix-out; gain=ogan-out
+  [366] right out                add=0x180139050 slot=0x1F0B8 rec=0x1804AFC10
+        rec: in=RWetDryMix-out; gain=ogan-out
+  [367] iswitch2                 add=0x1801389C0 slot=0x1F228 rec=0x1804B4950
+        rec: numins=2; select=c_subtract1-out; in1=adc-in1; in2=adc-in2
+  [368] iswitch                  add=0x1801389C0 slot=0x1F348 rec=0x1804AE5C0
+        rec: numins=2; select=bypa-out; in1=left out-out; in2=adc-in1
+  [369] iswitch1                 add=0x1801389C0 slot=0x1F468 rec=0x1804B1320
+        rec: numins=2; select=bypa-out; in1=right out-out; in2=iswitch2-out
+  [370] peak1                    add=0x180138570 slot=0x1F588 rec=0x1804AE5F0
+        rec: type=0; in=left out-out; attackcntl=0.05; decaycntl=0.1
+  [371] peak2                    add=0x180138570 slot=0x1F750 rec=0x1804AAC50
+        rec: type=0; in=right out-out; attackcntl=0.05; decaycntl=0.1
+  [372] LevLintodB3              add=0x180136DC0 slot=0x1F918 rec=0x1804B5990
+        rec: linvalue=LevMetrAtoC3-out
+  [373] peak5                    add=0x180138570 slot=0x1F980 rec=0x1804A88D0
+        rec: type=0; in=iswitch5-out; attackcntl=0.05; decaycntl=0.1
+  [374] LevMetrAtoC4             add=0x180139270 slot=0x1FB48 rec=0x1804AABC0
+        rec: in=peak5-out
+  [375] LevLintodB4              add=0x180136DC0 slot=0x1FBF0 rec=0x1804B3760
+        rec: linvalue=LevMetrAtoC4-out
+  [376] lipD                     add=0x180136C20 slot=0x1FC58 rec=0x1804A7790
+        rec: in=LevLintodB3-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [377] ripD                     add=0x180136C20 slot=0x1FD30 rec=0x1804B2A60
+        rec: in=LevLintodB4-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [378] LevMetrAtoC              add=0x180139270 slot=0x1FE08 rec=0x1804A7400
+        rec: in=peak1-out
+  [379] LevMetrAtoC1             add=0x180139270 slot=0x1FEB0 rec=0x1804A8670
+        rec: in=peak2-out
+  [380] LevLintodB               add=0x180136DC0 slot=0x1FF58 rec=0x1804A8A00
+        rec: linvalue=LevMetrAtoC-out
+  [381] LevLintodB1              add=0x180136DC0 slot=0x1FFC0 rec=0x1804B5C70
+        rec: linvalue=LevMetrAtoC1-out
+  [382] lopD                     add=0x180136C20 slot=0x20028 rec=0x1804AF780
+        rec: in=LevLintodB-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [383] ropD                     add=0x180136C20 slot=0x20100 rec=0x1804B5540
+        rec: in=LevLintodB1-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [384] overload1                add=0x180136980 slot=0x201D8 rec=0x1804AAF80
+        rec: in=left out-out; thresh=-0.1
+  [385] overload3                add=0x180136980 slot=0x202D8 rec=0x1804A8A10
+        rec: in=right out-out; thresh=-0.1
+  [386] overload                 add=0x180136980 slot=0x203D8 rec=0x1804AADC0
+        rec: in=iswitch6-out; thresh=-0.1
+  [387] overload2                add=0x180136980 slot=0x204D8 rec=0x1804AD7C0
+        rec: in=iswitch7-out; thresh=-0.1
+  [388] c_switch7                add=0x18013ABD0 slot=0x205D8 rec=0x1804AE910
+        rec: ninputs=2; select=c_subtract1-out; in1=overload-ol; in2=overload2-ol
+  [389] c_switch8                add=0x18013ABD0 slot=0x20660 rec=0x1804AF7D0
+        rec: ninputs=2; select=c_subtract3-out; in1=overload1-ol; in2=overload3-ol
+  [390] lopL                     add=0x180136750 slot=0x206E8 rec=0x1804ABB30
+        rec: in=overload1-ol; statement=monitor:%f; tag=monitor
+  [391] ropL                     add=0x180136750 slot=0x20798 rec=0x1804AF0E0
+        rec: in=c_switch8-out; statement=monitor:%f; tag=monitor
+  [392] lipL                     add=0x180136750 slot=0x20848 rec=0x1804AD800
+        rec: in=overload-ol; statement=monitor:%f; tag=monitor
+  [393] ripL                     add=0x180136750 slot=0x208F8 rec=0x1804B1670
+        rec: in=c_switch7-out; statement=monitor:%f; tag=monitor
+  [394] pitM                     add=0x180136750 slot=0x209A8 rec=0x1804B2AC0
+        rec: in=dtonicii9-pitch; statement=pitch detect; tag=pitM
+  [395] tonM                     add=0x180136750 slot=0x20A58 rec=0x1804AB580
+        rec: in=dtonicii9-tonality; statement=tonality detect; tag=tonM
+=== siso (394 modules)
+  [None] igan                     add=0x1800CA340 slot=0x1F0 rec=0x1804ACDF0
+        rec: statement=input gain:%3.0f dB; name=knob; min=-96; max=12; res=1; default=0
+  [None] inch                     add=0x1800CA340 slot=0x2A8 rec=0x1804AC200
+        rec: statement=knob: %f; name=knob; min=1; max=2; res=1; default=2
+  [None] c_subtract1              add=0x1800DCDC0 slot=0x360 rec=0x1804B29E0
+        rec: in1=inch-out; in2=1
+  [None] live                     add=0x1800D4B70 slot=0x3F8 rec=0x1804A9790
+        rec: statement=Live Mode %s; nchoices=2; default=0; choices1=off; choices2=on
+  [None] live mode delay comp     add=0x1800CB200 slot=0x4B0 rec=0x1804B0540
+        rec: value=40
+  [None] c_switch                 add=0x1800D6940 slot=0x4E8 rec=0x1804ADF60
+        rec: ninputs=2; select=live-out; in1=live mode delay comp-out; in2=0
+  [None] mfbk                     add=0x1800CA340 slot=0x570 rec=0x1804AAAC0
+        rec: statement=feedback: %f %; name=percent; min=0; max=100; res=1; default=0
+  [None] fbkd                     add=0x1800CA340 slot=0x628 rec=0x1804ADAB0
+        rec: statement=fback dly: %f ms; name=knob; min=0; max=5000; res=1; default=0
+  [None] c_minmax                 add=0x1800D15D0 slot=0x6E0 rec=0x1804AC8C0
+        rec: ninputs=2; in1=fbkd-out; in2=50
+  [10] rdep                     add=0x18013AB90 slot=0x758 rec=0x1804A7A70
+        rec: statement=rnd dpth: %f; name=knob; min=0; max=200; res=1; default=50
+  [11] c_divide26               add=0x18013A110 slot=0x810 rec=0x1804B5B50
+        rec: in1=rdep-out; in2=2400
+  [12] c_fltr_a36               add=0x18013AAC0 slot=0x8A8 rec=0x1804B2E80
+        rec: time_constant=20; in=c_divide26-out
+  [13] keys                     add=0x18013AD00 slot=0x980 rec=0x1804B3FE0
+        rec: statement=key  :   %s; nchoices=17; default=0; choices1= C; choices2=C#; choices3=Db; choices4= D; choices5=D#; choices6=Eb; choices7= E; choices8= F; choices9=F#; choices10=Gb; choices11= G; choices12=G#; choices13=Ab; choices14= A; choices15=A#; choices16=Bb; choices17= B
+  [14] scal                     add=0x18013AD00 slot=0xA38 rec=0x1804B01C0
+        rec: statement=scale: %s; nchoices=16; default=0; choices1=ionian (maj); choices2=dorian; choices3=phrygian; choices4=lydian; choices5=mixolydian; choices6=relative minor; choices7=locrian; choices8=harmonic min; choices9=melodic min; choices10=chromatic; choices11=whole tone; choices12=penta maj; choices13=penta min; choices14=enigmatic; choices15=neapolitan; choices16=hungarian
+  [15] ptrk                     add=0x18013AB90 slot=0xAF0 rec=0x1804B1360
+        rec: statement=Pitch Track; name=0; min=0; max=1; res=1; default=1
+  [16] scal table               add=0x18013A8D0 slot=0xBA8 rec=0x1804B08F0
+        rec: nentries=15; select=scal-out; in1=1; in2=2; in3=3; in4=4; in5=5; in6=6; in7=7; in8=10; in9=11; in10=14; in11=15; in12=16; in13=17; in14=18; in15=13
+  [17] c_cmp2                   add=0x18013A760 slot=0xC30 rec=0x1804B3CB0
+        rec: in1=scal table-out; in2=14
+  [18] c_cmp3                   add=0x18013A760 slot=0xD68 rec=0x1804B5290
+        rec: in1=scal table-out; in2=15
+  [19] c_or                     add=0x18013A110 slot=0xEA0 rec=0x1804AAB40
+        rec: in1=c_cmp2-eq; in2=c_cmp3-eq
+  [20] minp                     add=0x18013AD00 slot=0xF38 rec=0x1804B43B0
+        rec: statement=minpitch: %s; nchoices=48; default=24; choices1= C0; choices2=C#0; choices3= D0; choices4=D#0; choices5= E0; choices6= F0; choices7=F#0; choices8= G0; choices9=G#0; choices10= A0; choices11=A#0; choices12= B0; choices13= C1; choices14=C#1; choices15= D1; choices16=D#1; choices17= E1; choices18= F1; choices19=F#1; choices20= G1; choices21=G#1
+  [21] xfad                     add=0x18013AB90 slot=0xFF0 rec=0x1804AE4D0
+        rec: statement=xfade   : %3.0f ms; min=0; max=100; res=1; default=10
+  [22] tune                     add=0x18013AB90 slot=0x10A8 rec=0x1804B1100
+        rec: statement=tune: %3.0f; name=knob; min=392; max=494; res=1; default=440
+  [23] fbk1                     add=0x18013AB90 slot=0x1160 rec=0x1804A7330
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [24] msw1                     add=0x18013AD00 slot=0x1218 rec=0x1804A91A0
+        rec: statement=voice 1: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [25] m switch 1               add=0x18013ABD0 slot=0x12D0 rec=0x1804A8AD0
+        rec: ninputs=2; select=msw1-out; in1=-100; in2=ogn1-out
+  [26] ogn1                     add=0x18013AB90 slot=0x1358 rec=0x1804B4E30
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [27] fback switch 1           add=0x18013ABD0 slot=0x1410 rec=0x1804B21A0
+        rec: ninputs=2; select=msw1-out; in1=-100; in2=fbk1-out
+  [28] pan1                     add=0x18013AB90 slot=0x1498 rec=0x1804A9F60
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [29] dly1                     add=0x18013AB90 slot=0x1550 rec=0x1804B19C0
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [30] c_adder8                 add=0x18013A510 slot=0x1608 rec=0x1804AE820
+        rec: ninputs=2; in1=dly1-out; in2=c_switch-out
+  [31] int1                     add=0x18013AD00 slot=0x1660 rec=0x1804ABD80
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [32] int table 1              add=0x18013A8D0 slot=0x1718 rec=0x1804B24A0
+        rec: nentries=29; select=int1-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [33] int table switch 1       add=0x18013ABD0 slot=0x17A0 rec=0x1804B3610
+        rec: ninputs=2; select=c_or-out; in1=int1-out; in2=int table 1-out
+  [34] int sub 1                add=0x18013A110 slot=0x1828 rec=0x1804B42E0
+        rec: in1=int table switch 1-out; in2=14
+  [35] c_multiply 1             add=0x18013A390 slot=0x18C0 rec=0x1804B1E10
+        rec: in1=int sub 1-out; in2=-1
+  [36] sht1                     add=0x18013AB90 slot=0x1980 rec=0x1804AD740
+        rec: statement=fshift: %f; name=knob; min=-2400; max=2400; res=1; default=0
+  [37] fbk2                     add=0x18013AB90 slot=0x1A38 rec=0x1804B3700
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [38] msw2                     add=0x18013AD00 slot=0x1AF0 rec=0x1804AFA30
+        rec: statement=voice 2: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [39] m switch 2               add=0x18013ABD0 slot=0x1BA8 rec=0x1804B4AA0
+        rec: ninputs=2; select=msw2-out; in1=-100; in2=ogn2-out
+  [40] ogn2                     add=0x18013AB90 slot=0x1C30 rec=0x1804A97C0
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [41] fback switch 2           add=0x18013ABD0 slot=0x1CE8 rec=0x1804AE290
+        rec: ninputs=2; select=msw2-out; in1=-100; in2=fbk2-out
+  [42] pan2                     add=0x18013AB90 slot=0x1D70 rec=0x1804B6700
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [43] dly2                     add=0x18013AB90 slot=0x1E28 rec=0x1804A8680
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [44] c_adder9                 add=0x18013A510 slot=0x1EE0 rec=0x1804A76C0
+        rec: ninputs=2; in1=dly2-out; in2=c_switch-out
+  [45] int2                     add=0x18013AD00 slot=0x1F38 rec=0x1804A81D0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [46] int table 2              add=0x18013A8D0 slot=0x1FF0 rec=0x1804AC6E0
+        rec: nentries=29; select=int2-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [47] int table switch 2       add=0x18013ABD0 slot=0x2078 rec=0x1804AA190
+        rec: ninputs=2; select=c_or-out; in1=int2-out; in2=int table 2-out
+  [48] int sub 2                add=0x18013A110 slot=0x2100 rec=0x1804B1010
+        rec: in1=int table switch 2-out; in2=14
+  [49] c_multiply 2             add=0x18013A390 slot=0x2198 rec=0x1804B3640
+        rec: in1=int sub 2-out; in2=-1
+  [50] sht2                     add=0x18013AB90 slot=0x2258 rec=0x1804AAEF0
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [51] fbk3                     add=0x18013AB90 slot=0x2310 rec=0x1804B51A0
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [52] msw3                     add=0x18013AD00 slot=0x23C8 rec=0x1804A8800
+        rec: statement=voice 3: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [53] m switch 3               add=0x18013ABD0 slot=0x2480 rec=0x1804B0B50
+        rec: ninputs=2; select=msw3-out; in1=-100; in2=ogn3-out
+  [54] ogn3                     add=0x18013AB90 slot=0x2508 rec=0x1804AB390
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [55] fback switch 3           add=0x18013ABD0 slot=0x25C0 rec=0x1804A9290
+        rec: ninputs=2; select=msw3-out; in1=-100; in2=fbk3-out
+  [56] pan3                     add=0x18013AB90 slot=0x2648 rec=0x1804B53C0
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [57] dly3                     add=0x18013AB90 slot=0x2700 rec=0x1804A7EB0
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [58] c_adder10                add=0x18013A510 slot=0x27B8 rec=0x1804AA570
+        rec: ninputs=2; in1=dly3-out; in2=c_switch-out
+  [59] int3                     add=0x18013AD00 slot=0x2810 rec=0x1804A7FA0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [60] int table 3              add=0x18013A8D0 slot=0x28C8 rec=0x1804ADFB0
+        rec: nentries=29; select=int3-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [61] int table switch 3       add=0x18013ABD0 slot=0x2950 rec=0x1804B2A90
+        rec: ninputs=2; select=c_or-out; in1=int3-out; in2=int table 3-out
+  [62] int sub 3                add=0x18013A110 slot=0x29D8 rec=0x1804AC590
+        rec: in1=int table switch 3-out; in2=14
+  [63] c_multiply 3             add=0x18013A390 slot=0x2A70 rec=0x1804A72F0
+        rec: in1=int sub 3-out; in2=-1
+  [64] sht3                     add=0x18013AB90 slot=0x2B30 rec=0x1804B54A0
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [65] fbk4                     add=0x18013AB90 slot=0x2BE8 rec=0x1804B2340
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [66] msw4                     add=0x18013AD00 slot=0x2CA0 rec=0x1804B45D0
+        rec: statement=voice 4: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [67] m switch 4               add=0x18013ABD0 slot=0x2D58 rec=0x1804AEE70
+        rec: ninputs=2; select=msw4-out; in1=-100; in2=ogn4-out
+  [68] ogn4                     add=0x18013AB90 slot=0x2DE0 rec=0x1804A8BF0
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [69] fback switch 4           add=0x18013ABD0 slot=0x2E98 rec=0x1804A99E0
+        rec: ninputs=2; select=msw4-out; in1=-100; in2=fbk4-out
+  [70] pan4                     add=0x18013AB90 slot=0x2F20 rec=0x1804B1290
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [71] dly4                     add=0x18013AB90 slot=0x2FD8 rec=0x1804B35D0
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [72] c_adder11                add=0x18013A510 slot=0x3090 rec=0x1804A9900
+        rec: ninputs=2; in1=dly4-out; in2=c_switch-out
+  [73] int4                     add=0x18013AD00 slot=0x30E8 rec=0x1804B1C50
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [74] int table 4              add=0x18013A8D0 slot=0x31A0 rec=0x1804A71B0
+        rec: nentries=29; select=int4-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [75] int table switch 4       add=0x18013ABD0 slot=0x3228 rec=0x1804A9530
+        rec: ninputs=2; select=c_or-out; in1=int4-out; in2=int table 4-out
+  [76] int sub 4                add=0x18013A110 slot=0x32B0 rec=0x1804B14F0
+        rec: in1=int table switch 4-out; in2=14
+  [77] c_multiply 4             add=0x18013A390 slot=0x3348 rec=0x1804A6E90
+        rec: in1=int sub 4-out; in2=-1
+  [78] sht4                     add=0x18013AB90 slot=0x3408 rec=0x1804B1B80
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [79] fbk5                     add=0x18013AB90 slot=0x34C0 rec=0x1804B2380
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [80] msw5                     add=0x18013AD00 slot=0x3578 rec=0x1804B11B0
+        rec: statement=voice 5: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [81] m switch 5               add=0x18013ABD0 slot=0x3630 rec=0x1804B13E0
+        rec: ninputs=2; select=msw5-out; in1=-100; in2=ogn5-out
+  [82] ogn5                     add=0x18013AB90 slot=0x36B8 rec=0x1804B0550
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [83] fback switch 5           add=0x18013ABD0 slot=0x3770 rec=0x1804A9730
+        rec: ninputs=2; select=msw5-out; in1=-100; in2=fbk5-out
+  [84] pan5                     add=0x18013AB90 slot=0x37F8 rec=0x1804B18A0
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [85] dly5                     add=0x18013AB90 slot=0x38B0 rec=0x1804B4B90
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [86] c_adder12                add=0x18013A510 slot=0x3968 rec=0x1804AA1C0
+        rec: ninputs=2; in1=dly5-out; in2=c_switch-out
+  [87] int5                     add=0x18013AD00 slot=0x39C0 rec=0x1804AD0D0
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [88] int table 5              add=0x18013A8D0 slot=0x3A78 rec=0x1804A7950
+        rec: nentries=29; select=int5-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [89] int table switch 5       add=0x18013ABD0 slot=0x3B00 rec=0x1804A9760
+        rec: ninputs=2; select=c_or-out; in1=int5-out; in2=int table 5-out
+  [90] int sub 5                add=0x18013A110 slot=0x3B88 rec=0x1804A77C0
+        rec: in1=int table switch 5-out; in2=14
+  [91] c_multiply 5             add=0x18013A390 slot=0x3C20 rec=0x1804AD2D0
+        rec: in1=int sub 5-out; in2=-1
+  [92] sht5                     add=0x18013AB90 slot=0x3CE0 rec=0x1804A6C40
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [93] fbk6                     add=0x18013AB90 slot=0x3D98 rec=0x1804B63F0
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [94] msw6                     add=0x18013AD00 slot=0x3E50 rec=0x1804B0770
+        rec: statement=voice 6: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [95] m switch 6               add=0x18013ABD0 slot=0x3F08 rec=0x1804AC1D0
+        rec: ninputs=2; select=msw6-out; in1=-100; in2=ogn6-out
+  [96] ogn6                     add=0x18013AB90 slot=0x3F90 rec=0x1804B3940
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [97] fback switch 6           add=0x18013ABD0 slot=0x4048 rec=0x1804B2EA0
+        rec: ninputs=2; select=msw6-out; in1=-100; in2=fbk6-out
+  [98] pan6                     add=0x18013AB90 slot=0x40D0 rec=0x1804AB540
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [99] dly6                     add=0x18013AB90 slot=0x4188 rec=0x1804B0FA0
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [100] c_adder13                add=0x18013A510 slot=0x4240 rec=0x1804B1D70
+        rec: ninputs=2; in1=dly6-out; in2=c_switch-out
+  [101] int6                     add=0x18013AD00 slot=0x4298 rec=0x1804ADD20
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [102] int table 6              add=0x18013A8D0 slot=0x4350 rec=0x1804B2F00
+        rec: nentries=29; select=int6-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [103] int table switch 6       add=0x18013ABD0 slot=0x43D8 rec=0x1804AC900
+        rec: ninputs=2; select=c_or-out; in1=int6-out; in2=int table 6-out
+  [104] int sub 6                add=0x18013A110 slot=0x4460 rec=0x1804B3EC0
+        rec: in1=int table switch 6-out; in2=14
+  [105] c_multiply 6             add=0x18013A390 slot=0x44F8 rec=0x1804AB370
+        rec: in1=int sub 6-out; in2=-1
+  [106] sht6                     add=0x18013AB90 slot=0x45B8 rec=0x1804AF260
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [107] fbk7                     add=0x18013AB90 slot=0x4670 rec=0x1804A7680
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [108] msw7                     add=0x18013AD00 slot=0x4728 rec=0x1804AF100
+        rec: statement=voice 7: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [109] m switch 7               add=0x18013ABD0 slot=0x47E0 rec=0x1804A7490
+        rec: ninputs=2; select=msw7-out; in1=-100; in2=ogn7-out
+  [110] ogn7                     add=0x18013AB90 slot=0x4868 rec=0x1804AD4E0
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [111] fback switch 7           add=0x18013ABD0 slot=0x4920 rec=0x1804AB3F0
+        rec: ninputs=2; select=msw7-out; in1=-100; in2=fbk7-out
+  [112] pan7                     add=0x18013AB90 slot=0x49A8 rec=0x1804A82F0
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [113] dly7                     add=0x18013AB90 slot=0x4A60 rec=0x1804A8F20
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [114] c_adder14                add=0x18013A510 slot=0x4B18 rec=0x1804ABE90
+        rec: ninputs=2; in1=dly7-out; in2=c_switch-out
+  [115] int7                     add=0x18013AD00 slot=0x4B70 rec=0x1804B2870
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [116] int table 7              add=0x18013A8D0 slot=0x4C28 rec=0x1804AFED0
+        rec: nentries=29; select=int7-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [117] int table switch 7       add=0x18013ABD0 slot=0x4CB0 rec=0x1804B3090
+        rec: ninputs=2; select=c_or-out; in1=int7-out; in2=int table 7-out
+  [118] int sub 7                add=0x18013A110 slot=0x4D38 rec=0x1804A6EF0
+        rec: in1=int table switch 7-out; in2=14
+  [119] c_multiply 7             add=0x18013A390 slot=0x4DD0 rec=0x1804ACF40
+        rec: in1=int sub 7-out; in2=-1
+  [120] sht7                     add=0x18013AB90 slot=0x4E90 rec=0x1804ACC00
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [121] fbk8                     add=0x18013AB90 slot=0x4F48 rec=0x1804B1550
+        rec: statement=fback: %f; name=knob; min=-100; max=0; res=1; default=-100
+  [122] msw8                     add=0x18013AD00 slot=0x5000 rec=0x1804AB450
+        rec: statement=voice 8: %s; name=mute; nchoices=2; default=0; choices1=off; choices2=on
+  [123] m switch 8               add=0x18013ABD0 slot=0x50B8 rec=0x1804B09C0
+        rec: ninputs=2; select=msw8-out; in1=-100; in2=ogn8-out
+  [124] ogn8                     add=0x18013AB90 slot=0x5140 rec=0x1804A8D20
+        rec: statement=level: %f dB; name=knob; min=-100; max=0; res=0.1; default=-3
+  [125] fback switch 8           add=0x18013ABD0 slot=0x51F8 rec=0x1804B39D0
+        rec: ninputs=2; select=msw8-out; in1=-100; in2=fbk8-out
+  [126] c_divide18               add=0x18013A110 slot=0x5280 rec=0x1804AE0F0
+        rec: in1=fback switch 1-out; in2=20
+  [127] c_power9                 add=0x18013A110 slot=0x5318 rec=0x1804B6740
+        rec: in1=10; in2=c_divide18-out
+  [128] c_divide19               add=0x18013A110 slot=0x53B0 rec=0x1804A8D60
+        rec: in1=fback switch 2-out; in2=20
+  [129] c_power10                add=0x18013A110 slot=0x5448 rec=0x1804AA300
+        rec: in1=10; in2=c_divide19-out
+  [130] c_divide20               add=0x18013A110 slot=0x54E0 rec=0x1804ACA70
+        rec: in1=fback switch 3-out; in2=20
+  [131] c_power11                add=0x18013A110 slot=0x5578 rec=0x1804AFDB0
+        rec: in1=10; in2=c_divide20-out
+  [132] c_divide21               add=0x18013A110 slot=0x5610 rec=0x1804B5EA0
+        rec: in1=fback switch 4-out; in2=20
+  [133] c_power12                add=0x18013A110 slot=0x56A8 rec=0x1804B0260
+        rec: in1=10; in2=c_divide21-out
+  [134] c_divide22               add=0x18013A110 slot=0x5740 rec=0x1804B2D30
+        rec: in1=fback switch 5-out; in2=20
+  [135] c_power13                add=0x18013A110 slot=0x57D8 rec=0x1804AB0A0
+        rec: in1=10; in2=c_divide22-out
+  [136] c_divide23               add=0x18013A110 slot=0x5870 rec=0x1804B5CE0
+        rec: in1=fback switch 6-out; in2=20
+  [137] c_power14                add=0x18013A110 slot=0x5908 rec=0x1804A94A0
+        rec: in1=10; in2=c_divide23-out
+  [138] c_divide24               add=0x18013A110 slot=0x59A0 rec=0x1804B62F0
+        rec: in1=fback switch 7-out; in2=20
+  [139] c_power15                add=0x18013A110 slot=0x5A38 rec=0x1804ADF40
+        rec: in1=10; in2=c_divide24-out
+  [140] c_divide25               add=0x18013A110 slot=0x5AD0 rec=0x1804AC850
+        rec: in1=fback switch 8-out; in2=20
+  [141] c_power16                add=0x18013A110 slot=0x5B68 rec=0x1804AFE70
+        rec: in1=10; in2=c_divide25-out
+  [142] pan8                     add=0x18013AB90 slot=0x5C00 rec=0x1804ACF00
+        rec: statement=pan: %f; name=knob; min=-1; max=1; res=0.01; default=0
+  [143] dly8                     add=0x18013AB90 slot=0x5CB8 rec=0x1804B3F00
+        rec: statement=delay: %f ms; name=knob; min=0; max=1250; res=1; default=0
+  [144] c_adder15                add=0x18013A510 slot=0x5D70 rec=0x1804AD250
+        rec: ninputs=2; in1=dly8-out; in2=c_switch-out
+  [145] int8                     add=0x18013AD00 slot=0x5DC8 rec=0x1804AC240
+        rec: statement=pitch1: %s; nchoices=29; default=14; choices1=-2 oct; choices2=-14th; choices3=-13th; choices4=-12th; choices5=-11th; choices6=-10th; choices7=-9th; choices8=-1 oct; choices9=-7th; choices10=-6th; choices11=-5th; choices12=-4th; choices13=-3rd; choices14=-2nd; choices15=unison; choices16=+2nd; choices17=+3rd; choices18=+4th; choices19=+5th; choices20=+6th; choices21=+7th
+  [146] int table 8              add=0x18013A8D0 slot=0x5E80 rec=0x1804B2730
+        rec: nentries=29; select=int8-out; in1=0; in2=1; in3=3; in4=3; in5=4; in6=5; in7=7; in8=7; in9=8; in10=10; in11=10; in12=11; in13=12; in14=14; in15=14; in16=15; in17=17; in18=17; in19=18; in20=19; in21=21; in22=21
+  [147] int table switch 8       add=0x18013ABD0 slot=0x5F08 rec=0x1804AE750
+        rec: ninputs=2; select=c_or-out; in1=int8-out; in2=int table 8-out
+  [148] int sub 8                add=0x18013A110 slot=0x5F90 rec=0x1804A6E30
+        rec: in1=int table switch 8-out; in2=14
+  [149] c_multiply 8             add=0x18013A390 slot=0x6028 rec=0x1804B59B0
+        rec: in1=int sub 8-out; in2=-1
+  [150] sht8                     add=0x18013AB90 slot=0x60E8 rec=0x1804B3A00
+        rec: statement=fshift: %f; name=knob; min=-1; max=1; res=0.001; default=0
+  [151] c_abs                    add=0x180139EC0 slot=0x61A0 rec=0x1804B3770
+        rec: input=sht1-out
+  [152] c_abs1                   add=0x180139EC0 slot=0x6208 rec=0x1804A6A70
+        rec: input=sht2-out
+  [153] c_abs2                   add=0x180139EC0 slot=0x6270 rec=0x1804A8C70
+        rec: input=sht3-out
+  [154] c_abs3                   add=0x180139EC0 slot=0x62D8 rec=0x1804A9010
+        rec: input=sht4-out
+  [155] c_abs4                   add=0x180139EC0 slot=0x6340 rec=0x1804B3B70
+        rec: input=sht5-out
+  [156] c_abs5                   add=0x180139EC0 slot=0x63A8 rec=0x1804B59A0
+        rec: input=sht6-out
+  [157] c_abs6                   add=0x180139EC0 slot=0x6410 rec=0x1804B2080
+        rec: input=sht7-out
+  [158] c_abs7                   add=0x180139EC0 slot=0x6478 rec=0x1804A6AC0
+        rec: input=sht8-out
+  [159] c_adder                  add=0x18013A510 slot=0x64E0 rec=0x1804ADA00
+        rec: ninputs=2; in1=c_abs-output; in2=200
+  [160] c_adder1                 add=0x18013A510 slot=0x6538 rec=0x1804AC430
+        rec: ninputs=2; in1=c_abs1-output; in2=200
+  [161] c_adder2                 add=0x18013A510 slot=0x6590 rec=0x1804B4AD0
+        rec: ninputs=2; in1=c_abs2-output; in2=200
+  [162] c_adder3                 add=0x18013A510 slot=0x65E8 rec=0x1804A93C0
+        rec: ninputs=2; in1=c_abs3-output; in2=200
+  [163] c_adder4                 add=0x18013A510 slot=0x6640 rec=0x1804A8E80
+        rec: ninputs=2; in1=c_abs4-output; in2=200
+  [164] c_adder5                 add=0x18013A510 slot=0x6698 rec=0x1804AE6A0
+        rec: ninputs=2; in1=c_abs5-output; in2=200
+  [165] c_adder6                 add=0x18013A510 slot=0x66F0 rec=0x1804AE440
+        rec: ninputs=2; in1=c_abs6-output; in2=200
+  [166] c_adder7                 add=0x18013A510 slot=0x6748 rec=0x1804A6B10
+        rec: ninputs=2; in1=c_abs7-output; in2=200
+  [167] c_divide3                add=0x18013A110 slot=0x67A0 rec=0x1804B16D0
+        rec: in1=sht1-out; in2=c_adder-out
+  [168] c_fltr_a13               add=0x18013AAC0 slot=0x6838 rec=0x1804B38E0
+        rec: time_constant=0; in=c_divide3-out
+  [169] c_divide4                add=0x18013A110 slot=0x6910 rec=0x1804A96A0
+        rec: in1=sht2-out; in2=c_adder1-out
+  [170] c_fltr_a15               add=0x18013AAC0 slot=0x69A8 rec=0x1804AF9B0
+        rec: time_constant=0; in=c_divide4-out
+  [171] c_divide5                add=0x18013A110 slot=0x6A80 rec=0x1804AF200
+        rec: in1=sht3-out; in2=c_adder2-out
+  [172] c_fltr_a16               add=0x18013AAC0 slot=0x6B18 rec=0x1804ACC40
+        rec: time_constant=0; in=c_divide5-out
+  [173] c_divide6                add=0x18013A110 slot=0x6BF0 rec=0x1804A9380
+        rec: in1=sht4-out; in2=c_adder3-out
+  [174] c_fltr_a17               add=0x18013AAC0 slot=0x6C88 rec=0x1804B1530
+        rec: time_constant=0; in=c_divide6-out
+  [175] c_divide7                add=0x18013A110 slot=0x6D60 rec=0x1804AB7C0
+        rec: in1=sht5-out; in2=c_adder4-out
+  [176] c_fltr_a18               add=0x18013AAC0 slot=0x6DF8 rec=0x1804B5B70
+        rec: time_constant=0; in=c_divide7-out
+  [177] c_divide8                add=0x18013A110 slot=0x6ED0 rec=0x1804AEB90
+        rec: in1=sht6-out; in2=c_adder5-out
+  [178] c_fltr_a19               add=0x18013AAC0 slot=0x6F68 rec=0x1804B6170
+        rec: time_constant=0; in=c_divide8-out
+  [179] c_divide9                add=0x18013A110 slot=0x7040 rec=0x1804A9480
+        rec: in1=sht7-out; in2=c_adder6-out
+  [180] c_fltr_a20               add=0x18013AAC0 slot=0x70D8 rec=0x1804A98A0
+        rec: time_constant=0; in=c_divide9-out
+  [181] c_divide10               add=0x18013A110 slot=0x71B0 rec=0x1804AE320
+        rec: in1=sht8-out; in2=c_adder7-out
+  [182] c_fltr_a21               add=0x18013AAC0 slot=0x7248 rec=0x1804B1430
+        rec: time_constant=0; in=c_divide10-out
+  [183] rdm div 1                add=0x18013A110 slot=0x7320 rec=0x1804B16F0
+        rec: in1=rdm a-c 1-out; in2=1.5
+  [184] rdm add 1                add=0x18013A510 slot=0x73B8 rec=0x1804A93A0
+        rec: ninputs=2; in1=rdm div 1-out; in2=0.5
+  [185] rdm mult 2               add=0x18013A390 slot=0x7410 rec=0x1804A7BE0
+        rec: in1=2000; in2=rdm add 1-out
+  [186] rdm div 2                add=0x18013A110 slot=0x74D0 rec=0x1804B41D0
+        rec: in1=rdm a-c 2-out; in2=1.5
+  [187] rdm add 2                add=0x18013A510 slot=0x7568 rec=0x1804A7550
+        rec: ninputs=2; in1=rdm div 2-out; in2=0.5
+  [188] rdm mult 3               add=0x18013A390 slot=0x75C0 rec=0x1804B41B0
+        rec: in1=2000; in2=rdm add 2-out
+  [189] rdm div 3                add=0x18013A110 slot=0x7680 rec=0x1804B6430
+        rec: in1=rdm a-c 3-out; in2=1.5
+  [190] rdm add 3                add=0x18013A510 slot=0x7718 rec=0x1804B33C0
+        rec: ninputs=2; in1=rdm div 3-out; in2=0.5
+  [191] rdm mult 4               add=0x18013A390 slot=0x7770 rec=0x1804B5EC0
+        rec: in1=2000; in2=rdm add 3-out
+  [192] rdm div 4                add=0x18013A110 slot=0x7830 rec=0x1804AAB20
+        rec: in1=rdm a-c 4-out; in2=1.5
+  [193] rdm add 4                add=0x18013A510 slot=0x78C8 rec=0x1804B09F0
+        rec: ninputs=2; in1=rdm div 4-out; in2=0.5
+  [194] rdm mult 5               add=0x18013A390 slot=0x7920 rec=0x1804AF140
+        rec: in1=2000; in2=rdm add 4-out
+  [195] rdm div 5                add=0x18013A110 slot=0x79E0 rec=0x1804ADCC0
+        rec: in1=rdm a-c 5-out; in2=1.5
+  [196] rdm add 5                add=0x18013A510 slot=0x7A78 rec=0x1804AFE50
+        rec: ninputs=2; in1=rdm div 5-out; in2=0.5
+  [197] rdm mult 6               add=0x18013A390 slot=0x7AD0 rec=0x1804B3230
+        rec: in1=2000; in2=rdm add 5-out
+  [198] rdm div 6                add=0x18013A110 slot=0x7B90 rec=0x1804A8C80
+        rec: in1=rdm a-c 6-out; in2=1.5
+  [199] rdm add 6                add=0x18013A510 slot=0x7C28 rec=0x1804ACB80
+        rec: ninputs=2; in1=rdm div 6-out; in2=0.5
+  [200] rdm mult 7               add=0x18013A390 slot=0x7C80 rec=0x1804AC680
+        rec: in1=2000; in2=rdm add 6-out
+  [201] rdm div 7                add=0x18013A110 slot=0x7D40 rec=0x1804B2130
+        rec: in1=rdm a-c 7-out; in2=1.5
+  [202] rdm add 7                add=0x18013A510 slot=0x7DD8 rec=0x1804A9340
+        rec: ninputs=2; in1=rdm div 7-out; in2=0.5
+  [203] rdm mult 8               add=0x18013A390 slot=0x7E30 rec=0x1804AA7C0
+        rec: in1=2000; in2=rdm add 7-out
+  [204] rdm div 8                add=0x18013A110 slot=0x7EF0 rec=0x1804B3780
+        rec: in1=rdm a-c 8-out; in2=1.5
+  [205] rdm add 8                add=0x18013A510 slot=0x7F88 rec=0x1804A6A80
+        rec: ninputs=2; in1=rdm div 8-out; in2=0.5
+  [206] rdm mult 1               add=0x18013A390 slot=0x7FE0 rec=0x1804A7A50
+        rec: in1=2000; in2=rdm add 8-out
+  [207] mmix                     add=0x18013AB90 slot=0x80A0 rec=0x1804B02D0
+        rec: statement=mix:%3.0f %%; name=mix; min=0; max=100; res=1; default=100
+  [208] ouch                     add=0x18013AB90 slot=0x8158 rec=0x1804B1E30
+        rec: statement=knob: %f; name=knob; min=1; max=2; res=1; default=2
+  [209] c_subtract3              add=0x18013A110 slot=0x8210 rec=0x1804AF660
+        rec: in1=ouch-out; in2=1
+  [210] ogan                     add=0x18013AB90 slot=0x82A8 rec=0x1804AF9D0
+        rec: statement=Out Gain:%3.0f dB; name=knob; min=-96; max=24; res=1; default=0
+  [211] bypa                     add=0x18013AD00 slot=0x8360 rec=0x1804AA660
+        rec: statement=input: %s; nchoices=2; default=0; choices1=normal; choices2=bypass
+  [213] rdm abs                  add=0x180139A30 slot=0x8450 rec=0x1804B0480
+        rec: in=rdm noise-out
+  [214] rdm sh 1                 add=0x1801390D0 slot=0x84A8 rec=0x1804B37D0
+        rec: in=rdm abs-out; newsamp=rdm comp 1-out
+  [215] rdm slew 1               add=0x1801398E0 slot=0x8518 rec=0x1804B48F0
+        rec: in=rdm sh 1-out; pslew=rdm mult 1-out; nslew=rdm mult 1-out
+  [216] rdm comp 1               add=0x1801395F0 slot=0x8648 rec=0x1804AC120
+        rec: in1=rdm slew 1-out; in2=rdm sh 1-out; inspread=0; constval=0; outspread=0
+  [217] rdm a-c 1                add=0x180139270 slot=0x8750 rec=0x1804A8EC0
+        rec: in=rdm slew 1-out
+  [218] rdm sh 2                 add=0x1801390D0 slot=0x87F8 rec=0x1804AE3B0
+        rec: in=rdm abs-out; newsamp=rdm comp 2-out
+  [219] rdm slew 2               add=0x1801398E0 slot=0x8868 rec=0x1804A6A50
+        rec: in=rdm sh 2-out; pslew=rdm mult 2-out; nslew=rdm mult 2-out
+  [220] rdm comp 2               add=0x1801395F0 slot=0x8998 rec=0x1804B5AE0
+        rec: in1=rdm slew 2-out; in2=rdm sh 2-out; inspread=0; constval=0; outspread=0
+  [221] rdm a-c 2                add=0x180139270 slot=0x8AA0 rec=0x1804A92C0
+        rec: in=rdm slew 2-out
+  [222] rdm sh 3                 add=0x1801390D0 slot=0x8B48 rec=0x1804B5610
+        rec: in=rdm abs-out; newsamp=rdm comp 3-out
+  [223] rdm slew 3               add=0x1801398E0 slot=0x8BB8 rec=0x1804B1140
+        rec: in=rdm sh 3-out; pslew=rdm mult 3-out; nslew=rdm mult 3-out
+  [224] rdm comp 3               add=0x1801395F0 slot=0x8CE8 rec=0x1804B5D00
+        rec: in1=rdm slew 3-out; in2=rdm sh 3-out; inspread=0; constval=0; outspread=0
+  [225] rdm a-c 3                add=0x180139270 slot=0x8DF0 rec=0x1804AA3A0
+        rec: in=rdm slew 3-out
+  [226] rdm sh 4                 add=0x1801390D0 slot=0x8E98 rec=0x1804A6E50
+        rec: in=rdm abs-out; newsamp=rdm comp 4-out
+  [227] rdm slew 4               add=0x1801398E0 slot=0x8F08 rec=0x1804AD7A0
+        rec: in=rdm sh 4-out; pslew=rdm mult 4-out; nslew=rdm mult 4-out
+  [228] rdm comp 4               add=0x1801395F0 slot=0x9038 rec=0x1804AE7F0
+        rec: in1=rdm slew 4-out; in2=rdm sh 4-out; inspread=0; constval=0; outspread=0
+  [229] rdm a-c 4                add=0x180139270 slot=0x9140 rec=0x1804B0980
+        rec: in=rdm slew 4-out
+  [230] rdm sh 5                 add=0x1801390D0 slot=0x91E8 rec=0x1804A8970
+        rec: in=rdm abs-out; newsamp=rdm comp 5-out
+  [231] rdm slew 5               add=0x1801398E0 slot=0x9258 rec=0x1804B4FC0
+        rec: in=rdm sh 5-out; pslew=rdm mult 5-out; nslew=rdm mult 5-out
+  [232] rdm comp 5               add=0x1801395F0 slot=0x9388 rec=0x1804B3BE0
+        rec: in1=rdm slew 5-out; in2=rdm sh 5-out; inspread=0; constval=0; outspread=0
+  [233] rdm a-c 5                add=0x180139270 slot=0x9490 rec=0x1804AAF70
+        rec: in=rdm slew 5-out
+  [234] rdm sh 6                 add=0x1801390D0 slot=0x9538 rec=0x1804AD900
+        rec: in=rdm abs-out; newsamp=rdm comp 6-out
+  [235] rdm slew 6               add=0x1801398E0 slot=0x95A8 rec=0x1804B5440
+        rec: in=rdm sh 6-out; pslew=rdm mult 6-out; nslew=rdm mult 6-out
+  [236] rdm comp 6               add=0x1801395F0 slot=0x96D8 rec=0x1804ABBC0
+        rec: in1=rdm slew 6-out; in2=rdm sh 6-out; inspread=0; constval=0; outspread=0
+  [237] rdm a-c 6                add=0x180139270 slot=0x97E0 rec=0x1804A89F0
+        rec: in=rdm slew 6-out
+  [238] rdm sh 7                 add=0x1801390D0 slot=0x9888 rec=0x1804AD780
+        rec: in=rdm abs-out; newsamp=rdm comp 7-out
+  [239] rdm slew 7               add=0x1801398E0 slot=0x98F8 rec=0x1804B5B10
+        rec: in=rdm sh 7-out; pslew=rdm mult 7-out; nslew=rdm mult 7-out
+  [240] rdm comp 7               add=0x1801395F0 slot=0x9A28 rec=0x1804B5C00
+        rec: in1=rdm slew 7-out; in2=rdm sh 7-out; inspread=0; constval=0; outspread=0
+  [241] rdm a-c 7                add=0x180139270 slot=0x9B30 rec=0x1804A7B40
+        rec: in=rdm slew 7-out
+  [242] rdm sh 8                 add=0x1801390D0 slot=0x9BD8 rec=0x1804ABB70
+        rec: in=rdm abs-out; newsamp=rdm comp 8-out
+  [243] rdm slew 8               add=0x1801398E0 slot=0x9C48 rec=0x1804AB2D0
+        rec: in=rdm sh 8-out; pslew=rdm mult 8-out; nslew=rdm mult 8-out
+  [244] multiply12               add=0x1801390D0 slot=0x9D78 rec=0x1804B3B80
+        rec: in1=c_fltr_a36-out; in2=rdm slew 1-out
+  [245] rdm comp 8               add=0x1801395F0 slot=0x9DE0 rec=0x1804B3830
+        rec: in1=rdm slew 8-out; in2=rdm sh 8-out; inspread=0; constval=0; outspread=0
+  [246] rdm a-c 8                add=0x180139270 slot=0x9EE8 rec=0x1804A8710
+        rec: in=rdm slew 8-out
+  [247] left in                  add=0x180139050 slot=0x9F90 rec=0x1804ADA20
+        rec: in=adc-in1; gain=igan-out
+  [248] delay comp 1             add=0x180138D30 slot=0xA100 rec=0x1804B2A30
+        rec: maxdelay=51; in=left in-out; delayamt=live mode delay comp-out
+  [249] iswitch6                 add=0x1801389C0 slot=0xA278 rec=0x1804B54E0
+        rec: numins=2; select=live-out; in1=delay comp 1-out; in2=left in-out
+  [250] right in                 add=0x180139050 slot=0xA398 rec=0x1804B6360
+        rec: in=adc-in2; gain=igan-out
+  [251] delay comp 2             add=0x180138D30 slot=0xA508 rec=0x1804B39B0
+        rec: maxdelay=51; in=right in-out; delayamt=live mode delay comp-out
+  [252] iswitch7                 add=0x1801389C0 slot=0xA680 rec=0x1804A9AC0
+        rec: numins=2; select=live-out; in1=delay comp 2-out; in2=right in-out
+  [253] mix                      add=0x180138710 slot=0xA7A0 rec=0x1804AA8F0
+        rec: time_constant=20; in1=left in-out; in2=right in-out; amp1=0.5; amp2=0.5
+  [254] iswitch4                 add=0x1801389C0 slot=0xA900 rec=0x1804AE0C0
+        rec: numins=2; select=c_subtract1-out; in1=left in-out; in2=mix-out
+  [255] iswitch5                 add=0x1801389C0 slot=0xAA20 rec=0x1804AC870
+        rec: numins=2; select=c_subtract1-out; in1=iswitch6-out; in2=iswitch7-out
+  [256] peak4                    add=0x180138570 slot=0xAB40 rec=0x1804A7EF0
+        rec: type=0; in=iswitch6-out; attackcntl=0.05; decaycntl=0.1
+  [257] LevMetrAtoC3             add=0x180139270 slot=0xAD08 rec=0x1804B2190
+        rec: in=peak4-out
+  [258] inst                     add=0x18013AB90 slot=0xADB0 rec=0x1804ABC20
+        rec: statement=knob: %f; name=knob; min=0; max=12; res=1; default=0
+  [259] MaxCut                   add=0x18013A8D0 slot=0xAE68 rec=0x1804A8DE0
+        rec: nentries=16; select=inst-out; in1=0; in2=0; in3=-14; in4=-14; in5=-14; in6=-14; in7=-14; in8=-18; in9=-14; in10=-7; in11=-14; in12=-14; in13=-7; in14=-18; in15=-7; in16=-7
+  [260] CutFreq                  add=0x18013A8D0 slot=0xAEF0 rec=0x1804AF510
+        rec: nentries=16; select=inst-out; in1=20000; in2=20000; in3=8000; in4=8000; in5=8000; in6=8000; in7=8000; in8=2000; in9=3500; in10=12000; in11=8000; in12=8000; in13=3500; in14=1200; in15=4000; in16=10000
+  [261] CutMultiplier            add=0x18013A8D0 slot=0xAF78 rec=0x1804AD6A0
+        rec: nentries=16; select=inst-out; in1=0; in2=0; in3=-1; in4=-1; in5=-1; in6=-1; in7=-1; in8=-1.2857; in9=-1; in10=-0.5; in11=-1; in12=-1; in13=-0.5; in14=-1.2857; in15=-0.5; in16=-0.5
+  [262] AntiAliasOnOff           add=0x18013A8D0 slot=0xB000 rec=0x1804AF680
+        rec: nentries=16; select=inst-out; in1=0; in2=0; in3=1; in4=1; in5=1; in6=1; in7=1; in8=1; in9=1; in10=0; in11=1; in12=1; in13=0; in14=1; in15=0; in16=0
+  [263] c_minmax2                add=0x18013AB50 slot=0xB088 rec=0x1804AEDD0
+        rec: ninputs=9; in1=c_multiply 1-out; in2=c_multiply 2-out; in3=c_multiply 3-out; in4=c_multiply 4-out; in5=c_multiply 5-out; in6=c_multiply 6-out; in7=c_multiply 7-out; in8=c_multiply 8-out; in9=0
+  [264] c_divide2                add=0x18013A110 slot=0xB100 rec=0x1804B2B90
+        rec: in1=c_minmax2-maximum; in2=7
+  [265] c_multiply6              add=0x18013A390 slot=0xB198 rec=0x1804AD270
+        rec: in1=c_divide2-out; in2=-1
+  [266] c_power1                 add=0x18013A110 slot=0xB258 rec=0x1804B3E80
+        rec: in1=2; in2=c_multiply6-out
+  [267] c_fltr_a14               add=0x18013AAC0 slot=0xB2F0 rec=0x1804AD290
+        rec: time_constant=20; in=c_power1-out
+  [268] bound1                   add=0x1801384B0 slot=0xB3C8 rec=0x1804B1070
+        rec: in=c_fltr_a14-out; minimum=0; maximum=1
+  [269] c_fltr_a12               add=0x18013AAC0 slot=0xB4E8 rec=0x1804AC5D0
+        rec: time_constant=20; in=c_power9-out
+  [270] multiply4                add=0x1801390D0 slot=0xB5C0 rec=0x1804ADB90
+        rec: in1=moddelay7-out; in2=c_fltr_a12-out
+  [271] modiirq                  add=0x180138200 slot=0xB628 rec=0x1804A7570
+        rec: in=iswitch4-out; modfreq=bound1-out; n_sections=2; qfactor=0.7; type=0; sections=2; processoff=0
+  [272] iswitch8                 add=0x1801389C0 slot=0xB858 rec=0x1804AD650
+        rec: numins=2; select=AntiAliasOnOff-out; in1=iswitch4-out; in2=modiirq-out
+  [273] softclip                 add=0x1801380C0 slot=0xB978 rec=0x1804B4300
+        rec: in=iswitch8-out; select=1; drive=0; order=1; processoff=0
+  [274] add8                     add=0x180137F40 slot=0xBF48 rec=0x1804B2B40
+        rec: in1=c_fltr_a13-out; in2=multiply12-out
+  [275] dtonicii9                add=0x180137E20 slot=0xBFB8 rec=0x1804AF2E0
+        rec: maxdelay=2400; nvoices=8; steps=12; in=softclip-out; scale=scal table-out; key=keys-out; pitchtracking=ptrk-out; hysteresis=10; correctrate=1; mincorrect=0; intervalglide=1; tuning=0; tune=tune-out; quantization=0; minpitch=minp-out; gatelevel=-55; xfadetime=xfad-out; mod1=rdm slew 1-out; mod2=rdm slew 2-out; mod3=rdm slew 3-out; mod4=rdm slew 4-out; mod5=rdm slew 5-out; mod6=rdm slew 6-out; mod7=rdm slew 7-out
+  [276] modfilter8               add=0x180137C30 slot=0x16980 rec=0x1804B1EA0
+        rec: in=dtonicii9-out1; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [277] eqn                      add=0x180137AC0 slot=0x16C28 rec=0x1804AEAF0
+        rec: neqs=1; in=modfilter8-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound2-out; type1=2
+  [278] add                      add=0x180137F40 slot=0x16F70 rec=0x1804A6EB0
+        rec: in1=eqn-out; in2=multiply4-out
+  [279] moddelay7                add=0x180137930 slot=0x16FE0 rec=0x1804B55C0
+        rec: maxdelay=2000; declick=1; in=add-out; mod=adc-null; delayamt=dly1-out; modamt=0; glidespeed=0
+  [280] c_multiply8              add=0x18013A390 slot=0x17228 rec=0x1804AD070
+        rec: in1=c_multiply 1-out; in2=CutMultiplier-out
+  [281] c_bound2                 add=0x1801377A0 slot=0x172E8 rec=0x1804B6310
+        rec: input=c_multiply8-out; minimum=MaxCut-out; maximum=0
+  [282] c_fltr_a23               add=0x18013AAC0 slot=0x173B0 rec=0x1804B36C0
+        rec: time_constant=20; in=c_power10-out
+  [283] multiply5                add=0x1801390D0 slot=0x17488 rec=0x1804AB680
+        rec: in1=moddelay6-out; in2=c_fltr_a23-out
+  [284] modfilter9               add=0x180137C30 slot=0x174F0 rec=0x1804B2E30
+        rec: in=dtonicii9-out2; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [285] eqn1                     add=0x180137AC0 slot=0x17798 rec=0x1804ACF60
+        rec: neqs=1; in=modfilter9-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound3-out; type1=2
+  [286] add1                     add=0x180137F40 slot=0x17AE0 rec=0x1804A80B0
+        rec: in1=eqn1-out; in2=multiply5-out
+  [287] moddelay6                add=0x180137930 slot=0x17B50 rec=0x1804AA150
+        rec: maxdelay=2000; declick=1; in=add1-out; mod=adc-null; delayamt=dly2-out; modamt=0; glidespeed=0
+  [288] c_multiply9              add=0x18013A390 slot=0x17D98 rec=0x1804B5B30
+        rec: in1=c_multiply 2-out; in2=CutMultiplier-out
+  [289] c_bound3                 add=0x1801377A0 slot=0x17E58 rec=0x1804A7470
+        rec: input=c_multiply9-out; minimum=MaxCut-out; maximum=0
+  [290] c_fltr_a25               add=0x18013AAC0 slot=0x17F20 rec=0x1804B1750
+        rec: time_constant=20; in=c_power11-out
+  [291] multiply6                add=0x1801390D0 slot=0x17FF8 rec=0x1804AEA20
+        rec: in1=moddelay5-out; in2=c_fltr_a25-out
+  [292] modfilter10              add=0x180137C30 slot=0x18060 rec=0x1804AEA40
+        rec: in=dtonicii9-out3; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [293] eqn2                     add=0x180137AC0 slot=0x18308 rec=0x1804A8480
+        rec: neqs=1; in=modfilter10-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound4-out; type1=2
+  [294] add2                     add=0x180137F40 slot=0x18650 rec=0x1804AF720
+        rec: in1=eqn2-out; in2=multiply6-out
+  [295] moddelay5                add=0x180137930 slot=0x186C0 rec=0x1804AE8D0
+        rec: maxdelay=2000; declick=1; in=add2-out; mod=adc-null; delayamt=dly3-out; modamt=0; glidespeed=0
+  [296] c_multiply11             add=0x18013A390 slot=0x18908 rec=0x1804B4330
+        rec: in1=c_multiply 3-out; in2=CutMultiplier-out
+  [297] c_bound4                 add=0x1801377A0 slot=0x189C8 rec=0x1804B5A90
+        rec: input=c_multiply11-out; minimum=MaxCut-out; maximum=0
+  [298] c_fltr_a27               add=0x18013AAC0 slot=0x18A90 rec=0x1804B4ED0
+        rec: time_constant=20; in=c_power12-out
+  [299] multiply7                add=0x1801390D0 slot=0x18B68 rec=0x1804B5DE0
+        rec: in1=moddelay4-out; in2=c_fltr_a27-out
+  [300] modfilter11              add=0x180137C30 slot=0x18BD0 rec=0x1804B25E0
+        rec: in=dtonicii9-out4; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [301] eqn3                     add=0x180137AC0 slot=0x18E78 rec=0x1804B23F0
+        rec: neqs=1; in=modfilter11-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound5-out; type1=2
+  [302] add3                     add=0x180137F40 slot=0x191C0 rec=0x1804AB4E0
+        rec: in1=eqn3-out; in2=multiply7-out
+  [303] moddelay4                add=0x180137930 slot=0x19230 rec=0x1804ADEA0
+        rec: maxdelay=2000; declick=1; in=add3-out; mod=adc-null; delayamt=dly4-out; modamt=0; glidespeed=0
+  [304] c_multiply13             add=0x18013A390 slot=0x19478 rec=0x1804A99C0
+        rec: in1=c_multiply 4-out; in2=CutMultiplier-out
+  [305] c_bound5                 add=0x1801377A0 slot=0x19538 rec=0x1804AAD30
+        rec: input=c_multiply13-out; minimum=MaxCut-out; maximum=0
+  [306] c_fltr_a29               add=0x18013AAC0 slot=0x19600 rec=0x1804ABAF0
+        rec: time_constant=20; in=c_power13-out
+  [307] multiply8                add=0x1801390D0 slot=0x196D8 rec=0x1804B4E70
+        rec: in1=moddelay3-out; in2=c_fltr_a29-out
+  [308] modfilter12              add=0x180137C30 slot=0x19740 rec=0x1804A9DD0
+        rec: in=dtonicii9-out5; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [309] eqn4                     add=0x180137AC0 slot=0x199E8 rec=0x1804A7D20
+        rec: neqs=1; in=modfilter12-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound6-out; type1=2
+  [310] add4                     add=0x180137F40 slot=0x19D30 rec=0x1804ABF60
+        rec: in1=eqn4-out; in2=multiply8-out
+  [311] moddelay3                add=0x180137930 slot=0x19DA0 rec=0x1804ADCE0
+        rec: maxdelay=2000; declick=1; in=add4-out; mod=adc-null; delayamt=dly5-out; modamt=0; glidespeed=0
+  [312] c_multiply15             add=0x18013A390 slot=0x19FE8 rec=0x1804AB660
+        rec: in1=c_multiply 5-out; in2=CutMultiplier-out
+  [313] c_bound6                 add=0x1801377A0 slot=0x1A0A8 rec=0x1804AA640
+        rec: input=c_multiply15-out; minimum=MaxCut-out; maximum=0
+  [314] c_fltr_a31               add=0x18013AAC0 slot=0x1A170 rec=0x1804B4FE0
+        rec: time_constant=20; in=c_power14-out
+  [315] multiply9                add=0x1801390D0 slot=0x1A248 rec=0x1804B6380
+        rec: in1=moddelay2-out; in2=c_fltr_a31-out
+  [316] modfilter13              add=0x180137C30 slot=0x1A2B0 rec=0x1804B3130
+        rec: in=dtonicii9-out6; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [317] eqn5                     add=0x180137AC0 slot=0x1A558 rec=0x1804ADAF0
+        rec: neqs=1; in=modfilter13-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound7-out; type1=2
+  [318] add5                     add=0x180137F40 slot=0x1A8A0 rec=0x1804AE840
+        rec: in1=eqn5-out; in2=multiply9-out
+  [319] moddelay2                add=0x180137930 slot=0x1A910 rec=0x1804AB5E0
+        rec: maxdelay=2000; declick=1; in=add5-out; mod=adc-null; delayamt=dly6-out; modamt=0; glidespeed=0
+  [320] c_multiply17             add=0x18013A390 slot=0x1AB58 rec=0x1804AB8D0
+        rec: in1=c_multiply 6-out; in2=CutMultiplier-out
+  [321] c_bound7                 add=0x1801377A0 slot=0x1AC18 rec=0x1804ADE30
+        rec: input=c_multiply17-out; minimum=MaxCut-out; maximum=0
+  [322] c_fltr_a33               add=0x18013AAC0 slot=0x1ACE0 rec=0x1804AACC0
+        rec: time_constant=20; in=c_power15-out
+  [323] multiply10               add=0x1801390D0 slot=0x1ADB8 rec=0x1804AEAD0
+        rec: in1=moddelay1-out; in2=c_fltr_a33-out
+  [324] modfilter14              add=0x180137C30 slot=0x1AE20 rec=0x1804B0280
+        rec: in=dtonicii9-out7; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [325] eqn6                     add=0x180137AC0 slot=0x1B0C8 rec=0x1804B3050
+        rec: neqs=1; in=modfilter14-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound8-out; type1=2
+  [326] add6                     add=0x180137F40 slot=0x1B410 rec=0x1804AB310
+        rec: in1=eqn6-out; in2=multiply10-out
+  [327] moddelay1                add=0x180137930 slot=0x1B480 rec=0x1804B0590
+        rec: maxdelay=2000; declick=1; in=add6-out; mod=adc-null; delayamt=dly7-out; modamt=0; glidespeed=0
+  [328] c_multiply19             add=0x18013A390 slot=0x1B6C8 rec=0x1804AD5F0
+        rec: in1=c_multiply 7-out; in2=CutMultiplier-out
+  [329] c_bound8                 add=0x1801377A0 slot=0x1B788 rec=0x1804A7310
+        rec: input=c_multiply19-out; minimum=MaxCut-out; maximum=0
+  [330] c_fltr_a35               add=0x18013AAC0 slot=0x1B850 rec=0x1804AD330
+        rec: time_constant=20; in=c_power16-out
+  [331] multiply11               add=0x1801390D0 slot=0x1B928 rec=0x1804A8330
+        rec: in1=moddelay-out; in2=c_fltr_a35-out
+  [332] modfilter15              add=0x180137C30 slot=0x1B990 rec=0x1804B30C0
+        rec: in=dtonicii9-out8; fmod=adc-null; qmod=adc-null; freq=20; freqmodamt=0; q=1; qmodamt=0; processoff=0
+  [333] eqn7                     add=0x180137AC0 slot=0x1BC38 rec=0x1804AC470
+        rec: neqs=1; in=modfilter15-high; freq1=CutFreq-out; qfactor1=0.7; boost1=c_bound9-out; type1=2
+  [334] add7                     add=0x180137F40 slot=0x1BF80 rec=0x1804B1BC0
+        rec: in1=eqn7-out; in2=multiply11-out
+  [335] moddelay                 add=0x180137930 slot=0x1BFF0 rec=0x1804AD5B0
+        rec: maxdelay=2000; declick=1; in=add7-out; mod=adc-null; delayamt=dly8-out; modamt=0; glidespeed=0
+  [336] c_multiply21             add=0x18013A390 slot=0x1C238 rec=0x1804B2830
+        rec: in1=c_multiply 8-out; in2=CutMultiplier-out
+  [337] c_bound9                 add=0x1801377A0 slot=0x1C2F8 rec=0x1804A9210
+        rec: input=c_multiply21-out; minimum=MaxCut-out; maximum=0
+  [338] stereomixer3             add=0x180137720 slot=0x1C3C0 rec=0x1804B6480
+        rec: ninputs=8; time_constant=25; in1=add-out; in2=add1-out; in3=add2-out; in4=add3-out; in5=add4-out; in6=add5-out; in7=add6-out; in8=add7-out; gain1=m switch 1-out; gain2=m switch 2-out; gain3=m switch 3-out; gain4=m switch 4-out; gain5=m switch 5-out; gain6=m switch 6-out; gain7=m switch 7-out; gain8=m switch 8-out; pan1=pan1-out; pan2=pan2-out; pan3=pan3-out; pan4=pan4-out; pan5=pan5-out; pan6=pan6-out
+  [339] feedback1                add=0x180138710 slot=0x1C620 rec=0x1804B5590
+        rec: time_constant=20; in1=stereomixer3-right; in2=subtract1-out; amp1=1; amp2=mfbk-out
+  [340] softclip2                add=0x1801380C0 slot=0x1C780 rec=0x1804ACA40
+        rec: in=feedback1-out; select=1; drive=0; order=1; processoff=0
+  [341] delay_xf1                add=0x180137630 slot=0x1CD50 rec=0x1804A8620
+        rec: maxdelay=2400; noutputs=1; in=softclip2-out; xfadetime=20; mod1=adc-null; modamt1=0; tapdls1=c_minmax-maximum; gain1=0
+  [342] just for the filter2     add=0x1801374D0 slot=0x1D238 rec=0x1804A9DA0
+        rec: maxdelay=1; in=delay_xf1-out1; mod=adc-null; delayamt=0; modamt=0
+  [343] highcut1                 add=0x180137260 slot=0x1D3D8 rec=0x1804A8900
+        rec: in=just for the filter2-out; freq=5
+  [344] subtract1                add=0x180136FA0 slot=0x1D538 rec=0x1804B3440
+        rec: in1=just for the filter2-out; in2=highcut1-out
+  [345] feedback                 add=0x180138710 slot=0x1D5A8 rec=0x1804AC3A0
+        rec: time_constant=20; in1=stereomixer3-left; in2=subtract-out; amp1=1; amp2=mfbk-out
+  [346] softclip1                add=0x1801380C0 slot=0x1D708 rec=0x1804B1630
+        rec: in=feedback-out; select=1; drive=0; order=1; processoff=0
+  [347] delay_xf                 add=0x180137630 slot=0x1DCD8 rec=0x1804AE1B0
+        rec: maxdelay=2400; noutputs=1; in=softclip1-out; xfadetime=20; mod1=adc-null; modamt1=0; tapdls1=c_minmax-maximum; gain1=0
+  [348] just for the filter      add=0x1801374D0 slot=0x1E1C0 rec=0x1804B0990
+        rec: maxdelay=1; in=delay_xf-out1; mod=adc-null; delayamt=0; modamt=0
+  [349] highcut                  add=0x180137260 slot=0x1E360 rec=0x1804B13A0
+        rec: in=just for the filter-out; freq=5
+  [350] subtract                 add=0x180136FA0 slot=0x1E4C0 rec=0x1804AB800
+        rec: in1=just for the filter-out; in2=highcut-out
+  [351] c_subtract2              add=0x18013A110 slot=0x1E530 rec=0x1804AABA0
+        rec: in1=1; in2=mmix-out
+  [352] c_fltr_a1                add=0x18013AAC0 slot=0x1E5C8 rec=0x1804AE7D0
+        rec: time_constant=10; in=mmix-out
+  [353] c_fltr_a                 add=0x18013AAC0 slot=0x1E6A0 rec=0x1804B3F40
+        rec: time_constant=10; in=c_subtract2-out
+  [354] c_fltr_a2                add=0x18013AAC0 slot=0x1E778 rec=0x1804B1FF0
+        rec: time_constant=10; in=mmix-out
+  [355] c_fltr_a3                add=0x18013AAC0 slot=0x1E850 rec=0x1804AEB30
+        rec: time_constant=10; in=c_subtract2-out
+  [356] multiply                 add=0x1801390D0 slot=0x1E928 rec=0x1804B1C30
+        rec: in1=iswitch6-out; in2=c_fltr_a-out
+  [357] iswitch3                 add=0x1801389C0 slot=0x1E990 rec=0x1804AA350
+        rec: numins=2; select=c_subtract1-out; in1=iswitch6-out; in2=iswitch7-out
+  [358] multiply3                add=0x1801390D0 slot=0x1EAB0 rec=0x1804AD680
+        rec: in1=iswitch3-out; in2=c_fltr_a3-out
+  [359] multiply2                add=0x1801390D0 slot=0x1EB18 rec=0x1804B3000
+        rec: in1=feedback1-out; in2=c_fltr_a2-out
+  [360] RWetDryMix               add=0x180137F40 slot=0x1EB80 rec=0x1804AA690
+        rec: in1=multiply3-out; in2=multiply2-out
+  [361] monoSumWetChans          add=0x180138710 slot=0x1EBF0 rec=0x1804A6D00
+        rec: time_constant=20; in1=feedback-out; in2=feedback1-out; amp1=0.707; amp2=0.707
+  [362] iswitch11                add=0x1801389C0 slot=0x1ED50 rec=0x1804AFFF0
+        rec: numins=2; select=c_subtract3-out; in1=monoSumWetChans-out; in2=feedback-out
+  [363] multiply1                add=0x1801390D0 slot=0x1EE70 rec=0x1804B5270
+        rec: in1=iswitch11-out; in2=c_fltr_a1-out
+  [364] LWetDryMix               add=0x180137F40 slot=0x1EED8 rec=0x1804AC9B0
+        rec: in1=multiply-out; in2=multiply1-out
+  [365] left out                 add=0x180139050 slot=0x1EF48 rec=0x1804A9FA0
+        rec: in=LWetDryMix-out; gain=ogan-out
+  [366] right out                add=0x180139050 slot=0x1F0B8 rec=0x1804AEE50
+        rec: in=RWetDryMix-out; gain=ogan-out
+  [367] iswitch2                 add=0x1801389C0 slot=0x1F228 rec=0x1804ABD50
+        rec: numins=2; select=c_subtract1-out; in1=adc-in1; in2=adc-in2
+  [368] iswitch                  add=0x1801389C0 slot=0x1F348 rec=0x1804A6DD0
+        rec: numins=2; select=bypa-out; in1=left out-out; in2=adc-in1
+  [369] iswitch1                 add=0x1801389C0 slot=0x1F468 rec=0x1804A8740
+        rec: numins=2; select=bypa-out; in1=right out-out; in2=iswitch2-out
+  [370] peak1                    add=0x180138570 slot=0x1F588 rec=0x1804A91E0
+        rec: type=0; in=left out-out; attackcntl=0.05; decaycntl=0.1
+  [371] peak2                    add=0x180138570 slot=0x1F750 rec=0x1804ACE30
+        rec: type=0; in=right out-out; attackcntl=0.05; decaycntl=0.1
+  [372] LevLintodB3              add=0x180136DC0 slot=0x1F918 rec=0x1804B6330
+        rec: linvalue=LevMetrAtoC3-out
+  [373] peak5                    add=0x180138570 slot=0x1F980 rec=0x1804AFD10
+        rec: type=0; in=iswitch5-out; attackcntl=0.05; decaycntl=0.1
+  [374] LevMetrAtoC4             add=0x180139270 slot=0x1FB48 rec=0x1804A8FB0
+        rec: in=peak5-out
+  [375] LevLintodB4              add=0x180136DC0 slot=0x1FBF0 rec=0x1804ABF00
+        rec: linvalue=LevMetrAtoC4-out
+  [376] lipD                     add=0x180136C20 slot=0x1FC58 rec=0x1804B0B80
+        rec: in=LevLintodB3-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [377] ripD                     add=0x180136C20 slot=0x1FD30 rec=0x1804ACB50
+        rec: in=LevLintodB4-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [378] LevMetrAtoC              add=0x180139270 slot=0x1FE08 rec=0x1804AC190
+        rec: in=peak1-out
+  [379] LevMetrAtoC1             add=0x180139270 slot=0x1FEB0 rec=0x1804B2A50
+        rec: in=peak2-out
+  [380] LevLintodB               add=0x180136DC0 slot=0x1FF58 rec=0x1804B4F70
+        rec: linvalue=LevMetrAtoC-out
+  [381] LevLintodB1              add=0x180136DC0 slot=0x1FFC0 rec=0x1804AE0B0
+        rec: linvalue=LevMetrAtoC1-out
+  [382] lopD                     add=0x180136C20 slot=0x20028 rec=0x1804AF8A0
+        rec: in=LevLintodB-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [383] ropD                     add=0x180136C20 slot=0x20100 rec=0x1804ADBB0
+        rec: in=LevLintodB1-dbvalue; minimum=-90; maximum=0; tag=ganred:
+  [384] overload1                add=0x180136980 slot=0x201D8 rec=0x1804AAFF0
+        rec: in=left out-out; thresh=-0.1
+  [385] overload3                add=0x180136980 slot=0x202D8 rec=0x1804AFFD0
+        rec: in=right out-out; thresh=-0.1
+  [386] overload                 add=0x180136980 slot=0x203D8 rec=0x1804B10B0
+        rec: in=iswitch6-out; thresh=-0.1
+  [387] overload2                add=0x180136980 slot=0x204D8 rec=0x1804B5570
+        rec: in=iswitch7-out; thresh=-0.1
+  [388] c_switch7                add=0x18013ABD0 slot=0x205D8 rec=0x1804B1BE0
+        rec: ninputs=2; select=c_subtract1-out; in1=overload-ol; in2=overload2-ol
+  [389] c_switch8                add=0x18013ABD0 slot=0x20660 rec=0x1804A6BB0
+        rec: ninputs=2; select=c_subtract3-out; in1=overload1-ol; in2=overload3-ol
+  [390] lopL                     add=0x180136750 slot=0x206E8 rec=0x1804A8F00
+        rec: in=overload1-ol; statement=monitor:%f; tag=monitor
+  [391] ropL                     add=0x180136750 slot=0x20798 rec=0x1804AEEA0
+        rec: in=c_switch8-out; statement=monitor:%f; tag=monitor
+  [392] lipL                     add=0x180136750 slot=0x20848 rec=0x1804B4D00
+        rec: in=overload-ol; statement=monitor:%f; tag=monitor
+  [393] ripL                     add=0x180136750 slot=0x208F8 rec=0x1804B0040
+        rec: in=c_switch7-out; statement=monitor:%f; tag=monitor
+  [394] pitM                     add=0x180136750 slot=0x209A8 rec=0x1804AA230
+        rec: in=dtonicii9-pitch; statement=pitch detect; tag=pitM
+  [395] tonM                     add=0x180136750 slot=0x20A58 rec=0x1804A95D0
+        rec: in=dtonicii9-tonality; statement=tonality detect; tag=tonM

@@ -1,0 +1,427 @@
+PITCHLAB R22 -- RANDOMIZE SIGN / MODULATION-DIRECTION TRACE (static)
+==============================================================================
+Original binary: /home/z/my-project/octavox-work/original/Ox.vst3 (NEVER executed; static disassembly only)
+capstone 5.0.7; PE image base 0x180000000
+
+A. THE RANDOM SOURCE -- FUN_180139B40 (rdm noise [212])
+------------------------------------------------------------------------------
+  180139B40  mov       qword ptr [rsp + 8], rbx
+  180139B45  movss     xmm1, dword ptr [rcx + 0x28]
+  180139B4A  mov       rbx, rcx
+  180139B4D  mov       ecx, dword ptr [rcx + 0x2c]
+  180139B50  mov       r11d, dword ptr [rbx + 0x34]
+  180139B54  mov       edx, dword ptr [rbx + 0x20]
+  180139B57  mov       r9d, dword ptr [rbx + 0x24]
+  180139B5B  add       r9d, edx
+  180139B5E  and       r9d, r11d
+  180139B61  lea       r8d, [rdx + r9]
+  180139B65  and       r8d, r11d
+  180139B68  mov       eax, r8d
+  180139B6B  sar       eax, cl
+  180139B6D  lea       r10d, [r9 + r8]
+  180139B71  and       r10d, r11d
+  180139B74  movd      xmm0, eax
+  180139B78  mov       rax, qword ptr [rbx + 0x18]
+  180139B7C  cvtdq2ps  xmm0, xmm0
+  180139B7F  lea       edx, [r9 + r10]
+  180139B83  and       edx, r11d
+  180139B86  mulss     xmm0, xmm1
+  180139B8A  lea       r9d, [r10 + rdx]
+  180139B8E  and       r9d, r11d
+  180139B91  movss     dword ptr [rax], xmm0
+  180139B95  mov       eax, edx
+  180139B97  sar       eax, cl
+  180139B99  lea       edx, [r10 + r9]
+  180139B9D  and       edx, r11d
+  180139BA0  movd      xmm0, eax
+  180139BA4  mov       rax, qword ptr [rbx + 0x18]
+  180139BA8  lea       r8d, [r9 + rdx]
+  180139BAC  cvtdq2ps  xmm0, xmm0
+  180139BAF  and       r8d, r11d
+  180139BB2  mulss     xmm0, xmm1
+  180139BB6  movss     dword ptr [rax + 4], xmm0
+  180139BBB  mov       eax, edx
+  180139BBD  sar       eax, cl
+  180139BBF  lea       edx, [r9 + r8]
+  180139BC3  and       edx, r11d
+  180139BC6  movd      xmm0, eax
+  180139BCA  mov       rax, qword ptr [rbx + 0x18]
+  180139BCE  cvtdq2ps  xmm0, xmm0
+  180139BD1  mulss     xmm0, xmm1
+  180139BD5  movss     dword ptr [rax + 8], xmm0
+  180139BDA  mov       eax, edx
+  180139BDC  sar       eax, cl
+  180139BDE  movd      xmm0, eax
+  180139BE2  mov       rax, qword ptr [rbx + 0x18]
+  180139BE6  cvtdq2ps  xmm0, xmm0
+  180139BE9  mulss     xmm0, xmm1
+  180139BED  movss     dword ptr [rax + 0xc], xmm0
+  180139BF2  mov       dword ptr [rbx + 0x24], edx
+  180139BF5  mov       dword ptr [rbx + 0x20], r8d
+  180139BF9  mov       rbx, qword ptr [rsp + 8]
+  180139BFE  ret       
+  180139BFF  int3      
+  180139C00  mov       r8, rcx
+  180139C03  mov       dword ptr [rcx + 0x30], 0x20
+  180139C0A  mov       dword ptr [rcx + 0x2c], 8
+  180139C11  xor       edx, edx
+  180139C13  mov       ecx, 0x1f
+  180139C18  nop       dword ptr [rax + rax]
+  180139C20  mov       eax, 1
+  180139C25  shl       eax, cl
+  180139C27  dec       ecx
+  180139C29  add       edx, eax
+  180139C2B  cmp       ecx, 8
+  180139C2E  jae       0x180139c20
+  180139C30  mov       dword ptr [r8 + 0x34], edx
+  180139C34  mov       dword ptr [r8 + 0x20], 0xd00
+  180139C3C  mov       dword ptr [r8 + 0x24], 0x1100
+  180139C44  mov       dword ptr [r8 + 0x28], 0x34000001
+  180139C4C  ret       
+  180139C4D  int3      
+  180139C4E  int3      
+  180139C4F  int3      
+  180139C50  mov       qword ptr [rsp + 0x20], rbx
+  180139C55  push      rdi
+  180139C56  sub       rsp, 0x50
+
+  Reading: the generator state is shifted right and scaled into the
+  float range; the OUTPUT IS SIGNED at the source (both signs occur
+  over the orbit: [-1.0, +1.0] float32, R10/R11 audits).
+
+B. THE ABSOLUTE-VALUE SITES IN THE AUDIO WORKER
+------------------------------------------------------------------------------
+  .rdata 16 bytes at 0x180412C60: ffffff7fffffff7fffffff7fffffff7f
+    contains the andps abs pattern 0x7FFFFFFF: True
+
+  -- the per-voice random chain call site: 0x180103EE0..0x180103FA0
+  180103EE0  sal       ebx, 0xf                                  
+  180103EE3  adc       dword ptr [rax + 8], ebx                  
+  180103EE6  mov       rax, qword ptr [rbx + 0x72d8]             
+  180103EED  mulss     xmm0, xmm2                                
+  180103EF1  addss     xmm3, xmm0                                
+  180103EF5  movaps    xmm0, xmm3                                
+  180103EF8  movss     dword ptr [rax + 0xc], xmm3               
+  180103EFD  subss     xmm0, xmm1                                
+  180103F01  mulss     xmm0, xmm2                                
+  180103F05  addss     xmm0, xmm3                                
+  180103F09  movss     dword ptr [rbx + 0x72e0], xmm0            
+  180103F11  call      0x180139b40                               
+  180103F16  movss     xmm2, dword ptr [rip + 0x30ed42]          
+  180103F1E  mov       rax, qword ptr [rbx + 0x8488]             
+  180103F25  mov       rcx, qword ptr [rax]                      
+  180103F28  mov       rax, qword ptr [rbx + 0x84a0]             
+  180103F2F  movss     xmm0, dword ptr [rcx]                     
+  180103F33  andps     xmm0, xmm2                                   <== ABS MASK
+  180103F36  movss     dword ptr [rax], xmm0                     
+  180103F3A  movss     xmm0, dword ptr [rcx + 4]                 
+  180103F3F  mov       rax, qword ptr [rbx + 0x84a0]             
+  180103F46  andps     xmm0, xmm2                                   <== ABS MASK
+  180103F49  movss     dword ptr [rax + 4], xmm0                 
+  180103F4E  movss     xmm1, dword ptr [rcx + 8]                 
+  180103F53  mov       rax, qword ptr [rbx + 0x84a0]             
+  180103F5A  andps     xmm1, xmm2                                   <== ABS MASK
+  180103F5D  movss     dword ptr [rax + 8], xmm1                 
+  180103F62  movss     xmm0, dword ptr [rcx + 0xc]               
+  180103F67  lea       rcx, [rbx + 0x84a8]                       
+  180103F6E  mov       rax, qword ptr [rbx + 0x84a0]             
+  180103F75  andps     xmm0, xmm2                                   <== ABS MASK
+  180103F78  movss     dword ptr [rax + 0xc], xmm0               
+  180103F7D  call      0x180139970                               
+  180103F82  lea       rcx, [rbx + 0x8518]                       
+  180103F89  call      0x180139790                               
+  180103F8E  lea       rcx, [rbx + 0x8648]                       
+  180103F95  call      0x180139480                               
+
+  -- the 0x1800F55xx abs family: 0x1800F54C0..0x1800F5620
+  1800F54C0  xor       al, byte ptr [rax]                        
+  1800F54C2  add       byte ptr [rcx - 0x75], cl                 
+  1800F54C5  push      rsi                                       
+  1800F54C6  or        byte ptr [rcx - 0x73], cl                 
+  1800F54C9  mov       ss, word ptr [rax]                        
+
+C. THE SAMPLE&HOLD INTAKE (rdm sh N, FUN_180139970)
+------------------------------------------------------------------------------
+  180139970  mov       rax, qword ptr [rcx + 0x48]
+  180139974  mov       rdx, rcx
+  180139977  mov       r8, qword ptr [rax]
+  18013997A  movss     xmm0, dword ptr [r8]
+  18013997F  comiss    xmm0, dword ptr [rcx + 0x68]
+  180139983  jb        0x18013998e
+  180139985  mov       rax, qword ptr [rcx + 0x38]
+  180139989  mov       rcx, qword ptr [rax]
+  18013998C  jmp       0x180139992
+  18013998E  add       rcx, 0x6c
+  180139992  mov       rax, qword ptr [rdx + 0x60]
+  180139996  movss     xmm1, dword ptr [rcx]
+  18013999A  movss     dword ptr [rax], xmm1
+  18013999E  movss     xmm0, dword ptr [r8 + 4]
+  1801399A4  comiss    xmm0, dword ptr [rdx + 0x68]
+  1801399A8  jb        0x1801399b6
+  1801399AA  mov       rax, qword ptr [rdx + 0x38]
+  1801399AE  mov       rcx, qword ptr [rax]
+  1801399B1  movss     xmm1, dword ptr [rcx + 4]
+  1801399B6  mov       rax, qword ptr [rdx + 0x60]
+  1801399BA  movss     dword ptr [rax + 4], xmm1
+  1801399BF  movss     xmm0, dword ptr [r8 + 8]
+  1801399C5  comiss    xmm0, dword ptr [rdx + 0x68]
+  1801399C9  jb        0x1801399d7
+  1801399CB  mov       rax, qword ptr [rdx + 0x38]
+  1801399CF  mov       rcx, qword ptr [rax]
+  1801399D2  movss     xmm1, dword ptr [rcx + 8]
+  1801399D7  mov       rax, qword ptr [rdx + 0x60]
+  1801399DB  movss     dword ptr [rax + 8], xmm1
+  1801399E0  movss     xmm0, dword ptr [r8 + 0xc]
+  1801399E6  comiss    xmm0, dword ptr [rdx + 0x68]
+  1801399EA  jb        0x1801399f8
+  1801399EC  mov       rax, qword ptr [rdx + 0x38]
+  1801399F0  mov       rcx, qword ptr [rax]
+  1801399F3  movss     xmm1, dword ptr [rcx + 0xc]
+  1801399F8  mov       rax, qword ptr [rdx + 0x60]
+  1801399FC  movss     dword ptr [rax + 0xc], xmm1
+  180139A01  mov       rax, qword ptr [rdx + 0x60]
+  180139A05  mov       ecx, dword ptr [rax + 0xc]
+  180139A08  mov       dword ptr [rdx + 0x6c], ecx
+  180139A0B  ret       
+  180139A0C  int3      
+  180139A0D  int3      
+  180139A0E  int3      
+  180139A0F  int3      
+  180139A10  add       rcx, 8
+  180139A14  jmp       0x1800cacd0
+  180139A19  int3      
+  180139A1A  int3      
+  180139A1B  int3      
+  180139A1C  int3      
+  180139A1D  int3      
+  180139A1E  int3      
+  180139A1F  int3      
+  180139A20  add       rcx, 8
+  180139A24  jmp       0x1800db140
+  180139A29  int3      
+  180139A2A  int3      
+  180139A2B  int3      
+  180139A2C  int3      
+  180139A2D  int3      
+  180139A2E  int3      
+  180139A2F  int3      
+  180139A30  mov       qword ptr [rsp + 0x20], rbx
+  180139A35  push      rbp
+  180139A36  push      rsi
+  180139A37  push      rdi
+  180139A38  sub       rsp, 0x50
+  Reading: the held target is a snapshot of the (already-absolutised)
+  noise stream; the comparator re-arm does not re-introduce a sign.
+
+D. THE SLEW (rdm slew N, FUN_180139790)
+------------------------------------------------------------------------------
+  180139790  mov       rax, qword ptr [rcx + 0xd0]
+  180139797  movss     xmm0, dword ptr [rcx + 0xf0]
+  18013979F  movss     xmm2, dword ptr [rcx + 0x120]
+  1801397A7  movss     xmm1, dword ptr [rcx + 0x108]
+  1801397AF  mov       r8, qword ptr [rax]
+  1801397B2  movss     xmm3, dword ptr [r8]
+  1801397B7  comiss    xmm0, xmm3
+  1801397BA  jbe       0x1801397c4
+  1801397BC  addss     xmm0, xmm2
+  1801397C0  mov       dl, 1
+  1801397C2  jmp       0x1801397d3
+  1801397C4  ucomiss   xmm1, xmm2
+  1801397C7  addss     xmm0, xmm1
+  1801397CB  jne       0x1801397d1
+  1801397CD  mov       dl, 1
+  1801397CF  jmp       0x1801397d3
+  1801397D1  xor       dl, dl
+  1801397D3  comiss    xmm0, xmm3
+  1801397D6  seta      al
+  1801397D9  cmp       al, dl
+  1801397DB  je        0x1801397e0
+  1801397DD  movaps    xmm0, xmm3
+  1801397E0  mov       rax, qword ptr [rcx + 0xe8]
+  1801397E7  movss     dword ptr [rax], xmm0
+  1801397EB  movss     xmm3, dword ptr [r8 + 4]
+  1801397F1  comiss    xmm0, xmm3
+  1801397F4  jbe       0x1801397fe
+  1801397F6  addss     xmm0, xmm2
+  1801397FA  mov       dl, 1
+  1801397FC  jmp       0x18013980d
+  1801397FE  ucomiss   xmm1, xmm2
+  180139801  addss     xmm0, xmm1
+  180139805  jne       0x18013980b
+  180139807  mov       dl, 1
+  180139809  jmp       0x18013980d
+  18013980B  xor       dl, dl
+  18013980D  comiss    xmm0, xmm3
+  180139810  seta      al
+  180139813  cmp       al, dl
+  180139815  je        0x18013981a
+  180139817  movaps    xmm0, xmm3
+  18013981A  mov       rax, qword ptr [rcx + 0xe8]
+  180139821  movss     dword ptr [rax + 4], xmm0
+  180139826  movss     xmm3, dword ptr [r8 + 8]
+  18013982C  comiss    xmm0, xmm3
+  18013982F  jbe       0x180139839
+  180139831  addss     xmm0, xmm2
+  180139835  mov       dl, 1
+  180139837  jmp       0x180139848
+  180139839  ucomiss   xmm1, xmm2
+  18013983C  addss     xmm0, xmm1
+  180139840  jne       0x180139846
+  180139842  mov       dl, 1
+  180139844  jmp       0x180139848
+  180139846  xor       dl, dl
+  180139848  comiss    xmm0, xmm3
+  18013984B  seta      al
+  18013984E  cmp       al, dl
+  180139850  je        0x180139855
+  180139852  movaps    xmm0, xmm3
+  180139855  mov       rax, qword ptr [rcx + 0xe8]
+  Reading: state walks toward the held target and CLAMPS AT THE
+  TARGET on crossing (the 0x1801397D3 region, R9). With nonnegative
+  targets and a zero initial state the walk stays nonnegative:
+  F in [0, 1+2^-23] arithmetically, [0, 1] over the orbit (R10/R11).
+
+E. THE SCALE CONVERSION (page[10], 0x1800E769B-0x1800E7749)
+------------------------------------------------------------------------------
+  .rdata double at 0x1804120B0 = 0.0004166666666666666934  (1/2400 = 0.0004166666666666666934)
+  1800E7690  clc                                                     
+  1800E7691  add       byte ptr [rdx], al                            
+  1800E7693  add       byte ptr [rax], al                            
+  1800E7695  jl        0x1800e75b0                                   
+  1800E769B  mov       rcx, qword ptr [rsi + 0x2b0]                  
+  1800E76A2  mov       rdx, qword ptr [rbp + 0xc0]                   
+  1800E76A9  mov       rax, qword ptr [rdx + rcx + 0x20]             
+  1800E76AE  test      rax, rax                                      
+  1800E76B1  jne       0x1800e76ba                                   
+  1800E76B3  lea       rax, [rdx + 0x28]                             
+  1800E76B7  add       rax, rcx                                      
+  1800E76BA  movss     xmm1, dword ptr [rax]                         
+  1800E76BE  lea       r8, [rbp + 0xb0]                              
+  1800E76C5  movss     xmm0, dword ptr [rdx + rcx]                   
+  1800E76CA  lea       rax, [rbp + 0xa8]                             
+  1800E76D1  movss     xmm6, dword ptr [rbp + 0x158]                 
+  1800E76D9  comiss    xmm1, xmm0                                    
+  1800E76DC  movss     dword ptr [rbp + 0xa8], xmm1                  
+  1800E76E4  movss     dword ptr [rbp + 0xb0], xmm0                  
+  1800E76EC  cmovbe    rax, r8                                       
+  1800E76F0  movss     dword ptr [rsp + 0x20], xmm6                  
+  1800E76F6  imul      r12d, dword ptr [rsp + 0x48], 0x2c            
+  1800E76FC  movss     xmm0, dword ptr [rax]                         
+  1800E7700  minss     xmm0, dword ptr [rdx + rcx + 4]               
+  1800E7706  mov       rax, qword ptr [rsi + 0x408]                  
+  1800E770D  mov       r9d, r12d                                     
+  1800E7710  mov       rcx, qword ptr [rsp + 0x70]                   
+  1800E7715  mov       edx, dword ptr [rsi + 8]                      
+  1800E7718  cvtps2pd  xmm1, xmm0                                    
+  1800E771B  mov       ecx, dword ptr [rax + rcx*4]                  
+  1800E771E  neg       ecx                                           
+  1800E7720  mov       rcx, qword ptr [rsi]                          
+  1800E7723  sbb       r15d, r15d                                    
+  1800E7726  add       r15d, 0x16                                    
+  1800E772A  mov       r8d, r15d                                     
+  1800E772D  mulsd     xmm1, qword ptr [rip + 0x32a97b]                 <== mulsd by 1/2400
+  1800E7735  mov       rax, qword ptr [rcx]                          
+  1800E7738  cvtpd2ps  xmm7, xmm1                                    
+  1800E773C  minss     xmm7, xmm14                                   
+  1800E7741  maxss     xmm7, dword ptr [rip + 0x32b0c3]              
+  1800E7749  call      qword ptr [rax + 0xa0]                        
+  1800E774F  mov       rcx, qword ptr [rsi]                          
+  1800E7752  lea       r9d, [r12 + 1]                                
+  1800E7757  mov       edx, dword ptr [rsi + 8]                      
+  1800E775A  mov       r8d, r15d                                     
+  Reading: page[10] = clamp(clamp(live_modamt, lo, hi)*(1/2400), -1, 1).
+
+F. THE FINAL MULTIPLIER CHAIN (0x1800E2330-0x1800E2460)
+------------------------------------------------------------------------------
+  1800E2330  mov       rax, qword ptr [rsi + 0x68]                     
+  1800E2334  mov       rdx, qword ptr [rsi + 0x40f8]                   
+  1800E233B  mov       dword ptr [rsp + 0x148], r13d                   
+  1800E2343  mov       rcx, qword ptr [rcx + rax + 8]                  
+  1800E2348  movss     xmm0, dword ptr [r12 + rdx]                     
+  1800E234E  mov       rax, qword ptr [rcx]                            
+  1800E2351  movss     xmm4, dword ptr [rax]                           
+  1800E2355  cvtps2pd  xmm4, xmm4                                      
+  1800E2358  mov       rax, qword ptr [rsi + 0x4128]                   
+  1800E235F  mov       r8d, r13d                                       
+  1800E2362  imul      ecx, dword ptr [rsp + 0x140], 0x2c              
+  1800E236A  cvtps2pd  xmm0, xmm0                                      
+  1800E236D  mulsd     xmm4, xmm0                                      
+  1800E2371  movss     xmm0, dword ptr [rsi + 0x40e4]                  
+  1800E2379  cvtps2pd  xmm0, xmm0                                      
+  1800E237C  movaps    xmm2, xmm4                                      
+  1800E237F  mulsd     xmm2, xmm4                                      
+  1800E2383  movaps    xmm3, xmm2                                      
+  1800E2386  movaps    xmm1, xmm2                                      
+  1800E2389  mulsd     xmm1, xmm2                                      
+  1800E238D  mulsd     xmm3, xmm4                                      
+  1800E2391  mulsd     xmm3, xmm0                                      
+  1800E2395  movss     xmm0, dword ptr [rsi + 0x40e8]                  
+  1800E239D  cvtps2pd  xmm0, xmm0                                      
+  1800E23A0  mulsd     xmm1, xmm0                                      
+  1800E23A4  movss     xmm0, dword ptr [rsi + 0x40e0]                  
+  1800E23AC  cvtps2pd  xmm0, xmm0                                      
+  1800E23AF  addsd     xmm3, xmm1                                      
+  1800E23B3  movss     xmm1, dword ptr [rsi + 0x40dc]                  
+  1800E23BB  mulsd     xmm0, xmm2                                      
+  1800E23BF  cvtps2pd  xmm1, xmm1                                      
+  1800E23C2  addsd     xmm3, xmm0                                      
+  1800E23C6  movss     xmm0, dword ptr [rsi + 0x40d8]                  
+  1800E23CE  cvtps2pd  xmm0, xmm0                                      
+  1800E23D1  mulsd     xmm1, xmm4                                      
+  1800E23D5  addsd     xmm1, xmm0                                      
+  1800E23D9  addsd     xmm3, xmm1                                      
+  1800E23DD  movss     xmm1, dword ptr [r12 + rax]                        <== F*page10 / P(f)*slot / *64
+  1800E23E3  mov       rax, qword ptr [rsi + 0x4170]                   
+  1800E23EA  mov       qword ptr [rsp + 0x38], rax                     
+  1800E23EF  cvtps2pd  xmm1, xmm1                                      
+  1800E23F2  sub       r8d, dword ptr [r12 + rax]                      
+  1800E23F6  mov       rax, qword ptr [rsi + 0x4110]                   
+  1800E23FD  and       r8d, r15d                                       
+  1800E2400  mov       dword ptr [rsp + 0x158], r8d                    
+  1800E2408  cvtpd2ps  xmm0, xmm3                                      
+  1800E240C  cvtps2pd  xmm13, xmm0                                     
+  1800E2410  movss     xmm0, dword ptr [r12 + rax]                     
+  1800E2416  mov       rax, qword ptr [rsi + 0x4280]                   
+  1800E241D  mulsd     xmm13, xmm1                                        <== F*page10 / P(f)*slot / *64
+  1800E2422  movss     dword ptr [rsp + 0x150], xmm0                   
+  1800E242B  lea       r11, [rax + rcx*4]                              
+  1800E242F  mov       rax, qword ptr [rsi + 0x42d0]                   
+  1800E2436  mov       qword ptr [rsp + 0x28], r11                     
+  1800E243B  mulsd     xmm13, qword ptr [rip + 0x33004c]                  <== F*page10 / P(f)*slot / *64
+  1800E2444  cmp       dword ptr [rax + r14*4], 1                      
+  1800E2449  jne       0x1800e245b                                     
+  1800E244B  mov       rax, qword ptr [rsi + 0x42a8]                   
+  1800E2452  lea       r11, [rax + rcx*4]                              
+  1800E2456  mov       qword ptr [rsp + 0x28], r11                     
+  .rdata double at 0x180412490 = 64 (the *64.0)
+  Reading (rounds 9/12, re-verified instruction-by-instruction):
+    f    = F * page10               (F >= 0, page10 >= 0 => f >= 0)
+    step = (float)P(f) * slot_40F8[v] * 64 = 4*P(f)*(ratio*correction)
+    4*P(f) >= 1 for f >= 0 => the rate multiplier never dips below
+    unity: ONE-SIDED. No sign reintroduction exists in the chain.
+
+G. THE QUARTIC P AND ITS APPROXIMATION ERROR (numeric, DER)
+------------------------------------------------------------------------------
+  4*P(f) = 1 + 1.3842323f + 0.9756581f^2 + 0.4793226f^3 + 0.1394705f^4
+  Over the shipped domain f in [0, 1/12]:
+    max |achieved - nominal| = 0.1012 cents at f=0.05606 (signed -0.1012 c)
+    depth 50 default -> -0.0610 c ; depth 200 -> -0.0769 c
+    4*P over [0, 1/12] = [1.000000, 1.122412]  (+0% .. +12.24% rate)
+
+VERDICT (the resolution)
+==============================================================================
+  1. NOISE SIGN: signed at the source ([-1, +1] orbit, float32).
+  2. MODULATION INPUT RANGE: F = |noise|->sh->slew is NONNEGATIVE, [0, 1]
+     orbit-actual (1.0 attainable; 1+2^-23 arithmetic bound).
+  3. RATE MULTIPLIER RANGE: 4*P(f) in [1, 1.122412] at depth <= 200
+     (+0%% .. +12.24%% rate) -- ONE-SIDED, never below unity.
+  4. CENTS DEVIATION FROM BASELINE: 0 .. +199.92 c, upward only.
+  5. APPROXIMATION ERROR: |err| <= 0.1012 c over the shipped domain
+     (negative in the bulk; R11's quantification re-verified).
+
+  THE R21 WORDING '+-0..8.33%% rate modulation' IS THE CORRECTION-RECORD
+  ITEM: the '+-' is wrong (no sign reintroduction exists anywhere in
+  the live chain -- every link re-derived above); '8.33%%' conflates the
+  f-domain ceiling (200/2400) with the rate multiplier (4*P in
+  [1, 1.1224] = +0..+12.24%%). The R9/R11 one-sided law STANDS.
+  Historical findings are preserved; this file is the correction record.

@@ -1,0 +1,20 @@
+
+float FUN_1800ca260(undefined8 *param_1,float param_2)
+
+{
+  float fVar1;
+  
+  if (param_2 * 0.001 == 0.0) {
+    return 1.0;
+  }
+  fVar1 = (float)(**(code **)(*(longlong *)*param_1 + 8))();
+  fVar1 = 1.0 / (fVar1 * param_2 * 0.001);
+  if (1.0 <= fVar1) {
+    fVar1 = 1.0;
+  }
+  if ((int)(fVar1 * 8388607.0) == 0) {
+    return 1.192093e-07;
+  }
+  return fVar1;
+}
+

@@ -1,0 +1,97 @@
+{
+  "all_ok": true,
+  "variants": [
+    {
+      "variant": "Lagrange6_Balanced",
+      "size": 631808,
+      "sha256": "2c63408efdd063e55d8619ad8f65be3cdf0797aa9c9600120227956f282bc5a5",
+      "machine": "0x8664",
+      "magic": "0x20b",
+      "imports": [
+        "KERNEL32.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-private-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "USER32.dll",
+        "ole32.dll"
+      ],
+      "getpluginfactory": true,
+      "ok": true,
+      "errors": []
+    },
+    {
+      "variant": "Lagrange6_Hybrid",
+      "size": 631808,
+      "sha256": "a48049a0167ac7021e1c9642a395d9278173d8b2686d5499e397a837af419021",
+      "machine": "0x8664",
+      "magic": "0x20b",
+      "imports": [
+        "KERNEL32.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-private-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "USER32.dll",
+        "ole32.dll"
+      ],
+      "getpluginfactory": true,
+      "ok": true,
+      "errors": []
+    },
+    {
+      "variant": "ObsKernel6_Balanced",
+      "size": 631808,
+      "sha256": "e250e496b2e97502a65b4960da5e1bc19410f767660577ad29e57861784da8f9",
+      "machine": "0x8664",
+      "magic": "0x20b",
+      "imports": [
+        "KERNEL32.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-private-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "USER32.dll",
+        "ole32.dll"
+      ],
+      "getpluginfactory": true,
+      "ok": true,
+      "errors": []
+    },
+    {
+      "variant": "Lagrange6_FullRate",
+      "size": 631808,
+      "sha256": "937ef3723d82f7bb0eed476ae69bc1d84570dcd4f89d7d9de4d6e3df2f812b39",
+      "machine": "0x8664",
+      "magic": "0x20b",
+      "imports": [
+        "KERNEL32.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-private-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "USER32.dll",
+        "ole32.dll"
+      ],
+      "getpluginfactory": true,
+      "ok": true,
+      "errors": []
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+### [None] c_subtract1  slot=0x360 add=0x1800DCDC0
+    in1=inch-out
+    in2=1
+
+### [None] c_switch  slot=0x4E8 add=0x1800D6940
+    ninputs=2
+    select=live-out
+    in1=live mode delay comp-out
+    in2=0
+
+### [None] c_minmax  slot=0x6E0 add=0x1800D15D0
+    ninputs=2
+    in1=fbkd-out
+    in2=50
+
+### [11] c_divide26  slot=0x810 add=0x18013A110
+    in1=rdep-out
+    in2=2400
+
+### [12] c_fltr_a36  slot=0x8A8 add=0x18013AAC0
+    time_constant=20
+    in=c_divide26-out
+
+### [13] keys  slot=0x980 add=0x18013AD00
+    statement=key  :   %s
+    nchoices=17
+    default=0
+    choices1= C
+    choices2=C#
+    choices3=Db
+    choices4= D
+    choices5=D#
+    choices6=Eb
+    choices7= E
+    choices8= F
+    choices9=F#
+    choices10=Gb
+    choices11= G
+    choices12=G#
+    choices13=Ab
+    choices14= A
+    choices15=A#
+    choices16=Bb
+    choices17= B
+
+### [17] c_cmp2  slot=0xC30 add=0x18013A760
+    in1=scal table-out
+    in2=14
+
+### [19] c_or  slot=0xEA0 add=0x18013A110
+    in1=c_cmp2-eq
+    in2=c_cmp3-eq
+
+### [30] c_adder8  slot=0x1608 add=0x18013A510
+    ninputs=2
+    in1=dly1-out
+    in2=c_switch-out
+
+### [126] c_divide18  slot=0x5280 add=0x18013A110
+    in1=fback switch 1-out
+    in2=20
+
+### [127] c_power9  slot=0x5318 add=0x18013A110
+    in1=10
+    in2=c_divide18-out
+
+### [128] c_divide19  slot=0x53B0 add=0x18013A110
+    in1=fback switch 2-out
+    in2=20
+
+### [151] c_abs  slot=0x61A0 add=0x180139EC0
+    input=sht1-out
+
+### [159] c_adder  slot=0x64E0 add=0x18013A510
+    ninputs=2
+    in1=c_abs-output
+    in2=200
+
+### [167] c_divide3  slot=0x67A0 add=0x18013A110
+    in1=sht1-out
+    in2=c_adder-out
+
+### [168] c_fltr_a13  slot=0x6838 add=0x18013AAC0
+    time_constant=0
+    in=c_divide3-out
+
+### [183] rdm div 1  slot=0x7320 add=0x18013A110
+    in1=rdm a-c 1-out
+    in2=1.5
+
+### [184] rdm add 1  slot=0x73B8 add=0x18013A510
+    ninputs=2
+    in1=rdm div 1-out
+    in2=0.5
+
+### [206] rdm mult 1  slot=0x7FE0 add=0x18013A390
+    in1=2000
+    in2=rdm add 8-out
+
+### [213] rdm abs  slot=0x8450 add=0x180139A30
+    in=rdm noise-out
+
+### [214] rdm sh 1  slot=0x84A8 add=0x1801390D0
+    in=rdm abs-out
+    newsamp=rdm comp 1-out
+
+### [215] rdm slew 1  slot=0x8518 add=0x1801398E0
+    in=rdm sh 1-out
+    pslew=rdm mult 1-out
+    nslew=rdm mult 1-out
+
+### [216] rdm comp 1  slot=0x8648 add=0x1801395F0
+    in1=rdm slew 1-out
+    in2=rdm sh 1-out
+    inspread=0
+    constval=0
+    outspread=0
+
+### [217] rdm a-c 1  slot=0x8750 add=0x180139270
+    in=rdm slew 1-out
+
+### [263] c_minmax2  slot=0xB088 add=0x18013AB50
+    ninputs=9
+    in1=c_multiply 1-out
+    in2=c_multiply 2-out
+    in3=c_multiply 3-out
+    in4=c_multiply 4-out
+    in5=c_multiply 5-out
+    in6=c_multiply 6-out
+    in7=c_multiply 7-out
+    in8=c_multiply 8-out
+    in9=0
+
+### [268] bound1  slot=0xB3C8 add=0x1801384B0
+    in=c_fltr_a14-out
+    minimum=0
+    maximum=1
+
+### [269] c_fltr_a12  slot=0xB4E8 add=0x18013AAC0
+    time_constant=20
+    in=c_power9-out
+
+### [270] multiply4  slot=0xB5C0 add=0x1801390D0
+    in1=moddelay7-out
+    in2=c_fltr_a12-out
+
+### [278] add  slot=0x16F70 add=0x180137F40
+    in1=eqn-out
+    in2=multiply4-out
+

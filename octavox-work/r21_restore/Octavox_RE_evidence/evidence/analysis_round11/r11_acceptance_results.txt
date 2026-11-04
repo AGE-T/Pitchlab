@@ -1,0 +1,59 @@
+[PASS] wav_io                             read 16/24/32-bit PCM + clip-guarded write
+[PASS] ref_delayline_pitch_pos            220 Hz sine, +4 st, 1 voice
+[PASS] ref_delayline_pitch_neg            220 Hz sine, -5 st, 1 voice
+[PASS] ref_delayline_silence              digital silence in -> silence out
+[PASS] ref_delayline_lowlevel             -60 dBFS tone, +4 st
+[PASS] ref_delayline_unison               unison gain (delayline comb is documented)
+[PASS] ref_delayline_chord                A3+C#4+E4 chord, +4 st
+[PASS] ref_delayline_percussive           6 decaying noise bursts, +4 st
+[PASS] ref_delayline_voices8              220 Hz, +4 st, 8 voices (spread)
+[PASS] ref_delayline_impulse              impulse response / latency
+[PASS] ref_pv_pitch_pos                   220 Hz sine, +4 st, 1 voice
+[PASS] ref_pv_pitch_neg                   220 Hz sine, -5 st, 1 voice
+[PASS] ref_pv_silence                     digital silence in -> silence out
+[PASS] ref_pv_lowlevel                    -60 dBFS tone, +4 st
+[PASS] ref_pv_unison                      unison gain (delayline comb is documented)
+[PASS] ref_pv_chord                       A3+C#4+E4 chord, +4 st
+[PASS] ref_pv_percussive                  6 decaying noise bursts, +4 st
+[PASS] ref_pv_voices8                     220 Hz, +4 st, 8 voices (spread)
+[PASS] ref_pv_impulse                     impulse response / latency
+[PASS] ref_pv_transient_pitch_pos         220 Hz sine, +4 st, 1 voice
+[PASS] ref_pv_transient_pitch_neg         220 Hz sine, -5 st, 1 voice
+[PASS] ref_pv_transient_silence           digital silence in -> silence out
+[PASS] ref_pv_transient_lowlevel          -60 dBFS tone, +4 st
+[PASS] ref_pv_transient_unison            unison gain (delayline comb is documented)
+[PASS] ref_pv_transient_chord             A3+C#4+E4 chord, +4 st
+[PASS] ref_pv_transient_percussive        6 decaying noise bursts, +4 st
+[PASS] ref_pv_transient_voices8           220 Hz, +4 st, 8 voices (spread)
+[PASS] ref_pv_transient_impulse           impulse response / latency
+[PASS] ref_delayline_feedback8            8 voices, feedback 0.35, 4 s noise
+[PASS] v2_aligned_pitch_pos4              220 Hz sine, ratio 1.2599, aligned
+[PASS] v2_aligned_pitch_neg5              220 Hz sine, ratio 0.7492, aligned
+[PASS] v2_aligned_pitch_oct_up            220 Hz sine, ratio 2.0000, aligned
+[PASS] v2_aligned_pitch_oct_down          220 Hz sine, ratio 0.5000, aligned
+[PASS] v2_aligned_chord                   chord, +4 st, aligned (partial-period alignment)
+[PASS] v2_aligned_percussive              percussive bursts, +4 st, aligned
+[PASS] v2_aligned_unison                  unison (documented comb limitation)
+[PASS] v2_aligned_voices8                 220 Hz, +4 st, 8 voices (spread), aligned
+[PASS] v2_aligned_feedback8               aligned, 8 voices, feedback 0.35, 4 s noise
+[PASS] v2_aligned_longrun                 10 s sustained tone, +4 st, aligned
+[PASS] v2_stereo_integrity                L=tone R=silence -> R stays silent (fresh engines)
+[PASS] v2_stereo_differential             uncorrelated L/R stay distinct
+[PASS] cli_v2_mono                        v2 CLI mono +4 st 3 voices -> WAV
+[PASS] cli_v2_stereo                      v2 CLI stereo delayline: R silence preserved
+[PASS] cli_v2_44k_keep_rate               v2 CLI 48k in -> 44.1k proc -> keep rate
+[PASS] cli_v2_24bit                       v2 CLI 24-bit PCM input
+
+--- before/after (improvement evidence; recorded, not gated) ---
+reference CLI stereo contamination: -0.4420963737417111 dB (defect; fixed by v2 per-channel engines -> measured -234 dB in v2_stereo_integrity)
+r=1.2599: cents +3.274 -> +0.030 | mod(sync) 2.36 -> 0.00 dB | mod(1ms) 6.59 -> 5.48 dB
+r=0.7492: cents -5.835 -> +0.001 | mod(sync) 2.32 -> 0.00 dB | mod(1ms) 10.82 -> 10.06 dB
+r=2.0000: cents +9.131 -> +0.082 | mod(sync) 2.27 -> 0.01 dB | mod(1ms) 3.02 -> 1.15 dB
+r=0.5000: cents -17.757 -> -0.016 | mod(sync) 1.99 -> 0.00 dB | mod(1ms) 13.90 -> 13.32 dB
+reference: latency 102.5 ms, attack 130.41666666666666 ms, pre-onset -234.0 dB
+aligned: latency 102.5 ms, attack 141.29166666666669 ms, pre-onset -234.0 dB
+cost 8 voices: reference 4306 ms/s audio
+cost 8 voices: aligned 3811 ms/s audio
+
+======================================================================
+45/45 cases passed; results: /home/z/octavox/work/Octavox_RE_evidence/evidence/analysis_round11/r11_acceptance_results.json

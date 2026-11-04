@@ -1,0 +1,124 @@
+=== disp32 T+0x6070 running corr (0x6070): 4 raw hits ===
+  0x1800dff33  mov dword ptr [rdi + 0x6070], 0x3f800000
+  0x1800e01fb  movss xmm4, dword ptr [r9 + 0x6070]
+  0x1800e01fc  movups xmm4, xmmword ptr [r9 + 0x6070]
+  0x1800e01fd  movups xmm4, xmmword ptr [rcx + 0x6070]
+  0x1800e01fe  adc byte ptr [rcx + 0x6070], ah
+  0x1800e024e  movss dword ptr [r9 + 0x6070], xmm1
+  0x1800e024f  movups xmmword ptr [r9 + 0x6070], xmm1
+  0x1800e0250  movups xmmword ptr [rcx + 0x6070], xmm1
+  0x1800e0251  adc dword ptr [rcx + 0x6070], ecx
+  0x1800e0e94  mov dword ptr [rdi + 0x6070], 0x3f800000
+  -> 10 decoded instruction hits
+
+=== disp32 T+0x6074 clamped corr target (0x6074): 3 raw hits ===
+  0x1800e0154  movss dword ptr [rdi + 0x6074], xmm11
+  0x1800e0155  movups xmmword ptr [rdi + 0x6074], xmm11
+  0x1800e0156  movups xmmword ptr [rdi + 0x6074], xmm3
+  0x1800e0157  adc dword ptr [rdi + 0x6074], ebx
+  0x1800e016e  movss dword ptr [rdi + 0x6074], xmm10
+  0x1800e016f  movups xmmword ptr [rdi + 0x6074], xmm10
+  0x1800e0170  movups xmmword ptr [rdi + 0x6074], xmm2
+  0x1800e0171  adc dword ptr [rdi + 0x6074], edx
+  0x1800e019a  movss xmm2, dword ptr [rcx + 0x6074]
+  0x1800e019b  movups xmm2, xmmword ptr [rcx + 0x6074]
+  0x1800e019c  adc byte ptr [rcx + 0x6074], dl
+  -> 11 decoded instruction hits
+
+=== disp32 engine+0xa588 (=T+0x6070) (0xa588): 1 raw hits ===
+  0x1800e17e8  movss xmm7, dword ptr [rcx + 0xa588]
+  0x1800e17e9  movups xmm7, xmmword ptr [rcx + 0xa588]
+  0x1800e17ea  adc byte ptr [rcx + 0xa588], bh
+  -> 3 decoded instruction hits
+
+=== disp32 engine+0xa58c (=T+0x6074) (0xa58c): 1 raw hits ===
+  0x1800e1758  movss xmm7, dword ptr [rcx + 0xa58c]
+  0x1800e1759  movups xmm7, xmmword ptr [rcx + 0xa58c]
+  0x1800e175a  adc byte ptr [rcx + 0xa58c], bh
+  -> 3 decoded instruction hits
+
+=== engine-embed offset 0x430 (wrapper -> engine forwarding) ===
+=== disp32 wrapper+0x430 engine embed (0x430): 62 raw hits ===
+  0x1800cec90  mov r9d, dword ptr [rcx + 0x430]
+  0x1800cec91  mov ecx, dword ptr [rcx + 0x430]
+  0x1800f20c2  lea rcx, [rbp + 0x430]
+  0x1800f20c3  lea ecx, [rbp + 0x430]
+  0x1800f2115  lea rcx, [rbp + 0x430]
+  0x1800f2116  lea ecx, [rbp + 0x430]
+  0x1800fae2c  lea rcx, [rbp + 0x430]
+  0x1800fae2d  lea ecx, [rbp + 0x430]
+  0x1800fae49  lea rcx, [rbp + 0x430]
+  0x1800fae4a  lea ecx, [rbp + 0x430]
+  0x18010bd62  lea rcx, [rbp + 0x430]
+  0x18010bd63  lea ecx, [rbp + 0x430]
+  0x18010bdb5  lea rcx, [rbp + 0x430]
+  0x18010bdb6  lea ecx, [rbp + 0x430]
+  0x180114a6c  lea rcx, [rbp + 0x430]
+  0x180114a6d  lea ecx, [rbp + 0x430]
+  0x180114a89  lea rcx, [rbp + 0x430]
+  0x180114a8a  lea ecx, [rbp + 0x430]
+  0x180124e22  lea rcx, [rbp + 0x430]
+  0x180124e23  lea ecx, [rbp + 0x430]
+  0x180124e75  lea rcx, [rbp + 0x430]
+  0x180124e76  lea ecx, [rbp + 0x430]
+  0x18012db2c  lea rcx, [rbp + 0x430]
+  0x18012db2d  lea ecx, [rbp + 0x430]
+  0x18012db49  lea rcx, [rbp + 0x430]
+  0x18012db4a  lea ecx, [rbp + 0x430]
+  0x180137e05  lea rcx, [rbx + 0x430]
+  0x180137e06  lea ecx, [rbx + 0x430]
+  0x180137e53  lea rcx, [rsi + 0x430]
+  0x180137e54  lea ecx, [rsi + 0x430]
+  0x180152123  mov rcx, qword ptr [rbx + 0x430]
+  0x180152124  mov ecx, dword ptr [rbx + 0x430]
+  0x18016f9bb  mov rax, qword ptr [rbp + 0x430]
+  0x18016f9bc  mov eax, dword ptr [rbp + 0x430]
+  0x1801929d3  mov qword ptr [rsp + 0x430], rdi
+  0x1801929d4  mov dword ptr [rsp + 0x430], edi
+  0x180192d28  mov rdi, qword ptr [rsp + 0x430]
+  0x180192d29  mov edi, dword ptr [rsp + 0x430]
+  0x1801fda49  mov qword ptr [rsp + 0x430], rax
+  0x1801fda4a  mov dword ptr [rsp + 0x430], eax
+  0x1801fdb73  mov rcx, qword ptr [rsp + 0x430]
+  0x1801fdb74  mov ecx, dword ptr [rsp + 0x430]
+  0x1801fdeb3  mov qword ptr [rsp + 0x430], rax
+  0x1801fdeb4  mov dword ptr [rsp + 0x430], eax
+  0x1801fe046  mov rcx, qword ptr [rsp + 0x430]
+  0x1801fe047  mov ecx, dword ptr [rsp + 0x430]
+  0x180215393  movups xmmword ptr [rsi + 0x430], xmm1
+  0x180215394  adc dword ptr [rsi + 0x430], ecx
+  0x180215b1b  movups xmmword ptr [rbx + 0x430], xmm1
+  0x180215b1c  adc dword ptr [rbx + 0x430], ecx
+  0x18027ae93  cmp byte ptr [rsi + 0x430], 0
+  0x18027c8e0  cmp byte ptr [rcx + 0x430], 0
+  0x1802fbbd0  mov rsi, qword ptr [rbp + 0x430]
+  0x1802fbbd1  mov esi, dword ptr [rbp + 0x430]
+  0x1802fbc48  mov qword ptr [rbp + 0x430], r14
+  0x1802fbc49  mov dword ptr [rbp + 0x430], esi
+  0x1802fe52d  mov byte ptr [rbx + 0x430], 1
+  0x18030f920  lea rcx, [rbp + 0x430]
+  0x18030f921  lea ecx, [rbp + 0x430]
+  0x18030f956  lea rdx, [rbp + 0x430]
+  0x18030f957  lea edx, [rbp + 0x430]
+  0x18030fd85  lea rcx, [rbp + 0x430]
+  0x18030fd86  lea ecx, [rbp + 0x430]
+  0x180312c0e  mov qword ptr [rbx + 0x430], rsi
+  0x180312c0f  mov dword ptr [rbx + 0x430], esi
+  0x18032cf1a  mov rcx, qword ptr [r15 + 0x430]
+  0x18032cf1b  mov ecx, dword ptr [rdi + 0x430]
+  0x18033062e  mov rcx, qword ptr [rsi + 0x430]
+  0x18033062f  mov ecx, dword ptr [rsi + 0x430]
+  0x1803319b7  mov qword ptr [rsi + 0x430], r12
+  0x1803319b8  mov dword ptr [rsi + 0x430], esp
+  0x18033395c  lea rdi, [rsi + 0x430]
+  0x18033395d  lea edi, [rsi + 0x430]
+  0x1803339ad  lea rdx, [rsi + 0x430]
+  0x1803339ae  lea edx, [rsi + 0x430]
+  0x180333a4b  mov rdx, qword ptr [rsi + 0x430]
+  0x180333a4c  mov edx, dword ptr [rsi + 0x430]
+  0x18033553c  mov rax, qword ptr [rbp + 0x430]
+  0x18033553d  mov eax, dword ptr [rbp + 0x430]
+  0x18035d1a0  lea rcx, [rdx + 0x430]
+  0x18035d1a1  lea ecx, [rdx + 0x430]
+  -> 81 decoded instruction hits
+

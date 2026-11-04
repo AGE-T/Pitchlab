@@ -1,0 +1,72 @@
+[
+ {
+  "variant": "Lagrange6_Balanced",
+  "module": "/home/z/my-project/octavox-work/r21/Windows_delivery/Builds/Lagrange6_Balanced/PitchLab_Lagrange6_Balanced.vst3/Contents/x86_64-win/PitchLab_Lagrange6_Balanced.vst3",
+  "size": 613376,
+  "sha256": "f71cf87574ea8018a4693bc72f27d756b775e50c20aa37e2c9aaff696ccd8fdd",
+  "imports": [
+   "KERNEL32.dll",
+   "api-ms-win-crt-math-l1-1-0.dll",
+   "api-ms-win-crt-private-l1-1-0.dll",
+   "api-ms-win-crt-runtime-l1-1-0.dll",
+   "api-ms-win-crt-string-l1-1-0.dll",
+   "api-ms-win-crt-heap-l1-1-0.dll",
+   "api-ms-win-crt-stdio-l1-1-0.dll",
+   "api-ms-win-crt-environment-l1-1-0.dll",
+   "api-ms-win-crt-time-l1-1-0.dll",
+   "USER32.dll",
+   "ole32.dll"
+  ],
+  "moduleinfo": true,
+  "errors": []
+ },
+ {
+  "variant": "Lagrange6_Hybrid",
+  "module": "/home/z/my-project/octavox-work/r21/Windows_delivery/Builds/Lagrange6_Hybrid/PitchLab_Lagrange6_Hybrid.vst3/Contents/x86_64-win/PitchLab_Lagrange6_Hybrid.vst3",
+  "size": 613376,
+  "sha256": "3c61fe45f12a679ce530c7bc3fee17953990ee30315032e5510228d10ce5c2ee",
+  "imports": [
+   "KERNEL32.dll",
+   "api-ms-win-crt-math-l1-1-0.dll",
+   "api-ms-win-crt-private-l1-1-0.dll",
+   "api-ms-win-crt-runtime-l1-1-0.dll",
+   "api-ms-win-crt-string-l1-1-0.dll",
+   "api-ms-win-crt-heap-l1-1-0.dll",
+   "api-ms-win-crt-stdio-l1-1-0.dll",
+   "api-ms-win-crt-environment-l1-1-0.dll",
+   "api-ms-win-crt-time-l1-1-0.dll",
+   "USER32.dll",
+   "ole32.dll"
+  ],
+  "moduleinfo": true,
+  "errors": []
+ },
+ {
+  "variant": "ObsKernel6_Balanced",
+  "module": "/home/z/my-project/octavox-work/r21/Windows_delivery/Builds/ObsKernel6_Balanced/PitchLab_ObsKernel6_Balanced.vst3/Contents/x86_64-win/PitchLab_ObsKernel6_Balanced.vst3",
+  "size": 613376,
+  "sha256": "94f26f59fe8fcd2d9e4b20190a4d97a37f9ecedd23cce018947a640c8ab4a217",
+  "imports": [
+   "KERNEL32.dll",
+   "api-ms-win-crt-math-l1-1-0.dll",
+   "api-ms-win-crt-private-l1-1-0.dll",
+   "api-ms-win-crt-runtime-l1-1-0.dll",
+   "api-ms-win-crt-string-l1-1-0.dll",
+   "api-ms-win-crt-heap-l1-1-0.dll",
+   "api-ms-win-crt-stdio-l1-1-0.dll",
+   "api-ms-win-crt-environment-l1-1-0.dll",
+   "api-ms-win-crt-time-l1-1-0.dll",
+   "USER32.dll",
+   "ole32.dll"
+  ],
+  "moduleinfo": true,
+  "errors": []
+ },
+ {
+  "kit_exe": "/home/z/my-project/octavox-work/r21/Windows_delivery/Windows_Validation_Kit/octavox_dual_nulltest.exe",
+  "pe": true,
+  "sha256": "33759c45a5e4e55795367e42aae45441142d29433e49f516c811e88599d2afb6",
+  "size": 953856,
+  "errors": []
+ }
+]

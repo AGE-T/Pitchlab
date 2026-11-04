@@ -1,0 +1,62 @@
+{
+  "target": "/home/z/my-project/octavox-work/original/Ox.vst3",
+  "image_base": 6442450944,
+  "A_source": {
+    "function": "FUN_180139B40",
+    "output_sign": "signed",
+    "orbit_range": [
+      -1.0,
+      1.0
+    ]
+  },
+  "B_abs": {
+    "mask_va": "0x180412C60",
+    "mask_bytes": "ffffff7fffffff7fffffff7fffffff7f",
+    "applied_to": "the noise output BEFORE the sample&hold intake (targets become nonnegative)"
+  },
+  "C_sh": {
+    "function": "FUN_180139970",
+    "target_sign": "nonnegative"
+  },
+  "D_slew": {
+    "function": "FUN_180139790",
+    "state_sign": "nonnegative (targets nonnegative, initial 0)",
+    "clamp_at_target": true
+  },
+  "E_scale": {
+    "constant_va": "0x1804120B0",
+    "value": 0.0004166666666666667,
+    "law": "page10 = clamp(modamt/2400, -1, 1)"
+  },
+  "F_multiplier": {
+    "chain": "f=F*page10; step=4*P(f)*(ratio/16)*correction*64",
+    "c64": 64.0,
+    "sign": "one-sided (4P>=1 for f>=0)"
+  },
+  "G_quartic": {
+    "coefficients_x4": [
+      1.3842323,
+      0.9756581,
+      0.4793226,
+      0.1394705
+    ],
+    "domain": [
+      0.0,
+      0.08333333333333333
+    ],
+    "max_abs_error_cents": 0.10121405253593707,
+    "max_error_signed_cents": -0.10121405253593707,
+    "rate_multiplier_range": [
+      1.0,
+      1.1224122069106868
+    ]
+  },
+  "verdict": {
+    "noise_sign": "signed at source",
+    "modulation_input": "nonnegative [0,1] (post-abs sh+slew)",
+    "rate_multiplier": "one-sided [1, 1.122412] at depth<=200",
+    "cents_deviation": "0..+199.92 upward only",
+    "quartic_error_cents": 0.10121405253593707,
+    "r21_wording": "CORRECTED: '+-0..8.33% rate modulation' was a wording regression; the law is one-sided +0..+12.24% rate (= +0..~200 cents), F in [0,1]"
+  }
+}

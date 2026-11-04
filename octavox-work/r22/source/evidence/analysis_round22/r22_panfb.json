@@ -1,0 +1,22 @@
+{
+  "tool": "octavox_r22_panfb",
+  "round": 22,
+  "engine_version": "octavox-native 16.0.0",
+  "gates": [
+    {"name": "pan_law_amplitudes", "ok": true, "detail": "5 positions within 2% of sqrt2*cos/sin"},
+    {"name": "pan_total_power", "ok": true, "detail": "gL^2+gR^2 = 2 at every position (4% tol)"},
+    {"name": "pan_center_bitexact", "ok": true, "detail": "explicit-centred == never-panned AND L == R (dual-mono)"},
+    {"name": "pan_extreme_isolation", "ok": true, "detail": "L/R = -233.979134 dB (<= -60)"},
+    {"name": "pan_extreme_boost", "ok": true, "detail": "active channel = 1.414214x centred (sqrt2 = 1.4142)"},
+    {"name": "pan_eight_voices", "ok": true, "detail": "coherent model L=0.304586 exp 0.304586; R=0.304586 exp 0.304586"},
+    {"name": "pan_mono_fold", "ok": true, "detail": "mono amp = 0.923880x, law 0.923880"},
+    {"name": "pan_ramp_clickfree", "ok": true, "detail": "max |dL| = 0.010182 <= 3x natural slope 0.007559"},
+    {"name": "fb_off_bitexact", "ok": true, "detail": "explicit-zero == unset engine, bit-exact"},
+    {"name": "fb_levels_bounded", "ok": true, "detail": "18 combos, worst peak 8.263685"},
+    {"name": "fb_max_saturation", "ok": true, "detail": "all-voices 0 dBFS-fb 10 s: peak = 8.263619 (rail engaged, bounded)"},
+    {"name": "fb_mute_gating", "ok": true, "detail": "RMS before mute 0.659413 -> after 0.000000 (register zeroed)"},
+    {"name": "fb_reset_clean", "ok": true, "detail": "post-reset peak = 8.263619"},
+    {"name": "fb_channel_isolation", "ok": true, "detail": "silent L stays silent: peak = 0.000000"}
+  ],
+  "all_pass": true
+}

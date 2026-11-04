@@ -1,0 +1,39 @@
+OCTAVOX round 12 -- native vs Python v2 cross-language metrics
+
+unity comb battery (gain deviation across tones, dB):
+  native core : spread +0.0000 dB  [+0.0000 .. +0.0000]
+  python v2   : spread +16.4317 dB  [-16.7091 .. -0.2774]  (BEFORE)
+
+pitch battery (native, 220 Hz):
+     +0.0 c -> measured  219.9649 Hz, error -0.2766 c, env.mod(period-sync) 0.006 dB
+     +1.0 c -> measured  220.1499 Hz, error +0.1794 c, env.mod(period-sync) 0.013 dB
+     -1.0 c -> measured  219.8385 Hz, error -0.2716 c, env.mod(period-sync) 0.017 dB
+    +10.0 c -> measured  221.2719 Hz, error -0.0201 c, env.mod(period-sync) 0.876 dB
+    -10.0 c -> measured  218.7444 Hz, error +0.0907 c, env.mod(period-sync) 0.874 dB
+    +50.0 c -> measured  226.4176 Hz, error -0.2211 c, env.mod(period-sync) 0.432 dB
+    -50.0 c -> measured  213.7663 Hz, error +0.2372 c, env.mod(period-sync) 0.488 dB
+   +100.0 c -> measured  233.0465 Hz, error -0.2626 c, env.mod(period-sync) 0.002 dB
+   -100.0 c -> measured  207.6589 Hz, error +0.0550 c, env.mod(period-sync) 0.004 dB
+   +500.0 c -> measured  293.6744 Hz, error +0.0568 c, env.mod(period-sync) 0.024 dB
+   -500.0 c -> measured  164.8086 Hz, error -0.0545 c, env.mod(period-sync) 0.007 dB
+  +1200.0 c -> measured  440.0390 Hz, error +0.1535 c, env.mod(period-sync) 0.007 dB
+  -1200.0 c -> measured  109.9684 Hz, error -0.4967 c, env.mod(period-sync) 0.007 dB
+
+stereo isolation (L tone, R silence, +400c):
+  native R peak: -6000.0 dB   v2 R peak: -6000.0 dB
+
+python reference timing (LCG noise, 5 s, +400c):
+  1 voices: 11.429 s (0.44x realtime, 47622 ns/frame)
+  8 voices: 19.092 s (0.26x realtime, 79550 ns/frame)
+native bench rows (see r12_native_bench.json):
+  mono_1v_b64               1 v 1 ch: 1346 ns/frame, 15.48x realtime
+  mono_1v_b128              1 v 1 ch: 1352 ns/frame, 15.41x realtime
+  mono_1v_b512              1 v 1 ch: 1348 ns/frame, 15.46x realtime
+  mono_8v_b64               8 v 1 ch: 1552 ns/frame, 13.42x realtime
+  mono_8v_b128              8 v 1 ch: 1503 ns/frame, 13.86x realtime
+  mono_8v_b512              8 v 1 ch: 1513 ns/frame, 13.77x realtime
+  stereo_1v_b128            1 v 2 ch: 2592 ns/frame, 8.04x realtime
+  stereo_8v_b128            8 v 2 ch: 3089 ns/frame, 6.74x realtime
+  mono_8v_b128_ctrl512      8 v 1 ch: 410 ns/frame, 50.87x realtime
+
+gates: 15/15 pass

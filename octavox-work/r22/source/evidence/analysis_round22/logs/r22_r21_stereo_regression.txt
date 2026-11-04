@@ -1,0 +1,36 @@
+SCENARIO                           BEHAVIOUR CLASS                            SR INTERP     SPRD  V EQD INPUT         BITID    MAXDIFF RMSDIFF_DB SIDE/MID_DB  V1_RATIO   IV_LAG   CMT_D
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+dm_1v_spread_on_default_delays     (1) dual-mono transparency              48000 Lagrange6    on  1  no identical       yes   0.000000    -999.00   -999.00   0.00000      0.0       0
+dm_2v_spread_off_default_delays    (1)+(2) same-pitch, distinct delays     48000 Lagrange6   off  2  no identical       yes   0.000000    -999.00   -999.00   1.00000     32.0       0
+dm_2v_spread_off_equal_delays      (1)+(2) same-pitch, equal delays        48000 Lagrange6   off  2 yes identical       yes   0.000000    -999.00   -999.00   1.00000      0.0       0
+dm_2v_spread_on_default_delays     (1)+(3) harmony-map pitch, distinct delays  48000 Lagrange6    on  2  no identical       yes   0.000000    -999.00   -999.00   1.49831      8.0       0
+dm_8v_spread_on_default_delays     (1)+(3) 8-voice harmony map             48000 Lagrange6    on  8  no identical       yes   0.000000    -999.00   -999.00   1.49831      0.0       0
+offset1_2v_spread_on               (4) 1-sample input offset               48000 Lagrange6    on  2  no r_offset_1       NO   0.016291     -23.35    -29.37   1.49831      0.0       0
+amp01_2v_spread_on                 (4) 0.1% amplitude imbalance            48000 Lagrange6    on  2  no amp_0.1pct       NO   0.000106     -60.00    -66.02   1.49831      0.0       0
+true_stereo_2v_spread_on           (4) decorrelated stereo                 48000 Lagrange6    on  2  no decorrelated     NO   0.117797      -3.91     -9.93   1.49831      0.0       0
+dm_1v_spread_on_default_delays     (1) dual-mono transparency              48000 ObsKernel6   on  1  no identical       yes   0.000000    -999.00   -999.00   0.00000      0.0       0
+dm_2v_spread_off_default_delays    (1)+(2) same-pitch, distinct delays     48000 ObsKernel6  off  2  no identical       yes   0.000000    -999.00   -999.00   1.00000     32.0       0
+dm_2v_spread_off_equal_delays      (1)+(2) same-pitch, equal delays        48000 ObsKernel6  off  2 yes identical       yes   0.000000    -999.00   -999.00   1.00000      0.0       0
+dm_2v_spread_on_default_delays     (1)+(3) harmony-map pitch, distinct delays  48000 ObsKernel6   on  2  no identical       yes   0.000000    -999.00   -999.00   1.49831      8.0       0
+dm_8v_spread_on_default_delays     (1)+(3) 8-voice harmony map             48000 ObsKernel6   on  8  no identical       yes   0.000000    -999.00   -999.00   1.49831      0.0       0
+offset1_2v_spread_on               (4) 1-sample input offset               48000 ObsKernel6   on  2  no r_offset_1       NO   0.016194     -23.36    -29.38   1.49831      0.0       0
+amp01_2v_spread_on                 (4) 0.1% amplitude imbalance            48000 ObsKernel6   on  2  no amp_0.1pct       NO   0.000106     -60.00    -66.02   1.49831      0.0       0
+true_stereo_2v_spread_on           (4) decorrelated stereo                 48000 ObsKernel6   on  2  no decorrelated     NO   0.117759      -3.91     -9.93   1.49831      0.0       0
+dm_1v_spread_on_default_delays     (1) dual-mono transparency              96000 Lagrange6    on  1  no identical       yes   0.000000    -999.00   -999.00   0.00000      0.0       0
+dm_2v_spread_off_default_delays    (1)+(2) same-pitch, distinct delays     96000 Lagrange6   off  2  no identical       yes   0.000000    -999.00   -999.00   1.00000     32.0       0
+dm_2v_spread_off_equal_delays      (1)+(2) same-pitch, equal delays        96000 Lagrange6   off  2 yes identical       yes   0.000000    -999.00   -999.00   1.00000      0.0       0
+dm_2v_spread_on_default_delays     (1)+(3) harmony-map pitch, distinct delays  96000 Lagrange6    on  2  no identical       yes   0.000000    -999.00   -999.00   1.49831    -85.0       0
+dm_8v_spread_on_default_delays     (1)+(3) 8-voice harmony map             96000 Lagrange6    on  8  no identical       yes   0.000000    -999.00   -999.00   1.49831      0.0       0
+offset1_2v_spread_on               (4) 1-sample input offset               96000 Lagrange6    on  2  no r_offset_1       NO   0.008354     -29.09    -35.11   1.49831      0.0       0
+amp01_2v_spread_on                 (4) 0.1% amplitude imbalance            96000 Lagrange6    on  2  no amp_0.1pct       NO   0.000106     -60.00    -66.02   1.49831      0.0       0
+true_stereo_2v_spread_on           (4) decorrelated stereo                 96000 Lagrange6    on  2  no decorrelated     NO   0.160884       3.85     -2.17   1.49831      0.0       0
+dm_1v_spread_on_default_delays     (1) dual-mono transparency              96000 ObsKernel6   on  1  no identical       yes   0.000000    -999.00   -999.00   0.00000      0.0       0
+dm_2v_spread_off_default_delays    (1)+(2) same-pitch, distinct delays     96000 ObsKernel6  off  2  no identical       yes   0.000000    -999.00   -999.00   1.00000     32.0       0
+dm_2v_spread_off_equal_delays      (1)+(2) same-pitch, equal delays        96000 ObsKernel6  off  2 yes identical       yes   0.000000    -999.00   -999.00   1.00000      0.0       0
+dm_2v_spread_on_default_delays     (1)+(3) harmony-map pitch, distinct delays  96000 ObsKernel6   on  2  no identical       yes   0.000000    -999.00   -999.00   1.49831    -85.0       0
+dm_8v_spread_on_default_delays     (1)+(3) 8-voice harmony map             96000 ObsKernel6   on  8  no identical       yes   0.000000    -999.00   -999.00   1.49831      0.0       0
+offset1_2v_spread_on               (4) 1-sample input offset               96000 ObsKernel6   on  2  no r_offset_1       NO   0.008202     -29.16    -35.18   1.49831      0.0       0
+amp01_2v_spread_on                 (4) 0.1% amplitude imbalance            96000 ObsKernel6   on  2  no amp_0.1pct       NO   0.000106     -60.00    -66.02   1.49831      0.0       0
+true_stereo_2v_spread_on           (4) decorrelated stereo                 96000 ObsKernel6   on  2  no decorrelated     NO   0.160928       3.85     -2.17   1.49831      0.0       0
+
+dual-mono transparency violations: 0 (must be 0)

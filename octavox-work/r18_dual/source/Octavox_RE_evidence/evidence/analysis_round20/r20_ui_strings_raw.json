@@ -1,0 +1,7222 @@
+[
+ {
+  "enc": "a",
+  "addr": "0x1800ce19d",
+  "s": "maxdelayH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800cfa57",
+  "s": "gain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d2902",
+  "s": "maxdelayH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d2934",
+  "s": "maxdelayH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d2c89",
+  "s": "delayamtH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d2f22",
+  "s": "maxdelayL"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d3ea2",
+  "s": "maxdelayL"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d4259",
+  "s": "delayamtH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d87bd",
+  "s": "D$Pgain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d88fd",
+  "s": "D$Pgain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d94f9",
+  "s": "%n_gainsH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d966c",
+  "s": "D$`gain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800d9743",
+  "s": "D$`gain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800da602",
+  "s": "gain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800daf69",
+  "s": "inspreadH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800dbb82",
+  "s": "maxdelayL"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800dc7f0",
+  "s": "maxdelayL"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800dc9b5",
+  "s": "delayamtH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800e03eb",
+  "s": "maxdelayH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800e1d81",
+  "s": "maxdelayH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1800e385d",
+  "s": "minpitchH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180138c6e",
+  "s": "delayamtI"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180138f94",
+  "s": "D$HgainE"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1801a3032",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1801a3062",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1801a3124",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1801a31a1",
+  "s": "pansI"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1801a4a32",
+  "s": "pans"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1801a5002",
+  "s": "pansuxWH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1801a73ed",
+  "s": "pansw/tB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18030bec6",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180314953",
+  "s": "D$ pansI"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180314984",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180315364",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803153c2",
+  "s": "pans"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180315661",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180316177",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18031692a",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180318b42",
+  "s": "pansu."
+ },
+ {
+  "enc": "a",
+  "addr": "0x180339767",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180339a15",
+  "s": "pans"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180339ae8",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180339e5e",
+  "s": "pans"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18033a1c3",
+  "s": "pansH"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18033a71b",
+  "s": "pans"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037e6a0",
+  "s": "operation not permitted"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037e6b8",
+  "s": "resource deadlock would occur"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037e6d8",
+  "s": "resource unavailable try again"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037f3c0",
+  "s": "inappropriate io control operation"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037f4a0",
+  "s": "no lock available"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037f5c8",
+  "s": "operation canceled"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037f5e0",
+  "s": "operation in progress"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037f5f8",
+  "s": "operation not supported"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037f610",
+  "s": "operation would block"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037f738",
+  "s": "too many symbolic link levels"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037f988",
+  "s": "GetCurrentProcessorNumber"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037f9c0",
+  "s": "GetCurrentPackageId"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037fac0",
+  "s": "InitializeSRWLock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037fad8",
+  "s": "AcquireSRWLockExclusive"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037faf0",
+  "s": "TryAcquireSRWLockExclusive"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037fb10",
+  "s": "ReleaseSRWLockExclusive"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18037fb90",
+  "s": "CompareStringEx"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d068",
+  "s": "FLock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d0e4",
+  "s": "FLock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d23c",
+  "s": "HIView"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d244",
+  "s": "NSView"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d24c",
+  "s": "UIView"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d26c",
+  "s": "editor"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d368",
+  "s": "Mono"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d370",
+  "s": "Stereo"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d378",
+  "s": "Stereo (Ls Rs)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d388",
+  "s": "Stereo (Lc Rc)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d398",
+  "s": "Stereo (Sl Sr)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d3a8",
+  "s": "Stereo (C LFE)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d3b8",
+  "s": "Stereo (Tfl Tfr)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d3d8",
+  "s": "Stereo (Tsl Tsr)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d3f8",
+  "s": "Stereo (Trl Trr)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d420",
+  "s": "Stereo (Bfl Bfr)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d43c",
+  "s": "Stereo"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d4b4",
+  "s": "PanLaw"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d4ec",
+  "s": "spread"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d588",
+  "s": "7.1 Cine Top Center"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038d5a0",
+  "s": "7.1 Cine Center High"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038dfa0",
+  "s": "Fx|Delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038dfe8",
+  "s": "Fx|Instrument"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038dff8",
+  "s": "Fx|Instrument|External"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e050",
+  "s": "Fx|Pitch Shift"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e060",
+  "s": "Fx|Restoration"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e0b8",
+  "s": "Instrument"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e0c8",
+  "s": "Instrument|Drum"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e0d8",
+  "s": "Instrument|External"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e0f0",
+  "s": "Instrument|Piano"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e110",
+  "s": "Instrument|Sampler"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e128",
+  "s": "Instrument|Synth"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e148",
+  "s": "Instrument|Synth|Sampler"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e1c8",
+  "s": "Up-Downmix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e1fc",
+  "s": "Mono"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e21c",
+  "s": "Tempo"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e228",
+  "s": "Comp:GainReduction"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e240",
+  "s": "Comp:GainReductionMax"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e258",
+  "s": "Comp:GainReductionPeakHold"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e278",
+  "s": "Comp:ResetGainReductionMax"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e2a8",
+  "s": "DryWetMix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e2b8",
+  "s": "Randomize"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e2cc",
+  "s": "Scale"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e2fc",
+  "s": "Pan%d"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e380",
+  "s": "PanPosCenterX"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e390",
+  "s": "PanPosCenterY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e3a0",
+  "s": "PanPosFrontLeftX"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e3c0",
+  "s": "PanPosFrontLeftY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e3e0",
+  "s": "PanPosFrontRightX"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e3f8",
+  "s": "PanPosFrontRightY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e410",
+  "s": "PanRotation"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e420",
+  "s": "PanMirrorMode"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e430",
+  "s": "PanLfeGain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e440",
+  "s": "GainReduction"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e450",
+  "s": "Solo"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e458",
+  "s": "Mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e5d0",
+  "s": "Fx|Pitch Shift"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e628",
+  "s": "Fx|Pitch Shift"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038e650",
+  "s": "Component Controller Class"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038eb50",
+  "s": "MAP_END_KEY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038eb70",
+  "s": "Invalid Snapshot Chunk"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ebb0",
+  "s": "Tempo Enable"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ebc8",
+  "s": "Session Tempo Enable"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ec28",
+  "s": "Pitch Tracking Enable"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ec58",
+  "s": "Instrument"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ec68",
+  "s": "Minimum Pitch"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ec88",
+  "s": "Crossfade"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038eca0",
+  "s": "Input Level"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ecb8",
+  "s": "Output Level"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ece0",
+  "s": "Wet/Dry Mix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ecf0",
+  "s": "Loop Feedback"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed08",
+  "s": "Loop Delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed13",
+  "s": "MDelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed30",
+  "s": "Randomize"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed3a",
+  "s": "Random"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed48",
+  "s": "Live Mode Enable"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed59",
+  "s": "LiveMd"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed60",
+  "s": "Live"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed68",
+  "s": "Key Lock Enable"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed78",
+  "s": "KyLock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed88",
+  "s": "Mix Lock Enable"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ed98",
+  "s": "MxLock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038eda8",
+  "s": "Level%d"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038edb8",
+  "s": "Feedback%d"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038edd0",
+  "s": "Delay%d"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ede0",
+  "s": "Shift%d"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038edf0",
+  "s": "Interval%d"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ee38",
+  "s": "Voice Select"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ee45",
+  "s": "VoiceS"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ee50",
+  "s": "MIDI Control"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ee70",
+  "s": "Meter Numerator"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038ee88",
+  "s": "Meter Denominator"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038eea8",
+  "s": "Local Snapshots"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038f0c0",
+  "s": "Prints the current version number"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038f480",
+  "s": "Random seed: 0x"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038fa40",
+  "s": "invalid block type"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038fa98",
+  "s": "invalid stored block lengths"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038fe20",
+  "s": "HKEY_CURRENT_USER\\Software\\Classes\\"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18038fe48",
+  "s": "HKEY_CLASSES_ROOT\\"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180393028",
+  "s": " scale"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803930d6",
+  "s": "%%LanguageLevel: 2"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180393360",
+  "s": " scale"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180393528",
+  "s": "bad parameters to zlib"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180393860",
+  "s": "RGB color space not permitted on grayscale PNG"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180393b00",
+  "s": "Invalid image width in IHDR"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180393b20",
+  "s": "Image width is zero in IHDR"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180393b40",
+  "s": "Image width exceeds user limit in IHDR"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180393bc0",
+  "s": "Image width is too large for this architecture"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180393cd8",
+  "s": "sCAL width"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394000",
+  "s": "png_process_data_skip is not implemented in any current version of libpng"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394277",
+  "s": "Gignored in grayscale PNG"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803943e0",
+  "s": "bad keyword"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039452c",
+  "s": "Centre"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394570",
+  "s": "invalid gray level"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394630",
+  "s": "invalid parameter count"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803946d8",
+  "s": "non-positive width"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803946f0",
+  "s": "bad width format"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803947e0",
+  "s": "bad keyword"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394890",
+  "s": "bad keyword"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394be0",
+  "s": "Invalid format for pCAL parameter"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394c30",
+  "s": "Invalid pCAL parameter count"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394d40",
+  "s": "Insufficient memory for pCAL parameter"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394e30",
+  "s": "Invalid sCAL width ignored"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180394e50",
+  "s": "Invalid sCAL width ignored"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180395270",
+  "s": "keyword \"@1\": bad character '0x@2'"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803952b0",
+  "s": "keyword truncated"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180395580",
+  "s": "Ignoring request to write a PLTE chunk in grayscale PNG"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396090",
+  "s": "Right Centre"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803960a0",
+  "s": "Left Centre"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803960c8",
+  "s": "Centre Surround"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396100",
+  "s": "Top Front Centre"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396160",
+  "s": "Top Rear Centre"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396450",
+  "s": "Bottom Front Centre"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803964c0",
+  "s": "Bottom Rear Centre"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039672c",
+  "s": "Stereo"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396744",
+  "s": "Mono"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396938",
+  "s": "Note on "
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396988",
+  "s": "Note off "
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803969c8",
+  "s": "Pitch wheel "
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396a28",
+  "s": "All notes off Channel "
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396a60",
+  "s": "Controller "
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396b70",
+  "s": "Harpsichord"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396b80",
+  "s": "Glockenspiel"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396ca0",
+  "s": "Harmonica"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396d38",
+  "s": "Electric Guitar (mute)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396d50",
+  "s": "Guitar Harmonics"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396e68",
+  "s": "Timpani"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396ee0",
+  "s": "Voice Oohs"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396f10",
+  "s": "Synth Voice"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180396f40",
+  "s": "Muted Trumpet"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397038",
+  "s": "Pan Flute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397064",
+  "s": "Live 8"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803970b4",
+  "s": "Live 9"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803970f4",
+  "s": "Live 6"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397100",
+  "s": "Lead 6 (voice)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039712c",
+  "s": "Live 7"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397308",
+  "s": "Woodblock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039743c",
+  "s": "Live "
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397658",
+  "s": "Mute Hi Conga"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397738",
+  "s": "Hi Wood Block"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397748",
+  "s": "Mute Cuica"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397758",
+  "s": "Low Wood Block"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397768",
+  "s": "Mute Triangle"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803977a8",
+  "s": "Breath controller (coarse)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397860",
+  "s": "Pan position (coarse)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039788c",
+  "s": "shift"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803978a0",
+  "s": "Effect Control 1 (coarse)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397910",
+  "s": "Effect Control 2 (coarse)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803979c8",
+  "s": "Breath controller (fine)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397a58",
+  "s": "Pan position (fine)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397a80",
+  "s": "Effect Control 1 (fine)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397ac8",
+  "s": "Effect Control 2 (fine)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397be0",
+  "s": "Sound Control 7"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397bf0",
+  "s": "Sound Control 6"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397c00",
+  "s": "Sound Control 9"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397c10",
+  "s": "Sound Control 8"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397c50",
+  "s": "Sound Control 10"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397cd0",
+  "s": "Reverb Level"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397d08",
+  "s": "Chorus Level"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397d18",
+  "s": "Tremolo Level"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397d28",
+  "s": "Phaser Level"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397d38",
+  "s": "Celeste Level"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397d78",
+  "s": "Non-registered Parameter (coarse)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397da0",
+  "s": "Non-registered Parameter (fine)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397dc0",
+  "s": "Registered Parameter (coarse)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397de0",
+  "s": "Registered Parameter (fine)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397e00",
+  "s": "All Controllers Off"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397e28",
+  "s": "All Notes Off"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397e38",
+  "s": "Local Keyboard (on/off)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397e70",
+  "s": "Poly Operation"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397e80",
+  "s": "Mono Operation"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397ebc",
+  "s": "Expand"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397ed8",
+  "s": "This plug-in cannot be instantiated synchronously"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397f6c",
+  "s": "width"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180397fe8",
+  "s": "MIDI Input"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398018",
+  "s": "MIDI Output"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398044",
+  "s": "width"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398064",
+  "s": "width"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803980a4",
+  "s": "Level "
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803980b0",
+  "s": "isInstrument"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398168",
+  "s": "isInstrument"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803984d0",
+  "s": "Ableton Live 7"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803984e0",
+  "s": "Ableton Live 8"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803984f0",
+  "s": "Ableton Live 6"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398500",
+  "s": "Ableton Live 11"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398510",
+  "s": "Ableton Live"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398520",
+  "s": "Ableton Live 9"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398530",
+  "s": "Ableton Live 10"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803986a8",
+  "s": "Pyramix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398988",
+  "s": "Live 10"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398990",
+  "s": "Live 11"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398dc0",
+  "s": "control"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180398e30",
+  "s": "shift + "
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399078",
+  "s": "(no recently selected files)"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399371",
+  "s": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"706\" height=\"532\">"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039950d",
+  "s": "  <g class=\"currentLayer\">"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399528",
+  "s": "    <path d=\"M112.1 104c-8.2 2.2-13.2 11.6-11.3 21l68.3 342.7c1.9 9.4 10.1 15.2 18.4 13l384.3-104.1c8.2-2.2 13.2-11.6 11.3-21l-48-266a15.8 15.8 0 0 0-18.4-12.8l-224.2 38s-20.3-41.3-28.3-39.3z\" display=\"block\" fill=\"url(#b)\" stroke=\"#446c98\" stroke-width=\"7\"/>"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039962c",
+  "s": "    <path d=\"M608.6 136.8L235.2 208a22.7 22.7 0 0 0-16 19l-40.8 241c1.7 8.4 9.6 14.5 17.8 12.3l380-104c8-2.2 10.7-10.2 12.3-18.4l38-210.1c.4-15.4-10.4-11.8-18-11.1z\" display=\"block\" fill=\"url(#c)\" opacity=\".8\" stroke=\"#446c98\" stroke-width=\"7\"/>"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399741",
+  "s": "<svg version=\"1\" viewBox=\"-10 -10 450 600\" xmlns=\"http://www.w3.org/2000/svg\">"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399790",
+  "s": "  <path d=\"M17 0h290l120 132v426c0 10-8 19-17 19H17c-9 0-17-9-17-19V19C0 8 8 0 17 0z\" fill=\"#e5e5e5\" stroke=\"#888888\" stroke-width=\"7\"/>"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803999a8",
+  "s": "PROPERTYPANELSTATE"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803999e8",
+  "s": "PROPERTYPANELSTATE"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399c00",
+  "s": "KEYMAPPINGS"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399c20",
+  "s": "KEYMAPPINGS"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399cd1",
+  "s": "        <svg width=\"120\" height=\"60\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns=\"http://www.w3.org/2000/svg\">"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399d56",
+  "s": "            <rect id=\"a\" x=\".253\" y=\".253\" width=\"122\" height=\"62\" rx=\"10\"/>"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399dcc",
+  "s": "              <use xlink:href=\"#a\" width=\"100%\" height=\"100%\"/>"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180399e32",
+  "s": "          <rect width=\"120\" height=\"60\" rx=\"10\" fill=\"#000000\" opacity=\".8\" fill-rule=\"evenodd\"/>"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039afe0",
+  "s": "disableAsyncLayerBackedView"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b320",
+  "s": "MAP_END_KEY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b348",
+  "s": "Current "
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b368",
+  "s": "Snapshots"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b380",
+  "s": "Global "
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b6c0",
+  "s": "Mixolydian"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b700",
+  "s": "Harmonic Min"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b980",
+  "s": "Baritone Voice"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b990",
+  "s": "Tenor Voice"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b9a0",
+  "s": "Alto Voice"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b9b0",
+  "s": "Soprano Voice"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039b9e0",
+  "s": "Bass Voice"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039ba58",
+  "s": "Session"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039cf88",
+  "s": "statement=input gain:%3.0f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d078",
+  "s": "statement=Live Mode %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d0b8",
+  "s": "name=percent"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d0e0",
+  "s": "select=live-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d0f0",
+  "s": "in1=live mode delay comp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d118",
+  "s": "statement=feedback: %f %"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d250",
+  "s": "statement=key  :   %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d458",
+  "s": "choices5=mixolydian"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d470",
+  "s": "statement=scale: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d568",
+  "s": "choices8=harmonic min"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d5e0",
+  "s": "statement=Pitch Track"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039d728",
+  "s": "statement=minpitch: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039daf0",
+  "s": "statement=voice 1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039db08",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039dbb0",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039dcf0",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039dd20",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039dda8",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039e158",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039e2d8",
+  "s": "statement=voice 2: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039e2f0",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039e308",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039e3e0",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039e458",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039e508",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039e8c8",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039ea20",
+  "s": "statement=voice 3: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039ea38",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039eae0",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039eb10",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039ec10",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039ecd0",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f088",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f0d0",
+  "s": "statement=voice 4: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f0e8",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f230",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f2e8",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f360",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f418",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f7f8",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f830",
+  "s": "statement=voice 5: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f848",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039f8f0",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039fa30",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039fa60",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039fae8",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18039fe98",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0000",
+  "s": "statement=voice 6: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0018",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0030",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0108",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0180",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0230",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a05f0",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0748",
+  "s": "statement=voice 7: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0760",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0808",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0838",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0938",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a09f8",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0db0",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0df8",
+  "s": "statement=voice 8: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0e10",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a0f58",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a1190",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a1208",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a12c0",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a1690",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a171c",
+  "s": "gain~n"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a1884",
+  "s": "tuning"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a18a4",
+  "s": "tuning"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a1c94",
+  "s": "Note~n"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a1ff0",
+  "s": "statement=mix:%3.0f %%"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2008",
+  "s": "name=mix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a20a0",
+  "s": "statement=Out Gain:%3.0f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2118",
+  "s": "choices2=bypass"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a21d8",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a22a0",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a22d8",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2360",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a23a8",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a23c8",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2538",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2558",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2598",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2620",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2668",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2738",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2808",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2828",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2870",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a28f0",
+  "s": "maxdelay=51"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2910",
+  "s": "delayamt=live mode delay comp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2950",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2988",
+  "s": "gain=igan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2998",
+  "s": "gain=igan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a29a8",
+  "s": "maxdelay=51"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a29c8",
+  "s": "delayamt=live mode delay comp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a29f8",
+  "s": "select=live-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2a08",
+  "s": "in1=delay comp 1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2ad0",
+  "s": "select=live-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2ae0",
+  "s": "in1=delay comp 2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a2b18",
+  "s": "in2=mix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3140",
+  "s": "in1=moddelay7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3238",
+  "s": "maxdelay=2400"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3288",
+  "s": "key=keys-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3298",
+  "s": "pitchtracking=ptrk-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a32d0",
+  "s": "nvoices=8"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3310",
+  "s": "scale=scal table-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3338",
+  "s": "minpitch=minp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a334c",
+  "s": "gain~n"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3358",
+  "s": "gatelevel=-55"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3390",
+  "s": "intervalglide=1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a33a0",
+  "s": "tuning=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3490",
+  "s": "shift5=c_multiply 5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a34a8",
+  "s": "shift6=c_multiply 6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a34c0",
+  "s": "shift7=c_multiply 7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a34d8",
+  "s": "shift8=c_multiply 8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a34f0",
+  "s": "shift1=c_multiply 1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3508",
+  "s": "shift2=c_multiply 2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3520",
+  "s": "shift3=c_multiply 3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3538",
+  "s": "shift4=c_multiply 4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3550",
+  "s": "pcent5=sht5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3560",
+  "s": "pcent6=sht6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3570",
+  "s": "pcent7=sht7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3580",
+  "s": "pcent8=sht8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3590",
+  "s": "pcent1=sht1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a35a0",
+  "s": "pcent2=sht2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a35b0",
+  "s": "pcent3=sht3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a35c0",
+  "s": "pcent4=sht4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a36d8",
+  "s": "delayamt5=c_adder12-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a36f0",
+  "s": "delayamt6=c_adder13-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3708",
+  "s": "delayamt7=c_adder14-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3720",
+  "s": "delayamt8=c_adder15-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3738",
+  "s": "delayamt1=c_adder8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3750",
+  "s": "delayamt2=c_adder9-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3768",
+  "s": "delayamt3=c_adder10-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3780",
+  "s": "delayamt4=c_adder11-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3798",
+  "s": "userscale5=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a37a8",
+  "s": "userscale6=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a37b8",
+  "s": "userscale7=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a37c8",
+  "s": "userscale8=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a37d8",
+  "s": "userscale1=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a37e8",
+  "s": "userscale2=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a37f8",
+  "s": "userscale3=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3808",
+  "s": "userscale4=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3858",
+  "s": "userscale9=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3868",
+  "s": "userscale10=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3878",
+  "s": "userscale11=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3888",
+  "s": "userscale12=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3908",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a39f0",
+  "s": "delayamt=dly1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3ac8",
+  "s": "in1=moddelay6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3b68",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3c48",
+  "s": "delayamt=dly2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3d20",
+  "s": "in1=moddelay5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3dc8",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3eb8",
+  "s": "delayamt=dly3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a3f98",
+  "s": "in1=moddelay4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4038",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4118",
+  "s": "delayamt=dly4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a41f0",
+  "s": "in1=moddelay3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4290",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4370",
+  "s": "delayamt=dly5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4448",
+  "s": "in1=moddelay2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a44e8",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a45c8",
+  "s": "delayamt=dly6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a46b0",
+  "s": "in1=moddelay1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4750",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4830",
+  "s": "delayamt=dly7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4918",
+  "s": "in1=moddelay-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a49c0",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4aa0",
+  "s": "delayamt=dly8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4b88",
+  "s": "gain3=m switch 3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4ba0",
+  "s": "gain4=m switch 4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4bb8",
+  "s": "gain5=m switch 5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4bd0",
+  "s": "gain6=m switch 6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4c08",
+  "s": "gain1=m switch 1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4c20",
+  "s": "gain2=m switch 2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4c38",
+  "s": "pan3=pan3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4c48",
+  "s": "pan4=pan4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4c58",
+  "s": "pan5=pan5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4c68",
+  "s": "pan6=pan6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4c78",
+  "s": "gain7=m switch 7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4c90",
+  "s": "gain8=m switch 8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4ca8",
+  "s": "pan1=pan1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4cb8",
+  "s": "pan2=pan2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4cc8",
+  "s": "in1=stereomixer3-right"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4d08",
+  "s": "pan7=pan7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4d18",
+  "s": "pan8=pan8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4d70",
+  "s": "maxdelay=2400"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4db0",
+  "s": "in=feedback1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4df8",
+  "s": "gain1=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4e00",
+  "s": "maxdelay=1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4e10",
+  "s": "in=delay_xf1-out1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4ef0",
+  "s": "in1=stereomixer3-left"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4f08",
+  "s": "delayamt=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a4fb8",
+  "s": "in=feedback-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5010",
+  "s": "gain1=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5018",
+  "s": "maxdelay=2400"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a50c0",
+  "s": "maxdelay=1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a50d0",
+  "s": "in=delay_xf-out1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5100",
+  "s": "delayamt=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5110",
+  "s": "in=mmix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5188",
+  "s": "in2=mmix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a51f8",
+  "s": "in1=feedback-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5218",
+  "s": "in2=feedback1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5230",
+  "s": "in=mmix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a53f0",
+  "s": "in1=monoSumWetChans-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5408",
+  "s": "in2=feedback1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5480",
+  "s": "in1=monoSumWetChans-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5498",
+  "s": "in2=feedback-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5528",
+  "s": "in=LWetDryMix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5540",
+  "s": "gain=ogan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5550",
+  "s": "in=RWetDryMix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5568",
+  "s": "gain=ogan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5a50",
+  "s": "in=dtonicii9-pitch"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5ac0",
+  "s": "statement=pitch detect"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5bc8",
+  "s": "statement=input gain:%3.0f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5c80",
+  "s": "statement=Live Mode %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5cd8",
+  "s": "select=live-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5ce8",
+  "s": "in1=live mode delay comp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5d08",
+  "s": "statement=feedback: %f %"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5da8",
+  "s": "name=percent"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5ed0",
+  "s": "statement=key  :   %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a5f98",
+  "s": "statement=scale: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6058",
+  "s": "choices8=harmonic min"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a60c0",
+  "s": "choices5=mixolydian"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6120",
+  "s": "statement=Pitch Track"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6210",
+  "s": "statement=minpitch: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6688",
+  "s": "statement=voice 1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a66a0",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6718",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6740",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a67e8",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6888",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6bd8",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6c10",
+  "s": "statement=voice 2: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6c28",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6d28",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6da0",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6df8",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a6e88",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a71f0",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7218",
+  "s": "statement=voice 3: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7230",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a72a0",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7390",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a73b8",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7418",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7750",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7868",
+  "s": "statement=voice 4: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7880",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7890",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7928",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7988",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a79f8",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7d50",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7e58",
+  "s": "statement=voice 5: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7e70",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7ee8",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7f10",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a7fc0",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8060",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a83f0",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8430",
+  "s": "statement=voice 6: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8448",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8550",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a85d8",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8638",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a86d0",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8a80",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8ab0",
+  "s": "statement=voice 7: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8ac8",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8b48",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8c40",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8c68",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a8cd0",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a9060",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a9190",
+  "s": "statement=voice 8: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a91a8",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a91b8",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a93e0",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a9438",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a94b8",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803a9860",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa148",
+  "s": "statement=mix:%3.0f %%"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa160",
+  "s": "name=mix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa218",
+  "s": "statement=Out Gain:%3.0f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa2c0",
+  "s": "choices2=bypass"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa2f8",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa378",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa3b8",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa488",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa540",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa560",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa570",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa590",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa660",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa728",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa760",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa7e0",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa818",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa838",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa950",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa988",
+  "s": "gain=igan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa9c8",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa9e8",
+  "s": "select=live-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aa9f8",
+  "s": "in1=delay comp 1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aaa30",
+  "s": "maxdelay=51"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aaa50",
+  "s": "delayamt=live mode delay comp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aaa98",
+  "s": "select=live-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aaaa8",
+  "s": "in1=delay comp 2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aaad8",
+  "s": "gain=igan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aaae8",
+  "s": "maxdelay=51"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aab08",
+  "s": "delayamt=live mode delay comp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aac00",
+  "s": "in2=mix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab100",
+  "s": "in1=moddelay7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab270",
+  "s": "nvoices=8"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab2a0",
+  "s": "scale=scal table-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab2f8",
+  "s": "maxdelay=2400"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab318",
+  "s": "intervalglide=1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab328",
+  "s": "tuning=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab348",
+  "s": "key=keys-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab358",
+  "s": "pitchtracking=ptrk-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab400",
+  "s": "minpitch=minp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab418",
+  "s": "gatelevel=-55"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab440",
+  "s": "shift1=c_multiply 1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab458",
+  "s": "shift2=c_multiply 2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab470",
+  "s": "shift3=c_multiply 3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab488",
+  "s": "shift4=c_multiply 4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab500",
+  "s": "pcent1=sht1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab510",
+  "s": "pcent2=sht2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab520",
+  "s": "pcent3=sht3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab530",
+  "s": "pcent4=sht4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab540",
+  "s": "shift5=c_multiply 5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab558",
+  "s": "shift6=c_multiply 6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab570",
+  "s": "shift7=c_multiply 7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab588",
+  "s": "shift8=c_multiply 8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab600",
+  "s": "pcent5=sht5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab610",
+  "s": "pcent6=sht6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab620",
+  "s": "pcent7=sht7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab630",
+  "s": "pcent8=sht8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab640",
+  "s": "delayamt1=c_adder8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab658",
+  "s": "delayamt2=c_adder9-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab670",
+  "s": "delayamt3=c_adder10-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab688",
+  "s": "delayamt4=c_adder11-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab700",
+  "s": "userscale1=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab710",
+  "s": "userscale2=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab720",
+  "s": "userscale3=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab730",
+  "s": "userscale4=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab740",
+  "s": "delayamt5=c_adder12-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab758",
+  "s": "delayamt6=c_adder13-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab770",
+  "s": "delayamt7=c_adder14-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab788",
+  "s": "delayamt8=c_adder15-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab7a0",
+  "s": "userscale9=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab7b0",
+  "s": "userscale10=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab7c0",
+  "s": "userscale11=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab7d0",
+  "s": "userscale12=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab7e0",
+  "s": "userscale5=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab7f0",
+  "s": "userscale6=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab800",
+  "s": "userscale7=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab810",
+  "s": "userscale8=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab918",
+  "s": "delayamt=dly1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab968",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ab9d8",
+  "s": "in1=moddelay6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803abb58",
+  "s": "delayamt=dly2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803abba8",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803abc18",
+  "s": "in1=moddelay5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803abd98",
+  "s": "delayamt=dly3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803abde8",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803abe58",
+  "s": "in1=moddelay4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803abfd8",
+  "s": "delayamt=dly4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac028",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac098",
+  "s": "in1=moddelay3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac218",
+  "s": "delayamt=dly5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac268",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac2d8",
+  "s": "in1=moddelay2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac458",
+  "s": "delayamt=dly6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac4a8",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac518",
+  "s": "in1=moddelay1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac698",
+  "s": "delayamt=dly7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac6e8",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac758",
+  "s": "in1=moddelay-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac8d8",
+  "s": "delayamt=dly8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ac928",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aca28",
+  "s": "gain1=m switch 1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aca40",
+  "s": "gain2=m switch 2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aca98",
+  "s": "gain7=m switch 7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acab0",
+  "s": "gain8=m switch 8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acac8",
+  "s": "pan1=pan1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acad8",
+  "s": "pan2=pan2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acae8",
+  "s": "gain3=m switch 3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acb00",
+  "s": "gain4=m switch 4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acb18",
+  "s": "gain5=m switch 5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acb30",
+  "s": "gain6=m switch 6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acb48",
+  "s": "pan7=pan7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acb58",
+  "s": "pan8=pan8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acb90",
+  "s": "pan3=pan3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acba0",
+  "s": "pan4=pan4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acbb0",
+  "s": "pan5=pan5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acbc0",
+  "s": "pan6=pan6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acbd0",
+  "s": "in=feedback1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acc08",
+  "s": "in1=stereomixer3-right"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acca8",
+  "s": "maxdelay=2400"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acce0",
+  "s": "delayamt=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acd20",
+  "s": "gain1=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acd28",
+  "s": "maxdelay=1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acd38",
+  "s": "in=delay_xf1-out1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acd88",
+  "s": "in=feedback-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acde8",
+  "s": "in1=stereomixer3-left"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ace00",
+  "s": "maxdelay=2400"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ace78",
+  "s": "maxdelay=1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ace88",
+  "s": "in=delay_xf-out1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aceb0",
+  "s": "delayamt=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acf00",
+  "s": "gain1=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acf20",
+  "s": "in2=mmix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acf98",
+  "s": "in=mmix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803acff0",
+  "s": "in=mmix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad090",
+  "s": "in1=feedback1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad100",
+  "s": "in1=feedback-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad118",
+  "s": "in2=feedback1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad238",
+  "s": "in1=monoSumWetChans-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad250",
+  "s": "in2=feedback-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad2b0",
+  "s": "in=LWetDryMix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad2c8",
+  "s": "gain=ogan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad2d8",
+  "s": "in=RWetDryMix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad2f0",
+  "s": "gain=ogan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad7d8",
+  "s": "in=dtonicii9-pitch"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad880",
+  "s": "statement=pitch detect"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ad9c8",
+  "s": "statement=input gain:%3.0f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ada28",
+  "s": "statement=Live Mode %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ada88",
+  "s": "select=live-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ada98",
+  "s": "in1=live mode delay comp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803adb40",
+  "s": "statement=feedback: %f %"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803adb60",
+  "s": "name=percent"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803adcb8",
+  "s": "statement=key  :   %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803add80",
+  "s": "statement=scale: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803addf8",
+  "s": "choices5=mixolydian"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803adef0",
+  "s": "choices8=harmonic min"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803adf98",
+  "s": "statement=Pitch Track"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ae050",
+  "s": "statement=minpitch: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ae4e8",
+  "s": "statement=voice 1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ae500",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ae510",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ae5b0",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ae610",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ae690",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aea38",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aeb68",
+  "s": "statement=voice 2: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aeb80",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aec00",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aec28",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aece8",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aed88",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af118",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af158",
+  "s": "statement=voice 3: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af170",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af278",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af300",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af360",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af3f8",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af7a8",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af7d8",
+  "s": "statement=voice 4: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af7f0",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af870",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af968",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af990",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803af9f8",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803afd88",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803afeb8",
+  "s": "statement=voice 5: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803afed0",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803afee0",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803aff80",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803affe0",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0060",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0408",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0528",
+  "s": "statement=voice 6: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0540",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b05c0",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b05e8",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b06a8",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0748",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0ad8",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0b18",
+  "s": "statement=voice 7: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0b30",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0c38",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0cc0",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0d20",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b0db8",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b1168",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b1198",
+  "s": "statement=voice 8: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b11b0",
+  "s": "name=mute"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b1230",
+  "s": "statement=level: %f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b14a8",
+  "s": "statement=delay: %f ms"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b14d0",
+  "s": "statement=pan: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b1538",
+  "s": "statement=pitch1: %s"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b18c8",
+  "s": "statement=fshift: %f"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2150",
+  "s": "statement=mix:%3.0f %%"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2168",
+  "s": "name=mix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2270",
+  "s": "statement=Out Gain:%3.0f dB"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b22a0",
+  "s": "choices2=bypass"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2350",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2370",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b24d8",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b24f8",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2530",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b25b0",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b25f0",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b26c0",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2778",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2798",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b27a8",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b27c8",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2898",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2960",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2998",
+  "s": "inspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b29b8",
+  "s": "outspread=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2a40",
+  "s": "delayamt=live mode delay comp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2a78",
+  "s": "select=live-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2a88",
+  "s": "in1=delay comp 1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2ab0",
+  "s": "gain=igan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2ac0",
+  "s": "maxdelay=51"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2af0",
+  "s": "delayamt=live mode delay comp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2b28",
+  "s": "select=live-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2b58",
+  "s": "gain=igan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2b68",
+  "s": "maxdelay=51"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2bc0",
+  "s": "in1=delay comp 2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b2c88",
+  "s": "in2=mix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3200",
+  "s": "in1=moddelay7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b32f0",
+  "s": "maxdelay=2400"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3300",
+  "s": "nvoices=8"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3388",
+  "s": "intervalglide=1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b33a8",
+  "s": "scale=scal table-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b33c0",
+  "s": "key=keys-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b33d0",
+  "s": "pitchtracking=ptrk-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b33e8",
+  "s": "gatelevel=-55"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3440",
+  "s": "tuning=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3470",
+  "s": "minpitch=minp-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b34b8",
+  "s": "shift1=c_multiply 1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b34d0",
+  "s": "shift2=c_multiply 2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3548",
+  "s": "shift7=c_multiply 7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3560",
+  "s": "shift8=c_multiply 8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3578",
+  "s": "pcent1=sht1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3588",
+  "s": "pcent2=sht2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3598",
+  "s": "shift3=c_multiply 3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b35b0",
+  "s": "shift4=c_multiply 4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b35c8",
+  "s": "shift5=c_multiply 5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b35e0",
+  "s": "shift6=c_multiply 6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b35f8",
+  "s": "pcent7=sht7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3608",
+  "s": "pcent8=sht8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3648",
+  "s": "pcent3=sht3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3658",
+  "s": "pcent4=sht4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3668",
+  "s": "pcent5=sht5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3678",
+  "s": "pcent6=sht6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b36b8",
+  "s": "delayamt1=c_adder8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b36d0",
+  "s": "delayamt2=c_adder9-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3748",
+  "s": "delayamt7=c_adder14-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3760",
+  "s": "delayamt8=c_adder15-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3778",
+  "s": "userscale1=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3788",
+  "s": "userscale2=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3798",
+  "s": "delayamt3=c_adder10-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b37b0",
+  "s": "delayamt4=c_adder11-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b37c8",
+  "s": "delayamt5=c_adder12-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b37e0",
+  "s": "delayamt6=c_adder13-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b37f8",
+  "s": "userscale7=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3808",
+  "s": "userscale8=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3818",
+  "s": "userscale9=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3828",
+  "s": "userscale10=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3838",
+  "s": "userscale3=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3848",
+  "s": "userscale4=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3858",
+  "s": "userscale5=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3868",
+  "s": "userscale6=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b38a0",
+  "s": "userscale11=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b38b0",
+  "s": "userscale12=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3988",
+  "s": "delayamt=dly1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b39d8",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3ad0",
+  "s": "in1=moddelay6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3bc8",
+  "s": "delayamt=dly2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3c18",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3d10",
+  "s": "in1=moddelay5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3e08",
+  "s": "delayamt=dly3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3e58",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b3f50",
+  "s": "in1=moddelay4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4048",
+  "s": "delayamt=dly4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4098",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4190",
+  "s": "in1=moddelay3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4288",
+  "s": "delayamt=dly5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b42d8",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b43d0",
+  "s": "in1=moddelay2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b44c8",
+  "s": "delayamt=dly6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4518",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4610",
+  "s": "in1=moddelay1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4708",
+  "s": "delayamt=dly7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4758",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4850",
+  "s": "in1=moddelay-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4948",
+  "s": "delayamt=dly8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4998",
+  "s": "maxdelay=2000"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4ae0",
+  "s": "gain5=m switch 5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4af8",
+  "s": "gain6=m switch 6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4b10",
+  "s": "gain7=m switch 7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4b28",
+  "s": "gain8=m switch 8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4b40",
+  "s": "gain1=m switch 1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4b58",
+  "s": "gain2=m switch 2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4b70",
+  "s": "gain3=m switch 3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4b88",
+  "s": "gain4=m switch 4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4ba0",
+  "s": "pan5=pan5-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4bb0",
+  "s": "pan6=pan6-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4bc0",
+  "s": "pan7=pan7-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4bd0",
+  "s": "pan8=pan8-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4be0",
+  "s": "pan1=pan1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4bf0",
+  "s": "pan2=pan2-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4c00",
+  "s": "pan3=pan3-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4c10",
+  "s": "pan4=pan4-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4c30",
+  "s": "in=feedback1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4c80",
+  "s": "in1=stereomixer3-right"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4d18",
+  "s": "maxdelay=2400"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4d28",
+  "s": "in=delay_xf1-out1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4d50",
+  "s": "delayamt=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4da0",
+  "s": "gain1=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4da8",
+  "s": "maxdelay=1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4dd0",
+  "s": "in1=stereomixer3-left"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4e70",
+  "s": "maxdelay=2400"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4ea0",
+  "s": "in=feedback-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4ee8",
+  "s": "gain1=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4ef0",
+  "s": "maxdelay=1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4f00",
+  "s": "in=delay_xf-out1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b4fa8",
+  "s": "delayamt=0"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5018",
+  "s": "in=mmix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5040",
+  "s": "in2=mmix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5068",
+  "s": "in=mmix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5178",
+  "s": "in1=feedback-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5190",
+  "s": "in2=feedback1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b51c0",
+  "s": "in1=feedback1-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5208",
+  "s": "in1=monoSumWetChans-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5220",
+  "s": "in2=feedback-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b52b0",
+  "s": "in=RWetDryMix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b52c8",
+  "s": "gain=ogan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5330",
+  "s": "in=LWetDryMix-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5348",
+  "s": "gain=ogan-out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b58e0",
+  "s": "in=dtonicii9-pitch"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b58f8",
+  "s": "statement=pitch detect"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b59f8",
+  "s": "MAP_END_KEY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5a40",
+  "s": "Presets"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5b98",
+  "s": "BlockSize"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5cf0",
+  "s": "snapshot"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5d00",
+  "s": "snapshot"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5d18",
+  "s": "/Snapshots/"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5d38",
+  "s": "MAP_END_KEY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5d60",
+  "s": "Global "
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5d70",
+  "s": "Current "
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5dc0",
+  "s": "Copies the currently selected text to the clipboard and deletes it."
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5e58",
+  "s": "Copies the currently selected text to the clipboard."
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5ed8",
+  "s": "Selects all the text in the editor."
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5f90",
+  "s": "Keyword"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b5f98",
+  "s": "Keyword"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b6070",
+  "s": "Keyword"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b60c0",
+  "s": "Key Mappings"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b8e04",
+  "s": "gain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b8e34",
+  "s": "pan~n"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b8e50",
+  "s": "stereomixer"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b958c",
+  "s": "gain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b95a4",
+  "s": "gain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b9840",
+  "s": "max_delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b9850",
+  "s": "maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b98ac",
+  "s": "delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b98b8",
+  "s": "delayamt"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b98c8",
+  "s": "moddelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b98d8",
+  "s": "@maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b98f0",
+  "s": "microdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b9908",
+  "s": "@maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803b9ca0",
+  "s": "inspread"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ba110",
+  "s": "maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ba120",
+  "s": "max_delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ba150",
+  "s": "delayamt"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ba160",
+  "s": "@maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ba16c",
+  "s": "delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbb18",
+  "s": "nvoices"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbd48",
+  "s": "maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbd58",
+  "s": "number_voices"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbd80",
+  "s": "max_delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbd98",
+  "s": "scale_steps"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbda4",
+  "s": "scale"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbdac",
+  "s": "scale"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbdb8",
+  "s": "pitchtracking"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbdc8",
+  "s": "cents"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbdd0",
+  "s": "User,Ionian_(Maj),Dorian,Phrygian,Lydian,MixoLydian,Aeolian_(Min),Locrian,Major,Minor,Harmonic_Min,Melodic_Min,Chromatic,Whole-tone,Penta_Maj,Penta_Min,Enigmatic,Neapolitan,Hungarian"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbeb8",
+  "s": "pitchtracking"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbf24",
+  "s": "cents"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bbf30",
+  "s": "intervalglide"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc078",
+  "s": "gatelevel"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc088",
+  "s": "minpitch"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc098",
+  "s": "minpitch"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc0d0",
+  "s": "@nvoices"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc0e0",
+  "s": "shift~n"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc0e8",
+  "s": "@nvoices"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc0f8",
+  "s": "@nvoices"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc104",
+  "s": "shift"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc118",
+  "s": "@nvoices"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc12c",
+  "s": "pcent"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc138",
+  "s": "pcent~n"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc248",
+  "s": "@nvoices"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc264",
+  "s": "cents"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc270",
+  "s": "@maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc280",
+  "s": "@nvoices"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc290",
+  "s": "delayamt"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc2a0",
+  "s": "delay~n"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc2a8",
+  "s": "cents"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc2b0",
+  "s": "userscale"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc2e4",
+  "s": "pitch"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bc2f0",
+  "s": "pitch out"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bded8",
+  "s": "global1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bdee0",
+  "s": "global2"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bdf38",
+  "s": "global3"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bdf40",
+  "s": "global4"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bf708",
+  "s": "maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bf750",
+  "s": "max_delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bf7a8",
+  "s": "@maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bf7c8",
+  "s": "@maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bf7e8",
+  "s": "delay~n"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bf804",
+  "s": "gain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bf810",
+  "s": "delay_xf"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bfee8",
+  "s": "max_delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bfef8",
+  "s": "maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bff58",
+  "s": "@maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bff68",
+  "s": "delayamt"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bff74",
+  "s": "delay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bff80",
+  "s": "@maxdelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bffa0",
+  "s": "@maxdelay/#neg"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803bffe0",
+  "s": "moddelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c0b00",
+  "s": "percentknob"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1640",
+  "s": "MAP_END_KEY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1958",
+  "s": "MAP_END_KEY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1988",
+  "s": "key_lock_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1998",
+  "s": "key_lock_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c19b0",
+  "s": "live_mode_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c19c8",
+  "s": "live_mode_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1a38",
+  "s": "Please select a preset file to load..."
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1a60",
+  "s": "Please select a file to save the preset to..."
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1ac8",
+  "s": "MAP_END_KEY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1b00",
+  "s": "snapshot_03_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1b18",
+  "s": "snapshot_03_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1b30",
+  "s": "snapshot_02_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1b48",
+  "s": "snapshot_02_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1b60",
+  "s": "snapshot_01_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1b78",
+  "s": "snapshot_01_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1ba8",
+  "s": "snapshot_07_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1bc0",
+  "s": "snapshot_07_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1bd8",
+  "s": "snapshot_06_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1bf0",
+  "s": "snapshot_06_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1c08",
+  "s": "snapshot_05_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1c20",
+  "s": "snapshot_05_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1c38",
+  "s": "snapshot_04_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1c50",
+  "s": "snapshot_04_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1c68",
+  "s": "snapshot_11_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1c80",
+  "s": "snapshot_11_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1c98",
+  "s": "snapshot_10_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1cb0",
+  "s": "snapshot_10_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1cc8",
+  "s": "snapshot_09_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1ce0",
+  "s": "snapshot_09_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1cf8",
+  "s": "snapshot_08_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1d10",
+  "s": "snapshot_08_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1d28",
+  "s": "snapshot_15_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1d40",
+  "s": "snapshot_15_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1d58",
+  "s": "snapshot_14_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1d70",
+  "s": "snapshot_14_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1d88",
+  "s": "snapshot_13_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1da0",
+  "s": "snapshot_13_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1db8",
+  "s": "snapshot_12_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1dd0",
+  "s": "snapshot_12_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1de8",
+  "s": "snapshot_revert_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1e00",
+  "s": "snapshot_revert_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1e18",
+  "s": "snapshot_global_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1e30",
+  "s": "snapshot_global_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1e48",
+  "s": "snapshot_current_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1e60",
+  "s": "snapshot_current_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1e80",
+  "s": "snapshot_16_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c1e98",
+  "s": "snapshot_16_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2078",
+  "s": "compare_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2088",
+  "s": "compare_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c20f8",
+  "s": "mixlock_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2108",
+  "s": "mixlock_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2138",
+  "s": "live_mode_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2150",
+  "s": "live_mode_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2168",
+  "s": "key_lock_on_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2178",
+  "s": "key_lock_off_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2218",
+  "s": "preset_background_png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c22d8",
+  "s": "snapshot_04_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c22f0",
+  "s": "snapshot_04_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2308",
+  "s": "snapshot_03_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2320",
+  "s": "snapshot_03_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2338",
+  "s": "snapshot_02_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2350",
+  "s": "snapshot_02_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2368",
+  "s": "snapshot_01_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2380",
+  "s": "snapshot_01_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2398",
+  "s": "snapshot_08_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c23b0",
+  "s": "snapshot_08_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c23c8",
+  "s": "snapshot_07_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c23e0",
+  "s": "snapshot_07_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c23f8",
+  "s": "snapshot_06_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2410",
+  "s": "snapshot_06_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2428",
+  "s": "snapshot_05_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2440",
+  "s": "snapshot_05_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2458",
+  "s": "snapshot_12_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2470",
+  "s": "snapshot_12_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2488",
+  "s": "snapshot_11_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c24a0",
+  "s": "snapshot_11_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c24b8",
+  "s": "snapshot_10_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c24d0",
+  "s": "snapshot_10_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c24e8",
+  "s": "snapshot_09_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2500",
+  "s": "snapshot_09_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2518",
+  "s": "snapshot_16_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2530",
+  "s": "snapshot_16_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2548",
+  "s": "snapshot_15_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2560",
+  "s": "snapshot_15_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2578",
+  "s": "snapshot_14_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2590",
+  "s": "snapshot_14_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c25a8",
+  "s": "snapshot_13_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c25c0",
+  "s": "snapshot_13_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2608",
+  "s": "snapshot_revert_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2620",
+  "s": "snapshot_revert_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2638",
+  "s": "snapshot_global_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2650",
+  "s": "snapshot_global_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2668",
+  "s": "snapshot_current_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2680",
+  "s": "snapshot_current_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2848",
+  "s": "key_lock_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2858",
+  "s": "key_lock_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2890",
+  "s": "compare_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c28a0",
+  "s": "compare_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c28f0",
+  "s": "preset_background.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2908",
+  "s": "mixlock_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2918",
+  "s": "mixlock_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2948",
+  "s": "live_mode_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803c2960",
+  "s": "live_mode_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803e6f38",
+  "s": "Presets"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803e6f48",
+  "s": "MAP_END_KEY"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803e7050",
+  "s": "PluginSettingsLock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee760",
+  "s": "CPluginView"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee780",
+  "s": "Parameter"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee790",
+  "s": "StringListParameter"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee7a8",
+  "s": "EditController"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee7c8",
+  "s": "EditControllerEx1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee800",
+  "s": "Factory Presets"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee810",
+  "s": "Bypass"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee828",
+  "s": "juceProgramParameter"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee840",
+  "s": "JuceVST3EditController"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee860",
+  "s": "MIDI CC "
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803ee870",
+  "s": "MIDI Input"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803f0bf8",
+  "s": "Unexpected EOF in object declaration"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803f0c90",
+  "s": "Unexpected EOF in array declaration"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803f0e18",
+  "s": "Global\\"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803f2cb0",
+  "s": "<Monospaced>"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803f2d58",
+  "s": "Bitstream Vera Sans Mono"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1803f41c0",
+  "s": "juceAppLock_"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180407678",
+  "s": "width"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180407680",
+  "s": "preserveAspectRatio"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180407698",
+  "s": "viewBox"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804078d8",
+  "s": "stroke-width"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804078fc",
+  "s": "tspan"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180407a08",
+  "s": "scale"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408404",
+  "s": "gain"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408450",
+  "s": "delayamt"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408488",
+  "s": "%n_pans"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804084e0",
+  "s": "nvoices"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804084e8",
+  "s": "pitch"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408510",
+  "s": "tuning"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408518",
+  "s": "pcent"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408520",
+  "s": "userscale"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408540",
+  "s": "shift"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408558",
+  "s": "intervalglide"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408568",
+  "s": "gatelevel"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408588",
+  "s": "pitchtracking"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408648",
+  "s": "live mode delay comp"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040867c",
+  "s": "live"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804086ac",
+  "s": "keys"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408738",
+  "s": "pan1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408818",
+  "s": "pan2"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408898",
+  "s": "pan3"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408978",
+  "s": "pan4"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804089f8",
+  "s": "pan5"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408ad8",
+  "s": "pan6"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408b58",
+  "s": "pan7"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180408d34",
+  "s": "pan8"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804090ac",
+  "s": "mmix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409310",
+  "s": "delay comp 1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409340",
+  "s": "delay comp 2"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804094b8",
+  "s": "moddelay7"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409520",
+  "s": "moddelay6"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409590",
+  "s": "moddelay5"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409600",
+  "s": "moddelay4"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409670",
+  "s": "moddelay3"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804096e0",
+  "s": "moddelay2"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409750",
+  "s": "moddelay1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804097c0",
+  "s": "moddelay"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804097f0",
+  "s": "feedback1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409820",
+  "s": "stereomixer3"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409850",
+  "s": "delay_xf1"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409878",
+  "s": "delay_xf"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804098a0",
+  "s": "feedback"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409958",
+  "s": "monoSumWetChans"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180409988",
+  "s": "LWetDryMix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804099d8",
+  "s": "RWetDryMix"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040a410",
+  "s": "compare_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040a450",
+  "s": "mixlock_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040a460",
+  "s": "compare_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040a490",
+  "s": "mixlock_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040a870",
+  "s": "control output "
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040bce0",
+  "s": "synchronized"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040bd90",
+  "s": "Set this swatch to the current colour"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040bdb8",
+  "s": "Use this swatch as the current colour"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040bdf0",
+  "s": "Are you sure you want to reset all the key-mappings to their default state?"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040da78",
+  "s": "snapshot_current_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040da90",
+  "s": "snapshot_current_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040dab0",
+  "s": "snapshot_revert_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040dac8",
+  "s": "snapshot_revert_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040daf0",
+  "s": "snapshot_"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040db00",
+  "s": "snapshot_global_on.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040db18",
+  "s": "snapshot_global_off.png"
+ },
+ {
+  "enc": "a",
+  "addr": "0x18040e768",
+  "s": "invalid unordered_map<K, T> key"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180410b18",
+  "s": "Scale"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180410b28",
+  "s": "GlobalScaleFactor"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3578",
+  "s": "GetCurrentThreadId"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3664",
+  "s": "GetCurrentProcess"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3728",
+  "s": "CreateMutexW"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3790",
+  "s": "ReleaseMutex"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a37cc",
+  "s": "UnmapViewOfFile"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a38d6",
+  "s": "GetCurrentThread"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a395a",
+  "s": "GetCurrentDirectoryW"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a39b8",
+  "s": "GlobalMemoryStatusEx"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3a80",
+  "s": "CompareStringOrdinal"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3a98",
+  "s": "GlobalSize"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3ab6",
+  "s": "GlobalAlloc"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3ac4",
+  "s": "GlobalFree"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3ad2",
+  "s": "GlobalLock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3ae0",
+  "s": "GetCurrentProcessId"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3af6",
+  "s": "GlobalUnlock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3d34",
+  "s": "SystemParametersInfoW"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3f78",
+  "s": "GetAsyncKeyState"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a3fc6",
+  "s": "GetKeyboardState"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a40ea",
+  "s": "MapVirtualKeyW"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a479e",
+  "s": "InitializeSRWLock"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a47b2",
+  "s": "ReleaseSRWLockExclusive"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a47cc",
+  "s": "AcquireSRWLockExclusive"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a4a26",
+  "s": "InterlockedFlushSList"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804a4bdc",
+  "s": "CompareStringW"
+ },
+ {
+  "enc": "u",
+  "addr": "0x18037fe20",
+  "s": "api-ms-win-core-synch-l1-2-0.dll"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180380ea0",
+  "s": "api-ms-win-core-synch-l1-2-0"
+ },
+ {
+  "enc": "u",
+  "addr": "0x1803866f0",
+  "s": "spanish-argentina"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386718",
+  "s": "spanish-bolivia"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386738",
+  "s": "spanish-chile"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386758",
+  "s": "spanish-colombia"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386780",
+  "s": "spanish-costa rica"
+ },
+ {
+  "enc": "u",
+  "addr": "0x1803867a8",
+  "s": "spanish-dominican republic"
+ },
+ {
+  "enc": "u",
+  "addr": "0x1803867e0",
+  "s": "spanish-ecuador"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386800",
+  "s": "spanish-el salvador"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386828",
+  "s": "spanish-guatemala"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386850",
+  "s": "spanish-honduras"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386878",
+  "s": "spanish-mexican"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386898",
+  "s": "spanish-modern"
+ },
+ {
+  "enc": "u",
+  "addr": "0x1803868b8",
+  "s": "spanish-nicaragua"
+ },
+ {
+  "enc": "u",
+  "addr": "0x1803868e0",
+  "s": "spanish-panama"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386900",
+  "s": "spanish-paraguay"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386928",
+  "s": "spanish-peru"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386948",
+  "s": "spanish-puerto rico"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386970",
+  "s": "spanish-uruguay"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180386990",
+  "s": "spanish-venezuela"
+ },
+ {
+  "enc": "u",
+  "addr": "0x180407dd0",
+  "s": "Windows.UI.ViewManagement.UIViewSettings"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b72a8",
+  "s": ".?AVAudioProcessorParameter@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b7308",
+  "s": ".?AVLegacyAudioParameter@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b7380",
+  "s": ".?AVAudioProcessorParameterWithID@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b73c0",
+  "s": ".?AVParameter@Vst@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b7420",
+  "s": ".?AUParam@JuceVST3EditController@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b7590",
+  "s": ".?AVMidiFifo@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b7b70",
+  "s": ".?AVParameter@AudioProcessorValueTreeState@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b7c40",
+  "s": ".?AVRangedAudioParameter@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b7c70",
+  "s": ".?AVAudioProcessorEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b7d30",
+  "s": ".?AUAsyncCreateMessage@AudioPluginFormat@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b8748",
+  "s": ".?AVMultiDocumentPanel@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b87a8",
+  "s": ".?AVItemComponent@TreeView@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b8ba0",
+  "s": ".?AVMultiDocumentPanelWindow@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b8fd0",
+  "s": ".?AVPropertyPanel@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b9080",
+  "s": ".?AVFilePreviewComponent@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b9170",
+  "s": ".?AVTopLevelWindow@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b99e0",
+  "s": ".?AVTextEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804b9fe0",
+  "s": ".?AVConcertinaPanel@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ba720",
+  "s": ".?AVEditorView@Vst@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ba750",
+  "s": ".?AUILock@Thread@Base@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ba7c0",
+  "s": ".?AVListener@AudioProcessorParameter@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ba898",
+  "s": ".?AVIPlugView@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ba930",
+  "s": ".?AVJuceVST3Editor@JuceVST3EditController@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804baa18",
+  "s": ".?AVJuceVST3EditController@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bab90",
+  "s": ".?AVEditController@Vst@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bad30",
+  "s": ".?AVStringListParameter@Vst@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bad70",
+  "s": ".?AVEditorContextMenu@JuceVST3EditController@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bae50",
+  "s": ".?AUProgramChangeParameter@JuceVST3EditController@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804baf38",
+  "s": ".?AUAudioProcessorEditorHostContext@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804baff8",
+  "s": ".?AVIEditController@Vst@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb0c0",
+  "s": ".?AVFLock@Thread@Base@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb0f8",
+  "s": ".?AVIPlugViewContentScaleSupport@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb138",
+  "s": ".?AVPresetFile@Vst@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb168",
+  "s": ".?AVAsyncUpdater@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb190",
+  "s": ".?AVEditorHostContext@JuceVST3EditController@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb1d8",
+  "s": ".?AVEditControllerEx1@Vst@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb210",
+  "s": ".?AVIEditController2@Vst@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb280",
+  "s": ".?AUOwnedParameterListener@JuceVST3EditController@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb300",
+  "s": ".?AUIGainReductionInfo@Presonus@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb368",
+  "s": ".?AVIMidiMapping@Vst@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb440",
+  "s": ".?AUContentWrapperComponent@JuceVST3Editor@JuceVST3EditController@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb530",
+  "s": ".?AVCPluginView@Steinberg@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb620",
+  "s": ".?AVCPluginControl_LinearBeats@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb658",
+  "s": ".?AVCPluginControl_Linear@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb6b0",
+  "s": ".?AVCPluginControl_Discrete@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb6e0",
+  "s": ".?AVCPluginControl_LinearTime@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb710",
+  "s": ".?AVCPluginControl@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb738",
+  "s": ".?AVCPluginControl_Continuous@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb798",
+  "s": ".?AVCPluginUnits_Percent@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb7c8",
+  "s": ".?AVMeterInterface@tide@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb7f8",
+  "s": ".?AVCPluginControl_LinearBase@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb828",
+  "s": ".?AVCPluginControl_DiscreteBase@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb860",
+  "s": ".?AVCPluginUnits_Pan@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb8b0",
+  "s": ".?AVCPluginControl_LinearPan@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bb960",
+  "s": ".?AVCPluginControl_LinearPercent@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bc5f8",
+  "s": ".?AUCurrentThreadHolder@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bc860",
+  "s": ".?AVLowLevelGraphicsContext@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bcf80",
+  "s": ".?AVLowLevelGraphicsPostScriptRenderer@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bd050",
+  "s": ".?AV?$StackBasedLowLevelGraphicsContext@VSoftwareRendererSavedState@RenderingHelpers@juce@@@RenderingHelpers@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bd268",
+  "s": ".?AVLowLevelGraphicsSoftwareRenderer@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bd488",
+  "s": ".?AVAsyncUpdaterMessage@AsyncUpdater@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bd4c8",
+  "s": ".?AVMessageManagerLock@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bd4f8",
+  "s": ".?AVAsyncFunctionCallback@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bd568",
+  "s": ".?AUDataDeliveryMessage@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bd5d0",
+  "s": ".?AUAsyncCallInvoker@?1??callAsync@MessageManager@juce@@SA_NV?$function@$$A6AXXZ@std@@@Z@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bd9b8",
+  "s": ".?AVMixerAudioSource@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bd9e8",
+  "s": ".?AVSynthesiserVoice@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bdab8",
+  "s": ".?AVMPEInstrument@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bdc80",
+  "s": ".?AVListener@MPEInstrument@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bdcb8",
+  "s": ".?AVMPESynthesiserVoice@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bdf70",
+  "s": ".?AVAudioParameterInt@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bdfd0",
+  "s": ".?AVSliderParameterAttachment@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804be008",
+  "s": ".?AVAudioParameterChoice@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804be840",
+  "s": ".?AUDelayChannelOp@?$GraphRenderSequence@M@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804be9b8",
+  "s": ".?AVGenericAudioProcessorEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804beec0",
+  "s": ".?AVParameterAdapter@AudioProcessorValueTreeState@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bf258",
+  "s": ".?AVAudioParameterBool@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bf320",
+  "s": ".?AVComboBoxParameterAttachment@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bf358",
+  "s": ".?AUHostedAudioProcessorParameter@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bf398",
+  "s": ".?AUParameter@AudioPluginInstance@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bf7a0",
+  "s": ".?AUDelayChannelOp@?$GraphRenderSequence@N@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bfe20",
+  "s": ".?AUAudioProcessorEditorListener@AudioProcessorEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804bffd8",
+  "s": ".?AVAudioParameterFloat@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c00c8",
+  "s": ".?AVParameterAttachment@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c00f8",
+  "s": ".?AVTreeViewItem@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c01c8",
+  "s": ".?AVButtonParameterAttachment@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c0358",
+  "s": ".?AUTemporaryImage@HWNDComponentPeer@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c04b0",
+  "s": ".?AULookAndFeelMethods@ConcertinaPanel@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c06c8",
+  "s": ".?AULookAndFeelMethods@TreeView@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c0958",
+  "s": ".?AURemoveAction@TextEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c0f38",
+  "s": ".?AVTargetGroupHighlight@TreeView@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c14e0",
+  "s": ".?AVItemAccessibilityHandler@ItemComponent@TreeView@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c16f0",
+  "s": ".?AUIExpandCollapseProvider@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c1dc0",
+  "s": ".?AV?$_Func_impl_no_alloc@V<lambda_f2de5feb040032064cf85b4b8985866b>@@VModifierKeys@juce@@$$V@std@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c1fb8",
+  "s": ".?AUOnScreenKeyboard@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c1fe8",
+  "s": ".?AUModifierKeyReceiver@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c2110",
+  "s": ".?AUKeyMappingEditorComponentMethods@ExtraLookAndFeelBaseClasses@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c29a8",
+  "s": ".?AVInputFilter@TextEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c2da0",
+  "s": ".?AVListener@TextEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c2fb8",
+  "s": ".?AVListViewport@ListBox@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c3258",
+  "s": ".?AVInsertPointHighlight@TreeView@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c3650",
+  "s": ".?AUInsertAction@TextEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c3688",
+  "s": ".?AVViewport@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c3750",
+  "s": ".?AV?$ComBaseClassHelper@UIExpandCollapseProvider@@@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c38a0",
+  "s": ".?AVLengthAndCharacterRestriction@TextEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c3b50",
+  "s": ".?AVLabelKeyboardFocusTraverser@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c3ca0",
+  "s": ".?AVItemCellInterface@ItemAccessibilityHandler@ItemComponent@TreeView@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c3d00",
+  "s": ".?AV?$_Func_base@VModifierKeys@juce@@$$V@std@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c3ee8",
+  "s": ".?AVTextEditorAccessibilityHandler@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c3f90",
+  "s": ".?AV?$ComBaseClassHelperBase@UIExpandCollapseProvider@@$$V@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c4490",
+  "s": ".?AVTableInterface@?1??createAccessibilityHandler@TreeView@juce@@EEAA?AV?$unique_ptr@VAccessibilityHandler@juce@@U?$default_delete@VAccessibilityHandler@juce@@@std@@@std@@XZ@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c5030",
+  "s": ".?AVUIAExpandCollapseProvider@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c50d8",
+  "s": ".?AUTextHolderComponent@TextEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c54d0",
+  "s": ".?AVTextEditorTextInterface@TextEditorAccessibilityHandler@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c5580",
+  "s": ".?AVKeyPressMappingSet@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c5da8",
+  "s": ".?AVSidePanel@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c61c0",
+  "s": ".?AUDragToScrollListener@Viewport@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c6200",
+  "s": ".?AVTopLevelWindowManager@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c67c8",
+  "s": ".?AVContentComponent@TreeView@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c6a80",
+  "s": ".?AUTabbedComponentInternal@MultiDocumentPanel@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c6ef0",
+  "s": ".?AUTextEditorViewport@TextEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c6fe0",
+  "s": ".?AVTreeViewport@TreeView@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c72d8",
+  "s": ".?AULookAndFeelMethods@SidePanel@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c74e8",
+  "s": ".?AVKeyListener@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c75e8",
+  "s": ".?AVKeyboardFocusTraverser@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c7a28",
+  "s": ".?AULookAndFeelMethods@TextEditor@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c7a68",
+  "s": ".?AVImagePreviewComponent@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c7ba8",
+  "s": ".?AVTreeView@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c7df0",
+  "s": ".?AVValueTreeSynchroniser@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c7ee8",
+  "s": ".?AVCPluginControl_List@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c7f18",
+  "s": ".?AVCPluginUnits_Level@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c7f48",
+  "s": ".?AVCPluginControl_LinearLevel@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c7f80",
+  "s": ".?AVCPluginControl_OnOff@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c7fb0",
+  "s": ".?AVCPluginControl_Snapshots@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c80e0",
+  "s": ".?AUdsp_t@microdelay_t@modules@modpp@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c8308",
+  "s": ".?AUdsp_t@delay_t@modules@modpp@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c8340",
+  "s": ".?AUdsp_t@mix_t@modules@modpp@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c8370",
+  "s": ".?AUdsp_t@stereomixer_t@modules@modpp@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c83e0",
+  "s": ".?AUdsp_t@moddelay_t@modules@modpp@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c8688",
+  "s": ".?AUdsp_t@gain_t@modules@modpp@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c87c8",
+  "s": ".?AUdsp_t@delay_xf_t@modules@modpp@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c88c8",
+  "s": ".?AVVoxAudioProcessorEditor@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c8928",
+  "s": ".?AVPreferencesPanelController@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c89c0",
+  "s": ".?AVListener@GridEditor@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c89f0",
+  "s": ".?AVBasicPreferencesPanelController@tide@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c8a30",
+  "s": ".?AVDigiPluginAudioProcessorEditor@tide@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c8af0",
+  "s": ".?AUreceiver_t@midi@modpp@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c8e80",
+  "s": ".?AVCodeEditorComponentTextInterface@CodeEditorAccessibilityHandler@CodeEditorComponent@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c8f90",
+  "s": ".?AVKeyMappingEditorComponent@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9090",
+  "s": ".?AVPimpl@ActiveXControlComponent@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9280",
+  "s": ".?AVCodeEditorAccessibilityHandler@CodeEditorComponent@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9538",
+  "s": ".?AVCodeEditorComponent@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c95f8",
+  "s": ".?AVActiveXControlComponent@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9630",
+  "s": ".?AUScaleFactorListener@ComponentPeer@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9670",
+  "s": ".?AVPreferencesPanel@juce@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9980",
+  "s": ".?AV?$HighlighterGroup@VVoxAudioProcessor@@VVoxAudioProcessorEditor@@@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c99e0",
+  "s": ".?AV?$DigiPluginFrontPanelComponent@VVoxAudioProcessor@@VVoxAudioProcessorEditor@@@tide@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9a50",
+  "s": ".?AVVoxFrontPanelComponent@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9ab0",
+  "s": ".?AVImagePresetBar@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9ad8",
+  "s": ".?AVVoxPresetBar@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9bf8",
+  "s": ".?AVSnapshotController@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9c28",
+  "s": ".?AVSnapshotButton@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9e48",
+  "s": ".?AVGridEditor@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804c9ff0",
+  "s": ".?AVVoxVoiceSlider@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ca018",
+  "s": ".?AVNoImageMeter@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ca0a0",
+  "s": ".?AVVoxVoiceSwitch@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ca0e8",
+  "s": ".?AVVoxVoiceSelector@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ca1a0",
+  "s": ".?AVVoxPitchMeter@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ca300",
+  "s": ".?AVImagePresetPopup@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ca330",
+  "s": ".?AVFlatImagePopupMenuLookAndFeel@ImagePresetPopup@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1804ca378",
+  "s": ".?AVAsyncRepaintRefresher@@"
+ },
+ {
+  "enc": "a",
+  "addr": "0x1805083a1",
+  "s": "        <requestedExecutionLevel level='asInvoker' uiAccess='false' />"
+ },
+ {
+  "enc": "a",
+  "addr": "0x180508451",
+  "s": "      <assemblyIdentity type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*' />"
+ },
+ {
+  "enc": "u",
+  "addr": "0x18050813e",
+  "s": "CompanyName"
+ }
+]

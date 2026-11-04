@@ -1,0 +1,32 @@
+{
+  "Name": "OctavoxRE_ObsKernel6",
+  "Version": "1.0.0",
+  "Factory Info": {
+    "Vendor": "Octavox RE Project",
+    "URL": "https://example.invalid/octavox-re",
+    "E-Mail": "octavox-re@example.invalid",
+    "Flags": {
+      "Unicode": true,
+      "Classes Discardable": false,
+      "Component Non Discardable": false,
+    },
+  },
+  "Classes": [
+    {
+      "CID": "E3E7FA706A380D35B05F64B91F1E2689",
+      "Category": "Audio Module Class",
+      "Name": "OctavoxRE ObsKernel6",
+      "Vendor": "Octavox RE Project",
+      "Version": "1.2.0",
+      "SDKVersion": "VST 3.7.12",
+      "Sub Categories": [
+        "Fx",
+        "Pitch Shift",
+      ],
+      "Class Flags": 0,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+  ],
+}

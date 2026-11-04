@@ -1,0 +1,3 @@
+synthetic_vibrato_220.wav    fullrate   48000  med    0.000  max     0.000  jit   0.026  oct  0.00%  drop  0.00%  rec    0.0ms  lockd    0.0ms  cpu   1965.2 ns/s  step 0.0377
+synthetic_vibrato_220.wav    decimated  48000  med    0.017  max     0.249  jit   0.028  oct  0.00%  drop  0.00%  rec    0.0ms  lockd    0.0ms  cpu    574.5 ns/s  step 0.0377
+synthetic_vibrato_220.wav    hybrid     48000  med    0.016  max     0.022  jit   0.026  oct  0.00%  drop  0.00%  rec    0.0ms  lockd    0.0ms  cpu    602.4 ns/s  step 0.0377

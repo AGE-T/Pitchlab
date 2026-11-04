@@ -1,0 +1,270 @@
+PITCHLAB R22 -- Minimum Pitch conversion scan (static; never executed)
+==============================================================================
+disp32 scan hits: 6
+  candidate 0x1801088C9 +0x5F70
+  candidate 0x180122479 +0x5F70
+  candidate 0x18013C97C +0x5F70
+  candidate 0x18013CD20 +0x5F74
+  candidate 0x18013CDD9 +0x5F74
+  candidate 0x18013CF3C +0x5F70
+
+-- context 0x180108889..0x180108949 (hit +0x5F70)
+  180108889  ret                                                     
+  18010888A  cmc                                                     
+  18010888C  dec       dword ptr [rax - 0x73]                        
+  18010888F  mov       gs, eax                                       
+
+-- context 0x180122439..0x1801224F9 (hit +0x5F70)
+  180122439  adc       ebp, dword ptr [rdx - 0x72b7000d]             
+  18012243F  mov       gs, eax                                       
+
+-- context 0x18013C93C..0x18013C9FC (hit +0x5F70)
+  18013C93C  cmp       ebx, ecx                                      
+  18013C93E  jge       0x18013c96d                                   
+  18013C940  sub       r9d, r11d                                     
+  18013C943  mov       r8d, r9d                                      
+  18013C946  movss     xmm0, dword ptr [rcx]                         
+  18013C94A  movaps    xmm3, xmm1                                    
+  18013C94D  subss     xmm3, xmm0                                    
+  18013C951  add       rcx, 4                                        
+  18013C955  comiss    xmm3, xmm2                                    
+  18013C958  jbe       0x18013c95d                                   
+  18013C95A  movaps    xmm1, xmm4                                    
+  18013C95D  mov       rax, rcx                                      
+  18013C960  cmovbe    rax, rdx                                      
+  18013C964  mov       rdx, rax                                      
+  18013C967  sub       r8, 1                                         
+  18013C96B  jne       0x18013c946                                   
+  18013C96D  sub       rdx, 4                                        
+  18013C971  ucomiss   xmm1, xmm4                                    
+  18013C974  je        0x18013c97c                                   
+  18013C976  movaps    xmm5, xmm7                                    
+  18013C979  mov       rdx, rcx                                      
+  18013C97C  mov       eax, dword ptr [r15 + 0x5f70]                    <== TRACKER DOMAIN WRITE
+  18013C983  mov       rcx, rdx                                      
+  18013C986  movss     xmm1, dword ptr [rip + 0x2d5a22]              
+  18013C98E  sub       rcx, rbx                                      
+  18013C991  sar       rcx, 2                                        
+  18013C995  sub       eax, ecx                                      
+  18013C997  movss     dword ptr [r15 + 0x5f90], xmm5                
+  18013C9A0  movd      xmm0, eax                                     
+  18013C9A4  cvtdq2ps  xmm0, xmm0                                    
+  18013C9A7  mulss     xmm0, dword ptr [r15 + 0x6000]                
+  18013C9B0  comiss    xmm0, xmm1                                    
+  18013C9B3  jbe       0x18013c9c2                                   
+  18013C9B5  movss     xmm1, dword ptr [rip + 0x2d5c5f]              
+  18013C9BD  comiss    xmm0, xmm1                                    
+  18013C9C0  jb        0x18013c9c5                                   
+  18013C9C2  movaps    xmm0, xmm1                                    
+  18013C9C5  cvttss2si eax, xmm0                                     
+  18013C9C9  mov       qword ptr [r15 + 0x5f40], rdx                 
+  18013C9D0  mov       qword ptr [r15 + 0x5f78], rdx                 
+  18013C9D7  mov       qword ptr [r15 + 0x5f88], r12                 
+  18013C9DE  mov       qword ptr [r15 + 0x5f98], r12                 
+  18013C9E5  mov       dword ptr [r15 + 0x5ffc], 7                   
+  18013C9F0  mov       dword ptr [r15 + 0x5f68], eax                 
+  18013C9F7  mov       eax, 3                                        
+
+-- context 0x18013CCE0..0x18013CDA0 (hit +0x5F74)
+  18013CCE0  movss     xmm2, dword ptr [rax - 8]                     
+  18013CCE5  xor       r12d, r12d                                    
+  18013CCE8  movss     xmm1, dword ptr [rax - 4]                     
+  18013CCED  nop       dword ptr [rax]                               
+  18013CCF0  movaps    xmm0, xmm2                                    
+  18013CCF3  subss     xmm0, xmm1                                    
+  18013CCF7  comiss    xmm0, xmm6                                    
+  18013CCFA  ja        0x18013cd12                                   
+  18013CCFC  movaps    xmm2, xmm1                                    
+  18013CCFF  inc       r12d                                          
+  18013CD02  movss     xmm1, dword ptr [rcx]                         
+  18013CD06  add       rcx, 4                                        
+  18013CD0A  cmp       r12d, 0x19                                    
+  18013CD0E  jl        0x18013ccf0                                   
+  18013CD10  jmp       0x18013cd29                                   
+  18013CD12  mov       rax, rcx                                      
+  18013CD15  sub       rax, qword ptr [r15 + 0x5f58]                 
+  18013CD1C  sar       rax, 2                                        
+  18013CD20  cmp       eax, dword ptr [r15 + 0x5f74]                    <== TRACKER DOMAIN WRITE
+  18013CD27  jle       0x18013cd39                                   
+  18013CD29  mov       rcx, qword ptr [r15 + 0x5f88]                 
+  18013CD30  movss     xmm2, dword ptr [r15 + 0x5f84]                
+  18013CD39  movss     dword ptr [r15 + 0x5f90], xmm2                
+  18013CD42  mov       qword ptr [r15 + 0x5f98], rcx                 
+  18013CD49  mov       dword ptr [r15 + 0x5ff8], 5                   
+  18013CD54  jmp       0x18013d1eb                                   
+  18013CD59  mov       rax, qword ptr [r15 + 0x5fa8]                 
+  18013CD60  xor       r12d, r12d                                    
+  18013CD63  movss     xmm5, dword ptr [rip + 0x2d5261]              
+  18013CD6B  mov       r8d, 0x7fffff                                 
+  18013CD71  test      rax, rax                                      
+  18013CD74  je        0x18013ce8f                                   
+  18013CD7A  movss     xmm1, dword ptr [rax - 4]                     
+  18013CD7F  lea       rdx, [rax - 4]                                
+  18013CD83  movss     xmm2, dword ptr [rax - 8]                     
+  18013CD88  lea       rcx, [rax - 8]                                
+  18013CD8C  movaps    xmm0, xmm1                                    
+  18013CD8F  subss     xmm0, xmm2                                    
+  18013CD93  comiss    xmm0, xmm6                                    
+  18013CD96  ja        0x18013cd9b                                   
+  18013CD98  movaps    xmm1, xmm2                                    
+  18013CD9B  movss     xmm2, dword ptr [rcx - 4]                     
+
+-- context 0x18013CD99..0x18013CE59 (hit +0x5F74)
+  18013CD99  sub       dl, cl                                        
+  18013CD9B  movss     xmm2, dword ptr [rcx - 4]                     
+  18013CDA0  mov       rax, rcx                                      
+  18013CDA3  cmova     rax, rdx                                      
+  18013CDA7  movaps    xmm0, xmm1                                    
+  18013CDAA  add       rcx, -4                                       
+  18013CDAE  subss     xmm0, xmm2                                    
+  18013CDB2  comiss    xmm0, xmm6                                    
+  18013CDB5  ja        0x18013cdba                                   
+  18013CDB7  movaps    xmm1, xmm2                                    
+  18013CDBA  cmova     rcx, rax                                      
+  18013CDBE  cmp       rcx, qword ptr [r15 + 0x5f78]                 
+  18013CDC5  jb        0x18013ce8f                                   
+  18013CDCB  mov       rax, rcx                                      
+  18013CDCE  sub       rax, qword ptr [r15 + 0x5f58]                 
+  18013CDD5  sar       rax, 2                                        
+  18013CDD9  cmp       eax, dword ptr [r15 + 0x5f74]                    <== TRACKER DOMAIN WRITE
+  18013CDE0  jge       0x18013ce8f                                   
+  18013CDE6  movss     xmm0, dword ptr [r15 + 0x5f80]                
+  18013CDEF  movss     xmm4, dword ptr [rip + 0x2d504d]              
+  18013CDF7  mulss     xmm0, xmm5                                    
+  18013CDFB  subss     xmm0, xmm1                                    
+  18013CDFF  comiss    xmm0, xmm4                                    
+  18013CE02  jae       0x18013ce8f                                   
+  18013CE08  lea       rax, [rcx + 8]                                
+  18013CE0C  movss     dword ptr [r15 + 0x5fa0], xmm1                
+  18013CE15  mov       qword ptr [r15 + 0x5fa8], rax                 
+  18013CE1C  mov       eax, dword ptr [r15 + 0x5fb4]                 
+  18013CE23  inc       eax                                           
+  18013CE25  cmp       eax, r8d                                      
+  18013CE28  jle       0x18013ce33                                   
+  18013CE2A  mov       dword ptr [r15 + 0x5fb4], r8d                 
+  18013CE31  jmp       0x18013ce3f                                   
+  18013CE33  mov       dword ptr [r15 + 0x5fb4], eax                 
+  18013CE3A  cmp       eax, 5                                        
+  18013CE3D  jle       0x18013ceab                                   
+  18013CE3F  movss     xmm0, dword ptr [rip + 0x2d5071]              
+  18013CE47  comiss    xmm0, dword ptr [r15 + 0x5fec]                
+  18013CE4F  movss     xmm2, dword ptr [rip + 0x2d51cd]              
+  18013CE57  jb        0x18013ce61                                   
+
+-- context 0x18013CEFC..0x18013CFBC (hit +0x5F70)
+  18013CEFC  add       byte ptr [rax], al                            
+  18013CEFE  cvtps2pd  xmm0, xmm0                                    
+  18013CF01  subsd     xmm1, xmm0                                    
+  18013CF05  comisd    xmm1, xmmword ptr [rip + 0x2d503b]            
+  18013CF0D  jb        0x18013cf16                                   
+  18013CF0F  mov       eax, 1                                        
+  18013CF14  jmp       0x18013cf22                                   
+  18013CF16  lea       eax, [r12 + 1]                                
+  18013CF1B  cmp       eax, r8d                                      
+  18013CF1E  cmovg     eax, r8d                                      
+  18013CF22  mov       r12d, eax                                     
+  18013CF25  mov       dword ptr [r15 + 0x5fb0], r12d                
+  18013CF2C  mov       dword ptr [r15 + 0x5ff8], 6                   
+  18013CF37  jmp       0x18013d1eb                                   
+  18013CF3C  cmp       dword ptr [r15 + 0x5f70], 0xd2                   <== TRACKER DOMAIN WRITE
+  18013CF47  movss     xmm2, dword ptr [rip + 0x2d5031]              
+  18013CF4F  movss     xmm1, dword ptr [rip + 0x2d4fed]              
+  18013CF57  jle       0x18013cf5c                                   
+  18013CF59  movaps    xmm2, xmm1                                    
+  18013CF5C  mov       r8, qword ptr [r15 + 0x5f98]                  
+  18013CF63  test      r8, r8                                        
+  18013CF66  je        0x18013d09f                                   
+  18013CF6C  movss     xmm3, dword ptr [r15 + 0x5fa0]                
+  18013CF75  cvtps2pd  xmm3, xmm3                                    
+  18013CF78  cvtpd2ps  xmm0, xmm3                                    
+  18013CF7C  andps     xmm0, xmm9                                    
+  18013CF80  comiss    xmm0, xmm6                                    
+  18013CF83  jae       0x18013cf90                                   
+  18013CF85  movss     xmm2, dword ptr [r15 + 0x5fc0]                
+  18013CF8E  jmp       0x18013d008                                   
+  18013CF90  mov       r9, qword ptr [r15 + 0x5fa8]                  
+  18013CF97  mov       rcx, r9                                       
+  18013CF9A  sub       rcx, r8                                       
+  18013CF9D  sar       rcx, 2                                        
+  18013CFA1  mov       eax, ecx                                      
+  18013CFA3  cdq                                                     
+  18013CFA4  xor       eax, edx                                      
+  18013CFA6  sub       eax, edx                                      
+  18013CFA8  cmp       eax, 1                                        
+  18013CFAB  jle       0x18013d03a                                   
+  18013CFB1  test      ecx, ecx                                      
+  18013CFB3  jns       0x18013cfb8                                   
+  18013CFB5  movaps    xmm1, xmm2                                    
+
+-- 0x18013CF3C..0x18013CFCC
+  18013CF3C  cmp       dword ptr [r15 + 0x5f70], 0xd2              
+  18013CF47  movss     xmm2, dword ptr [rip + 0x2d5031]               ; [0x180411F80] f32=0.09375 f64=5.238690707e-11
+  18013CF4F  movss     xmm1, dword ptr [rip + 0x2d4fed]               ; [0x180411F44] f32=0.03125 f64=5.056318096e-315
+  18013CF57  jle       0x18013cf5c                                 
+  18013CF59  movaps    xmm2, xmm1                                  
+  18013CF5C  mov       r8, qword ptr [r15 + 0x5f98]                
+  18013CF63  test      r8, r8                                      
+  18013CF66  je        0x18013d09f                                 
+  18013CF6C  movss     xmm3, dword ptr [r15 + 0x5fa0]              
+  18013CF75  cvtps2pd  xmm3, xmm3                                  
+  18013CF78  cvtpd2ps  xmm0, xmm3                                  
+  18013CF7C  andps     xmm0, xmm9                                  
+  18013CF80  comiss    xmm0, xmm6                                  
+  18013CF83  jae       0x18013cf90                                 
+  18013CF85  movss     xmm2, dword ptr [r15 + 0x5fc0]              
+  18013CF8E  jmp       0x18013d008                                 
+  18013CF90  mov       r9, qword ptr [r15 + 0x5fa8]                
+  18013CF97  mov       rcx, r9                                     
+  18013CF9A  sub       rcx, r8                                     
+  18013CF9D  sar       rcx, 2                                      
+  18013CFA1  mov       eax, ecx                                    
+  18013CFA3  cdq                                                   
+  18013CFA4  xor       eax, edx                                    
+  18013CFA6  sub       eax, edx                                    
+  18013CFA8  cmp       eax, 1                                      
+  18013CFAB  jle       0x18013d03a                                 
+  18013CFB1  test      ecx, ecx                                    
+  18013CFB3  jns       0x18013cfb8                                 
+  18013CFB5  movaps    xmm1, xmm2                                  
+  18013CFB8  movss     xmm2, dword ptr [r15 + 0x5fc0]              
+  18013CFC1  subss     xmm2, xmm1                                  
+  18013CFC5  comiss    xmm2, xmm6                                  
+  18013CFC8  ja        0x18013cfcd                                 
+
+-- 0x18013C946..0x18013C9D0
+  18013C946  movss     xmm0, dword ptr [rcx]                       
+  18013C94A  movaps    xmm3, xmm1                                  
+  18013C94D  subss     xmm3, xmm0                                  
+  18013C951  add       rcx, 4                                      
+  18013C955  comiss    xmm3, xmm2                                  
+  18013C958  jbe       0x18013c95d                                 
+  18013C95A  movaps    xmm1, xmm4                                  
+  18013C95D  mov       rax, rcx                                    
+  18013C960  cmovbe    rax, rdx                                    
+  18013C964  mov       rdx, rax                                    
+  18013C967  sub       r8, 1                                       
+  18013C96B  jne       0x18013c946                                 
+  18013C96D  sub       rdx, 4                                      
+  18013C971  ucomiss   xmm1, xmm4                                  
+  18013C974  je        0x18013c97c                                 
+  18013C976  movaps    xmm5, xmm7                                  
+  18013C979  mov       rdx, rcx                                    
+  18013C97C  mov       eax, dword ptr [r15 + 0x5f70]               
+  18013C983  mov       rcx, rdx                                    
+  18013C986  movss     xmm1, dword ptr [rip + 0x2d5a22]               ; [0x1804123B0] f32=2 f64=5.304989477e-315
+  18013C98E  sub       rcx, rbx                                    
+  18013C991  sar       rcx, 2                                      
+  18013C995  sub       eax, ecx                                    
+  18013C997  movss     dword ptr [r15 + 0x5f90], xmm5              
+  18013C9A0  movd      xmm0, eax                                   
+  18013C9A4  cvtdq2ps  xmm0, xmm0                                  
+  18013C9A7  mulss     xmm0, dword ptr [r15 + 0x6000]              
+  18013C9B0  comiss    xmm0, xmm1                                  
+  18013C9B3  jbe       0x18013c9c2                                 
+  18013C9B5  movss     xmm1, dword ptr [rip + 0x2d5c5f]               ; [0x18041261C] f32=18 f64=134217760.8
+  18013C9BD  comiss    xmm0, xmm1                                  
+  18013C9C0  jb        0x18013c9c5                                 
+  18013C9C2  movaps    xmm0, xmm1                                  
+  18013C9C5  cvttss2si eax, xmm0                                   
+  18013C9C9  mov       qword ptr [r15 + 0x5f40], rdx               
+

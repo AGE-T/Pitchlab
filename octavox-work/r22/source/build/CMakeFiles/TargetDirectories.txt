@@ -1,0 +1,17 @@
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_dsp.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_tests.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_cli.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r15refcap.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r19_clickscan.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r19_nulltest.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r19_variant_metrics.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r20_detcompare.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r20_dualmono.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r21_realaudio.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r21_fmin.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r21_stereo.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r21_harmony.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_r22_minpitch.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/octavox_bench.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/edit_cache.dir
+/home/z/my-project/octavox-work/r22/source/build/CMakeFiles/rebuild_cache.dir

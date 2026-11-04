@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../lib/Release/libpluginterfaces.a CMakeFiles/pluginterfaces.dir/base/conststringtable.cpp.o CMakeFiles/pluginterfaces.dir/base/coreiids.cpp.o CMakeFiles/pluginterfaces.dir/base/funknown.cpp.o CMakeFiles/pluginterfaces.dir/base/ustring.cpp.o
+/usr/bin/ranlib ../../lib/Release/libpluginterfaces.a

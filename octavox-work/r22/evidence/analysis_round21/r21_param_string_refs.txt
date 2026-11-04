@@ -1,0 +1,32 @@
+'Beat Loop': 1 refs -> 0x1801A1824
+'Beat%d': 1 refs -> 0x1801A2BD3
+'Crossfade': 1 refs -> 0x1801A11E5
+'Delay%d': 1 refs -> 0x1801A23F7
+'Enable%d': 1 refs -> 0x1801A2A39
+'Feedback%d': 1 refs -> 0x1801A1F66
+'Input Level': 1 refs -> 0x1801A12E2
+'Instrument': 1 refs -> 0x1801A112E
+'Interval%d': 1 refs -> 0x1801A2891
+'Key Lock Enable': 1 refs -> 0x1801A1ABB
+'Level%d': 1 refs -> 0x1801A1CE8
+'Live Mode Enable': 1 refs -> 0x1801A19FA
+'Local Snapshots': 1 refs -> 0x1801A3016
+'Loop Delay': 1 refs -> 0x1801A1726
+'Loop Feedback': 1 refs -> 0x1801A1626
+'MIDI Control': 1 refs -> 0x1801A2F41
+'Master Tune': 1 refs -> 0x1801A0FD5
+'Meter Denominator': 1 refs -> 0x1801A2FEF
+'Meter Numerator': 1 refs -> 0x1801A2F9C
+'Minimum Pitch': 1 refs -> 0x1801A1178
+'Mix Lock Enable': 1 refs -> 0x1801A1B7C
+'Output Level': 1 refs -> 0x1801A1404
+'Pan%d': 1 refs -> 0x1801A21AF
+'Pitch Tracking Enable': 1 refs -> 0x1801A10E4
+'Randomize': 1 refs -> 0x1801A1919
+'Session Tempo Enable': 1 refs -> 0x1801A0DC5
+'Shift%d': 1 refs -> 0x1801A2642
+'Tempo Enable': 1 refs -> 0x1801A0CFD
+'Voice Select': 1 refs -> 0x1801A2E8C
+'Wet/Dry Mix': 1 refs -> 0x1801A1529
+
+# found refs for 30/30; no refs: []

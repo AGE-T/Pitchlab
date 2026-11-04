@@ -1,0 +1,53 @@
+== displacement 0x4128: 7 decoded uses ==
+  0x01800e0847  mov         dword ptr [rdi + 0x4128], esi
+  0x01800e0884  mov         dword ptr [rdi + 0x4128], eax
+  0x01800e0895  mov         ecx, dword ptr [rdi + 0x4128]
+  0x01800e235b  mov         eax, dword ptr [rsi + 0x4128]
+  0x01800e2694  mov         eax, dword ptr [rsi + 0x4128]
+  0x01800e7ef9  lea         ecx, [rbx + 0x4128]
+  0x018035baca  raw         (imm32 operand, not a decoded disp)
+== displacement 0x40f8: 7 decoded uses ==
+  0x01800e072b  mov         dword ptr [rdi + 0x40f8], esi
+  0x01800e075e  mov         dword ptr [rdi + 0x40f8], eax
+  0x01800e076f  mov         ecx, dword ptr [rdi + 0x40f8]
+  0x01800e2337  mov         edx, dword ptr [rsi + 0x40f8]
+  0x01800e26c8  mov         edx, dword ptr [rsi + 0x40f8]
+  0x01800e7f11  lea         ecx, [rbx + 0x40f8]
+  0x018035ba8a  raw         (imm32 operand, not a decoded disp)
+== displacement 0x4110: 14 decoded uses ==
+  0x01800e07b4  mov         dword ptr [rdi + 0x4110], esi
+  0x01800e07f1  mov         dword ptr [rdi + 0x4110], eax
+  0x01800e0802  mov         ecx, dword ptr [rdi + 0x4110]
+  0x01800e23f9  mov         eax, dword ptr [rsi + 0x4110]
+  0x01800e26e3  mov         eax, dword ptr [rsi + 0x4110]
+  0x01800e7f05  lea         ecx, [rbx + 0x4110]
+  0x01801120b1  lea         ecx, [rbp + 0x4110]
+  0x01801120c9  lea         eax, [rbp + 0x4110]
+  0x01801120e1  lea         ecx, [rbp + 0x4110]
+  0x018012b171  lea         ecx, [rbp + 0x4110]
+  0x018012b189  lea         eax, [rbp + 0x4110]
+  0x018012b1a1  lea         ecx, [rbp + 0x4110]
+  0x018035baaa  raw         (imm32 operand, not a decoded disp)
+  0x0180365273  lea         ecx, [rdx + 0x4110]
+== displacement 0x4140: 10 decoded uses ==
+  0x01800e08c9  lea         ecx, [rdi + 0x4140]
+  0x01800e2761  mov         eax, dword ptr [rsi + 0x4140]
+  0x01800e27fa  mov         eax, dword ptr [rsi + 0x4140]
+  0x01800e7eed  lea         ecx, [rbx + 0x4140]
+  0x01800f8477  lea         ecx, [rbp + 0x4140]
+  0x01800f848f  lea         eax, [rbp + 0x4140]
+  0x01800f84a7  lea         ecx, [rbp + 0x4140]
+  0x018015fc40  lea         eax, [rip + 0x4140]
+  0x018035baea  raw         (imm32 operand, not a decoded disp)
+  0x0180361213  lea         ecx, [rdx + 0x4140]
+== displacement 0x40f0: 10 decoded uses ==
+  0x01800e1fbe  mov         dword ptr [rsi + 0x40f0], eax
+  0x01800e24c7  mov         edi, dword ptr [rsi + 0x40f0]
+  0x01800e285a  mov         edx, dword ptr [rsi + 0x40f0]
+  0x018011204b  lea         ecx, [rbp + 0x40f0]
+  0x0180112063  lea         eax, [rbp + 0x40f0]
+  0x018011207b  lea         ecx, [rbp + 0x40f0]
+  0x018012b10b  lea         ecx, [rbp + 0x40f0]
+  0x018012b123  lea         eax, [rbp + 0x40f0]
+  0x018012b13b  lea         ecx, [rbp + 0x40f0]
+  0x0180365263  lea         ecx, [rdx + 0x40f0]

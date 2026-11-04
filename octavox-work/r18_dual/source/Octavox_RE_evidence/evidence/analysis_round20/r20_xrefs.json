@@ -1,0 +1,82 @@
+{
+ "Bypass": [
+  "0x180006d70",
+  "0x18000ca69",
+  "0x18000cd06"
+ ],
+ "Tempo Enable": [
+  "0x1801a0cfd"
+ ],
+ "Session Tempo Enable": [
+  "0x1801a0dc5"
+ ],
+ "Tempo": [
+  "0x1801a0e9b"
+ ],
+ "Scale": [
+  "0x1801a109d"
+ ],
+ "Pitch Tracking Enable": [
+  "0x1801a10e4"
+ ],
+ "Minimum Pitch": [
+  "0x1801a1178"
+ ],
+ "Crossfade(param)": [
+  "0x1801a11e5"
+ ],
+ "Input Level": [
+  "0x1801a12e2"
+ ],
+ "Output Level": [
+  "0x1801a1404"
+ ],
+ "Wet/Dry Mix": [
+  "0x1801a1529"
+ ],
+ "Loop Feedback": [
+  "0x1801a1626"
+ ],
+ "Loop Delay": [
+  "0x1801a1726"
+ ],
+ "Live Mode Enable": [
+  "0x1801a19fa"
+ ],
+ "Key Lock Enable": [
+  "0x1801a1abb"
+ ],
+ "Mix Lock Enable": [
+  "0x1801a1b7c"
+ ],
+ "Level%d": [
+  "0x1801a1ce8"
+ ],
+ "Feedback%d": [
+  "0x1801a1f66"
+ ],
+ "Pan%d": [
+  "0x1801a21af"
+ ],
+ "Delay%d": [
+  "0x1801a23f7"
+ ],
+ "Shift%d": [
+  "0x1801a2642"
+ ],
+ "Interval%d": [
+  "0x1801a2891"
+ ],
+ "Voice Select": [
+  "0x1801a2e8c"
+ ],
+ "MIDI Control": [
+  "0x1801a2f41"
+ ],
+ "Meter Numerator": [
+  "0x1801a2f9c"
+ ],
+ "Meter Denominator": [
+  "0x1801a2fef"
+ ]
+}

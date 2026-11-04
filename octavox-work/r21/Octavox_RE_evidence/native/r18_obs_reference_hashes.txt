@@ -1,0 +1,70 @@
+OCTAVOX R18-WDB -- OBSKERNEL6 VARIANT REFERENCE HASHES (Windows dual build)
+=======================================================================
+Recorded 2026-10-30 during the R18 Windows dual-build round (Lagrange6 vs
+ObsKernel6). These are the SEPARATE, reproducible reference measurements for
+the OBSKERNEL6 variant of our independent harmonizer, established because the
+selected kernel CHANGES the output of three of the four default-neutrality
+configurations. The EXISTING Lagrange6 gate (native/r15_reference_hashes.txt)
+is PRESERVED UNCHANGED and still passes 4/4 with the default tool behaviour.
+
+PROTOCOL
+--------
+Tool:   native/cli/r15ref_capture.cpp (CMake target octavox_r15refcap), run
+        with the R18-WDB mode added this round:
+          ./octavox_r15refcap --interpolation obskernel6
+        Every config's Config::interpolation is set to Interpolation::
+        ObsKernel6 (the target's observed static 256x6 .rdata kernel used
+        as a comparison mode in our independent DSP engine); all other
+        fields stay at the core defaults. The DEFAULT invocation (no flag)
+        is byte-identical to the historical R15 tool -- the existing gate
+        is untouched.
+Hash:   FNV-1a 64 over the raw output float bits (little-endian bytes), the
+        same law as the acceptance suite's default_neutrality cases and
+        r15_reference_hashes.txt.
+Input:  the SAME four pure-formula configurations as r15_reference_hashes.txt
+        (same seeds, tones, chirp, block patterns, N = 2^18 at 48 kHz) -- the
+        only difference is the interpolation kernel.
+Build:  Release, GCC 14.2.0, Debian 13 x86_64 (the same host/compiler class
+        as the R16-R18 reference records).
+
+THE FOUR OBSKERNEL6 MEASUREMENTS (two consecutive runs compared equal)
+-----------------------------------------------------------------------------
+  cfg1_default_unity_lcg_noise_b64_150_512  0x74318b06c182aacb
+  cfg2_r700c_8v_spread_fb025_sine220       0xa73fa640f0fcce9b
+  cfg3_rm400c_4v_nospread_chirp200_800     0x517af72e159b5a53
+  cfg4_stereo_2ch_4v_unity_then_r400c      0x87e676a3e9ecc108
+-----------------------------------------------------------------------------
+
+DIFFERENCE vs THE LAGRANGE6 REFERENCE (r15_reference_hashes.txt)
+-----------------------------------------------------------------
+  cfg1  0x74318b06c182aacb == 0x74318b06c182aacb   IDENTICAL
+  cfg2  0xa73fa640f0fcce9b != 0x46a091e98f2a413a   DIFFERS
+  cfg3  0x517af72e159b5a53 != 0x9502cf8827e8782c   DIFFERS
+  cfg4  0x87e676a3e9ecc108 != 0x6f7a2ce3ca310c25   DIFFERS
+
+Interpretation of cfg1 (IDENTICAL): cfg1 is the default-surface configuration
+(ratio 1, 1 voice, wet 1, bypass off, no per-voice overrides, gain 1) whose
+engine takes the special-cased legacy output path with the bit-neutral
+x*1.0 == x multiplication (documented in r15_reference_hashes.txt since
+R15-REB1). That path does not traverse the fractional-delay interpolation
+kernel, so swapping Lagrange6 -> ObsKernel6 cannot change its output bits.
+cfg2/cfg3/cfg4 exercise real transposition reads and therefore differ.
+
+STATUS
+------
+* Reproducibility: two consecutive runs on the same build produced
+  byte-identical output (run logs in the R18-WDB evidence directory).
+* The 85-case acceptance suite (native, core defaults = Lagrange6) is
+  unchanged and passes 85/85 on the unmodified core; these ObsKernel6
+  hashes are the variant's own reference record, NOT a replacement of any
+  existing gate.
+* Cross-check at the wrapper level: the OBSKERNEL6 VST3 module's processed
+  output is bit-exact vs an ObsKernel6-configured hand-driven core
+  reference (12/12 integration cases), and the same source built as
+  LAGRANGE6 passes the identical suites with the Lagrange6 references --
+  proving the variant plumbing end to end (see WINDOWS_DUAL_BUILD_REPORT.md).
+* Scope note (the standing rule): these are measurements of OUR OWN
+  independent DSP implementation. The ObsKernel6 kernel is the static
+  256x6 interpolation table OBSERVED in the original binary's .rdata; using
+  it does NOT make this engine a reproduction of the original Eventide
+  Octavox, and the original binary was never executed.

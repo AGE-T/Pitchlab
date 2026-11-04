@@ -1,0 +1,46 @@
+rate-map coefficient stores (raw image bytes, 0x1800E1F80..0x1800E1FC0)
+VA            bytes
+0x1800e1f80  00 00 c7 86 d8 40 00 00
+0x1800e1f88  00 00 80 3e c7 86 dc 40
+0x1800e1f90  00 00 86 2e b1 3e c7 86
+0x1800e1f98  e0 40 00 00 bb c4 79 3e
+0x1800e1fa0  c7 86 e4 40 00 00 c6 69
+0x1800e1fa8  f5 3d c7 86 e8 40 00 00
+0x1800e1fb0  5e d1 0e 3d 48 8d 05 b5
+0x1800e1fb8  41 2d 00 48 89 86 f0 40
+
+decoded `C7 86 <disp32> <imm32>` stores (mov dword ptr [rsi+disp], imm32):
+  0x1800e1f82  [rsi+0x40D8] = 0x3E800000  = 0.250000000
+  0x1800e1f8c  [rsi+0x40DC] = 0x3EB12E86  = 0.346058071
+  0x1800e1f96  [rsi+0x40E0] = 0x3E79C4BB  = 0.243914530
+  0x1800e1fa0  [rsi+0x40E4] = 0x3DF569C6  = 0.119830653
+  0x1800e1faa  [rsi+0x40E8] = 0x3D0ED15E  = 0.034867637
+
+multiplier pool, doubles at 0x180412480..0x1804124A8:
+  0x180412480  00 00 00 00 00 00 48 40  double=48  float32(low)=0
+  0x180412488  db 0f 49 40 cd cc 4c 40  double=57.6000137669  float32(low)=3.14159274
+  0x180412490  00 00 00 00 00 00 50 40  double=64  float32(low)=0
+  0x180412498  00 00 00 00 00 00 58 40  double=96  float32(low)=0
+  0x1804124a0  00 00 00 00 00 c0 58 40  double=99  float32(low)=0
+  0x1804124a8  00 00 00 00 00 00 59 40  double=100  float32(low)=0
+
+P evaluation (from the extracted prepare decompile, function FUN_1800E2030):
+  f    = (double)page[+0x40F8] * (double)F,  F = **(base + page[0x68] + 8)
+  P    = c0 + c1*f + c2*f^2 + c3*f^3 + c4*f^4      (double, MULSD/ADDSD chain)
+  step = P * (double)page[+0x4128] * 64.0
+  precision: coefficients are float32 members loaded MOVSS and widened with
+  0F 5A (CVTPS2PD); f is a MULSD product at 0x1800E236D; quartic and both
+  multiplies are double. No CVTPD2PS / no float32 rounding of P.
+
+exact coefficient sum = 0.994670891
+
+unity locus: step=1 <=> P(f)*R = 1/64 = 0.015625
+  f          P(f)          R for unity
+  0.000000   0.250000000   0.062500000
+  0.250000   0.353767732   0.044167397
+  0.500000   0.501165727   0.031177312
+  0.750000   0.708331371   0.022058885
+  1.000000   0.994670891   0.015708713
+  1.003989   1.000000000   0.015625000
+  2.000000   3.434301676   0.004549688
+  P(f)=1 at f = 1.003988571

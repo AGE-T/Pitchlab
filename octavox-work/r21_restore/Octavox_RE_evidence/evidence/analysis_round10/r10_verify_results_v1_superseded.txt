@@ -1,0 +1,104 @@
+[SUPERSEDED by the round-11 correction: this is the ORIGINAL round-10 output, retained verbatim. Two labels below are wrong - the max |cents - walk*depth| location is INTERIOR (f ~ 0.0561), not the F=1/depth=200 corner; and the residual is not "one-sided upward" - see r10_verify.py (fixed) and r11_numeric_audit_results.txt.]
+==============================================================================
+ROUND-10 NUMERICAL VERIFICATION  (target-exact arithmetic, OBS constants)
+==============================================================================
+
+[1] Coefficients (float32 bit patterns -> values)
+  c0 = 0x3E800000 = 0.25
+  c1 = 0x3EB12E86 = 0.34605807065963745
+  c2 = 0x3E79C4BB = 0.24391452968120575
+  c3 = 0x3DF569C6 = 0.1198306530714035
+  c4 = 0x3D0ED15E = 0.03486763685941696
+  scale 0x34000001 = 1.1920930376163597e-07 = 2^-23*(1+2^-23): True
+  P(0) = 0.25 (exactly 0.25: True); 4*P(0) with f32 rounding = 1.0
+
+[2] Round-9 doc table, claimed vs exact  (f = depth/2400 rows of doc §3)
+  f                             4P exact    4P doc  cents exact  cents doc      err
+  1/96  (walk 1, depth 25)      1.014526    1.0146       24.966      25.02    +0.05
+  1/48  (walk 1, depth 50)      1.029266    1.0293       49.939      50.13    +0.19
+  1/24  (walk 1, depth 100)     1.059405    1.0590       99.906     100.55    +0.64
+  1/12  (walk 1, depth 200)     1.122412    1.1224      199.923     201.68    +1.76
+  0.5                           2.004663    2.0047     1204.032    1204.00    -0.03
+  1.0                           3.978683    3.9787     2390.749    2386.60    -4.15
+  Internal consistency of the doc's own columns (1200*log2 of the doc 4P):
+    1/96  (walk 1, depth 25)   1200*log2(1.014568) =    25.039  vs doc cents   25.02  (diff -0.02)
+    1/48  (walk 1, depth 50)   1200*log2(1.029268) =    49.942  vs doc cents   50.13  (diff +0.19)
+    1/24  (walk 1, depth 100)  1200*log2(1.059047) =    99.320  vs doc cents  100.55  (diff +1.23)
+    1/12  (walk 1, depth 200)  1200*log2(1.122414) =   199.926  vs doc cents  201.68  (diff +1.75)
+    0.5                        1200*log2(2.004663) =  1204.032  vs doc cents 1204.00  (diff -0.03)
+    1.0                        1200*log2(3.978684) =  2390.750  vs doc cents 2386.60  (diff -4.15)
+
+[3] Task grid: cents(F, depth) for F in {0, .25, .5, .75, 1} and -> 1
+  depth = 50  (page10 = 0.02083333395421505)
+           F               f       cents   F*depth      dev
+         0.0    0.0000000000      0.0000      0.00  +0.0000
+        0.25    0.0052083335     12.4823     12.50  -0.0177
+         0.5    0.0104166670     24.9662     25.00  -0.0338
+        0.75    0.0156250005     37.4518     37.50  -0.0482
+         1.0    0.0208333340     49.9391     50.00  -0.0609
+    limit F->1 (continuous) = 49.9391 cents; nominal walk*depth = 50 cents; shortfall 0.0609
+  depth = 200  (page10 = 0.0833333358168602)
+           F               f       cents   F*depth      dev
+         0.0    0.0000000000      0.0000      0.00  +0.0000
+        0.25    0.0208333340     49.9391     50.00  -0.0609
+         0.5    0.0416666679     99.9056    100.00  -0.0944
+        0.75    0.0625000019    149.9001    150.00  -0.0999
+         1.0    0.0833333358    199.9231    200.00  -0.0769
+    limit F->1 (continuous) = 199.9231 cents; nominal walk*depth = 200 cents; shortfall 0.0769
+
+[4] The walk*depth law and the quartic fit over the shipped range
+  max |4P/4^f - 1| for f in [0,1/12]:  5.852e-05  (round-9 claimed <= 6e-5)
+  max |cents - 2400f| (fit error):     0.1013 cents
+  max |cents - walk*depth| over F in [0,1], depth in [0,200]: 0.1013 cents (at F=1, depth=200 corner)
+  at f=1/12: 4P = 1.1224122, 4^f = 1.1224620, cents = 199.923 (nominal 200)
+  at f=1:    4P = 3.9786835, 4^f = 4, cents = 2390.75 (rel err -0.0053)
+
+[5] Candidate sources of the claimed cents (none reproduces all six)
+  round-6 transcribed coeff (0.34630,0.24410,0.11983,0.03489):
+    1/96  (walk 1, depth 25)   ->    24.983  (doc claimed   25.02, diff +0.04)
+    1/48  (walk 1, depth 50)   ->    49.973  (doc claimed   50.13, diff +0.16)
+    1/24  (walk 1, depth 100)  ->    99.974  (doc claimed  100.55, diff +0.58)
+    1/12  (walk 1, depth 200)  ->   200.055  (doc claimed  201.68, diff +1.62)
+    0.5                        ->  1204.614  (doc claimed 1204.00, diff -0.61)
+    1.0                        ->  2391.531  (doc claimed 2386.60, diff -4.93)
+  formula 2400f*(1+f/10):
+    1/96  (walk 1, depth 25)   ->    25.026  (doc claimed   25.02, diff -0.01)
+    1/48  (walk 1, depth 50)   ->    50.104  (doc claimed   50.13, diff +0.03)
+    1/24  (walk 1, depth 100)  ->   100.417  (doc claimed  100.55, diff +0.13)
+    1/12  (walk 1, depth 200)  ->   201.667  (doc claimed  201.68, diff +0.01)
+    0.5                        ->  1260.000  (doc claimed 1204.00, diff -56.00)
+    1.0                        ->  2640.000  (doc claimed 2386.60, diff -253.40)
+  ln(2) typo variants (0.69 / 0.693 / 0.7):
+    ln2=0.69:    25.08     50.17    100.36    200.83   1209.52   2401.65
+    ln2=0.693:    24.97     49.95     99.93    199.97   1204.29   2391.26
+    ln2=0.7:    24.72     49.45     98.93    197.97   1192.24   2367.34
+  doc's own 4P column -> cents:    25.04     49.94     99.32    199.93   1204.03   2390.75
+  doc's claimed cents:               25.02     50.13    100.55    201.68   1204.00   2386.60
+
+[6] Noise range (arithmetic bound, default config FUN_180139C00)
+  sar(state,8) in [-8388608, 8388607]  (int32 arithmetic shift)
+  scale = 2^-23*(1+2^-23) = 1.1920930376163597e-07
+  exact product at sar=-2^23:  -(1+2^-23) = -1.0000001192092896
+  float32 out at sar=-2^23:    -1.0000001192092896   (below -1 by 1.192e-07)
+  exact product at sar=2^23-1: 1-2^-46 = 0.9999999999999858
+  float32 out at sar=2^23-1:   1.0   (rounds UP to exactly 1.0: True)
+  => noise in [-(1+2^-23), +1.0]; |noise| in [0, 1+2^-23]  (exceeds 1 by 1.192e-07)
+  => after abs/S&H/slew(clamps at target): F in [0, 1+2^-23]
+  max cents at depth 50: F=1 -> 49.9391, F=1+2^-23 -> 49.939050 (excess 0.00e+00 cents)
+  max cents at depth 200: F=1 -> 199.9231, F=1+2^-23 -> 199.923122 (excess 0.00e+00 cents)
+
+[7] Orbit of the decoded recurrence (seeds 13,17 / mask 2^24 / 4 outputs)
+  matrix order of M=[[17,12],[24,17]] mod 2^24: 4194304 (2^22)
+  vector period (first return to seeds): 4194304
+  emitted sar over the full orbit: min = -8388607, max = 8388607
+  extremes visited: sar = -2^23 (0x800000): False;  sar = 2^23-1: True
+  emitted noise (float32) over the orbit: [-1.0, 1.0]
+  max |noise| over the orbit: 1.0  (exceeds 1: False)
+  max cents at depth 50 with orbit-max F = 1.0: 49.9391
+  max cents at depth 200 with orbit-max F = 1.0: 199.9231
+
+[8] Verdict summary
+  - claimed 50.13c at depth 50 -> exact 49.939c
+  - claimed 201.68c at depth 200 -> exact 199.923c
+  - the walk*depth law holds to <= 0.101 cents over the shipped range (quartic fit error), one-sided upward.
+  - round-9 'F in [0,1)' refined: arithmetic bound F in [0, 1+2^-23]; orbit-actual max |noise| = 1.0

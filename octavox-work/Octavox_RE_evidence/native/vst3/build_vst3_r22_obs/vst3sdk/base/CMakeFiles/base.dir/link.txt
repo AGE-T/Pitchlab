@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../lib/Release/libbase.a CMakeFiles/base.dir/source/baseiids.cpp.o CMakeFiles/base.dir/source/fbuffer.cpp.o CMakeFiles/base.dir/source/fdebug.cpp.o CMakeFiles/base.dir/source/fdynlib.cpp.o CMakeFiles/base.dir/source/fobject.cpp.o CMakeFiles/base.dir/source/fstreamer.cpp.o CMakeFiles/base.dir/source/fstring.cpp.o CMakeFiles/base.dir/source/timer.cpp.o CMakeFiles/base.dir/source/updatehandler.cpp.o CMakeFiles/base.dir/thread/source/fcondition.cpp.o CMakeFiles/base.dir/thread/source/flock.cpp.o
+/usr/bin/ranlib ../../lib/Release/libbase.a

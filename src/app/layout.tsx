@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Octavox Research — Round 20 Findings",
+  title: "Octavox Research — Round 22 Findings",
   description:
-    "Round 19: the real-time fix (decimated ~24 kHz control-rate detector — 96 kHz stereo 8 voices at 13.2% CPU, 86.8% headroom; FullRate reference retained bit-exact), the click investigation (spacing-commit/base-delay/voice-transition pops eliminated 32-67x, measured), and the dual-interpolation verification (Lagrange6 vs ObsKernel6: a real -38.5 dB null difference, unity bit-identical, engine and module level) — Eventide Octavox reverse engineering, round 19.",
-  keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting"],
+    "Round 22 (recovery round): the complete Minimum Pitch signal path — the unified engine spacing-accept gate max(fmin, f0_min) (bit-exact at every historical configuration), four new diagnostics, the 10-frequency × 4-floor × 3-shift × 3-detector transposition-safety matrix (360 cells: detectable vs safely transposable), suite 96→100 with all reference hashes unchanged — Eventide Octavox reverse engineering, round 22.",
+  keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting", "minimum pitch"],
   authors: [{ name: "Z.ai Team" }],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",

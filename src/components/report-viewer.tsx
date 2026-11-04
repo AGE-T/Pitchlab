@@ -67,11 +67,11 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 20 · funkció-rekonstrukció + adaptív YIN" },
-  { label: "P0 javítás", value: "38 paraméter · 20/20 · gyökérok SDK-szint" },
-  { label: "Három detektor", value: "FullRate / Decimated / Hybrid · 96 kHz: 12,4×" },
-  { label: "Dual-mono", value: "bit-azonos L/R · doubling = 0,67 ms" },
-  { label: "Kapuk", value: "96/96 · ASan 0 · 12/12 hash · mind zöld" },
+  { label: "Kör", value: "Round 22 · Minimum Pitch jelútvonal (helyreállítási kör)" },
+  { label: "Egységes kapu", value: "max(fmin, f0_min) · bit-exakt · 4 új diagnózis" },
+  { label: "Mátrix", value: "360 cella · 10 frekvencia × 4 padló × 3 shift × 3 detektor" },
+  { label: "Verdictumok", value: "170 biztonságos · 31 padló alatt · 18 csak-detektálható" },
+  { label: "Kapuk", value: "100/100 · minden referencia-hash változatlan" },
 ];
 
 export function ReportViewer({
@@ -122,22 +122,26 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 20. kör
+                Octavox Research — 22. kör
               </h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                Funkció-rekonstrukciós mátrix + adaptív YIN hangmagasság-követés · P0 paraméter-inicializáció, három detektor, dual-mono integritás · Eventide Octavox RE projekt
+                Minimum Pitch jelútvonal: az egységesített spacing-kapu és a 10 frekvenciás transzponálás-biztonsági mátrix · helyreállítási kör (az R21 alapvonal a gazda által visszaadott archívumból, SHA-256-celve ellenőrizve) · Eventide Octavox RE projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 20 · KÉSZ
+              ROUND 22 · KÉSZ
             </Badge>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {META.map((m) => (
-              <Badge key={m.label} variant="outline" className="text-[11px] font-normal">
+              <Badge
+                key={m.label}
+                variant="outline"
+                className="h-auto max-w-full whitespace-normal text-left text-[11px] font-normal leading-relaxed"
+              >
                 <span className="text-muted-foreground">{m.label}:</span>&nbsp;{m.value}
               </Badge>
             ))}
@@ -158,13 +162,13 @@ export function ReportViewer({
                       aria-hidden="true"
                     />
                     <h2 className="text-base font-semibold tracking-tight">
-                      {di === 0 ? "Eredménycsomag — letöltés" : "Windows kettős VST3 build — letöltés"}
+                      {di === 0 ? "Eredménycsomag — letöltés" : "Helyreállított R21-alapvonal — letöltés"}
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
                     {di === 0
-                      ? "A 20. körre frissített teljes kutatási csomag: a P0 VST3 alapértelmezett paraméter-inicializáció gyökérok-meghatározása és javítása (SDK Parameter() ctor — mind a 38 paraméter 0-alapú értéket jelentett a friss példányon), az új Hybrid durva-finom detektor (96 kHz-en 12,4× olcsóbb a FullRate-nál, a Decimatednél +14% CPU-val FullRate-szintű stabilitásért), a 13 korpuszos valós anyagú három-detektor összehasonlítás, a determinisztikus dual-mono/sztereó integritási jelentés (a „doubling” = 0,67 ms inter-voice echo), a 96 esetből álló tesztcsomag (release és ASan/UBSan egyaránt nulla lelettel) és a 40 elemű funkció-rekonstrukciós mátrix (Crossfade = grain-commit blend szélesség; Randomize = sebesség-véletlen-séta)."
-                      : "Az OctavoxRE_R20_Windows_x64_Dual_Build: a két egyidejűleg betölthető Windows x64 VST3 modul (Lagrange6 és ObsKernel6) a javított paraméter-inicializálással és a Hybrid detektor-támogatással, bájtreprodukálható linkekkel (ALL GATES PASSED) és a felhasználói oldalon futtatható dual null-teszttel a validációs készletben."}
+                      ? "A 22. körre frissített teljes kutatási csomag: a Minimum Pitch jelútvonal teljes 8 szintű láncolata — az egységesített spacing-accept kapu max(fmin, f0_min) (bit-exakt minden történelmi konfiguráción: a detektor-dominancia bizonyítással explicit), a négy új diagnosztika (spacingGateHz / lastEstimateSpacingAccepted / spacingHistoryCount / spacingTargetSamples), a 360 cellás transzponálás-biztonsági mátrix (nem detektálható 141 · csak detektálható 18 · hallható padló alatt 31 · biztonságosan transzponálható 170 — a „detektálható” vs. „biztonságosan transzponálható” különbségtétel explicit), a 100/100 tesztcsomag minden referenciacél-hash változatlanul, és a műszer-javítási rekord (két mérőeszköz-hiba gyökérok-meghatározva és javítva a leszállítás ELŐTT). Windows-átadás: elhalasztva (az eszközlánc elveszett a környezet-visszaállításban — őszinte rekord)."
+                      : "A 21. kör lezárt bizonyítékarchívuma — e helyreállítási kör alapvonala. A sandbox-környezet visszaállása után a projektgazda szolgáltatta vissza (SHA-256 c77dc1e3…, a manifeszt kicsomagoláskor fájl-onként újraellenőrizve: 632 fájl, nulla eltérés). Tartalmazza a PitchLab-identitást, a független Harmony mappert (545/545 referencia vektor), a hibrid detektort, a Config::f0_min-t és a valós hang WAV-harnesst — minden, amire az R22 épült."}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
@@ -174,7 +178,7 @@ export function ReportViewer({
                       {formatBytes(entry.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      {di === 0 ? "616 fájl · sha256sum -c" : "2 modul + validációs készlet"}
+                      {di === 0 ? "638 fájl · sha256sum -c" : "632 fájl · alapvonal"}
                     </Badge>
                   </div>
                   {entry.sha256 ? (
@@ -364,10 +368,10 @@ export function ReportViewer({
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            Octavox RE — 20. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
-            forrásfájl: <code className="font-mono">OCTAVOX_ROUND20_FINDINGS.md</code> · csomag:{" "}
-            <code className="font-mono">Octavox_RE_evidence_round20.zip</code> +
-            <code className="font-mono">OctavoxRE_R20_Windows_x64_Dual_Build.zip</code>
+            Octavox RE — 22. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
+            forrásfájl: <code className="font-mono">OCTAVOX_ROUND22_FINDINGS.md</code> · csomag:{" "}
+            <code className="font-mono">Octavox_RE_evidence_round22.zip</code> +
+            <code className="font-mono">Octavox_RE_evidence_round21.zip</code> (alapvonal)
           </p>
         </div>
       </footer>

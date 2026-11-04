@@ -1,0 +1,12 @@
+v3_roundtrip               ok   
+v2_migration               ok   
+v1_migration               ok   
+v2_processor_restore       ok   
+legacy_inert_bitexact      ok   
+mapper_armed_ratios        ok   
+mapper_all_scales          ok   
+mapper_all_intervals       ok   
+mapper_disarmed            ok   
+param_surface_74           ok   
+
+R22 state/mapper battery: 10 cases, 0 failed

@@ -1,0 +1,50 @@
+Q-8 exhaustive negatives (raw .text scan, 3650048 bytes, 0x180001000..0x18037C200)
+
+scan 1: mov r64,[rcx+d]; mov eax,[r64+d]; ret   -> 12 hits
+  VT 0x180083410  [rcx+128] -> [rax+328]  rdata_refs=['0x180403a98']
+  VT 0x180099ae0  [rcx+8] -> [rax+732]  rdata_refs=['0x180405c80']
+  VT 0x18014a110  [rcx+8] -> [rax+312]  rdata_refs=['0x18040d970']
+     0x18028e9d0  [rcx+552] -> [rax+536]  rdata_refs=[]
+     0x18028f530  [rcx+552] -> [rax+544]  rdata_refs=[]
+     0x18028f550  [rcx+552] -> [rax+540]  rdata_refs=[]
+     0x18028f570  [rcx+552] -> [rax+520]  rdata_refs=[]
+     0x18028f6d0  [rcx+552] -> [rax+32]  rdata_refs=[]
+     0x180291210  [rcx+240] -> [rax+312]  rdata_refs=[]
+     0x1802cb870  [rcx+216] -> [rax+304]  rdata_refs=[]
+     0x1802cb930  [rcx+216] -> [rax+284]  rdata_refs=[]
+     0x1802cbf20  [rcx+216] -> [rax+288]  rdata_refs=[]
+  vtable-referenced hits resolve to:
+    0x180083410 -> FileListTreeItem@juce (COL 0x18042CDB8)
+    0x180099AE0 -> TextEditorTextInterface@TextEditorAccessibilityHandler@juce (COL 0x180427C78)
+    0x18014A110 -> CodeEditorComponent::TextInsert accessibility interface (COL 0x180438628, ctor 0x18031DAC0)
+  -> none is the host latency getter
+
+scan 1b: mov rax,[rcx]; mov eax,[rax+d]; ret   -> 2 hits
+  0x1802f2490  [rcx] -> [rax+16]  rdata_refs=[]
+  0x1802f2500  [rcx] -> [rax+20]  rdata_refs=[]
+  -> neither is a vtable entry
+
+scan 2: store to +0x27DC at 0x180319764 : 89 87 dc 27 00 00 49 89 87 e0
+scan 2: displacements 0x27DC in .text: 52 sites, 1 stores
+  the single store is the zero-init at 0x180319764 in FUN_180319510
+  (tide::DigiPluginBase ctor): *(u32*)(this+0x27DC) = 0
+
+scan 3: `cmp [rcx+d],edx` + `mov [rcx+d],edx` pairs: 17
+  0x18025aaaa disp=0x128
+  0x18027529a disp=0x160
+  0x1802817c2 disp=0x1F4
+  0x18029229a disp=0xE8
+  0x1802966fb disp=0x1E8
+  0x18029ccb3 disp=0x1F0
+  0x1802c9730 disp=0x1EC
+  0x1802e32a4 disp=0x120
+  0x1802eab49 disp=0x1C8
+  0x1802f6205 disp=0x80
+  0x1802fe914 disp=0x1C0
+  0x1802feaa9 disp=0x1BC
+  0x180301504 disp=0x1E8
+  0x180324da8 disp=0xD8
+  0x18033fc0a disp=0x1EE
+  0x18033fc6a disp=0x1EC
+  0x180349f11 disp=0x118
+  none targets 0x27DC

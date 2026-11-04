@@ -1,0 +1,752 @@
+PITCHLAB ROUND 22
+
+Unified Engineering, DSP Diagnostics, YIN Validation, Harmony Integration and Continued Octavox Static Reverse Engineering
+
+1. Mission and baseline
+
+Continue from the verified Round 21 evidence archive:
+
+Octavox_RE_evidence_round21.zip
+
+Round 22 must combine all outstanding Round 21 corrections, the original Round 22 objectives, the subsequent PitchLab runtime problem investigation, independent YIN algorithm research, and continued static reverse engineering of the original Eventide Octavox binary.
+
+This is one integrated task specification. Do not treat the later diagnostic requirements as optional addenda.
+
+The independent product is PitchLab Harmonizer. Keep all user facing product names and distributable bundles branded PitchLab. The historical octavox:: namespace and Octavox terminology may remain in internal research documents where appropriate.
+
+The original Eventide Octavox binary must not be executed. Do not claim runtime equivalence with the original plugin.
+
+Round 21 established baseline
+
+Round 21 delivered or reported the following:
+
+1. Three user facing PitchLab VST3 configurations and one FullRate benchmark configuration.
+2. A Hybrid coarse to fine YIN detector.
+3. An independent harmony mapper verified against 545 reference vectors.
+4. An expanded original UI feature reconstruction matrix.
+5. VST3 parameter initialization and controller synchronization fixes.
+6. A configurable detector minimum frequency.
+7. A dual mono and voice delay diagnostic matrix.
+8. An updated archive manifest.
+9. Static reverse engineering findings for pitch tracking, modulation, harmony mapping, feedback, stereo mixing, instrument selection and other controls.
+
+Treat these as the baseline, not as proof that all associated behaviour is correct.
+
+Preserve Round 20 and Round 21 archives unchanged. Create new evidence and build outputs for Round 22.
+
+2. Execution rules and evidence discipline
+
+Before making changes, inspect the actual Round 21 source tree, build configuration, tests, documentation and manifest. Do not rely exclusively on previous agent summaries.
+
+Establish and record:
+
+1. The exact source commit and archive hash.
+2. The source tree used for the current build.
+3. The compiler, build configuration and relevant dependencies.
+4. The exact build options for each VST3 variant.
+5. The currently registered test groups and test cases.
+6. The current state format and host parameter ID assignments.
+7. Which previous findings have been independently reproduced.
+
+Classify important findings as:
+
+OBS directly observed in the original target’s static code or data.
+
+DER derived mathematically or structurally from observed evidence.
+
+UNK unresolved or insufficiently supported.
+
+For PitchLab itself, distinguish source inspection, unit testing, offline rendering, host validation and actual DAW runtime observations.
+
+Never report an agent generated result as independently verified unless it has actually been reproduced.
+
+Do not silently replace contradictory historical findings. Add correction records explaining the earlier claim, the new evidence and the reason for the change.
+
+When a task cannot be completed, report the limitation, the evidence collected and the remaining work explicitly.
+
+3. Priority 0: Investigate existing runtime and audio integrity problems
+
+This investigation is mandatory and must precede unrelated feature expansion.
+
+The user has reported the following symptoms in the Round 21 PitchLab builds:
+
+1. The three VST3 variants sound indistinguishable and appear to consume similar CPU resources.
+2. Even with one voice, the output exhibits a Haas like stereo effect. A dual mono input develops a small relative channel offset.
+3. The plugin has become internally unresponsive while the DAW survived. Audio output became completely silent even though the DAW meter showed maximum volume.
+4. Small clicks and pops are audible in processed audio. These are especially noticeable with negative pitch shifts, where the sound becomes darker and the high frequency clicks become easier to hear.
+5. The source audio is reported to be clean. The user does not attribute the issue to CPU overload or offline rendering.
+
+Do not assume that all symptoms have a common cause.
+
+3.1 Build identity and DSP variant verification
+
+Inspect the three user facing VST3 configurations and the FullRate benchmark configuration.
+
+The intended variants are:
+
+1. PitchLab Lagrange6 Balanced: Decimated detector and Lagrange6 interpolation.
+2. PitchLab Lagrange6 Hybrid: Hybrid detector and Lagrange6 interpolation.
+3. PitchLab ObsKernel6 Balanced: Decimated detector and ObsKernel6 interpolation.
+4. FullRate benchmark: FullRate detector configuration, retained for research.
+
+Verify the actual compile time selections and the resulting code paths. Record compiler definitions, detector selection, interpolation selection, FUID, binary hash and build metadata.
+
+Verify that each intended variant really differs in the expected implementation paths.
+
+Create a diagnostic build identity report. Where possible, include a runtime diagnostic identifying the loaded variant without introducing user facing product confusion.
+
+Do not treat identical CPU use or similar output as proof of a configuration error. Measure the detector and interpolation paths independently.
+
+Fix any configuration identity collision that could cause a host to load the wrong build or confuse two intended variants.
+
+3.2 Stereo path and dual mono integrity
+
+Trace the entire PitchLab stereo processing path, including:
+
+1. Input channel mapping.
+2. Per voice delay and grain state.
+3. Pitch tracking input selection.
+4. Voice output routing.
+5. Per voice pan.
+6. Global stereo mixing.
+7. Output channel mapping.
+8. Mono to stereo and stereo to mono behaviour.
+9. State reset and voice enable transitions.
+
+Test identical left and right input signals using a null comparison.
+
+Measure the output channel difference at every relevant stage. Determine whether the observed offset is caused by different delay state, different processing history, channel mapping, grain scheduling, interpolation, a deliberate stereo operation or a defect.
+
+Do not add artificial stereo widening.
+
+A centred pan setting must not introduce an unintended Haas effect. If the architecture intentionally uses different voice delays, document that separately from unintended interchannel latency.
+
+3.3 Click and pop investigation
+
+Use deterministic test signals and real recorded audio to reproduce the reported clicks.
+
+Investigate at least:
+
+1. Negative pitch shifts.
+2. Positive pitch shifts.
+3. Octave down and larger downward intervals.
+4. Lagrange6 interpolation.
+5. ObsKernel6 interpolation.
+6. FullRate, Decimated and Hybrid detector configurations.
+7. One voice and multiple voices.
+8. Mono, stereo and dual mono.
+9. Sustained sine waves, harmonic tones, impulses, transients and clean recordings.
+10. Pitch transitions, vibrato and portamento.
+11. Voice activation and deactivation.
+12. Parameter automation.
+13. State restore and processing reset.
+14. Long renders and repeated processing blocks.
+
+Inspect ring buffer indexing, delay read positions, interpolation support, grain transitions, crossfade scheduling, phase continuity, denormal behaviour, invalid floating point values and discontinuities at block boundaries.
+
+Capture the output around each click and correlate it with detector estimates, delay positions, grain events and parameter changes.
+
+Measure peak discontinuity, click timing, click amplitude, residual energy and any associated NaN or Inf values.
+
+Do not assume YIN is the cause merely because the clicks occur during pitch shifting. Establish causality through targeted experiments.
+
+3.4 Silence, overload and recovery
+
+Reproduce or instrument the reported full silence and apparent maximum meter condition.
+
+Check:
+
+1. NaN and Inf propagation.
+2. Ring buffer index corruption.
+3. Invalid delay positions.
+4. Infinite or denormal feedback loops.
+5. Voice state corruption.
+6. Buffer ownership and channel mapping.
+7. Failed state restoration.
+8. Invalid parameter values.
+9. Audio thread stalls or lock contention.
+10. Failure to reset after silence or transport changes.
+
+Add non intrusive diagnostic counters or debug assertions where useful. Do not add expensive logging to the real time audio path.
+
+The plugin must recover safely from silence, reset, reinitialization and valid state restoration.
+
+4. Priority 1: Resolve the complete Minimum Pitch signal path
+
+Round 21 identified the original UI Minimum Pitch control as C0 through B3, with a default of C2, approximately 65.406 Hz.
+
+PitchLab currently has Config::f0_min, defaulting to 60 Hz, configurable between 20 and 200 Hz.
+
+However, the downstream spacing logic retains an independent fixed 55 Hz gate. Lowering the detector minimum therefore does not prove that the complete pitch shifting engine supports the same frequency range.
+
+Trace and document the complete signal path:
+
+1. Minimum detector frequency.
+2. Pitch tracker lag range.
+3. Tracker confidence and rejection.
+4. Period conversion.
+5. Grain spacing.
+6. Delay read position.
+7. Voice pitch ratio.
+8. Lower frequency safety constraints.
+9. Buffer size and interpolation support.
+10. Output frequency and latency behaviour.
+
+Ensure each stage follows a coherent, explicitly documented minimum frequency policy.
+
+Test these input frequency points:
+
+32.703, 36.708, 41.203, 49.000, 55.000, 60.000, 65.406, 73.416, 82.407 and 110.000 Hz.
+
+Test positive and negative intervals, including octave down and minus 24 semitones where mathematically and technically supported.
+
+Separate the following capabilities in the API and documentation:
+
+1. Frequency detectable by the tracker.
+2. Frequency accepted as a valid pitch estimate.
+3. Frequency safely supported by the delay and grain engine.
+4. Frequency that can be shifted for a particular interval without violating buffer or spacing constraints.
+
+Do not simply remove the 55 Hz spacing gate. First establish the real safety requirements and the valid range of every downstream stage.
+
+Preserve 60 Hz as the default until the full low frequency path has been measured.
+
+Update stale documentation, including the valid range comment in native/include/octavox/dsp.hpp.
+
+5. Priority 2: Independently validate YIN implementation correctness
+
+This is a dedicated research and engineering workstream. Do not limit it to parameter tuning.
+
+The objective is to determine whether the current PitchLab detector implementations are mathematically correct for their intended operating ranges, whether their differences are intentional, and whether detector behaviour contributes to the observed audio problems.
+
+Preserve the existing FullRate detector as a historical and diagnostic baseline until the comparison is complete.
+
+5.1 Audit the current PitchLab YIN implementations
+
+Inspect the current source in native/src/dsp.cpp and native/include/octavox/dsp.hpp.
+
+Document the exact implementation of:
+
+1. Input frame preparation.
+2. Window length.
+3. Minimum and maximum lag.
+4. Difference function.
+5. Cumulative mean normalized difference function, CMNDF.
+6. Threshold selection.
+7. First local minimum selection.
+8. Global minimum fallback.
+9. Parabolic interpolation.
+10. Confidence or voicing estimation.
+11. Frequency conversion.
+12. Pitch rejection.
+13. Smoothing and tracking latency.
+14. Decimation and anti alias filtering.
+15. Hybrid coarse to fine refinement.
+
+Compare the actual source with the mathematical YIN definition and a small, independent reference implementation.
+
+Do not rewrite the existing detector before establishing which deviations are intentional, historically required or incorrect.
+
+5.2 Investigate CMNDF normalization start lag
+
+The current implementation calculates CMNDF over a restricted lag range rather than necessarily accumulating the full difference function from lag 1.
+
+The FullRate path begins normalization at its configured lower lag. The Decimated and Hybrid paths warm up from a limited number of lags below the configured minimum.
+
+This may change the normalized values and the locations of threshold crossings. Its actual effect must be measured rather than assumed.
+
+Implement an independent mathematical reference for comparison.
+
+For identical input frames, record and compare:
+
+1. Difference function values.
+2. Cumulative normalization values.
+3. CMNDF curves.
+4. Candidate local minima.
+5. Selected lag.
+6. Interpolated lag.
+7. Final frequency.
+8. Confidence or voicing result.
+9. Rejection reason.
+
+Quantify the effect of the restricted normalization range across low notes, high notes, noisy frames and transient material.
+
+Do not silently change the FullRate path simply to make the implementations appear more alike.
+
+5.3 Threshold and interpolation comparison
+
+The current PitchLab implementation uses a threshold of 0.20.
+
+External reference implementations use different thresholds, including 0.10 and 0.40. These values are not directly comparable unless their normalization, search ranges and frame support are equivalent.
+
+Run a controlled threshold sweep and measure octave errors, missed estimates, false voicing, jitter and latency.
+
+Compare interpolation methods using the same candidate lag and difference function:
+
+1. Parabolic interpolation of CMNDF.
+2. Parabolic interpolation of the raw difference function.
+3. FullRate current behaviour.
+4. Decimated current behaviour.
+5. Hybrid coarse and fine behaviour.
+
+Determine which differences produce meaningful improvements and which are merely implementation differences.
+
+Keep the default detector and interpolation unchanged until evidence supports a change.
+
+5.4 Audit the hyuncat YIN reference
+
+Reference:
+
+https://github.com/hyuncat/YIN-algorithm
+
+The repository contains an educational notebook using FFT autocorrelation.
+
+The inspected implementation calculates a difference function using a constant full frame energy term and the autocorrelation. This is not generally equivalent to the conventional finite overlap difference function, which accounts for the two overlapping segments at each lag.
+
+Independently verify the discrepancy using deterministic signals and direct numerical comparison.
+
+The notebook also has the following limitations:
+
+1. It is educational material rather than a validated real time production implementation.
+2. The final best local estimate step appears to be missing.
+3. Its synthetic generator accepts frequency and duration arguments but hardcodes 440 Hz and two seconds in the inspected code.
+4. Repository metadata does not establish a reuse license.
+
+Do not copy its implementation into PitchLab without a license review. It may be used as a mathematical reference after its limitations are documented.
+
+5.5 Audit the ABSounds YIN reference
+
+Reference:
+
+https://github.com/ABSounds/YIN-Pitch
+
+The inspected YIN_pitch.py implementation uses decimation, a difference function, CMNDF, threshold and local minimum selection, interpolation and frequency conversion.
+
+The repository declares AGPL 3.0. Do not copy its source into a closed product without a separate license review.
+
+The implementation has an important test target: its default frame size is 256 samples and its decimation factor is 8. At a 44.1 kHz input rate, the effective sample rate is approximately 5512.5 Hz. A 20 Hz signal has a period of approximately 276 decimated samples, which exceeds the nominal frame size.
+
+Therefore the default configuration cannot robustly support 20 Hz and may produce invalid slice lengths or array dimension mismatches if lag and window constraints are not validated.
+
+Verify this experimentally. Record the failure or invalid operating condition, and determine whether the implementation safely rejects unsupported configurations.
+
+Also inspect its slice boundaries and CMNDF accumulation. Compare its conventions against the mathematical reference rather than assuming every discrepancy is a defect.
+
+5.6 Build a minimal independent YIN oracle
+
+Create a small, transparent test reference whose primary purpose is correctness rather than speed.
+
+It must use identical samples, sample rates, frame boundaries and expected frequencies for each implementation under test.
+
+The oracle should make the finite overlap difference function, CMNDF normalization, lag search, local minimum selection and interpolation explicit.
+
+Use deterministic test signals including:
+
+1. Pure tones.
+2. Harmonic complexes.
+3. Missing fundamental signals.
+4. Harmonic signals with a weak fundamental.
+5. White and coloured noise.
+6. Additive noise at documented signal to noise ratios.
+7. Vibrato.
+8. Portamento.
+9. Transient attacks.
+10. Unvoiced and breath noise.
+11. Low frequency tones near the configured minimum.
+12. Frequencies near octave and subharmonic ambiguity points.
+
+Do not use different random seeds to generate supposedly equivalent test signals for different sample rates. Generate a single continuous reference signal and resample it using documented methods, or otherwise ensure all compared cases represent the same underlying waveform.
+
+Keep synthetic correctness tests separate from real recording evaluation.
+
+5.7 Detector comparison output
+
+For FullRate, Decimated and Hybrid, produce:
+
+1. Raw pitch estimates.
+2. Smoothed trajectories.
+3. Difference function and CMNDF diagnostics.
+4. Confidence or voicing decisions.
+5. Selected lags and interpolation offsets.
+6. Octave errors.
+7. Dropouts.
+8. Jitter.
+9. Transition timestamps.
+10. Tracking latency.
+11. CPU and memory.
+12. Rejection reasons.
+
+For cases with reliable reference trajectories, report median, mean, maximum and percentile cents error as appropriate. Do not call a comparison ground truth when no reliable reference trajectory exists.
+
+Keep Lagrange6 as the default interpolator. ObsKernel6 remains an optional research configuration.
+
+Do not select a new default based only on a single synthetic test.
+
+6. Priority 3: Compare detectors using real recorded audio
+
+Round 21’s included WAV comparison material is synthetic. Preserve the existing synthetic measurements as a separate category.
+
+Prepare the harness to accept external mono and stereo WAV files without embedding personal recordings in the research archive unless explicitly approved.
+
+Create a documented real audio test set covering:
+
+1. Male singing.
+2. Female singing.
+3. Spoken voice.
+4. Bass instruments.
+5. Acoustic guitar.
+6. Electric guitar.
+7. Sustained monophonic instruments.
+8. Vibrato.
+9. Portamento.
+10. Breath noise and unvoiced consonants.
+11. Difficult polyphonic input.
+
+For each recording, compare FullRate, Decimated and Hybrid under identical conditions.
+
+Save the raw estimates, smoothed trajectories, confidence values where available, transitions, octave errors, dropouts, jitter, transient recovery, latency, CPU, memory and final offline output WAV.
+
+Allow manually annotated or externally supplied reference trajectories.
+
+Distinguish three evaluation categories:
+
+1. Synthetic deterministic signals with mathematically known frequencies.
+2. Real recordings without reliable reference trajectories.
+3. Real recordings with manually annotated or externally supplied reference trajectories.
+
+Report the category for every result. Do not silently promote an unlabelled real recording into a ground truth benchmark.
+
+Compare the processed audio as well as the pitch trajectories.
+
+The test harness must document sample rate conversion, channel selection, windowing, latency alignment and any post processing applied to the outputs.
+
+Do not include private recordings in the distributed evidence package by default. Include generated diagnostic signals, scripts, metadata and anonymized summaries instead.
+
+7. Priority 4: Implement independent per voice Pan and Feedback
+
+7.1 Per voice Pan
+
+The original target’s pan parameter reaches a stereo mixer consumer, but its exact channel mixing equation remains unresolved.
+
+Record the established static evidence and its limitations.
+
+Implement an independent, conventional pan law in PitchLab. Constant power panning is acceptable if its gain curve and centre behaviour are explicitly documented.
+
+Do not claim the independent implementation reproduces the original target’s exact arithmetic.
+
+Test:
+
+1. Hard left.
+2. Centre.
+3. Hard right.
+4. Intermediate pan positions.
+5. Mono input.
+6. Stereo input.
+7. One voice.
+8. Eight voices.
+9. Dual mono.
+10. Channel isolation.
+11. Gain normalization.
+12. Voice enable and disable transitions.
+
+Ensure centred pan does not create unintended stereo widening or a relative channel delay.
+
+7.2 Per voice Feedback
+
+The original control is documented as minus 100 to 0 dB, with a separate linear gain conversion and mute gating.
+
+Implement an independent feedback path and define its topology explicitly. Do not simply multiply the current global feedback value by the voice feedback value without tracing the intended independent signal graph.
+
+Test:
+
+1. Feedback off.
+2. Low feedback.
+3. Moderate feedback.
+4. Maximum feedback.
+5. One voice.
+6. Eight voices.
+7. Different pitch ratios.
+8. Saturation and stability.
+9. Long renders.
+10. Silence and reset.
+11. State restore.
+12. Parameter automation.
+
+Use independent internal state per voice where required by the chosen topology.
+
+Demonstrate stability throughout the complete documented parameter range. Do not claim exact reproduction of the original routing.
+
+8. Priority 5: Integrate the reconstructed harmony mapper
+
+Round 21 implemented an independent mapper and verified 545 reference vectors.
+
+Design and implement its integration with the native harmonizer API.
+
+The user facing musical model must expose, at minimum:
+
+1. Key.
+2. Scale.
+3. Temperament.
+4. Musical interval per voice.
+5. Fine tuning per voice.
+6. Harmony Map enable and disable.
+
+Review whether host parameter IDs 38 and above can be added without modifying existing parameter IDs, ranges or meanings.
+
+The existing parameter IDs 0 through 37 are frozen unless a compatibility review explicitly proves a change is safe. Prefer adding new parameters at 38 and above.
+
+Define a versioned state blob migration strategy. Maintain stable round trip behaviour for existing projects and preserve old state formats.
+
+The mapper must produce the voice pitch ratios supplied to the existing DSP core. Do not implement the harmony mapper by modifying the pitch shifting DSP itself.
+
+Test all 19 scale patterns, all supported intervals and all five temperaments.
+
+Resolve or explicitly document the Hungarian scale index and scale mux edge cases.
+
+Preserve original target selection rules where supported. Do not normalize away a recovered quirk simply because a different mapping would be more conventional.
+
+9. Priority 6: Continue original Eventide Octavox static reverse engineering
+
+Do not abandon the original target investigation while debugging PitchLab.
+
+Use R21_FEATURE_RECONSTRUCTION_MATRIX.md and the R17 and R18 static findings as baselines.
+
+Prioritize:
+
+1. Exact Pan arithmetic inside the stereo mixer.
+2. Per voice feedback routing and state flow.
+3. Randomize output polarity and the contradiction between R9/R11 and R21 descriptions.
+4. Crossfade parameter range and exact conversion into the grain commit mechanism.
+5. Pitch Tracking Enable state transitions.
+6. Instrument parameter and anti alias cutoff mapping.
+7. Minimum Pitch exact range conversion and sample rate interactions.
+8. MIDI Control and internal dispatch.
+9. Tempo and meter conversion.
+10. Preset, Snapshot, Current/Global, Compare and Revert state management.
+
+Continue using static analysis, disassembly, data inspection, resource analysis and mathematically reproducible derivations. Do not execute the original binary.
+
+9.1 Randomize sign and modulation direction
+
+Older R9 and R11 evidence indicates that an absolute value noise path produces a nonnegative modulation input. Round 21 contains language describing positive and negative rate modulation.
+
+Resolve the contradiction explicitly.
+
+Trace the random source, absolute value operation, scale conversion, polynomial mapping and final multiplier.
+
+Distinguish:
+
+1. Noise sign.
+2. Modulation input range.
+3. Rate multiplier range.
+4. Cents deviation from baseline.
+5. Polynomial approximation error.
+
+The earlier derived relationship is:
+
+page[10] = clamp(modamt / 2400, -1, 1)
+
+The earlier rate path includes:
+
+local_3f0[k] = 2^(cents / 1200) * 0.0625
+
+and:
+
+step = float32(P(f)) * slot_4128 * 64
+
+with P(0) = 0.25.
+
+Under the previously derived path, no modulation gives the intended base ratio after scaling. Recheck these relationships against the actual evidence and preserve any corrections.
+
+R11’s corrected calculations indicated approximately 49.939 cents for F=1 and depth 50, and approximately 199.923 cents for depth 200. Earlier figures of 50.13 and 201.68 cents were calculation errors.
+
+Verify these calculations independently and document the polynomial approximation error separately from the modulation direction.
+
+Preserve the historical findings and add a correction record rather than silently overwriting them.
+
+9.2 Other unresolved original target behaviour
+
+For Pan, feedback, crossfade, pitch tracking, Instrument, Minimum Pitch, MIDI, tempo, snapshots and compare/revert, record the evidence chain for every new conclusion.
+
+If the original implementation remains unknown, leave it marked UNK and document the next useful static investigation.
+
+Do not fabricate certainty to close a task.
+
+10. Priority 7: Repair the Round 21 test infrastructure and metadata
+
+Round 21 review identified concrete problems that must be corrected.
+
+10.1 Test group filtering
+
+Three Hybrid tests have metadata group r20, while the current kGroupIds and kRunners do not register r20 as a valid group. These tests are registered through the R19 runner.
+
+The full test run may execute them, but group filtering can reject the group and name based filtering can select metadata without executing the corresponding runner.
+
+Fix this so every supported test group and filter executes the intended tests.
+
+Requirements:
+
+1. Unknown group names fail explicitly.
+2. A selected test name must execute at least one intended test or fail explicitly.
+3. No empty successful test run may be reported as passing.
+4. Every executed test is reported by name and group.
+5. The total test count is generated from the registered tests rather than a stale comment.
+6. The Hybrid detector filter is tested directly.
+
+10.2 FUID uniqueness
+
+Round 21 review identified an auxiliary LAGRANGE6Q+DECIMATED build branch that shares a FUID with LAGRANGE6+DECIMATED.
+
+Ensure all configurations intended to be simultaneously loadable have unique VST3 identities.
+
+If a configuration is an internal benchmark only and must not be distributed, explicitly mark it as such and prevent accidental packaging.
+
+Verify the generated FUIDs from the actual build configuration. Do not rely solely on README tables.
+
+10.3 Metadata consistency
+
+Reconcile stale metadata in:
+
+1. native/CMakeLists.txt.
+2. native/tests/test_main.cpp.
+3. native/include/octavox/dsp.hpp.
+4. Current README.
+5. Detector documentation.
+6. Build scripts.
+7. Variant manifests.
+8. Release metadata.
+
+Round 21 had a project version mismatch between CMake and the reported core version. Resolve this consistently and document the actual version.
+
+10.4 VST3 state and parameter validation
+
+Revalidate:
+
+1. New instance defaults.
+2. Fresh state restore.
+3. Repeated initialize and terminate.
+4. State v1 and v2 migration.
+5. Mono and stereo switching.
+6. Dual mono null tests.
+7. Voice delay matrix.
+8. Spread on and off.
+9. Voice pitch offsets.
+10. Parameter initialization.
+11. Controller synchronization.
+12. Round trip serialization.
+
+The host must display the actual processor defaults without requiring manual slider movement.
+
+Do not change existing parameter IDs, default values or state compatibility without a documented migration and compatibility review.
+
+11. Priority 8: Build, CPU and packaging quality
+
+Produce reproducible builds for every intended configuration.
+
+Record the exact toolchain and whether the build is native, cross compiled or built with a Windows compatible toolchain on Linux.
+
+Do not claim Windows DAW runtime validation if the plugin has only been cross compiled or structurally inspected.
+
+Measure CPU use using identical inputs, render lengths, block sizes and host conditions. Include warm up, repeat runs and measurement variability.
+
+Compare FullRate, Decimated and Hybrid separately from interpolation differences.
+
+Measure the CPU impact of Pan, Feedback and Harmony Map integration.
+
+Regenerate the checksum manifest from the final Round 22 source tree and outputs. Verify every manifest entry and the final archive hash.
+
+Keep research evidence, generated test assets, private recordings and distributable binaries clearly separated.
+
+The Round 22 archive must not replace or mutate the historical Round 20 or Round 21 archives.
+
+12. Required deliverables
+
+Deliver a complete Round 22 package containing:
+
+1. PITCHLAB_ROUND22_FINDINGS.md.
+2. A complete Minimum Pitch signal path specification and low frequency test results.
+3. A source level audit of FullRate, Decimated and Hybrid YIN.
+4. An independent mathematical YIN reference implementation and tests.
+5. A comparison of difference function, CMNDF, thresholds, lag selection and interpolation.
+6. A WAV comparison harness with explicit synthetic, recorded and annotated categories.
+7. FullRate, Decimated and Hybrid tracking comparison results.
+8. Real audio test metadata and privacy safe evidence.
+9. Per voice Pan implementation and acceptance tests.
+10. Per voice Feedback implementation and acceptance tests.
+11. Harmony mapper integration design and implementation, if ready.
+12. A versioned state migration strategy and tests.
+13. An updated original Octavox feature reconstruction matrix using OBS, DER and UNK evidence labels.
+14. A Randomize polarity and modulation direction resolution report.
+15. A build identity and VST3 variant validation report.
+16. A test group filtering and FUID uniqueness regression report.
+17. CPU, click, stereo, silence and recovery regression results.
+18. Updated documentation and metadata.
+19. A fresh source and build manifest with verified SHA256 checksums.
+20. A final archive that can be independently inspected and reproduced.
+
+For every result, identify whether it is a source observation, a derived calculation, a unit test, an offline audio measurement, a host validation or an actual DAW observation.
+
+13. Acceptance criteria
+
+Round 22 is successful only when the following have been demonstrated:
+
+1. The complete low frequency pitch detection and shifting path has a coherent and measured valid range.
+2. FullRate, Decimated and Hybrid have a credible comparison workflow using both synthetic signals and actual recorded audio.
+3. The independent YIN reference provides a reliable mathematical baseline for evaluating the production detectors.
+4. The known YIN normalization and interpolation differences have been quantified.
+5. The reported click and pop behaviour has been reproduced or systematically investigated with sufficient evidence to isolate likely causes.
+6. The dual mono stereo divergence has been explained and unintended channel offsets have been corrected.
+7. The full silence and maximum meter symptom has been investigated for invalid DSP state, routing errors and recovery failures.
+8. Per voice Pan and Feedback are independently implemented and tested.
+9. Harmony Map integration preserves existing parameter and project compatibility.
+10. Original target static reverse engineering has made measurable progress, particularly on Randomize, Pan and feedback.
+11. Test filtering cannot silently pass without executing tests.
+12. Intended distributable variants have distinct identities.
+13. All build and version metadata are consistent.
+14. The archive manifest and SHA256 checksums are independently verified.
+
+14. Explicit exclusions
+
+Do not execute the original Eventide Octavox binary.
+
+Do not claim runtime equivalence with the original target.
+
+Do not use Octavox as the visible product identity.
+
+Do not discard FullRate YIN.
+
+Do not confuse synthetic test data with real recorded material.
+
+Do not claim ground truth accuracy without a reliable reference trajectory.
+
+Do not add artificial stereo widening.
+
+Do not silently change existing host parameter IDs, default values or project state compatibility.
+
+Do not begin custom GUI implementation.
+
+Do not copy code from reference repositories without resolving the applicable license implications.
+
+Do not close unresolved reverse engineering questions by inventing a likely answer.
+
+Do not declare Round 22 complete solely because the build succeeds or the unit tests pass.
+
+15. Final reporting format
+
+The final report must begin with a concise status summary and include:
+
+1. What changed.
+2. What was independently verified.
+3. What remains unresolved.
+4. What was not tested.
+5. The results of each acceptance criterion.
+6. Exact build commands and test commands.
+7. Build identities and artifact hashes.
+8. Known limitations.
+9. The most important next steps.
+
+Provide exact paths for all deliverables. Include the final archive SHA256 and a manifest verification summary.
+
+If any acceptance criterion remains incomplete, mark Round 22 as incomplete and identify the specific blocker rather than implying completion.
+
+The overall objective is to improve PitchLab’s actual audio integrity and engineering reliability while continuing rigorous, evidence based static reverse engineering of the original target. Neither track may be abandoned in favour of the other.

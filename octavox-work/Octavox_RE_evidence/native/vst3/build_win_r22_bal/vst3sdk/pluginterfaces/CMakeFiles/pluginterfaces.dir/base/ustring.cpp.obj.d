@@ -1,0 +1,33 @@
+vst3sdk/pluginterfaces/CMakeFiles/pluginterfaces.dir/base/ustring.cpp.obj: \
+  /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/ustring.cpp \
+  /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/ustring.h \
+  /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/ftypes.h \
+  /home/z/my-project/octavox-work/vst3sdk/pluginterfaces/base/fplatform.h \
+  /home/z/zig/lib/libcxx/include/cstdint \
+  /home/z/zig/lib/libcxx/include/__assert \
+  /home/z/zig/lib/libcxx/include/__assertion_handler \
+  /home/z/zig/lib/libcxx/include/__config \
+  /home/z/zig/lib/libcxx/include/__verbose_abort \
+  /home/z/zig/lib/libcxx/include/__availability \
+  /home/z/zig/lib/libcxx/include/stdint.h \
+  /home/z/zig/lib/include/stdint.h \
+  /home/z/zig/lib/libc/include/any-windows-any/stdint.h \
+  /home/z/zig/lib/libc/include/any-windows-any/crtdefs.h \
+  /home/z/zig/lib/libc/include/any-windows-any/corecrt.h \
+  /home/z/zig/lib/libc/include/any-windows-any/_mingw.h \
+  /home/z/zig/lib/libc/include/any-windows-any/_mingw_mac.h \
+  /home/z/zig/lib/libc/include/any-windows-any/_mingw_secapi.h \
+  /home/z/zig/lib/include/vadefs.h \
+  /home/z/zig/lib/libc/include/any-windows-any/vadefs.h \
+  /home/z/zig/lib/libc/include/any-windows-any/sdks/_mingw_ddk.h \
+  /home/z/zig/lib/libcxx/include/stddef.h \
+  /home/z/zig/lib/include/stddef.h \
+  /home/z/zig/lib/include/__stddef_wchar_t.h \
+  /home/z/zig/lib/include/__stddef_wint_t.h \
+  /home/z/zig/lib/libcxx/include/cstdio \
+  /home/z/zig/lib/libcxx/include/stdio.h \
+  /home/z/zig/lib/libc/include/any-windows-any/stdio.h \
+  /home/z/zig/lib/libc/include/any-windows-any/corecrt_stdio_config.h \
+  /home/z/zig/lib/libc/include/any-windows-any/_mingw_off_t.h \
+  /home/z/zig/lib/libc/include/any-windows-any/swprintf.inl \
+  /home/z/zig/lib/libc/include/any-windows-any/sec_api/stdio_s.h

@@ -1,0 +1,1143 @@
+{
+  "suite": "r11_acceptance_tests",
+  "version": 1,
+  "cases": [
+    {
+      "id": "wav_io",
+      "group": "io",
+      "desc": "read 16/24/32-bit PCM + clip-guarded write",
+      "metrics": {
+        "read16bit_max_err": 3.0407826829115248e-05,
+        "read24bit_max_err": 5.95293336846936e-08,
+        "read32bit_max_err": 2.3213811428668407e-10,
+        "write_clip_values": [
+          0.999969482421875,
+          -0.999969482421875,
+          0.5,
+          -0.5
+        ]
+      },
+      "gates": {
+        "read16bit_ok": true,
+        "read24bit_ok": true,
+        "read32bit_ok": true,
+        "write_clips_to_pm1": true,
+        "write_preserves_half": true
+      },
+      "passed": true,
+      "wall_s": 0.003015220999259327
+    },
+    {
+      "id": "ref_delayline_pitch_pos",
+      "group": "reference",
+      "desc": "220 Hz sine, +4 st, 1 voice",
+      "metrics": {
+        "measured_hz": 277.7072706127722,
+        "measured_fft_hz": 278.02446010349786,
+        "cents": 3.27370986282519,
+        "cents_fft": 5.249948668811885,
+        "peak": 0.49999717579652236,
+        "rms": 0.3032147762429883,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 2.355289619142818,
+        "mod_db_1ms": 6.586977172840095
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 2.7864099680000436
+    },
+    {
+      "id": "ref_delayline_pitch_neg",
+      "group": "reference",
+      "desc": "220 Hz sine, -5 st, 1 voice",
+      "metrics": {
+        "measured_hz": 164.259189749018,
+        "measured_fft_hz": 164.082034837368,
+        "cents": -5.835324412966144,
+        "cents_fft": -7.703482425441837,
+        "peak": 0.49999682045640303,
+        "rms": 0.30665959718842917,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 2.316695470779437,
+        "mod_db_1ms": 10.818639803556746
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 2.794552453000506
+    },
+    {
+      "id": "ref_delayline_silence",
+      "group": "reference",
+      "desc": "digital silence in -> silence out",
+      "metrics": {
+        "peak": 0.0,
+        "rms": 0.0,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0
+      },
+      "gates": {
+        "finite": true,
+        "silent": true,
+        "len": true
+      },
+      "passed": true,
+      "wall_s": 0.1891972249995888
+    },
+    {
+      "id": "ref_delayline_lowlevel",
+      "group": "reference",
+      "desc": "-60 dBFS tone, +4 st",
+      "metrics": {
+        "peak": 0.0004999861610600808,
+        "rms": 0.00028316645566773836,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "rms_ratio": 0.8009156840288707
+      },
+      "gates": {
+        "finite": true,
+        "level_kept": true,
+        "len": true
+      },
+      "passed": true,
+      "wall_s": 1.1352079719999892
+    },
+    {
+      "id": "ref_delayline_unison",
+      "group": "reference",
+      "desc": "unison gain (delayline comb is documented)",
+      "metrics": {
+        "peak": 0.3784975278165861,
+        "rms": 0.2566351420112048,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "unison_gain_db": -2.418139142103481
+      },
+      "gates": {
+        "finite": true,
+        "gain_in_range": true
+      },
+      "passed": true,
+      "wall_s": 2.7515508559999944
+    },
+    {
+      "id": "ref_delayline_chord",
+      "group": "reference",
+      "desc": "A3+C#4+E4 chord, +4 st",
+      "metrics": {
+        "peak": 0.7982082422236035,
+        "rms": 0.27783435832513403,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "pitch": {
+          "measured_hz": 68.87716711014981,
+          "measured_fft_hz": 275.7634505242645,
+          "cents": -2396.8006884354327,
+          "cents_fft": 4.799564632208021
+        }
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_le_1": true,
+        "audible": true
+      },
+      "passed": true,
+      "wall_s": 2.8016383719996156
+    },
+    {
+      "id": "ref_delayline_percussive",
+      "group": "reference",
+      "desc": "6 decaying noise bursts, +4 st",
+      "metrics": {
+        "peak": 1.0667830453675526,
+        "rms": 0.09168703838836198,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 4,
+        "transient": {
+          "onset_delay_samples": 859,
+          "attack_samples": 1,
+          "attack_ms": 0.020833333333333332,
+          "pre_onset_db": -240.5615220945782
+        }
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_sane": true,
+        "causal": true,
+        "attack_bound": true
+      },
+      "passed": true,
+      "wall_s": 3.4664012359999106
+    },
+    {
+      "id": "ref_delayline_voices8",
+      "group": "reference",
+      "desc": "220 Hz, +4 st, 8 voices (spread)",
+      "metrics": {
+        "peak": 0.13187589341387612,
+        "rms": 0.044119003361582,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 2.3435836439215354,
+        "mod_db_1ms": 6.75768924216383
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_le_1": true,
+        "audible": true
+      },
+      "passed": true,
+      "wall_s": 5.1439511210001
+    },
+    {
+      "id": "ref_delayline_impulse",
+      "group": "reference",
+      "desc": "impulse response / latency",
+      "metrics": {
+        "peak": 0.9532202016591933,
+        "rms": 0.004495245319051361,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "latency_samples": 4919,
+        "latency_ms": 102.47916666666666
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "latency_bound": true
+      },
+      "passed": true,
+      "wall_s": 0.41202070000053936
+    },
+    {
+      "id": "ref_pv_pitch_pos",
+      "group": "reference",
+      "desc": "220 Hz sine, +4 st, 1 voice",
+      "metrics": {
+        "measured_hz": 277.19038902026534,
+        "measured_fft_hz": 277.26404662436335,
+        "cents": 0.0484546988865946,
+        "cents_fft": 0.5084331740847268,
+        "peak": 0.5166527473480144,
+        "rms": 0.3445943954368745,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.0396001351374167,
+        "mod_db_1ms": 5.480257711224134
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 0.04053387800013297
+    },
+    {
+      "id": "ref_pv_pitch_neg",
+      "group": "reference",
+      "desc": "220 Hz sine, -5 st, 1 voice",
+      "metrics": {
+        "measured_hz": 164.81697795263094,
+        "measured_fft_hz": 164.73143568721218,
+        "cents": 0.033607766549682075,
+        "cents_fft": -0.8651596358945297,
+        "peak": 0.4982296739204059,
+        "rms": 0.34266134677375,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.01205723341251718,
+        "mod_db_1ms": 10.047108377763088
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 0.039338111999313696
+    },
+    {
+      "id": "ref_pv_silence",
+      "group": "reference",
+      "desc": "digital silence in -> silence out",
+      "metrics": {
+        "peak": 0.0,
+        "rms": 0.0,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0
+      },
+      "gates": {
+        "finite": true,
+        "silent": true,
+        "len": true
+      },
+      "passed": true,
+      "wall_s": 0.012447721999706118
+    },
+    {
+      "id": "ref_pv_lowlevel",
+      "group": "reference",
+      "desc": "-60 dBFS tone, +4 st",
+      "metrics": {
+        "peak": 0.0005158621572216306,
+        "rms": 0.00033707427194061904,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "rms_ratio": 0.9533900138109205
+      },
+      "gates": {
+        "finite": true,
+        "level_kept": true,
+        "len": true
+      },
+      "passed": true,
+      "wall_s": 0.006081179999455344
+    },
+    {
+      "id": "ref_pv_unison",
+      "group": "reference",
+      "desc": "unison gain (delayline comb is documented)",
+      "metrics": {
+        "peak": 0.500000000000015,
+        "rms": 0.34715611009871666,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "unison_gain_db": -7.7146197324263e-15
+      },
+      "gates": {
+        "finite": true,
+        "gain_in_range": true
+      },
+      "passed": true,
+      "wall_s": 0.01329344200075866
+    },
+    {
+      "id": "ref_pv_chord",
+      "group": "reference",
+      "desc": "A3+C#4+E4 chord, +4 st",
+      "metrics": {
+        "peak": 0.8274024878714719,
+        "rms": 0.3130349659384121,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "pitch": {
+          "measured_hz": 68.89758786853115,
+          "measured_fft_hz": 274.9998676362488,
+          "cents": -2396.287486833559,
+          "cents_fft": -0.0008332825021981683
+        }
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_le_1": true,
+        "audible": true
+      },
+      "passed": true,
+      "wall_s": 0.03674552800021047
+    },
+    {
+      "id": "ref_pv_percussive",
+      "group": "reference",
+      "desc": "6 decaying noise bursts, +4 st",
+      "metrics": {
+        "peak": 1.0756482370987184,
+        "rms": 0.07627736230932226,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 4,
+        "transient": {
+          "onset_delay_samples": 860,
+          "attack_samples": 0,
+          "attack_ms": 0.0,
+          "pre_onset_db": -240.63340539568244
+        }
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_sane": true,
+        "causal": true,
+        "attack_bound": true
+      },
+      "passed": true,
+      "wall_s": 0.04785227499996836
+    },
+    {
+      "id": "ref_pv_voices8",
+      "group": "reference",
+      "desc": "220 Hz, +4 st, 8 voices (spread)",
+      "metrics": {
+        "peak": 0.5158621572216306,
+        "rms": 0.34483862112917213,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.03906464534144585,
+        "mod_db_1ms": 5.550309440983719
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_le_1": true,
+        "audible": true
+      },
+      "passed": true,
+      "wall_s": 0.10931954300031066
+    },
+    {
+      "id": "ref_pv_impulse",
+      "group": "reference",
+      "desc": "impulse response / latency",
+      "metrics": {
+        "peak": 0.7605401605558371,
+        "rms": 0.003471375015208606,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "latency_samples": 1643,
+        "latency_ms": 34.229166666666664
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "latency_bound": true
+      },
+      "passed": true,
+      "wall_s": 0.011304066999400675
+    },
+    {
+      "id": "ref_pv_transient_pitch_pos",
+      "group": "reference",
+      "desc": "220 Hz sine, +4 st, 1 voice",
+      "metrics": {
+        "measured_hz": 277.18963284842306,
+        "measured_fft_hz": 277.26404635201584,
+        "cents": 0.04373190806203368,
+        "cents_fft": 0.5084314735493669,
+        "peak": 0.5085857830568088,
+        "rms": 0.3469510786597128,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.03588583600456404,
+        "mod_db_1ms": 5.47583307188718
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 0.03996612799983268
+    },
+    {
+      "id": "ref_pv_transient_pitch_neg",
+      "group": "reference",
+      "desc": "220 Hz sine, -5 st, 1 voice",
+      "metrics": {
+        "measured_hz": 164.81506112807617,
+        "measured_fft_hz": 164.73143574517962,
+        "cents": 0.013473364902575162,
+        "cents_fft": -0.8651590266895816,
+        "peak": 0.5024074644120025,
+        "rms": 0.34426886936470363,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.006954313809601595,
+        "mod_db_1ms": 10.055508107134372
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 0.04178158800004894
+    },
+    {
+      "id": "ref_pv_transient_silence",
+      "group": "reference",
+      "desc": "digital silence in -> silence out",
+      "metrics": {
+        "peak": 0.0,
+        "rms": 0.0,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0
+      },
+      "gates": {
+        "finite": true,
+        "silent": true,
+        "len": true
+      },
+      "passed": true,
+      "wall_s": 0.00657376200069848
+    },
+    {
+      "id": "ref_pv_transient_lowlevel",
+      "group": "reference",
+      "desc": "-60 dBFS tone, +4 st",
+      "metrics": {
+        "peak": 0.0005081659059606535,
+        "rms": 0.0003378309562840441,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "rms_ratio": 0.9555302403327347
+      },
+      "gates": {
+        "finite": true,
+        "level_kept": true,
+        "len": true
+      },
+      "passed": true,
+      "wall_s": 0.006485574999715027
+    },
+    {
+      "id": "ref_pv_transient_unison",
+      "group": "reference",
+      "desc": "unison gain (delayline comb is documented)",
+      "metrics": {
+        "peak": 0.500000000000015,
+        "rms": 0.34707749383729836,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "unison_gain_db": -3.857309866213149e-15
+      },
+      "gates": {
+        "finite": true,
+        "gain_in_range": true
+      },
+      "passed": true,
+      "wall_s": 0.014034363000064332
+    },
+    {
+      "id": "ref_pv_transient_chord",
+      "group": "reference",
+      "desc": "A3+C#4+E4 chord, +4 st",
+      "metrics": {
+        "peak": 0.8274024878714719,
+        "rms": 0.31303496593853564,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "pitch": {
+          "measured_hz": 68.89758786853115,
+          "measured_fft_hz": 274.9998676362488,
+          "cents": -2396.287486833559,
+          "cents_fft": -0.0008332825021981683
+        }
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_le_1": true,
+        "audible": true
+      },
+      "passed": true,
+      "wall_s": 0.0643870310004786
+    },
+    {
+      "id": "ref_pv_transient_percussive",
+      "group": "reference",
+      "desc": "6 decaying noise bursts, +4 st",
+      "metrics": {
+        "peak": 1.0480727664459435,
+        "rms": 0.08958088164680933,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 3,
+        "transient": {
+          "onset_delay_samples": 860,
+          "attack_samples": 0,
+          "attack_ms": 0.0,
+          "pre_onset_db": -240.40782872487912
+        }
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_sane": true,
+        "causal": true,
+        "attack_bound": true
+      },
+      "passed": true,
+      "wall_s": 0.02066417999958503
+    },
+    {
+      "id": "ref_pv_transient_voices8",
+      "group": "reference",
+      "desc": "220 Hz, +4 st, 8 voices (spread)",
+      "metrics": {
+        "peak": 0.5081659059606533,
+        "rms": 0.34691859661691116,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.03514787898190399,
+        "mod_db_1ms": 5.546357957435673
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_le_1": true,
+        "audible": true
+      },
+      "passed": true,
+      "wall_s": 0.14450079500056745
+    },
+    {
+      "id": "ref_pv_transient_impulse",
+      "group": "reference",
+      "desc": "impulse response / latency",
+      "metrics": {
+        "peak": 0.49459844604362413,
+        "rms": 0.0026347855358020665,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "latency_samples": 1746,
+        "latency_ms": 36.375
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "latency_bound": true
+      },
+      "passed": true,
+      "wall_s": 0.012259381000149006
+    },
+    {
+      "id": "ref_delayline_feedback8",
+      "group": "reference",
+      "desc": "8 voices, feedback 0.35, 4 s noise",
+      "metrics": {
+        "peak": 0.2497701021502356,
+        "rms": 0.05463136361774485,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0
+      },
+      "gates": {
+        "finite": true,
+        "bounded": true,
+        "len": true
+      },
+      "passed": true,
+      "wall_s": 17.11076681800023
+    },
+    {
+      "id": "v2_aligned_pitch_pos4",
+      "group": "v2",
+      "desc": "220 Hz sine, ratio 1.2599, aligned",
+      "metrics": {
+        "measured_hz": 277.18747964526113,
+        "measured_fft_hz": 277.2649740867438,
+        "cents": 0.030283666623295274,
+        "cents_fft": 0.5142242306112512,
+        "peak": 0.4999999926365837,
+        "rms": 0.3376612986787966,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.0001983390618164388,
+        "mod_db_1ms": 5.484349676302599
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents_tight": true,
+        "mod_sync_tight": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 2.6665304759999344
+    },
+    {
+      "id": "v2_aligned_pitch_neg5",
+      "group": "v2",
+      "desc": "220 Hz sine, ratio 0.7492, aligned",
+      "metrics": {
+        "measured_hz": 164.81391675793654,
+        "measured_fft_hz": 164.7305858560483,
+        "cents": 0.0014527436379123933,
+        "cents_fft": -0.8740909029341656,
+        "peak": 0.49999997623341225,
+        "rms": 0.34173373835441045,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.0021267997388670244,
+        "mod_db_1ms": 10.058418437364981
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents_tight": true,
+        "mod_sync_tight": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 2.721581449000041
+    },
+    {
+      "id": "v2_aligned_pitch_oct_up",
+      "group": "v2",
+      "desc": "220 Hz sine, ratio 2.0000, aligned",
+      "metrics": {
+        "measured_hz": 440.02077030215503,
+        "measured_fft_hz": 440.0019016739593,
+        "cents": 0.08172137640457203,
+        "cents_fft": 0.007482353622814081,
+        "peak": 0.49999998250174255,
+        "rms": 0.33809815291674233,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.006001187839104033,
+        "mod_db_1ms": 1.1495218227997381
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents_tight": true,
+        "mod_sync_tight": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 2.692581945000711
+    },
+    {
+      "id": "v2_aligned_pitch_oct_down",
+      "group": "v2",
+      "desc": "220 Hz sine, ratio 0.5000, aligned",
+      "metrics": {
+        "measured_hz": 109.99897429351903,
+        "measured_fft_hz": 109.99907548642167,
+        "cents": -0.016143147848149856,
+        "cents_fft": -0.014550510106354978,
+        "peak": 0.49999999777036863,
+        "rms": 0.33875232470556194,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.0006937249414706212,
+        "mod_db_1ms": 13.321601537060467
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "pitch_cents_tight": true,
+        "mod_sync_tight": true,
+        "peak_le_1": true
+      },
+      "passed": true,
+      "wall_s": 2.7007473499998014
+    },
+    {
+      "id": "v2_aligned_chord",
+      "group": "v2",
+      "desc": "chord, +4 st, aligned (partial-period alignment)",
+      "metrics": {
+        "peak": 0.7981905131343552,
+        "rms": 0.27712173030128506,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "pitch": {
+          "measured_hz": 68.98299571611436,
+          "measured_fft_hz": 275.9349432690628,
+          "cents": -2394.1427179493435,
+          "cents_fft": 5.875855924208471
+        },
+        "mod_db_sync": 5.104064360729982,
+        "mod_db_1ms": 16.87166803562777
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_le_1": true,
+        "audible": true
+      },
+      "passed": true,
+      "wall_s": 2.6895704360003947
+    },
+    {
+      "id": "v2_aligned_percussive",
+      "group": "v2",
+      "desc": "percussive bursts, +4 st, aligned",
+      "metrics": {
+        "peak": 1.1439159484719341,
+        "rms": 0.09093702759827538,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 3,
+        "transient": {
+          "onset_delay_samples": 859,
+          "attack_samples": 1,
+          "attack_ms": 0.020833333333333332,
+          "pre_onset_db": -241.16788229935213
+        }
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_sane": true,
+        "causal": true,
+        "attack_bound": true
+      },
+      "passed": true,
+      "wall_s": 3.3439527959999396
+    },
+    {
+      "id": "v2_aligned_unison",
+      "group": "v2",
+      "desc": "unison (documented comb limitation)",
+      "metrics": {
+        "peak": 0.3784975278165861,
+        "rms": 0.2566351420112048,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "unison_gain_db": -2.418139142103481
+      },
+      "gates": {
+        "finite": true,
+        "gain_in_range": true,
+        "note": true
+      },
+      "passed": true,
+      "wall_s": 2.641951618999883
+    },
+    {
+      "id": "v2_aligned_voices8",
+      "group": "v2",
+      "desc": "220 Hz, +4 st, 8 voices (spread), aligned",
+      "metrics": {
+        "peak": 0.13187589341387612,
+        "rms": 0.04927707010327673,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.0022149783995064846,
+        "mod_db_1ms": 5.556435293205178
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "peak_le_1": true,
+        "audible": true
+      },
+      "passed": true,
+      "wall_s": 4.572292007000215
+    },
+    {
+      "id": "v2_aligned_feedback8",
+      "group": "v2",
+      "desc": "aligned, 8 voices, feedback 0.35, 4 s noise",
+      "metrics": {
+        "peak": 0.2927496316765189,
+        "rms": 0.055162294836836386,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "n_commits": [
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14
+        ],
+        "n_wraps": [
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18
+        ]
+      },
+      "gates": {
+        "finite": true,
+        "bounded": true,
+        "len": true
+      },
+      "passed": true,
+      "wall_s": 15.560846874000163
+    },
+    {
+      "id": "v2_aligned_longrun",
+      "group": "v2",
+      "desc": "10 s sustained tone, +4 st, aligned",
+      "metrics": {
+        "peak": 0.4999999996386914,
+        "rms": 0.35165780695426885,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "mod_db_sync": 0.002215158601475605,
+        "mod_db_1ms": 5.556452211794153,
+        "pitch": {
+          "measured_hz": 275.00230950001634,
+          "measured_fft_hz": 275.0010185668958,
+          "cents": 0.014539157365771363,
+          "cents_fft": 0.0064122706387872205
+        }
+      },
+      "gates": {
+        "finite": true,
+        "len": true,
+        "mod_sync_tight": true,
+        "pitch_cents_tight": true
+      },
+      "passed": true,
+      "wall_s": 22.965160853999805
+    },
+    {
+      "id": "v2_stereo_integrity",
+      "group": "v2",
+      "desc": "L=tone R=silence -> R stays silent (fresh engines)",
+      "metrics": {
+        "peak": 0.4999997200611811,
+        "rms": 0.33347246323166607,
+        "finite": true,
+        "n_nonfinite": 0,
+        "n_clipped": 0,
+        "r_peak": 0.0,
+        "contamination_db": -233.97939522368364,
+        "channels": 2
+      },
+      "gates": {
+        "channels": true,
+        "len": true,
+        "r_silent": true
+      },
+      "passed": true,
+      "wall_s": 2.5713266399998247
+    },
+    {
+      "id": "v2_stereo_differential",
+      "group": "v2",
+      "desc": "uncorrelated L/R stay distinct",
+      "metrics": {
+        "corr_LR": 0.0034315945812093207,
+        "rmsL": 0.21376355480518971,
+        "rmsR": 0.2133318100935971
+      },
+      "gates": {
+        "distinct": true,
+        "levels_similar": true
+      },
+      "passed": true,
+      "wall_s": 2.277834745999826
+    },
+    {
+      "id": "cli_v2_mono",
+      "group": "cli",
+      "desc": "v2 CLI mono +4 st 3 voices -> WAV",
+      "metrics": {
+        "returncode": 0,
+        "out_samples": 57600,
+        "sr_out": 48000,
+        "peak": 0.498809814453125,
+        "pitch": {
+          "measured_hz": 69.43918178416875,
+          "measured_fft_hz": 415.4091588272785,
+          "cents": -2382.7317182491897,
+          "cents_fft": 714.1216872489177
+        }
+      },
+      "gates": {
+        "ran": true,
+        "duration_preserved": true,
+        "sr_preserved": true,
+        "finite_peak": true
+      },
+      "passed": true,
+      "wall_s": 3.491163830000005
+    },
+    {
+      "id": "cli_v2_stereo",
+      "group": "cli",
+      "desc": "v2 CLI stereo delayline: R silence preserved",
+      "metrics": {
+        "returncode": 0,
+        "channels": 2,
+        "out_samples": 48000,
+        "r_peak": 0.0,
+        "l_peak": 0.499969482421875,
+        "contamination_db": -233.97886992590975
+      },
+      "gates": {
+        "ran": true,
+        "stereo_out": true,
+        "len": true,
+        "r_silent": true
+      },
+      "passed": true,
+      "wall_s": 2.8990801800000554
+    },
+    {
+      "id": "cli_v2_44k_keep_rate",
+      "group": "cli",
+      "desc": "v2 CLI 48k in -> 44.1k proc -> keep rate",
+      "metrics": {
+        "returncode": 0,
+        "sr_out": 48000,
+        "out_samples": 48000,
+        "pitch": {
+          "measured_hz": 164.81444708513828,
+          "measured_fft_hz": 164.71652185020122,
+          "cents": 0.007023383846914009,
+          "cents_fft": -1.021902707827752
+        }
+      },
+      "gates": {
+        "ran": true,
+        "keep_rate": true,
+        "len": true,
+        "pitch": true
+      },
+      "passed": true,
+      "wall_s": 0.3381177170003866
+    },
+    {
+      "id": "cli_v2_24bit",
+      "group": "cli",
+      "desc": "v2 CLI 24-bit PCM input",
+      "metrics": {
+        "returncode": 0,
+        "out_samples": 57600,
+        "peak": 0.516632080078125,
+        "pitch": {
+          "measured_hz": 277.19039037629915,
+          "measured_fft_hz": 277.264046444343,
+          "cents": 0.04846316819885507,
+          "cents_fft": 0.5084320500394778
+        }
+      },
+      "gates": {
+        "ran": true,
+        "len": true,
+        "pitch": true
+      },
+      "passed": true,
+      "wall_s": 0.3203416689993901
+    }
+  ],
+  "improvement": {
+    "stereo_reference_cli": {
+      "r_contamination_db": -0.4420963737417111,
+      "note": "reference CLI shares one stateful engine across channels (round-11 finding)"
+    },
+    "delayline_vs_aligned": [
+      {
+        "ratio": 1.2599210498948732,
+        "cents_ref": 3.27370986282519,
+        "cents_aligned": 0.030283666623295274,
+        "mod_db_sync_ref": 2.355289619142818,
+        "mod_db_sync_aligned": 0.0001983390618164388,
+        "mod_db_1ms_ref": 6.586977172840095,
+        "mod_db_1ms_aligned": 5.484349676302599
+      },
+      {
+        "ratio": 0.7491535384383408,
+        "cents_ref": -5.835324412966144,
+        "cents_aligned": 0.0014527436379123933,
+        "mod_db_sync_ref": 2.316695470779437,
+        "mod_db_sync_aligned": 0.0021267997388670244,
+        "mod_db_1ms_ref": 10.818639803556746,
+        "mod_db_1ms_aligned": 10.058418437364981
+      },
+      {
+        "ratio": 2.0,
+        "cents_ref": 9.130766693983727,
+        "cents_aligned": 0.08172137640457203,
+        "mod_db_sync_ref": 2.270412000976951,
+        "mod_db_sync_aligned": 0.006001187839104033,
+        "mod_db_1ms_ref": 3.0207757110327482,
+        "mod_db_1ms_aligned": 1.1495218227997381
+      },
+      {
+        "ratio": 0.5,
+        "cents_ref": -17.75681149473355,
+        "cents_aligned": -0.016143147848149856,
+        "mod_db_sync_ref": 1.9925174545854374,
+        "mod_db_sync_aligned": 0.0006937249414706212,
+        "mod_db_1ms_ref": 13.899399867315068,
+        "mod_db_1ms_aligned": 13.321601537060467
+      }
+    ],
+    "latency_transient": {
+      "reference": {
+        "latency_samples": 4919,
+        "latency_ms": 102.47916666666666,
+        "attack_ms": 130.41666666666666,
+        "pre_onset_db": -233.97925786114672
+      },
+      "aligned": {
+        "latency_samples": 4919,
+        "latency_ms": 102.47916666666666,
+        "attack_ms": 141.29166666666669,
+        "pre_onset_db": -233.9793917147797
+      }
+    },
+    "cost_8voice": {
+      "reference": {
+        "ms_per_s_8v": 4302.428705999773
+      },
+      "aligned": {
+        "ms_per_s_8v": 3792.578962999869
+      }
+    }
+  },
+  "summary": {
+    "passed": 45,
+    "failed": 0,
+    "total": 45,
+    "all_passed": true
+  }
+}

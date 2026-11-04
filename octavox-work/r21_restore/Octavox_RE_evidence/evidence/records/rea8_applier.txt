@@ -1,0 +1,124 @@
+00000001800E7960  48895c2418               mov qword ptr [rsp + 0x18], rbx
+00000001800E7965  4889742420               mov qword ptr [rsp + 0x20], rsi
+00000001800E796A  57                       push rdi
+00000001800E796B  4883ec20                 sub rsp, 0x20
+00000001800E796F  488b8110020000           mov rax, qword ptr [rcx + 0x210]
+00000001800E7976  488bf1                   mov rsi, rcx
+00000001800E7979  4885c0                   test rax, rax
+00000001800E797C  7406                     je 0x1800e7984
+00000001800E797E  f30f1008                 movss xmm1, dword ptr [rax]
+00000001800E7982  eb08                     jmp 0x1800e798c
+00000001800E7984  f30f108918020000         movss xmm1, dword ptr [rcx + 0x218]
+00000001800E798C  f30f1081f0010000         movss xmm0, dword ptr [rcx + 0x1f0]
+00000001800E7994  488d442430               lea rax, [rsp + 0x30]
+00000001800E7999  488b39                   mov rdi, qword ptr [rcx]
+00000001800E799C  488d4c2438               lea rcx, [rsp + 0x38]
+00000001800E79A1  0f2fc8                   comiss xmm1, xmm0
+00000001800E79A4  488b1f                   mov rbx, qword ptr [rdi]
+00000001800E79A7  f30f11442438             movss dword ptr [rsp + 0x38], xmm0
+00000001800E79AD  f30f114c2430             movss dword ptr [rsp + 0x30], xmm1
+00000001800E79B3  480f46c1                 cmovbe rax, rcx
+00000001800E79B7  f30f1000                 movss xmm0, dword ptr [rax]
+00000001800E79BB  f30f5d86f4010000         minss xmm0, dword ptr [rsi + 0x1f4]
+00000001800E79C3  0f5ac0                   cvtps2pd xmm0, xmm0
+00000001800E79C6  f20f590582a83200         mulsd xmm0, qword ptr [rip + 0x32a882]
+00000001800E79CE  e87da52600               call 0x180351f50
+00000001800E79D3  8b5608                   mov edx, dword ptr [rsi + 8]
+00000001800E79D6  0f57db                   xorps xmm3, xmm3
+00000001800E79D9  f20f5ad8                 cvtsd2ss xmm3, xmm0
+00000001800E79DD  41b802000000             mov r8d, 2
+00000001800E79E3  488bcf                   mov rcx, rdi
+00000001800E79E6  f30f5d1d4ea73200         minss xmm3, dword ptr [rip + 0x32a74e]
+00000001800E79EE  ff5360                   call qword ptr [rbx + 0x60]
+00000001800E79F1  488b8e10020000           mov rcx, qword ptr [rsi + 0x210]
+00000001800E79F8  4885c9                   test rcx, rcx
+00000001800E79FB  7406                     je 0x1800e7a03
+00000001800E79FD  f30f1001                 movss xmm0, dword ptr [rcx]
+00000001800E7A01  eb08                     jmp 0x1800e7a0b
+00000001800E7A03  f30f108618020000         movss xmm0, dword ptr [rsi + 0x218]
+00000001800E7A0B  f30f108ef0010000         movss xmm1, dword ptr [rsi + 0x1f0]
+00000001800E7A13  488d442430               lea rax, [rsp + 0x30]
+00000001800E7A18  f30f1096f4010000         movss xmm2, dword ptr [rsi + 0x1f4]
+00000001800E7A20  488d542438               lea rdx, [rsp + 0x38]
+00000001800E7A25  0f2fc1                   comiss xmm0, xmm1
+00000001800E7A28  f30f11442430             movss dword ptr [rsp + 0x30], xmm0
+00000001800E7A2E  f30f114c2438             movss dword ptr [rsp + 0x38], xmm1
+00000001800E7A34  480f46c2                 cmovbe rax, rdx
+00000001800E7A38  f30f1000                 movss xmm0, dword ptr [rax]
+00000001800E7A3C  f30f5dc2                 minss xmm0, xmm2
+00000001800E7A40  f30f2cc0                 cvttss2si eax, xmm0
+00000001800E7A44  83f89d                   cmp eax, -0x63
+00000001800E7A47  7446                     je 0x1800e7a8f
+00000001800E7A49  4885c9                   test rcx, rcx
+00000001800E7A4C  7406                     je 0x1800e7a54
+00000001800E7A4E  f30f1001                 movss xmm0, dword ptr [rcx]
+00000001800E7A52  eb08                     jmp 0x1800e7a5c
+00000001800E7A54  f30f108618020000         movss xmm0, dword ptr [rsi + 0x218]
+00000001800E7A5C  0f2fc1                   comiss xmm0, xmm1
+00000001800E7A5F  488d442430               lea rax, [rsp + 0x30]
+00000001800E7A64  488d4c2438               lea rcx, [rsp + 0x38]
+00000001800E7A69  f30f11442430             movss dword ptr [rsp + 0x30], xmm0
+00000001800E7A6F  f30f114c2438             movss dword ptr [rsp + 0x38], xmm1
+00000001800E7A75  480f46c1                 cmovbe rax, rcx
+00000001800E7A79  f30f1000                 movss xmm0, dword ptr [rax]
+00000001800E7A7D  f30f5dc2                 minss xmm0, xmm2
+00000001800E7A81  f30f2cc0                 cvttss2si eax, xmm0
+00000001800E7A85  83f89f                   cmp eax, -0x61
+00000001800E7A88  7405                     je 0x1800e7a8f
+00000001800E7A8A  0f57db                   xorps xmm3, xmm3
+00000001800E7A8D  eb08                     jmp 0x1800e7a97
+00000001800E7A8F  f30f101deda53200         movss xmm3, dword ptr [rip + 0x32a5ed]
+00000001800E7A97  488b0e                   mov rcx, qword ptr [rsi]
+00000001800E7A9A  41b804000000             mov r8d, 4
+00000001800E7AA0  8b5608                   mov edx, dword ptr [rsi + 8]
+00000001800E7AA3  488b01                   mov rax, qword ptr [rcx]
+00000001800E7AA6  ff5060                   call qword ptr [rax + 0x60]
+00000001800E7AA9  488b8e10020000           mov rcx, qword ptr [rsi + 0x210]
+00000001800E7AB0  4885c9                   test rcx, rcx
+00000001800E7AB3  7406                     je 0x1800e7abb
+00000001800E7AB5  f30f1001                 movss xmm0, dword ptr [rcx]
+00000001800E7AB9  eb08                     jmp 0x1800e7ac3
+00000001800E7ABB  f30f108618020000         movss xmm0, dword ptr [rsi + 0x218]
+00000001800E7AC3  f30f108ef0010000         movss xmm1, dword ptr [rsi + 0x1f0]
+00000001800E7ACB  488d442430               lea rax, [rsp + 0x30]
+00000001800E7AD0  f30f1096f4010000         movss xmm2, dword ptr [rsi + 0x1f4]
+00000001800E7AD8  488d542438               lea rdx, [rsp + 0x38]
+00000001800E7ADD  0f2fc1                   comiss xmm0, xmm1
+00000001800E7AE0  f30f11442430             movss dword ptr [rsp + 0x30], xmm0
+00000001800E7AE6  f30f114c2438             movss dword ptr [rsp + 0x38], xmm1
+00000001800E7AEC  480f46c2                 cmovbe rax, rdx
+00000001800E7AF0  f30f1000                 movss xmm0, dword ptr [rax]
+00000001800E7AF4  f30f5dc2                 minss xmm0, xmm2
+00000001800E7AF8  f30f2cc0                 cvttss2si eax, xmm0
+00000001800E7AFC  83f89e                   cmp eax, -0x62
+00000001800E7AFF  745f                     je 0x1800e7b60
+00000001800E7B01  4885c9                   test rcx, rcx
+00000001800E7B04  7406                     je 0x1800e7b0c
+00000001800E7B06  f30f1001                 movss xmm0, dword ptr [rcx]
+00000001800E7B0A  eb08                     jmp 0x1800e7b14
+00000001800E7B0C  f30f108618020000         movss xmm0, dword ptr [rsi + 0x218]
+00000001800E7B14  0f2fc1                   comiss xmm0, xmm1
+00000001800E7B17  488d442430               lea rax, [rsp + 0x30]
+00000001800E7B1C  488d4c2438               lea rcx, [rsp + 0x38]
+00000001800E7B21  f30f114c2438             movss dword ptr [rsp + 0x38], xmm1
+00000001800E7B27  f30f11442430             movss dword ptr [rsp + 0x30], xmm0
+00000001800E7B2D  480f46c1                 cmovbe rax, rcx
+00000001800E7B31  f30f1000                 movss xmm0, dword ptr [rax]
+00000001800E7B35  0f2fc2                   comiss xmm0, xmm2
+00000001800E7B38  7203                     jb 0x1800e7b3d
+00000001800E7B3A  0f28c2                   movaps xmm0, xmm2
+00000001800E7B3D  f30f2cc0                 cvttss2si eax, xmm0
+00000001800E7B41  83f89f                   cmp eax, -0x61
+00000001800E7B44  741a                     je 0x1800e7b60
+00000001800E7B46  c7862004000000000000     mov dword ptr [rsi + 0x420], 0
+00000001800E7B50  488b5c2440               mov rbx, qword ptr [rsp + 0x40]
+00000001800E7B55  488b742448               mov rsi, qword ptr [rsp + 0x48]
+00000001800E7B5A  4883c420                 add rsp, 0x20
+00000001800E7B5E  5f                       pop rdi
+00000001800E7B5F  c3                       ret 
+00000001800E7B60  c7862004000001000000     mov dword ptr [rsi + 0x420], 1
+00000001800E7B6A  488b5c2440               mov rbx, qword ptr [rsp + 0x40]
+00000001800E7B6F  488b742448               mov rsi, qword ptr [rsp + 0x48]
+00000001800E7B74  4883c420                 add rsp, 0x20
+00000001800E7B78  5f                       pop rdi
+00000001800E7B79  c3                       ret 

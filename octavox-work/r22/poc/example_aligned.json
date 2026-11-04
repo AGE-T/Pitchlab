@@ -1,0 +1,17 @@
+{
+  "demo": "v2",
+  "algo": "delayline_aligned",
+  "ratio": 1.2599210498948732,
+  "voices": 3,
+  "interp": "lagrange6",
+  "sr_in": 48000,
+  "sr_out": 48000,
+  "channels": 1,
+  "in_samples": 96000,
+  "out_samples": 96000,
+  "duration_s": 2.0,
+  "cpu_s": 4.688906541000506,
+  "x_realtime": 0.4265386785835244,
+  "peak": 0.5369330297241759,
+  "per_channel_engines": true
+}

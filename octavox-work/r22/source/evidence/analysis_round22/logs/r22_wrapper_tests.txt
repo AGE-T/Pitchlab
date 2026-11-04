@@ -1,0 +1,121 @@
+RUN lifecycle_smoke
+RUN param_roundtrip
+RUN segmentation_equivalence_BITEXACT
+RUN state_roundtrip_BITEXACT
+RUN silence_blocks_reset
+RUN inplace_safety
+RUN no_alloc_steady_state
+RUN latency_report
+RUN param_metadata_table
+RUN events_block_positions
+RUN simultaneous_multivoice_events
+RUN bypass_wetdry_clickless_noalloc
+RUN state_full_surface_restore
+RUN state_cross_rate_layout
+RUN state_invalid_blobs
+RUN param_defaults_fresh_instance
+RUN param_defaults_after_prepare
+RUN param_defaults_state_roundtrip
+RUN param_state_restore_new_instance
+RUN param_defaults_reinit_cycles
+RUN identity_variant_authority_r21
+CASE                                       PASS   MEASUREMENTS
+------------------------------------------------------------------------------------------------
+lifecycle_smoke                            ok     
+                                                  factory_class_count = 1
+param_roundtrip                            ok     
+                                                  getset_normalized_worst_diff = 0
+                                                  plain_chain_idempotence_worst = 0
+                                                  voices1_vs_8_maxdiff = 0.3068660833
+                                                  wrapper_default_vs_core_maxdiff = 0
+                                                  wrapper_bypass_vs_core_maxdiff = 0
+segmentation_equivalence_BITEXACT          ok     
+                                                  maxdiff = 0
+                                                  bit_identical = 1
+                                                  sampleaccurate_vs_coarse_host_maxdiff = 0.4935997277
+state_roundtrip_BITEXACT                   ok     
+                                                  live_surface_vs_reference_maxdiff = 0
+                                                  state_bytes = 744
+                                                  same_instance_restore_maxdiff = 0
+                                                  fresh_instance_restore_maxdiff = 0
+silence_blocks_reset                       ok     
+                                                  silence_out_maxabs = 0
+                                                  split_vs_oneshot_maxdiff = 0
+                                                  reset_replay_vs_fresh_surface_maxdiff = 0
+                                                  reset_replay_vs_original_run_maxdiff = 0.5300969929
+inplace_safety                             ok     
+                                                  inplace_vs_separate_maxdiff = 0
+no_alloc_steady_state                      ok     
+                                                  allocations_during_100_process_calls = 0
+latency_report                             ok     
+                                                  wrapper_latency_samples = 2304
+                                                  core_latency_samples = 2304
+                                                  tail_samples = 15080
+param_metadata_table                       ok     
+                                                  spec_table_entries = 74
+                                                  id_mask_complete = 1
+                                                  parameterinfo_mismatches = 0
+                                                  step_exact_roundtrip_failures = 0
+                                                  continuous_ulp_roundtrip_failures = 0
+events_block_positions                     ok     
+                                                  maxdiff = 0
+                                                  bit_identical = 1
+                                                  blockend_event_effect_maxdiff = 0.05861789174
+simultaneous_multivoice_events             ok     
+                                                  maxdiff = 0
+                                                  bit_identical = 1
+bypass_wetdry_clickless_noalloc            ok     
+                                                  reference_max_step = 0.4980181307
+                                                  peak_out = 0.2499928325
+                                                  allocations_during_automation = 0
+                                                  automation_max_step = 0.4980181307
+                                                  automation_max_step_at_sample = 36472
+                                                  no_click_bound = 0.5073928619
+state_full_surface_restore                 ok     
+                                                  live_full_surface_vs_reference_maxdiff = 0
+                                                  state_bytes = 744
+                                                  restored_value_mismatches = 0
+                                                  fresh_restore_replay_maxdiff = 0
+state_cross_rate_layout                    ok     
+                                                  restore_96k_mono_vs_reference_maxdiff = 0
+                                                  restore_44k1_stereo_vs_reference_maxdiff = 0
+state_invalid_blobs                        ok     
+                                                  blob_bytes = 744
+                                                  truncation_prefixes_accepted = 0
+                                                  usable_after_rejections_maxdiff = 0
+param_defaults_fresh_instance              ok     
+                                                  fresh_current_vs_default_worst_norm = 0
+                                                  fresh_info_defaultnorm_worst = 0
+                                                  fresh_display_plain_worst = 0
+                                                  fresh_display_string_mismatches = 0
+                                                  fresh_surface_vs_default_worst = 0
+param_defaults_after_prepare               ok     
+                                                  prepared_current_vs_default_worst_norm = 0
+                                                  prepared_surface_vs_default_worst = 0
+                                                  prepared_engine_vs_default_reference_maxdiff = 0
+                                                  flush_surface_vs_default_worst = 0
+                                                  flush_engine_vs_chain_reference_maxdiff = 0
+                                                  flush_engine_vs_raw_reference_maxdiff = 0
+param_defaults_state_roundtrip             ok     
+                                                  roundtrip_setstate_worst_norm = 0
+                                                  roundtrip_setstate_surface_worst = 0
+                                                  roundtrip_seteditorstate_worst_norm = 0
+                                                  roundtrip_setcomponentstate_worst_norm = 0
+param_state_restore_new_instance           ok     
+                                                  fresh_setstate_current_vs_saved_worst_norm = 0
+                                                  fresh_setstate_surface_vs_saved_worst_plain = 0
+                                                  fresh_setcomponentstate_current_vs_saved_worst_norm = 0
+                                                  fresh_setcomponentstate_surface_vs_saved_worst_plain = 0
+                                                  resaved_current_vs_saved_worst_norm = 0
+                                                  resaved_surface_vs_saved_worst_plain = 0
+param_defaults_reinit_cycles               ok     
+                                                  reinit_cycles = 6
+                                                  reinit_worst_current_vs_default = 0
+                                                  reinit_worst_surface_vs_default = 0
+                                                  reinit_paramcount_issues = 0
+identity_variant_authority_r21             ok     
+                                                  help_texts_empty = 0
+                                                  restored_interpolation = 1
+                                                  restored_detector = 1
+------------------------------------------------------------------------------------------------
+octavox-native VST3 wrapper tests (R16-P4b + R17-P3): 21 passed, 0 failed, 21 total

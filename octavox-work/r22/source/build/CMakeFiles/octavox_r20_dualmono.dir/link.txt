@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/octavox_r20_dualmono.dir/link.d CMakeFiles/octavox_r20_dualmono.dir/cli/r20_dualmono.cpp.o -o octavox_r20_dualmono  liboctavox_dsp.a

@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/z/my-project/octavox-work/Octavox_RE_evidence/native/build_asan_r22/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

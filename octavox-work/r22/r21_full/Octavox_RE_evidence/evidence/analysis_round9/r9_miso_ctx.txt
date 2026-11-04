@@ -1,0 +1,44 @@
+0000000180112040  d8488d                     fmul     dword ptr [rax - 0x73]                   [base=35 idx=0 scale=1 disp=-0x73]
+0000000180112043  1508772f00                 adc      eax, 0x2f7708                            reg=19; imm=0x2f7708
+0000000180112048  488d8df0400000             lea      rcx, [rbp + 0x40f0]                      reg=38; [base=36 idx=0 scale=1 disp=0x40f0]
+000000018011204F  e8ac59f0ff                 call     0x180017a00                              imm=0x180017a00
+0000000180112054  90                         nop                                               
+0000000180112055  48895c2420                 mov      qword ptr [rsp + 0x20], rbx              [base=44 idx=0 scale=1 disp=0x20]; reg=37
+000000018011205A  41b947010000               mov      r9d, 0x147                               reg=227; imm=0x147
+0000000180112060  4c8d85f0400000             lea      r8, [rbp + 0x40f0]                       reg=106; [base=36 idx=0 scale=1 disp=0x40f0]
+0000000180112067  498b5608                   mov      rdx, qword ptr [r14 + 8]                 reg=40; [base=112 idx=0 scale=1 disp=0x8]
+000000018011206B  498d8e80b40100             lea      rcx, [r14 + 0x1b480]                     reg=38; [base=112 idx=0 scale=1 disp=0x1b480]
+0000000180112072  e8b9580200                 call     0x180137930                              imm=0x180137930
+0000000180112077  90                         nop                                               
+0000000180112078  488d8df0400000             lea      rcx, [rbp + 0x40f0]                      reg=38; [base=36 idx=0 scale=1 disp=0x40f0]
+000000018011207F  e82c51f0ff                 call     0x1800171b0                              imm=0x1800171b0
+0000000180112084  90                         nop                                               
+0000000180112085  488d8db0130000             lea      rcx, [rbp + 0x13b0]                      reg=38; [base=36 idx=0 scale=1 disp=0x13b0]
+000000018011208C  e84f28fbff                 call     0x1800c48e0                              imm=0x1800c48e0
+0000000180112091  488d1558aa3900             lea      rdx, [rip + 0x39aa58]                    reg=40; [base=41 idx=0 scale=1 disp=0x39aa58]
+0000000180112098  488d8dc0130000             lea      rcx, [rbp + 0x13c0]                      reg=38; [base=36 idx=0 scale=1 disp=0x13c0]
+000000018011209F  e8ec18fbff                 call     0x1800c3990                              imm=0x1800c3990
+00000001801120A4  488bd8                     mov      rbx, rax                                 reg=37; reg=35
+00000001801120A7  488d15b2762f00             lea      rdx, [rip + 0x2f76b2]                    reg=40; [base=41 idx=0 scale=1 disp=0x2f76b2]
+00000001801120AE  488d8d10410000             lea      rcx, [rbp + 0x4110]                      reg=38; [base=36 idx=0 scale=1 disp=0x4110]
+00000001801120B5  e84659f0ff                 call     0x180017a00                              imm=0x180017a00
+00000001801120BA  90                         nop                                               
+00000001801120BB  48895c2420                 mov      qword ptr [rsp + 0x20], rbx              [base=44 idx=0 scale=1 disp=0x20]; reg=37
+00000001801120C0  41b948010000               mov      r9d, 0x148                               reg=227; imm=0x148
+00000001801120C6  4c8d8510410000             lea      r8, [rbp + 0x4110]                       reg=106; [base=36 idx=0 scale=1 disp=0x4110]
+00000001801120CD  498b5608                   mov      rdx, qword ptr [r14 + 8]                 reg=40; [base=112 idx=0 scale=1 disp=0x8]
+00000001801120D1  498d8ec8b60100             lea      rcx, [r14 + 0x1b6c8]                     reg=38; [base=112 idx=0 scale=1 disp=0x1b6c8]
+00000001801120D8  e8b3820200                 call     0x18013a390                              imm=0x18013a390
+00000001801120DD  90                         nop                                               
+00000001801120DE  488d8d10410000             lea      rcx, [rbp + 0x4110]                      reg=38; [base=36 idx=0 scale=1 disp=0x4110]
+00000001801120E5  e8c650f0ff                 call     0x1800171b0                              imm=0x1800171b0
+00000001801120EA  90                         nop                                               
+00000001801120EB  488d8dc0130000             lea      rcx, [rbp + 0x13c0]                      reg=38; [base=36 idx=0 scale=1 disp=0x13c0]
+00000001801120F2  e8e927fbff                 call     0x1800c48e0                              imm=0x1800c48e0
+00000001801120F7  488d15d24d3900             lea      rdx, [rip + 0x394dd2]                    reg=40; [base=41 idx=0 scale=1 disp=0x394dd2]
+00000001801120FE  488d8dd0130000             lea      rcx, [rbp + 0x13d0]                      reg=38; [base=36 idx=0 scale=1 disp=0x13d0]
+0000000180112105  e88618fbff                 call     0x1800c3990                              imm=0x1800c3990
+000000018011210A  488bd8                     mov      rbx, rax                                 reg=37; reg=35
+000000018011210D  488d158c762f00             lea      rdx, [rip + 0x2f768c]                    reg=40; [base=41 idx=0 scale=1 disp=0x2f768c]
+0000000180112114  488d8d30410000             lea      rcx, [rbp + 0x4130]                      reg=38; [base=36 idx=0 scale=1 disp=0x4130]
+000000018011211B  e8e058f0ff                 call     0x180017a00                              imm=0x180017a00

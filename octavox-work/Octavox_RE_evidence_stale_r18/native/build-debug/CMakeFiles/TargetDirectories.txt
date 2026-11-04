@@ -1,0 +1,7 @@
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/build-debug/CMakeFiles/octavox_dsp.dir
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/build-debug/CMakeFiles/octavox_tests.dir
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/build-debug/CMakeFiles/octavox_cli.dir
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/build-debug/CMakeFiles/octavox_r15refcap.dir
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/build-debug/CMakeFiles/octavox_bench.dir
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/build-debug/CMakeFiles/edit_cache.dir
+/home/z/my-project/octavox-work/Octavox_RE_evidence/native/build-debug/CMakeFiles/rebuild_cache.dir

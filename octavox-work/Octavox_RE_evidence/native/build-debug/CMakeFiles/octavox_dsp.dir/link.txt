@@ -1,0 +1,2 @@
+/usr/bin/ar qc liboctavox_dsp.a CMakeFiles/octavox_dsp.dir/src/dsp.cpp.o
+/usr/bin/ranlib liboctavox_dsp.a

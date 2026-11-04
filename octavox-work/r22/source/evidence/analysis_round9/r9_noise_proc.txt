@@ -1,0 +1,76 @@
+0000000180139B40  48895c2408                 mov      qword ptr [rsp + 8], rbx                 [base=44 idx=0 scale=1 disp=0x8]; reg=37
+0000000180139B45  f30f104928                 movss    xmm1, dword ptr [rcx + 0x28]             reg=123; [base=38 idx=0 scale=1 disp=0x28]
+0000000180139B4A  488bd9                     mov      rbx, rcx                                 reg=37; reg=38
+0000000180139B4D  8b492c                     mov      ecx, dword ptr [rcx + 0x2c]              reg=22; [base=38 idx=0 scale=1 disp=0x2c]
+0000000180139B50  448b5b34                   mov      r11d, dword ptr [rbx + 0x34]             reg=229; [base=37 idx=0 scale=1 disp=0x34]
+0000000180139B54  8b5320                     mov      edx, dword ptr [rbx + 0x20]              reg=24; [base=37 idx=0 scale=1 disp=0x20]
+0000000180139B57  448b4b24                   mov      r9d, dword ptr [rbx + 0x24]              reg=227; [base=37 idx=0 scale=1 disp=0x24]
+0000000180139B5B  4403ca                     add      r9d, edx                                 reg=227; reg=24
+0000000180139B5E  4523cb                     and      r9d, r11d                                reg=227; reg=229
+0000000180139B61  468d040a                   lea      r8d, [rdx + r9]                          reg=226; [base=40 idx=107 scale=1 disp=0x0]
+0000000180139B65  4523c3                     and      r8d, r11d                                reg=226; reg=229
+0000000180139B68  418bc0                     mov      eax, r8d                                 reg=19; reg=226
+0000000180139B6B  d3f8                       sar      eax, cl                                  reg=19; reg=10
+0000000180139B6D  478d1401                   lea      r10d, [r9 + r8]                          reg=228; [base=107 idx=106 scale=1 disp=0x0]
+0000000180139B71  4523d3                     and      r10d, r11d                               reg=228; reg=229
+0000000180139B74  660f6ec0                   movd     xmm0, eax                                reg=122; reg=19
+0000000180139B78  488b4318                   mov      rax, qword ptr [rbx + 0x18]              reg=35; [base=37 idx=0 scale=1 disp=0x18]
+0000000180139B7C  0f5bc0                     cvtdq2ps xmm0, xmm0                               reg=122; reg=122
+0000000180139B7F  438d1411                   lea      edx, [r9 + r10]                          reg=24; [base=107 idx=108 scale=1 disp=0x0]
+0000000180139B83  4123d3                     and      edx, r11d                                reg=24; reg=229
+0000000180139B86  f30f59c1                   mulss    xmm0, xmm1                               reg=122; reg=123
+0000000180139B8A  458d0c12                   lea      r9d, [r10 + rdx]                         reg=227; [base=108 idx=40 scale=1 disp=0x0]
+0000000180139B8E  4523cb                     and      r9d, r11d                                reg=227; reg=229
+0000000180139B91  f30f1100                   movss    dword ptr [rax], xmm0                    [base=35 idx=0 scale=1 disp=0x0]; reg=122
+0000000180139B95  8bc2                       mov      eax, edx                                 reg=19; reg=24
+0000000180139B97  d3f8                       sar      eax, cl                                  reg=19; reg=10
+0000000180139B99  438d140a                   lea      edx, [r10 + r9]                          reg=24; [base=108 idx=107 scale=1 disp=0x0]
+0000000180139B9D  4123d3                     and      edx, r11d                                reg=24; reg=229
+0000000180139BA0  660f6ec0                   movd     xmm0, eax                                reg=122; reg=19
+0000000180139BA4  488b4318                   mov      rax, qword ptr [rbx + 0x18]              reg=35; [base=37 idx=0 scale=1 disp=0x18]
+0000000180139BA8  458d0411                   lea      r8d, [r9 + rdx]                          reg=226; [base=107 idx=40 scale=1 disp=0x0]
+0000000180139BAC  0f5bc0                     cvtdq2ps xmm0, xmm0                               reg=122; reg=122
+0000000180139BAF  4523c3                     and      r8d, r11d                                reg=226; reg=229
+0000000180139BB2  f30f59c1                   mulss    xmm0, xmm1                               reg=122; reg=123
+0000000180139BB6  f30f114004                 movss    dword ptr [rax + 4], xmm0                [base=35 idx=0 scale=1 disp=0x4]; reg=122
+0000000180139BBB  8bc2                       mov      eax, edx                                 reg=19; reg=24
+0000000180139BBD  d3f8                       sar      eax, cl                                  reg=19; reg=10
+0000000180139BBF  438d1401                   lea      edx, [r9 + r8]                           reg=24; [base=107 idx=106 scale=1 disp=0x0]
+0000000180139BC3  4123d3                     and      edx, r11d                                reg=24; reg=229
+0000000180139BC6  660f6ec0                   movd     xmm0, eax                                reg=122; reg=19
+0000000180139BCA  488b4318                   mov      rax, qword ptr [rbx + 0x18]              reg=35; [base=37 idx=0 scale=1 disp=0x18]
+0000000180139BCE  0f5bc0                     cvtdq2ps xmm0, xmm0                               reg=122; reg=122
+0000000180139BD1  f30f59c1                   mulss    xmm0, xmm1                               reg=122; reg=123
+0000000180139BD5  f30f114008                 movss    dword ptr [rax + 8], xmm0                [base=35 idx=0 scale=1 disp=0x8]; reg=122
+0000000180139BDA  8bc2                       mov      eax, edx                                 reg=19; reg=24
+0000000180139BDC  d3f8                       sar      eax, cl                                  reg=19; reg=10
+0000000180139BDE  660f6ec0                   movd     xmm0, eax                                reg=122; reg=19
+0000000180139BE2  488b4318                   mov      rax, qword ptr [rbx + 0x18]              reg=35; [base=37 idx=0 scale=1 disp=0x18]
+0000000180139BE6  0f5bc0                     cvtdq2ps xmm0, xmm0                               reg=122; reg=122
+0000000180139BE9  f30f59c1                   mulss    xmm0, xmm1                               reg=122; reg=123
+0000000180139BED  f30f11400c                 movss    dword ptr [rax + 0xc], xmm0              [base=35 idx=0 scale=1 disp=0xc]; reg=122
+0000000180139BF2  895324                     mov      dword ptr [rbx + 0x24], edx              [base=37 idx=0 scale=1 disp=0x24]; reg=24
+0000000180139BF5  44894320                   mov      dword ptr [rbx + 0x20], r8d              [base=37 idx=0 scale=1 disp=0x20]; reg=226
+0000000180139BF9  488b5c2408                 mov      rbx, qword ptr [rsp + 8]                 reg=37; [base=44 idx=0 scale=1 disp=0x8]
+0000000180139BFE  c3                         ret                                               
+0000000180139BFF  cc                         int3                                              
+0000000180139C00  4c8bc1                     mov      r8, rcx                                  reg=106; reg=38
+0000000180139C03  c7413020000000             mov      dword ptr [rcx + 0x30], 0x20             [base=38 idx=0 scale=1 disp=0x30]; imm=0x20
+0000000180139C0A  c7412c08000000             mov      dword ptr [rcx + 0x2c], 8                [base=38 idx=0 scale=1 disp=0x2c]; imm=0x8
+0000000180139C11  33d2                       xor      edx, edx                                 reg=24; reg=24
+0000000180139C13  b91f000000                 mov      ecx, 0x1f                                reg=22; imm=0x1f
+0000000180139C18  0f1f840000000000           nop      dword ptr [rax + rax]                    [base=35 idx=35 scale=1 disp=0x0]
+0000000180139C20  b801000000                 mov      eax, 1                                   reg=19; imm=0x1
+0000000180139C25  d3e0                       shl      eax, cl                                  reg=19; reg=10
+0000000180139C27  ffc9                       dec      ecx                                      reg=22
+0000000180139C29  03d0                       add      edx, eax                                 reg=24; reg=19
+0000000180139C2B  83f908                     cmp      ecx, 8                                   reg=22; imm=0x8
+0000000180139C2E  73f0                       jae      0x180139c20                              imm=0x180139c20
+0000000180139C30  41895034                   mov      dword ptr [r8 + 0x34], edx               [base=106 idx=0 scale=1 disp=0x34]; reg=24
+0000000180139C34  41c74020000d0000           mov      dword ptr [r8 + 0x20], 0xd00             [base=106 idx=0 scale=1 disp=0x20]; imm=0xd00
+0000000180139C3C  41c7402400110000           mov      dword ptr [r8 + 0x24], 0x1100            [base=106 idx=0 scale=1 disp=0x24]; imm=0x1100
+0000000180139C44  41c7402801000034           mov      dword ptr [r8 + 0x28], 0x34000001        [base=106 idx=0 scale=1 disp=0x28]; imm=0x34000001
+0000000180139C4C  c3                         ret                                               
+0000000180139C4D  cc                         int3                                              
+0000000180139C4E  cc                         int3                                              
+0000000180139C4F  cc                         int3                                              

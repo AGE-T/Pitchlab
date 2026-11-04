@@ -1,0 +1,23 @@
+# R17-P1: harness selection/order demos (Release build)
+
+$ ./build/octavox_tests --list | head -3 (of 85)
+prepare_default                                prepare_reset  unit
+prepare_invalid_rejected                       prepare_reset  unit
+reset_determinism                              prepare_reset  unit
+...
+
+$ ./build/octavox_tests --group r13   # 20 cases incl. the 96 kHz battery
+octavox-native 15.0.0: 20 passed, 0 failed, 20 total
+TOTAL_WALL_MS 11557.6
+
+$ ./build/octavox_tests --filter detector_96000hz_sine_battery   # isolated
+octavox-native 15.0.0: 1 passed, 0 failed, 1 total
+TOTAL_WALL_MS 5933.4
+
+$ ./build/octavox_tests --group r15acc   # the 7 acceptance cases
+octavox-native 15.0.0: 7 passed, 0 failed, 7 total
+TOTAL_WALL_MS 7111.2
+
+$ ./build/octavox_tests --reverse   # full suite, group runners reversed (order-independence proof; see r17_acceptance_results_reverse.json)
+octavox-native 15.0.0: 85 passed, 0 failed, 85 total
+TOTAL_WALL_MS 41439.7

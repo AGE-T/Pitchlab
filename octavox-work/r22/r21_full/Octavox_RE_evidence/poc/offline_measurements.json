@@ -1,0 +1,149 @@
+{
+  "sr": 48000,
+  "interp": "lagrange6",
+  "n_fft": 2048,
+  "ratios": {
+    "ratio_1.25": {
+      "delayline": {
+        "pitch": {
+          "measured_hz": 275.56856190989345,
+          "measured_fft_hz": 275.76344971106033,
+          "expected_hz": 275.0,
+          "cents_err": 3.5756276526087,
+          "cents_err_fft": 4.7995595269387685,
+          "thd_energy": 2.2806773807282354e-06,
+          "cost_ms_per_s": 3904.5095833353116
+        },
+        "latency_samples": 4919,
+        "latency_ms": 102.47916666666666,
+        "first_response_samples": 1640,
+        "first_response_ms": 34.166666666666664,
+        "pre_ring_db": -239.58386475607637,
+        "attack_samples": 6260,
+        "attack_ms": 130.41666666666666,
+        "onset_delay_samples": 2698,
+        "onset_delay_ms": 56.208333333333336,
+        "mod_db": 15.67900040425522,
+        "pre_onset_db": -233.97925786114672,
+        "cost_8voice_ms_per_s": 6504.059800005052
+      },
+      "pv": {
+        "pitch": {
+          "measured_hz": 275.00433176624176,
+          "measured_fft_hz": 275.0000014117649,
+          "expected_hz": 275.0,
+          "cents_err": 0.027269971443374674,
+          "cents_err_fft": 8.887619913143662e-06,
+          "thd_energy": 0.00012712677674620032,
+          "cost_ms_per_s": 20.28608333300023
+        },
+        "latency_samples": 1643,
+        "latency_ms": 34.229166666666664,
+        "first_response_samples": 1643,
+        "first_response_ms": 34.229166666666664,
+        "pre_ring_db": -237.6224430409501,
+        "attack_samples": 392,
+        "attack_ms": 8.166666666666666,
+        "onset_delay_samples": 693,
+        "onset_delay_ms": 14.4375,
+        "mod_db": 1.062916277156337,
+        "pre_onset_db": -232.634170026836,
+        "cost_8voice_ms_per_s": 181.41869999817573
+      },
+      "pv_transient": {
+        "pitch": {
+          "measured_hz": 275.0034546539261,
+          "measured_fft_hz": 275.00000137432096,
+          "expected_hz": 275.0,
+          "cents_err": 0.021748279775509416,
+          "cents_err_fft": 8.65189551878041e-06,
+          "thd_energy": 0.00010776230536924114,
+          "cost_ms_per_s": 20.66458332895612
+        },
+        "latency_samples": 1746,
+        "latency_ms": 36.375,
+        "first_response_samples": 1163,
+        "first_response_ms": 24.229166666666668,
+        "pre_ring_db": -233.88505495074662,
+        "attack_samples": 265,
+        "attack_ms": 5.520833333333333,
+        "onset_delay_samples": 981,
+        "onset_delay_ms": 20.4375,
+        "mod_db": 0.7893557277546932,
+        "pre_onset_db": -235.16552884658753,
+        "cost_8voice_ms_per_s": 190.83059999684338
+      }
+    },
+    "ratio_0.80": {
+      "delayline": {
+        "pitch": {
+          "measured_hz": 175.53374352742262,
+          "measured_fft_hz": 175.56660405715775,
+          "expected_hz": 176.0,
+          "cents_err": -4.592444219815422,
+          "cents_err_fft": -4.268381492419598,
+          "thd_energy": 2.3448472389331343e-06,
+          "cost_ms_per_s": 3880.3765000072117
+        },
+        "latency_samples": 3129,
+        "latency_ms": 65.1875,
+        "first_response_samples": 3126,
+        "first_response_ms": 65.125,
+        "pre_ring_db": -238.0175357871532,
+        "attack_samples": 4718,
+        "attack_ms": 98.29166666666667,
+        "onset_delay_samples": 751,
+        "onset_delay_ms": 15.645833333333334,
+        "mod_db": 16.83883264236724,
+        "pre_onset_db": -233.97932018381897,
+        "cost_8voice_ms_per_s": 6566.321499994956
+      },
+      "pv": {
+        "pitch": {
+          "measured_hz": 176.00181085064503,
+          "measured_fft_hz": 175.99999987071803,
+          "expected_hz": 176.0,
+          "cents_err": 0.017812444128801445,
+          "cents_err_fft": -1.2716894626873218e-06,
+          "thd_energy": 1.9286505242410712e-05,
+          "cost_ms_per_s": 19.194666674593464
+        },
+        "latency_samples": 2554,
+        "latency_ms": 53.208333333333336,
+        "first_response_samples": 2553,
+        "first_response_ms": 53.1875,
+        "pre_ring_db": -238.28269130030515,
+        "attack_samples": 1248,
+        "attack_ms": 26.0,
+        "onset_delay_samples": 1295,
+        "onset_delay_ms": 26.979166666666664,
+        "mod_db": 3.256131370635414,
+        "pre_onset_db": -232.52371450262206,
+        "cost_8voice_ms_per_s": 174.34149999462534
+      },
+      "pv_transient": {
+        "pitch": {
+          "measured_hz": 176.00113017710825,
+          "measured_fft_hz": 175.99999923255305,
+          "expected_hz": 176.0,
+          "cents_err": 0.011117015961405992,
+          "cents_err_fft": -7.54903583318882e-06,
+          "thd_energy": 2.4929069974977125e-06,
+          "cost_ms_per_s": 22.878916667347465
+        },
+        "latency_samples": 2427,
+        "latency_ms": 50.5625,
+        "first_response_samples": 1206,
+        "first_response_ms": 25.125,
+        "pre_ring_db": -233.5173827851272,
+        "attack_samples": 406,
+        "attack_ms": 8.458333333333334,
+        "onset_delay_samples": 1387,
+        "onset_delay_ms": 28.895833333333332,
+        "mod_db": 3.2536171185360923,
+        "pre_onset_db": -234.97847343565653,
+        "cost_8voice_ms_per_s": 188.8316999975359
+      }
+    }
+  }
+}
