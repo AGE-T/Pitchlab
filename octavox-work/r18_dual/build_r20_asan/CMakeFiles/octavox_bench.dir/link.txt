@@ -1,1 +1,0 @@
-/usr/bin/c++ -fsanitize=address,undefined -fno-omit-frame-pointer -g -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/octavox_bench.dir/link.d CMakeFiles/octavox_bench.dir/bench/bench_main.cpp.o CMakeFiles/octavox_bench.dir/tests/alloc_counter.cpp.o -o octavox_bench  liboctavox_dsp.a

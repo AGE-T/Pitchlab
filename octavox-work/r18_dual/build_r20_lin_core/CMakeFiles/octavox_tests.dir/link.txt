@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/octavox_tests.dir/link.d CMakeFiles/octavox_tests.dir/tests/test_main.cpp.o CMakeFiles/octavox_tests.dir/tests/wav_io.cpp.o CMakeFiles/octavox_tests.dir/tests/alloc_counter.cpp.o -o octavox_tests  liboctavox_dsp.a

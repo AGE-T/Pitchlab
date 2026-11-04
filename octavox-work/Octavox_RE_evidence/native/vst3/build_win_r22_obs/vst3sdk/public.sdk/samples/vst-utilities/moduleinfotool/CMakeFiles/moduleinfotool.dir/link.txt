@@ -1,3 +1,0 @@
-/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E rm -f CMakeFiles/moduleinfotool.dir/objects.a
-/usr/bin/ar qc CMakeFiles/moduleinfotool.dir/objects.a @CMakeFiles/moduleinfotool.dir/objects1.rsp
-/home/z/my-project/octavox-work/r22/win-zig/zig-cxx.sh  -Wno-multichar -O3 -DNDEBUG -municode -Wl,--whole-archive CMakeFiles/moduleinfotool.dir/objects.a -Wl,--no-whole-archive -o ../../../../../bin/moduleinfotool.exe -Wl,--out-implib,../../../../../lib/libmoduleinfotool.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/moduleinfotool.dir/linkLibs.rsp

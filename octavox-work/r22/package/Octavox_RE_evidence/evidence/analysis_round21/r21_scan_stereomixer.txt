@@ -1,2 +1,0 @@
-rip-referenced double constants in stereomixer3 add_fn:
-  0x180412328: 1.0

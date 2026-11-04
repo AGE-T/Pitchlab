@@ -1,2 +1,0 @@
-/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar qc liboctavox_core_vst3.a "CMakeFiles/octavox_core_vst3.dir/home/z/my-project/octavox-work/r18_dual/source/Octavox_RE_evidence/native/src/dsp.cpp.obj"
-/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib liboctavox_core_vst3.a

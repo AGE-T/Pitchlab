@@ -1,183 +1,367 @@
-f0_min   mode       tone     semi    det%      medCent   S          lockErr   outCent   wraps    verdict
-32.703   fullrate   32.703   0.0     100.0     2.07      4096.0     0.2093    0.13      0        unity_parked
-32.703   fullrate   32.703   12.0    100.0     2.07      4398.0     0.0036    1.10      87       shiftable
-32.703   fullrate   32.703   -12.0   100.0     2.07      4395.6     0.0052    -2.76     44       shiftable
-32.703   fullrate   32.703   -24.0   100.0     2.07      4398.0     0.0036    -5.60     66       shiftable
-32.703   fullrate   32.703   7.0     100.0     2.07      4395.6     0.0052    1.11      44       shiftable
-32.703   fullrate   36.708   0.0     100.0     0.64      4096.0     0.1324    0.04      0        unity_parked
-32.703   fullrate   36.708   12.0    100.0     0.64      3929.5     0.0051    -1.45     99       shiftable
-32.703   fullrate   36.708   -12.0   100.0     0.64      3924.2     0.0011    0.68      49       shiftable
-32.703   fullrate   36.708   -24.0   100.0     0.64      3921.7     0.0009    -1.39     73       shiftable
-32.703   fullrate   36.708   7.0     100.0     0.64      3924.2     0.0011    -0.19     50       shiftable
-32.703   fullrate   41.203   0.0     100.0     0.39      4096.0     0.4840    -0.03     0        unity_parked
-32.703   fullrate   41.203   12.0    100.0     0.39      4663.0     0.0027    -0.59     83       shiftable
-32.703   fullrate   41.203   -12.0   100.0     0.39      4663.7     0.0033    1.39      41       shiftable
-32.703   fullrate   41.203   -24.0   100.0     0.39      4662.1     0.0019    2.44      62       shiftable
-32.703   fullrate   41.203   7.0     100.0     0.39      4663.7     0.0033    -0.48     41       shiftable
-32.703   fullrate   49.000   0.0     100.0     0.17      4096.0     0.1813    -0.03     0        unity_parked
-32.703   fullrate   49.000   12.0    100.0     0.17      3923.5     0.0053    -1.15     99       shiftable
-32.703   fullrate   49.000   -12.0   100.0     0.17      3920.8     0.0025    1.02      49       shiftable
-32.703   fullrate   49.000   -24.0   100.0     0.17      3917.8     0.0006    -0.93     73       shiftable
-32.703   fullrate   49.000   7.0     100.0     0.17      3920.8     0.0025    -0.37     50       shiftable
-32.703   fullrate   55.000   0.0     100.0     0.01      4096.0     0.3067    -0.07     0        unity_parked
-32.703   fullrate   55.000   12.0    100.0     0.01      4365.8     0.0024    -0.46     88       shiftable
-32.703   fullrate   55.000   -12.0   100.0     0.01      4362.6     0.0011    -0.53     44       shiftable
-32.703   fullrate   55.000   -24.0   100.0     0.01      4366.4     0.0031    2.95      66       shiftable
-32.703   fullrate   55.000   7.0     100.0     0.01      4362.6     0.0011    0.09      44       shiftable
-32.703   fullrate   60.000   0.0     100.0     0.10      4096.0     0.1200    0.14      0        unity_parked
-32.703   fullrate   60.000   12.0    100.0     0.10      4004.7     0.0059    -0.95     97       shiftable
-32.703   fullrate   60.000   -12.0   100.0     0.10      4003.0     0.0037    1.53      48       shiftable
-32.703   fullrate   60.000   -24.0   100.0     0.10      3999.8     0.0002    0.24      72       shiftable
-32.703   fullrate   60.000   7.0     100.0     0.10      4003.0     0.0037    -0.36     49       shiftable
-32.703   fullrate   65.406   0.0     100.0     -0.12     4096.0     0.4187    -0.20     0        unity_parked
-32.703   fullrate   65.406   12.0    100.0     -0.12     4407.9     0.0064    -1.01     87       shiftable
-32.703   fullrate   65.406   -12.0   100.0     -0.12     4401.3     0.0026    -1.16     44       shiftable
-32.703   fullrate   65.406   -24.0   100.0     -0.12     4402.3     0.0013    -1.90     65       shiftable
-32.703   fullrate   65.406   7.0     100.0     -0.12     4401.3     0.0026    0.12      44       shiftable
-32.703   fullrate   73.416   0.0     100.0     0.05      4096.0     0.2648    -0.09     0        unity_parked
-32.703   fullrate   73.416   12.0    100.0     0.05      3932.8     0.0152    -2.19     99       shiftable
-32.703   fullrate   73.416   -12.0   100.0     0.05      3925.1     0.0035    0.82      49       shiftable
-32.703   fullrate   73.416   -24.0   100.0     0.05      3919.1     0.0058    -5.35     73       shiftable
-32.703   fullrate   73.416   7.0     100.0     0.05      3925.1     0.0035    -0.38     50       shiftable
-32.703   fullrate   82.407   0.0     100.0     -0.03     4096.0     0.0321    0.02      0        unity_parked
-32.703   fullrate   82.407   12.0    100.0     -0.03     4075.5     0.0032    0.42      95       shiftable
-32.703   fullrate   82.407   -12.0   100.0     -0.03     4074.8     0.0043    -0.97     47       shiftable
-32.703   fullrate   82.407   -24.0   100.0     -0.03     4075.2     0.0036    -2.59     71       shiftable
-32.703   fullrate   82.407   7.0     100.0     -0.03     4074.8     0.0043    0.37      48       shiftable
-32.703   fullrate   110.000  0.0     100.0     0.02      4096.0     0.3867    -0.06     0        unity_parked
-32.703   fullrate   110.000  12.0    100.0     0.02      3931.2     0.0089    -0.86     99       shiftable
-32.703   fullrate   110.000  -12.0   100.0     0.02      3927.7     0.0010    0.09      49       shiftable
-32.703   fullrate   110.000  -24.0   100.0     0.02      3924.5     0.0063    -3.85     73       shiftable
-32.703   fullrate   110.000  7.0     100.0     0.02      3927.7     0.0010    -0.09     50       shiftable
-32.703   decimated  32.703   0.0     100.0     4.44      4096.0     0.2093    -0.06     0        unity_parked
-32.703   decimated  32.703   12.0    100.0     4.44      4392.0     0.0077    2.17      88       shiftable
-32.703   decimated  32.703   -12.0   100.0     4.44      4392.0     0.0077    -4.59     44       shiftable
-32.703   decimated  32.703   -24.0   100.0     4.44      4392.0     0.0077    -13.59    66       shiftable
-32.703   decimated  32.703   7.0     100.0     4.44      4392.0     0.0077    1.43      44       shiftable
-32.703   decimated  36.708   0.0     100.0     0.17      4096.0     0.1324    0.08      0        unity_parked
-32.703   decimated  36.708   12.0    100.0     0.17      3927.5     0.0035    -0.97     99       shiftable
-32.703   decimated  36.708   -12.0   100.0     0.17      3921.4     0.0011    -0.49     49       shiftable
-32.703   decimated  36.708   -24.0   100.0     0.17      3920.8     0.0016    -2.44     73       shiftable
-32.703   decimated  36.708   7.0     100.0     0.17      3921.4     0.0011    0.28      50       shiftable
-32.703   decimated  41.203   0.0     100.0     0.17      4096.0     0.4840    0.08      0        unity_parked
-32.703   decimated  41.203   12.0    100.0     0.17      4670.4     0.0090    -1.88     82       shiftable
-32.703   decimated  41.203   -12.0   100.0     0.17      4656.1     0.0032    -1.26     41       shiftable
-32.703   decimated  41.203   -24.0   100.0     0.17      4657.9     0.0016    -1.87     62       shiftable
-32.703   decimated  41.203   7.0     100.0     0.17      4656.1     0.0032    0.51      41       shiftable
-32.703   decimated  49.000   0.0     100.0     -0.14     4096.0     0.1813    0.02      0        unity_parked
-32.703   decimated  49.000   12.0    100.0     -0.14     3921.7     0.0034    -0.72     99       shiftable
-32.703   decimated  49.000   -12.0   100.0     -0.14     3922.4     0.0041    1.80      49       shiftable
-32.703   decimated  49.000   -24.0   100.0     -0.14     3918.9     0.0005    0.75      73       shiftable
-32.703   decimated  49.000   7.0     100.0     -0.14     3922.4     0.0041    -0.57     50       shiftable
-32.703   decimated  55.000   0.0     100.0     -0.03     4096.0     0.3067    -0.21     0        unity_parked
-32.703   decimated  55.000   12.0    100.0     -0.03     4364.3     0.0008    -0.23     88       shiftable
-32.703   decimated  55.000   -12.0   100.0     -0.03     4362.0     0.0018    -1.04     44       shiftable
-32.703   decimated  55.000   -24.0   100.0     -0.03     4364.8     0.0014    0.60      66       shiftable
-32.703   decimated  55.000   7.0     100.0     -0.03     4362.0     0.0018    0.08      44       shiftable
-32.703   decimated  60.000   0.0     100.0     0.09      4096.0     0.1200    -0.09     0        unity_parked
-32.703   decimated  60.000   12.0    100.0     0.09      4004.1     0.0051    -0.91     97       shiftable
-32.703   decimated  60.000   -12.0   100.0     0.09      3995.9     0.0051    -1.88     48       shiftable
-32.703   decimated  60.000   -24.0   100.0     0.09      4003.0     0.0038    3.62      72       shiftable
-32.703   decimated  60.000   7.0     100.0     0.09      3995.9     0.0051    0.55      49       shiftable
-32.703   decimated  65.406   0.0     100.0     0.12      4096.0     0.4187    0.05      0        unity_parked
-32.703   decimated  65.406   12.0    100.0     0.12      4413.5     0.0140    -1.95     87       shiftable
-32.703   decimated  65.406   -12.0   100.0     0.12      4406.0     0.0037    1.18      44       shiftable
-32.703   decimated  65.406   -24.0   100.0     0.12      4404.6     0.0018    1.74      65       shiftable
-32.703   decimated  65.406   7.0     100.0     0.12      4406.0     0.0037    -0.32     44       shiftable
-32.703   decimated  73.416   0.0     100.0     -0.03     4096.0     0.2648    -0.01     0        unity_parked
-32.703   decimated  73.416   12.0    100.0     -0.03     3926.1     0.0050    -0.72     100      shiftable
-32.703   decimated  73.416   -12.0   100.0     -0.03     3920.7     0.0032    -0.96     49       shiftable
-32.703   decimated  73.416   -24.0   100.0     -0.03     3926.8     0.0061    5.20      73       shiftable
-32.703   decimated  73.416   7.0     100.0     -0.03     3920.7     0.0032    0.30      50       shiftable
-32.703   decimated  82.407   0.0     100.0     -0.13     4096.0     0.0321    -0.06     0        unity_parked
-32.703   decimated  82.407   12.0    100.0     -0.13     4077.2     0.0003    0.01      95       shiftable
-32.703   decimated  82.407   -12.0   100.0     -0.13     4075.4     0.0034    -0.96     47       shiftable
-32.703   decimated  82.407   -24.0   100.0     -0.13     4074.4     0.0050    -3.98     71       shiftable
-32.703   decimated  82.407   7.0     100.0     -0.13     4075.4     0.0033    0.22      48       shiftable
-32.703   decimated  110.000  0.0     100.0     0.00      4096.0     0.3867    -0.04     0        unity_parked
-32.703   decimated  110.000  12.0    100.0     0.00      3929.7     0.0055    -0.53     100      shiftable
-32.703   decimated  110.000  -12.0   100.0     0.00      3923.9     0.0077    -1.57     49       shiftable
-32.703   decimated  110.000  -24.0   100.0     0.00      3925.9     0.0031    -1.97     73       shiftable
-32.703   decimated  110.000  7.0     100.0     0.00      3923.9     0.0077    0.47      50       shiftable
-32.703   hybrid     32.703   0.0     100.0     1.35      4096.0     0.2093    -0.14     0        unity_parked
-32.703   hybrid     32.703   12.0    100.0     1.35      4401.0     0.0015    0.38      87       shiftable
-32.703   hybrid     32.703   -12.0   100.0     1.35      4400.6     0.0018    -1.31     44       shiftable
-32.703   hybrid     32.703   -24.0   100.0     1.35      4398.0     0.0036    -6.67     66       shiftable
-32.703   hybrid     32.703   7.0     100.0     1.35      4400.6     0.0018    0.27      44       shiftable
-32.703   hybrid     36.708   0.0     100.0     -0.00     4096.0     0.1324    -0.06     0        unity_parked
-32.703   hybrid     36.708   12.0    100.0     -0.00     3932.6     0.0075    -2.15     99       shiftable
-32.703   hybrid     36.708   -12.0   100.0     -0.00     3922.7     0.0001    -0.17     49       shiftable
-32.703   hybrid     36.708   -24.0   100.0     -0.00     3924.1     0.0009    1.41      73       shiftable
-32.703   hybrid     36.708   7.0     100.0     -0.00     3922.7     0.0001    -0.01     50       shiftable
-32.703   hybrid     41.203   0.0     100.0     0.15      4096.0     0.4840    0.18      0        unity_parked
-32.703   hybrid     41.203   12.0    100.0     0.15      4667.3     0.0064    -1.27     82       shiftable
-32.703   hybrid     41.203   -12.0   100.0     0.15      4658.8     0.0009    -0.04     41       shiftable
-32.703   hybrid     41.203   -24.0   100.0     0.15      4661.2     0.0011    2.19      62       shiftable
-32.703   hybrid     41.203   7.0     100.0     0.15      4658.8     0.0009    0.26      41       shiftable
-32.703   hybrid     49.000   0.0     100.0     0.03      4096.0     0.1813    -0.00     0        unity_parked
-32.703   hybrid     49.000   12.0    100.0     0.03      3919.1     0.0007    -0.15     99       shiftable
-32.703   hybrid     49.000   -12.0   100.0     0.03      3921.5     0.0032    1.39      49       shiftable
-32.703   hybrid     49.000   -24.0   100.0     0.03      3919.0     0.0006    0.81      73       shiftable
-32.703   hybrid     49.000   7.0     100.0     0.03      3921.5     0.0032    -0.45     50       shiftable
-32.703   hybrid     55.000   0.0     100.0     0.12      4096.0     0.3067    -0.01     0        unity_parked
-32.703   hybrid     55.000   12.0    100.0     0.12      4371.1     0.0085    -1.46     88       shiftable
-32.703   hybrid     55.000   -12.0   100.0     0.12      4363.6     0.0000    -0.04     44       shiftable
-32.703   hybrid     55.000   -24.0   100.0     0.12      4366.0     0.0027    2.76      66       shiftable
-32.703   hybrid     55.000   7.0     100.0     0.12      4363.6     0.0000    -0.00     44       shiftable
-32.703   hybrid     60.000   0.0     100.0     0.10      4096.0     0.1200    0.20      0        unity_parked
-32.703   hybrid     60.000   12.0    100.0     0.10      4001.8     0.0022    -0.29     97       shiftable
-32.703   hybrid     60.000   -12.0   100.0     0.10      3998.8     0.0015    -0.17     48       shiftable
-32.703   hybrid     60.000   -24.0   100.0     0.10      3999.9     0.0001    0.70      72       shiftable
-32.703   hybrid     60.000   7.0     100.0     0.10      3998.8     0.0015    0.29      49       shiftable
-32.703   hybrid     65.406   0.0     100.0     0.01      4096.0     0.4187    0.03      0        unity_parked
-32.703   hybrid     65.406   12.0    100.0     0.01      4420.0     0.0228    -3.10     87       shiftable
-32.703   hybrid     65.406   -12.0   100.0     0.01      4402.3     0.0013    -0.33     44       shiftable
-32.703   hybrid     65.406   -24.0   100.0     0.01      4401.6     0.0023    -1.87     65       shiftable
-32.703   hybrid     65.406   7.0     100.0     0.01      4402.3     0.0013    0.16      44       shiftable
-32.703   hybrid     73.416   0.0     100.0     0.00      4096.0     0.2648    -0.06     0        unity_parked
-32.703   hybrid     73.416   12.0    100.0     0.00      3924.7     0.0029    -0.44     100      shiftable
-32.703   hybrid     73.416   -12.0   100.0     0.00      3922.9     0.0001    -0.09     49       shiftable
-32.703   hybrid     73.416   -24.0   100.0     0.00      3925.6     0.0042    3.40      73       shiftable
-32.703   hybrid     73.416   7.0     100.0     0.00      3922.9     0.0001    -0.05     50       shiftable
-32.703   hybrid     82.407   0.0     100.0     0.04      4096.0     0.0321    0.06      0        unity_parked
-32.703   hybrid     82.407   12.0    100.0     0.04      4079.8     0.0042    -0.47     95       shiftable
-32.703   hybrid     82.407   -12.0   100.0     0.04      4074.1     0.0056    -1.25     47       shiftable
-32.703   hybrid     82.407   -24.0   100.0     0.04      4073.9     0.0059    -4.19     71       shiftable
-32.703   hybrid     82.407   7.0     100.0     0.04      4074.1     0.0056    0.49      48       shiftable
-32.703   hybrid     110.000  0.0     100.0     -0.01     4096.0     0.3867    -0.04     0        unity_parked
-32.703   hybrid     110.000  12.0    100.0     -0.01     3925.4     0.0043    0.41      100      shiftable
-32.703   hybrid     110.000  -12.0   100.0     -0.01     3929.5     0.0052    0.92      49       shiftable
-32.703   hybrid     110.000  -24.0   100.0     -0.01     3924.9     0.0055    -3.37     73       shiftable
-32.703   hybrid     110.000  7.0     100.0     -0.01     3929.5     0.0052    -0.36     50       shiftable
-60.000   fullrate   32.703   0.0     100.0     6236.96   4096.0     0.2093    0.13      0        below_floor
-60.000   fullrate   36.708   0.0     100.0     6036.96   4096.0     0.1324    0.04      0        below_floor
-60.000   fullrate   41.203   0.0     100.0     652.82    4096.0     0.4840    -0.03     0        below_floor
-60.000   fullrate   49.000   0.0     100.0     352.78    4096.0     0.1813    -0.03     0        below_floor
-60.000   fullrate   55.000   0.0     100.0     152.80    4096.0     0.3067    -0.07     0        below_floor
-60.000   fullrate   60.000   0.0     100.0     2.17      4096.0     0.1200    0.14      0        unity_parked
-60.000   fullrate   65.406   0.0     100.0     -0.08     4096.0     0.4187    -0.20     0        unity_parked
-60.000   fullrate   73.416   0.0     100.0     0.00      4096.0     0.2648    -0.09     0        unity_parked
-60.000   fullrate   82.407   0.0     100.0     -0.02     4096.0     0.0321    0.02      0        unity_parked
-60.000   fullrate   110.000  0.0     100.0     0.03      4096.0     0.3867    -0.06     0        unity_parked
-60.000   decimated  32.703   0.0     80.4      1054.98   4096.0     0.2093    -0.06     0        below_floor
-60.000   decimated  36.708   0.0     82.2      854.98    4096.0     0.1324    0.08      0        below_floor
-60.000   decimated  41.203   0.0     88.9      654.99    4096.0     0.4840    0.08      0        below_floor
-60.000   decimated  49.000   0.0     97.7      354.95    4096.0     0.1813    0.02      0        below_floor
-60.000   decimated  55.000   0.0     100.0     154.97    4096.0     0.3067    -0.21     0        below_floor
-60.000   decimated  60.000   0.0     100.0     4.33      4096.0     0.1200    -0.09     0        unity_parked
-60.000   decimated  65.406   0.0     100.0     0.11      4096.0     0.4187    0.05      0        unity_parked
-60.000   decimated  73.416   0.0     100.0     -0.01     4096.0     0.2648    -0.01     0        unity_parked
-60.000   decimated  82.407   0.0     100.0     -0.07     4096.0     0.0321    -0.06     0        unity_parked
-60.000   decimated  110.000  0.0     100.0     0.02      4096.0     0.3867    -0.04     0        unity_parked
-60.000   hybrid     32.703   0.0     88.7      1054.98   4096.0     0.2093    -0.14     0        below_floor
-60.000   hybrid     36.708   0.0     91.5      854.98    4096.0     0.1324    -0.06     0        below_floor
-60.000   hybrid     41.203   0.0     94.1      654.99    4096.0     0.4840    0.18      0        below_floor
-60.000   hybrid     49.000   0.0     98.2      354.95    4096.0     0.1813    -0.00     0        below_floor
-60.000   hybrid     55.000   0.0     100.0     150.64    4096.0     0.3067    -0.01     0        below_floor
-60.000   hybrid     60.000   0.0     100.0     0.39      4096.0     0.1200    0.20      0        unity_parked
-60.000   hybrid     65.406   0.0     100.0     0.00      4096.0     0.4187    0.03      0        unity_parked
-60.000   hybrid     73.416   0.0     100.0     0.01      4096.0     0.2648    -0.06     0        unity_parked
-60.000   hybrid     82.407   0.0     100.0     0.06      4096.0     0.0321    0.06      0        unity_parked
-60.000   hybrid     110.000  0.0     100.0     -0.01     4096.0     0.3867    -0.04     0        unity_parked
+tone   32.7  floor  40.0  st  +0.0  decimated ok   0.0%  acc  18.2%  S 4123.0  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  40.0  st  +0.0  hybrid    ok   0.0%  acc  18.4%  S 4071.2  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  40.0  st  +0.0  fullrate  ok   0.0%  acc  26.1%  S 4080.0  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  40.0  st -12.0  decimated ok   0.0%  acc  18.2%  S 4123.0  step 0.00183  fout   16.22  not_detectable     
+tone   32.7  floor  40.0  st -12.0  hybrid    ok   0.0%  acc  18.4%  S 4071.2  step 0.00183  fout 2000.00  not_detectable     
+tone   32.7  floor  40.0  st -12.0  fullrate  ok   0.0%  acc  26.1%  S 4080.0  step 0.00176  fout   16.26  not_detectable     
+tone   32.7  floor  40.0  st -24.0  decimated ok   0.0%  acc  18.2%  S 4123.0  step 0.00090  fout 2000.00  not_detectable     
+tone   32.7  floor  40.0  st -24.0  hybrid    ok   0.0%  acc  18.4%  S 4071.2  step 0.00089  fout 2000.00  not_detectable     
+tone   32.7  floor  40.0  st -24.0  fullrate  ok   0.0%  acc  26.1%  S 4080.0  step 0.00090  fout 2000.00  not_detectable     
+tone   32.7  floor  55.0  st  +0.0  decimated ok   0.0%  acc  87.2%  S 4350.0  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  55.0  st  +0.0  hybrid    ok   0.0%  acc  94.0%  S 3833.2  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  55.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 3773.2  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  55.0  st -12.0  decimated ok   0.0%  acc  87.2%  S 4350.0  step 0.00177  fout   16.23  not_detectable     
+tone   32.7  floor  55.0  st -12.0  hybrid    ok   0.0%  acc  94.0%  S 3833.2  step 0.00176  fout   16.16  not_detectable     
+tone   32.7  floor  55.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 3773.2  step 0.00174  fout 2000.00  not_detectable     
+tone   32.7  floor  55.0  st -24.0  decimated ok   0.0%  acc  87.2%  S 4350.0  step 0.00086  fout    7.87  not_detectable     
+tone   32.7  floor  55.0  st -24.0  hybrid    ok   0.0%  acc  94.0%  S 3833.2  step 0.00080  fout    7.89  not_detectable     
+tone   32.7  floor  55.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 3773.2  step 0.00082  fout 2000.00  not_detectable     
+tone   32.7  floor  60.0  st  +0.0  decimated ok   0.0%  acc  78.3%  S 4322.6  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  60.0  st  +0.0  hybrid    ok   0.0%  acc  87.9%  S 4175.0  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  60.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 3960.1  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  60.0  st -12.0  decimated ok   0.0%  acc  78.3%  S 4322.6  step 0.00175  fout 2000.00  not_detectable     
+tone   32.7  floor  60.0  st -12.0  hybrid    ok   0.0%  acc  87.9%  S 4175.0  step 0.00163  fout 2000.00  not_detectable     
+tone   32.7  floor  60.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 3960.1  step 0.00166  fout 2000.00  not_detectable     
+tone   32.7  floor  60.0  st -24.0  decimated ok   0.0%  acc  78.3%  S 4322.6  step 0.00082  fout 2000.00  not_detectable     
+tone   32.7  floor  60.0  st -24.0  hybrid    ok   0.0%  acc  87.9%  S 4175.0  step 0.00089  fout 2000.00  not_detectable     
+tone   32.7  floor  60.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 3960.1  step 0.00090  fout 2000.00  not_detectable     
+tone   32.7  floor  80.0  st  +0.0  decimated ok   0.0%  acc  54.9%  S 4186.0  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  80.0  st  +0.0  hybrid    ok   0.0%  acc  72.8%  S 4117.7  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  80.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 4129.9  step 0.00352  fout   32.70  not_detectable     
+tone   32.7  floor  80.0  st -12.0  decimated ok   0.0%  acc  54.9%  S 4186.0  step 0.00180  fout 2000.00  not_detectable     
+tone   32.7  floor  80.0  st -12.0  hybrid    ok   0.0%  acc  72.8%  S 4117.7  step 0.00176  fout   16.29  not_detectable     
+tone   32.7  floor  80.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 4129.9  step 0.00180  fout 2000.00  not_detectable     
+tone   32.7  floor  80.0  st -24.0  decimated ok   0.0%  acc  54.9%  S 4186.0  step 0.00091  fout 2000.00  not_detectable     
+tone   32.7  floor  80.0  st -24.0  hybrid    ok   0.0%  acc  72.8%  S 4117.7  step 0.00092  fout 2000.00  not_detectable     
+tone   32.7  floor  80.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 4129.9  step 0.00086  fout 2000.00  not_detectable     
+tone   41.2  floor  40.0  st  +0.0  decimated ok  93.6%  acc   0.0%  S 4118.3  step 0.00402  fout   41.20  detectable_only    
+tone   41.2  floor  40.0  st  +0.0  hybrid    ok  93.6%  acc   0.0%  S 4101.0  step 0.00402  fout   41.20  detectable_only    
+tone   41.2  floor  40.0  st  +0.0  fullrate  ok  92.4%  acc   0.0%  S 4010.5  step 0.00402  fout   41.20  detectable_only    
+tone   41.2  floor  40.0  st -12.0  decimated ok  93.6%  acc   0.0%  S 4118.3  step 0.00210  fout   20.61  detectable_only    
+tone   41.2  floor  40.0  st -12.0  hybrid    ok  93.6%  acc   0.0%  S 4101.0  step 0.00196  fout    5.91  detectable_only    
+tone   41.2  floor  40.0  st -12.0  fullrate  ok  92.4%  acc   0.0%  S 4010.5  step 0.00199  fout   20.64  detectable_only    
+tone   41.2  floor  40.0  st -24.0  decimated ok  93.6%  acc   0.0%  S 4118.3  step 0.00102  fout 2000.00  detectable_only    
+tone   41.2  floor  40.0  st -24.0  hybrid    ok  93.6%  acc   0.0%  S 4101.0  step 0.00098  fout 2000.00  detectable_only    
+tone   41.2  floor  40.0  st -24.0  fullrate  ok  92.4%  acc   0.0%  S 4010.5  step 0.00100  fout 2000.00  detectable_only    
+tone   41.2  floor  55.0  st  +0.0  decimated ok   0.0%  acc  95.1%  S 4350.0  step 0.00402  fout   41.20  not_detectable     
+tone   41.2  floor  55.0  st  +0.0  hybrid    ok   0.0%  acc  96.8%  S 4360.0  step 0.00402  fout   41.20  not_detectable     
+tone   41.2  floor  55.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 4355.0  step 0.00402  fout   41.20  not_detectable     
+tone   41.2  floor  55.0  st -12.0  decimated ok   0.0%  acc  95.1%  S 4350.0  step 0.00203  fout 2000.00  not_detectable     
+tone   41.2  floor  55.0  st -12.0  hybrid    ok   0.0%  acc  96.8%  S 4360.0  step 0.00195  fout   20.56  not_detectable     
+tone   41.2  floor  55.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 4355.0  step 0.00201  fout 2000.00  not_detectable     
+tone   41.2  floor  55.0  st -24.0  decimated ok   0.0%  acc  95.1%  S 4350.0  step 0.00098  fout    8.14  not_detectable     
+tone   41.2  floor  55.0  st -24.0  hybrid    ok   0.0%  acc  96.8%  S 4360.0  step 0.00076  fout    8.19  not_detectable     
+tone   41.2  floor  55.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 4355.0  step 0.00101  fout 2000.00  not_detectable     
+tone   41.2  floor  60.0  st  +0.0  decimated ok   0.0%  acc  88.7%  S 3990.0  step 0.00402  fout   41.20  not_detectable     
+tone   41.2  floor  60.0  st  +0.0  hybrid    ok   0.0%  acc  95.2%  S 3995.0  step 0.00402  fout   41.20  not_detectable     
+tone   41.2  floor  60.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00402  fout   41.20  not_detectable     
+tone   41.2  floor  60.0  st -12.0  decimated ok   0.0%  acc  88.7%  S 3990.0  step 0.00190  fout 2000.00  not_detectable     
+tone   41.2  floor  60.0  st -12.0  hybrid    ok   0.0%  acc  95.2%  S 3995.0  step 0.00191  fout   20.59  not_detectable     
+tone   41.2  floor  60.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00197  fout 2000.00  not_detectable     
+tone   41.2  floor  60.0  st -24.0  decimated ok   0.0%  acc  88.7%  S 3990.0  step 0.00101  fout 2000.00  not_detectable     
+tone   41.2  floor  60.0  st -24.0  hybrid    ok   0.0%  acc  95.2%  S 3995.0  step 0.00115  fout 2000.00  not_detectable     
+tone   41.2  floor  60.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00103  fout 2000.00  not_detectable     
+tone   41.2  floor  80.0  st  +0.0  decimated ok   0.0%  acc  69.2%  S 4186.0  step 0.00402  fout   41.20  not_detectable     
+tone   41.2  floor  80.0  st  +0.0  hybrid    ok   0.0%  acc  86.0%  S 4186.0  step 0.00402  fout   41.20  not_detectable     
+tone   41.2  floor  80.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 4116.5  step 0.00402  fout   41.20  not_detectable     
+tone   41.2  floor  80.0  st -12.0  decimated ok   0.0%  acc  69.2%  S 4186.0  step 0.00203  fout 2000.00  not_detectable     
+tone   41.2  floor  80.0  st -12.0  hybrid    ok   0.0%  acc  86.0%  S 4186.0  step 0.00208  fout 2000.00  not_detectable     
+tone   41.2  floor  80.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 4116.5  step 0.00203  fout    5.89  not_detectable     
+tone   41.2  floor  80.0  st -24.0  decimated ok   0.0%  acc  69.2%  S 4186.0  step 0.00093  fout 2000.00  not_detectable     
+tone   41.2  floor  80.0  st -24.0  hybrid    ok   0.0%  acc  86.0%  S 4186.0  step 0.00099  fout 2000.00  not_detectable     
+tone   41.2  floor  80.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 4116.5  step 0.00102  fout 2000.00  not_detectable     
+tone   49.0  floor  40.0  st  +0.0  decimated ok  94.0%  acc   1.2%  S 4331.0  step 0.00458  fout   49.00  detectable_only    
+tone   49.0  floor  40.0  st  +0.0  hybrid    ok  94.0%  acc   1.3%  S 4313.2  step 0.00458  fout   49.00  detectable_only    
+tone   49.0  floor  40.0  st  +0.0  fullrate  ok  93.7%  acc   1.6%  S 4319.4  step 0.00458  fout   49.00  detectable_only    
+tone   49.0  floor  40.0  st -12.0  decimated ok  94.0%  acc   1.2%  S 4331.0  step 0.00236  fout   24.54  detectable_only    
+tone   49.0  floor  40.0  st -12.0  hybrid    ok  94.0%  acc   1.3%  S 4313.2  step 0.00237  fout   24.55  detectable_only    
+tone   49.0  floor  40.0  st -12.0  fullrate  ok  93.7%  acc   1.6%  S 4319.4  step 0.00236  fout   24.54  detectable_only    
+tone   49.0  floor  40.0  st -24.0  decimated ok  94.0%  acc   1.2%  S 4331.0  step 0.00113  fout    7.73  detectable_only    
+tone   49.0  floor  40.0  st -24.0  hybrid    ok  94.0%  acc   1.3%  S 4313.2  step 0.00107  fout    7.68  detectable_only    
+tone   49.0  floor  40.0  st -24.0  fullrate  ok  93.7%  acc   1.6%  S 4319.4  step 0.00113  fout    7.63  detectable_only    
+tone   49.0  floor  55.0  st  +0.0  decimated ok   0.0%  acc 100.0%  S 4350.0  step 0.00458  fout   49.00  not_detectable     
+tone   49.0  floor  55.0  st  +0.0  hybrid    ok   0.0%  acc 100.0%  S 4350.0  step 0.00458  fout   49.00  not_detectable     
+tone   49.0  floor  55.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 4355.0  step 0.00458  fout   49.00  not_detectable     
+tone   49.0  floor  55.0  st -12.0  decimated ok   0.0%  acc 100.0%  S 4350.0  step 0.00221  fout 2000.00  not_detectable     
+tone   49.0  floor  55.0  st -12.0  hybrid    ok   0.0%  acc 100.0%  S 4350.0  step 0.00237  fout 2000.00  not_detectable     
+tone   49.0  floor  55.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 4355.0  step 0.00235  fout 2000.00  not_detectable     
+tone   49.0  floor  55.0  st -24.0  decimated ok   0.0%  acc 100.0%  S 4350.0  step 0.00118  fout 2000.00  not_detectable     
+tone   49.0  floor  55.0  st -24.0  hybrid    ok   0.0%  acc 100.0%  S 4350.0  step 0.00111  fout    7.88  not_detectable     
+tone   49.0  floor  55.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 4355.0  step 0.00113  fout 2000.00  not_detectable     
+tone   49.0  floor  60.0  st  +0.0  decimated ok   0.0%  acc  97.3%  S 3990.0  step 0.00458  fout   49.00  not_detectable     
+tone   49.0  floor  60.0  st  +0.0  hybrid    ok   0.0%  acc  98.1%  S 3990.0  step 0.00458  fout   49.00  not_detectable     
+tone   49.0  floor  60.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00458  fout   49.00  not_detectable     
+tone   49.0  floor  60.0  st -12.0  decimated ok   0.0%  acc  97.3%  S 3990.0  step 0.00224  fout   24.60  not_detectable     
+tone   49.0  floor  60.0  st -12.0  hybrid    ok   0.0%  acc  98.1%  S 3990.0  step 0.00228  fout   24.70  not_detectable     
+tone   49.0  floor  60.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00236  fout   24.62  not_detectable     
+tone   49.0  floor  60.0  st -24.0  decimated ok   0.0%  acc  97.3%  S 3990.0  step 0.00108  fout 2000.00  not_detectable     
+tone   49.0  floor  60.0  st -24.0  hybrid    ok   0.0%  acc  98.1%  S 3990.0  step 0.00114  fout 2000.00  not_detectable     
+tone   49.0  floor  60.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00110  fout 2000.00  not_detectable     
+tone   49.0  floor  80.0  st  +0.0  decimated ok   0.0%  acc  86.2%  S 4056.7  step 0.00458  fout   49.00  not_detectable     
+tone   49.0  floor  80.0  st  +0.0  hybrid    ok   0.0%  acc  90.5%  S 4049.5  step 0.00458  fout   49.00  not_detectable     
+tone   49.0  floor  80.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 3912.2  step 0.00458  fout   49.00  not_detectable     
+tone   49.0  floor  80.0  st -12.0  decimated ok   0.0%  acc  86.2%  S 4056.7  step 0.00228  fout 2000.00  not_detectable     
+tone   49.0  floor  80.0  st -12.0  hybrid    ok   0.0%  acc  90.5%  S 4049.5  step 0.00228  fout 2000.00  not_detectable     
+tone   49.0  floor  80.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 3912.2  step 0.00226  fout   24.67  not_detectable     
+tone   49.0  floor  80.0  st -24.0  decimated ok   0.0%  acc  86.2%  S 4056.7  step 0.00109  fout 2000.00  not_detectable     
+tone   49.0  floor  80.0  st -24.0  hybrid    ok   0.0%  acc  90.5%  S 4049.5  step 0.00115  fout 2000.00  not_detectable     
+tone   49.0  floor  80.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 3912.2  step 0.00114  fout 2000.00  not_detectable     
+tone   55.0  floor  40.0  st  +0.0  decimated ok  96.7%  acc  52.2%  S 4361.8  step 0.00499  fout   55.00  safely_transposable
+tone   55.0  floor  40.0  st  +0.0  hybrid    ok  96.7%  acc  48.5%  S 4361.7  step 0.00499  fout   55.00  safely_transposable
+tone   55.0  floor  40.0  st  +0.0  fullrate  ok  96.4%  acc  49.8%  S 4361.7  step 0.00499  fout   55.00  safely_transposable
+tone   55.0  floor  40.0  st -12.0  decimated ok  96.7%  acc  52.2%  S 4361.8  step 0.00246  fout   27.49  safely_transposable
+tone   55.0  floor  40.0  st -12.0  hybrid    ok  96.7%  acc  48.5%  S 4361.7  step 0.00254  fout   27.49  safely_transposable
+tone   55.0  floor  40.0  st -12.0  fullrate  ok  96.4%  acc  49.8%  S 4361.7  step 0.00254  fout   27.49  safely_transposable
+tone   55.0  floor  40.0  st -24.0  decimated ok  96.7%  acc  52.2%  S 4361.8  step 0.00127  fout   13.75  below_audible_floor
+tone   55.0  floor  40.0  st -24.0  hybrid    ok  96.7%  acc  48.5%  S 4361.7  step 0.00128  fout   13.74  below_audible_floor
+tone   55.0  floor  40.0  st -24.0  fullrate  ok  96.4%  acc  49.8%  S 4361.7  step 0.00129  fout   13.75  below_audible_floor
+tone   55.0  floor  55.0  st  +0.0  decimated ok  93.5%  acc 100.0%  S 4350.0  step 0.00499  fout   55.00  safely_transposable
+tone   55.0  floor  55.0  st  +0.0  hybrid    ok  93.5%  acc 100.0%  S 4357.5  step 0.00499  fout   55.00  safely_transposable
+tone   55.0  floor  55.0  st  +0.0  fullrate  ok  92.5%  acc 100.0%  S 4355.0  step 0.00499  fout   55.00  safely_transposable
+tone   55.0  floor  55.0  st -12.0  decimated ok  93.5%  acc 100.0%  S 4350.0  step 0.00249  fout   27.42  safely_transposable
+tone   55.0  floor  55.0  st -12.0  hybrid    ok  93.5%  acc 100.0%  S 4357.5  step 0.00249  fout   27.48  safely_transposable
+tone   55.0  floor  55.0  st -12.0  fullrate  ok  92.5%  acc 100.0%  S 4355.0  step 0.00249  fout   27.45  safely_transposable
+tone   55.0  floor  55.0  st -24.0  decimated ok  93.5%  acc 100.0%  S 4350.0  step 0.00128  fout   13.63  below_audible_floor
+tone   55.0  floor  55.0  st -24.0  hybrid    ok  93.5%  acc 100.0%  S 4357.5  step 0.00122  fout   13.72  below_audible_floor
+tone   55.0  floor  55.0  st -24.0  fullrate  ok  92.5%  acc 100.0%  S 4355.0  step 0.00128  fout   13.67  below_audible_floor
+tone   55.0  floor  60.0  st  +0.0  decimated ok   0.0%  acc 100.0%  S 3990.0  step 0.00499  fout   55.00  not_detectable     
+tone   55.0  floor  60.0  st  +0.0  hybrid    ok   0.0%  acc 100.0%  S 4000.0  step 0.00499  fout   55.00  not_detectable     
+tone   55.0  floor  60.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00499  fout   55.00  not_detectable     
+tone   55.0  floor  60.0  st -12.0  decimated ok   0.0%  acc 100.0%  S 3990.0  step 0.00242  fout   27.50  not_detectable     
+tone   55.0  floor  60.0  st -12.0  hybrid    ok   0.0%  acc 100.0%  S 4000.0  step 0.00242  fout   27.50  not_detectable     
+tone   55.0  floor  60.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00252  fout   27.50  not_detectable     
+tone   55.0  floor  60.0  st -24.0  decimated ok   0.0%  acc 100.0%  S 3990.0  step 0.00120  fout    9.63  not_detectable     
+tone   55.0  floor  60.0  st -24.0  hybrid    ok   0.0%  acc 100.0%  S 4000.0  step 0.00125  fout    9.70  not_detectable     
+tone   55.0  floor  60.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00119  fout    9.66  not_detectable     
+tone   55.0  floor  80.0  st  +0.0  decimated ok   0.0%  acc  95.1%  S 4186.0  step 0.00499  fout   55.00  not_detectable     
+tone   55.0  floor  80.0  st  +0.0  hybrid    ok   0.0%  acc  97.6%  S 4186.0  step 0.00499  fout   55.00  not_detectable     
+tone   55.0  floor  80.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 4193.0  step 0.00499  fout   55.00  not_detectable     
+tone   55.0  floor  80.0  st -12.0  decimated ok   0.0%  acc  95.1%  S 4186.0  step 0.00242  fout 2000.00  not_detectable     
+tone   55.0  floor  80.0  st -12.0  hybrid    ok   0.0%  acc  97.6%  S 4186.0  step 0.00250  fout   27.42  not_detectable     
+tone   55.0  floor  80.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 4193.0  step 0.00251  fout 2000.00  not_detectable     
+tone   55.0  floor  80.0  st -24.0  decimated ok   0.0%  acc  95.1%  S 4186.0  step 0.00125  fout 2000.00  not_detectable     
+tone   55.0  floor  80.0  st -24.0  hybrid    ok   0.0%  acc  97.6%  S 4186.0  step 0.00117  fout 2000.00  not_detectable     
+tone   55.0  floor  80.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 4193.0  step 0.00207  fout 2000.00  not_detectable     
+tone   58.3  floor  40.0  st  +0.0  decimated ok  96.7%  acc 100.0%  S 4116.1  step 0.00517  fout   58.30  safely_transposable
+tone   58.3  floor  40.0  st  +0.0  hybrid    ok  96.7%  acc 100.0%  S 4116.0  step 0.00517  fout   58.30  safely_transposable
+tone   58.3  floor  40.0  st  +0.0  fullrate  ok  96.7%  acc 100.0%  S 4116.0  step 0.00517  fout   58.30  safely_transposable
+tone   58.3  floor  40.0  st -12.0  decimated ok  96.7%  acc 100.0%  S 4116.1  step 0.00267  fout   29.16  safely_transposable
+tone   58.3  floor  40.0  st -12.0  hybrid    ok  96.7%  acc 100.0%  S 4116.0  step 0.00263  fout   29.16  safely_transposable
+tone   58.3  floor  40.0  st -12.0  fullrate  ok  96.7%  acc 100.0%  S 4116.0  step 0.00264  fout   29.16  safely_transposable
+tone   58.3  floor  40.0  st -24.0  decimated ok  96.7%  acc 100.0%  S 4116.1  step 0.00131  fout   14.59  below_audible_floor
+tone   58.3  floor  40.0  st -24.0  hybrid    ok  96.7%  acc 100.0%  S 4116.0  step 0.00131  fout   14.58  below_audible_floor
+tone   58.3  floor  40.0  st -24.0  fullrate  ok  96.7%  acc 100.0%  S 4116.0  step 0.00131  fout   14.58  below_audible_floor
+tone   58.3  floor  55.0  st  +0.0  decimated ok  93.7%  acc 100.0%  S 4115.9  step 0.00517  fout   58.30  safely_transposable
+tone   58.3  floor  55.0  st  +0.0  hybrid    ok  93.7%  acc 100.0%  S 4115.5  step 0.00517  fout   58.30  safely_transposable
+tone   58.3  floor  55.0  st  +0.0  fullrate  ok  92.9%  acc 100.0%  S 4115.5  step 0.00517  fout   58.30  safely_transposable
+tone   58.3  floor  55.0  st -12.0  decimated ok  93.7%  acc 100.0%  S 4115.9  step 0.00259  fout   29.16  safely_transposable
+tone   58.3  floor  55.0  st -12.0  hybrid    ok  93.7%  acc 100.0%  S 4115.5  step 0.00260  fout   29.15  safely_transposable
+tone   58.3  floor  55.0  st -12.0  fullrate  ok  92.9%  acc 100.0%  S 4115.5  step 0.00257  fout   29.15  safely_transposable
+tone   58.3  floor  55.0  st -24.0  decimated ok  93.7%  acc 100.0%  S 4115.9  step 0.00131  fout   14.60  below_audible_floor
+tone   58.3  floor  55.0  st -24.0  hybrid    ok  93.7%  acc 100.0%  S 4115.5  step 0.00131  fout   14.60  below_audible_floor
+tone   58.3  floor  55.0  st -24.0  fullrate  ok  92.9%  acc 100.0%  S 4115.5  step 0.00131  fout   14.60  below_audible_floor
+tone   58.3  floor  60.0  st  +0.0  decimated ok   0.0%  acc 100.0%  S 3990.0  step 0.00517  fout   58.30  not_detectable     
+tone   58.3  floor  60.0  st  +0.0  hybrid    ok  62.5%  acc 100.0%  S 4000.0  step 0.00517  fout   58.30  safely_transposable
+tone   58.3  floor  60.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00517  fout   58.30  not_detectable     
+tone   58.3  floor  60.0  st -12.0  decimated ok   0.0%  acc 100.0%  S 3990.0  step 0.00249  fout   29.06  not_detectable     
+tone   58.3  floor  60.0  st -12.0  hybrid    ok  62.5%  acc 100.0%  S 4000.0  step 0.00256  fout   29.05  safely_transposable
+tone   58.3  floor  60.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00251  fout   29.05  not_detectable     
+tone   58.3  floor  60.0  st -24.0  decimated ok   0.0%  acc 100.0%  S 3990.0  step 0.00126  fout   12.68  not_detectable     
+tone   58.3  floor  60.0  st -24.0  hybrid    ok  62.5%  acc 100.0%  S 4000.0  step 0.00123  fout   12.75  below_audible_floor
+tone   58.3  floor  60.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 3995.0  step 0.00123  fout   12.75  not_detectable     
+tone   58.3  floor  80.0  st  +0.0  decimated ok   0.0%  acc  96.5%  S 4284.0  step 0.00517  fout   58.30  not_detectable     
+tone   58.3  floor  80.0  st  +0.0  hybrid    ok   0.0%  acc  97.1%  S 4263.1  step 0.00517  fout   58.30  not_detectable     
+tone   58.3  floor  80.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 4000.3  step 0.00517  fout   58.30  not_detectable     
+tone   58.3  floor  80.0  st -12.0  decimated ok   0.0%  acc  96.5%  S 4284.0  step 0.00257  fout   29.32  not_detectable     
+tone   58.3  floor  80.0  st -12.0  hybrid    ok   0.0%  acc  97.1%  S 4263.1  step 0.00261  fout   29.35  not_detectable     
+tone   58.3  floor  80.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 4000.3  step 0.00257  fout   29.04  not_detectable     
+tone   58.3  floor  80.0  st -24.0  decimated ok   0.0%  acc  96.5%  S 4284.0  step 0.00133  fout 2000.00  not_detectable     
+tone   58.3  floor  80.0  st -24.0  hybrid    ok   0.0%  acc  97.1%  S 4263.1  step 0.00132  fout 2000.00  not_detectable     
+tone   58.3  floor  80.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 4000.3  step 0.00128  fout 2000.00  not_detectable     
+tone   62.0  floor  40.0  st  +0.0  decimated ok  96.4%  acc 100.0%  S 3872.2  step 0.00549  fout   61.99  safely_transposable
+tone   62.0  floor  40.0  st  +0.0  hybrid    ok  96.4%  acc 100.0%  S 3872.2  step 0.00549  fout   61.99  safely_transposable
+tone   62.0  floor  40.0  st  +0.0  fullrate  ok  96.4%  acc 100.0%  S 3872.2  step 0.00549  fout   61.99  safely_transposable
+tone   62.0  floor  40.0  st -12.0  decimated ok  96.4%  acc 100.0%  S 3872.2  step 0.00273  fout   31.02  safely_transposable
+tone   62.0  floor  40.0  st -12.0  hybrid    ok  96.4%  acc 100.0%  S 3872.2  step 0.00274  fout   31.02  safely_transposable
+tone   62.0  floor  40.0  st -12.0  fullrate  ok  96.4%  acc 100.0%  S 3872.2  step 0.00274  fout   31.02  safely_transposable
+tone   62.0  floor  40.0  st -24.0  decimated ok  96.4%  acc 100.0%  S 3872.2  step 0.00140  fout   15.49  below_audible_floor
+tone   62.0  floor  40.0  st -24.0  hybrid    ok  96.4%  acc 100.0%  S 3872.2  step 0.00140  fout   15.49  below_audible_floor
+tone   62.0  floor  40.0  st -24.0  fullrate  ok  96.4%  acc 100.0%  S 3872.2  step 0.00140  fout   15.49  below_audible_floor
+tone   62.0  floor  55.0  st  +0.0  decimated ok  96.1%  acc 100.0%  S 3873.6  step 0.00549  fout   61.99  safely_transposable
+tone   62.0  floor  55.0  st  +0.0  hybrid    ok  96.1%  acc 100.0%  S 3873.9  step 0.00549  fout   61.99  safely_transposable
+tone   62.0  floor  55.0  st  +0.0  fullrate  ok  95.9%  acc 100.0%  S 3873.9  step 0.00549  fout   61.99  safely_transposable
+tone   62.0  floor  55.0  st -12.0  decimated ok  96.1%  acc 100.0%  S 3873.6  step 0.00274  fout   31.02  safely_transposable
+tone   62.0  floor  55.0  st -12.0  hybrid    ok  96.1%  acc 100.0%  S 3873.9  step 0.00274  fout   31.01  safely_transposable
+tone   62.0  floor  55.0  st -12.0  fullrate  ok  95.9%  acc 100.0%  S 3873.9  step 0.00266  fout   31.01  safely_transposable
+tone   62.0  floor  55.0  st -24.0  decimated ok  96.1%  acc 100.0%  S 3873.6  step 0.00142  fout   15.51  below_audible_floor
+tone   62.0  floor  55.0  st -24.0  hybrid    ok  96.1%  acc 100.0%  S 3873.9  step 0.00141  fout   15.51  below_audible_floor
+tone   62.0  floor  55.0  st -24.0  fullrate  ok  95.9%  acc 100.0%  S 3873.9  step 0.00141  fout   15.51  below_audible_floor
+tone   62.0  floor  60.0  st  +0.0  decimated ok  96.5%  acc 100.0%  S 3873.9  step 0.00549  fout   61.99  safely_transposable
+tone   62.0  floor  60.0  st  +0.0  hybrid    ok  96.5%  acc 100.0%  S 3874.4  step 0.00549  fout   61.99  safely_transposable
+tone   62.0  floor  60.0  st  +0.0  fullrate  ok  96.3%  acc 100.0%  S 3874.4  step 0.00549  fout   61.99  safely_transposable
+tone   62.0  floor  60.0  st -12.0  decimated ok  96.5%  acc 100.0%  S 3873.9  step 0.00276  fout   31.01  safely_transposable
+tone   62.0  floor  60.0  st -12.0  hybrid    ok  96.5%  acc 100.0%  S 3874.4  step 0.00273  fout   31.01  safely_transposable
+tone   62.0  floor  60.0  st -12.0  fullrate  ok  96.3%  acc 100.0%  S 3874.4  step 0.00273  fout   31.01  safely_transposable
+tone   62.0  floor  60.0  st -24.0  decimated ok  96.5%  acc 100.0%  S 3873.9  step 0.00142  fout   15.52  below_audible_floor
+tone   62.0  floor  60.0  st -24.0  hybrid    ok  96.5%  acc 100.0%  S 3874.4  step 0.00142  fout   15.51  below_audible_floor
+tone   62.0  floor  60.0  st -24.0  fullrate  ok  96.3%  acc 100.0%  S 3874.4  step 0.00141  fout   15.52  below_audible_floor
+tone   62.0  floor  80.0  st  +0.0  decimated ok   0.0%  acc  98.9%  S 4186.0  step 0.00549  fout   61.99  not_detectable     
+tone   62.0  floor  80.0  st  +0.0  hybrid    ok   0.0%  acc  99.3%  S 4186.0  step 0.00549  fout   61.99  not_detectable     
+tone   62.0  floor  80.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 4193.0  step 0.00549  fout   61.99  not_detectable     
+tone   62.0  floor  80.0  st -12.0  decimated ok   0.0%  acc  98.9%  S 4186.0  step 0.00266  fout   31.07  not_detectable     
+tone   62.0  floor  80.0  st -12.0  hybrid    ok   0.0%  acc  99.3%  S 4186.0  step 0.00283  fout   31.04  not_detectable     
+tone   62.0  floor  80.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 4193.0  step 0.00270  fout   31.07  not_detectable     
+tone   62.0  floor  80.0  st -24.0  decimated ok   0.0%  acc  98.9%  S 4186.0  step 0.00134  fout 2000.00  not_detectable     
+tone   62.0  floor  80.0  st -24.0  hybrid    ok   0.0%  acc  99.3%  S 4186.0  step 0.00128  fout 2000.00  not_detectable     
+tone   62.0  floor  80.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 4193.0  step 0.00131  fout 2000.00  not_detectable     
+tone   65.4  floor  40.0  st  +0.0  decimated ok  96.5%  acc 100.0%  S 4403.5  step 0.00572  fout   65.39  safely_transposable
+tone   65.4  floor  40.0  st  +0.0  hybrid    ok  96.5%  acc 100.0%  S 4403.1  step 0.00572  fout   65.39  safely_transposable
+tone   65.4  floor  40.0  st  +0.0  fullrate  ok  96.4%  acc 100.0%  S 4403.1  step 0.00572  fout   65.39  safely_transposable
+tone   65.4  floor  40.0  st -12.0  decimated ok  96.5%  acc 100.0%  S 4403.5  step 0.00287  fout   32.67  safely_transposable
+tone   65.4  floor  40.0  st -12.0  hybrid    ok  96.5%  acc 100.0%  S 4403.1  step 0.00288  fout   32.67  safely_transposable
+tone   65.4  floor  40.0  st -12.0  fullrate  ok  96.4%  acc 100.0%  S 4403.1  step 0.00286  fout   32.67  safely_transposable
+tone   65.4  floor  40.0  st -24.0  decimated ok  96.5%  acc 100.0%  S 4403.5  step 0.00139  fout   16.35  below_audible_floor
+tone   65.4  floor  40.0  st -24.0  hybrid    ok  96.5%  acc 100.0%  S 4403.1  step 0.00142  fout   16.35  below_audible_floor
+tone   65.4  floor  40.0  st -24.0  fullrate  ok  96.4%  acc 100.0%  S 4403.1  step 0.00140  fout   16.36  below_audible_floor
+tone   65.4  floor  55.0  st  +0.0  decimated ok  96.4%  acc 100.0%  S 4401.4  step 0.00572  fout   65.39  safely_transposable
+tone   65.4  floor  55.0  st  +0.0  hybrid    ok  96.4%  acc 100.0%  S 4401.1  step 0.00572  fout   65.39  safely_transposable
+tone   65.4  floor  55.0  st  +0.0  fullrate  ok  96.1%  acc 100.0%  S 4401.1  step 0.00572  fout   65.39  safely_transposable
+tone   65.4  floor  55.0  st -12.0  decimated ok  96.4%  acc 100.0%  S 4401.4  step 0.00289  fout   32.67  safely_transposable
+tone   65.4  floor  55.0  st -12.0  hybrid    ok  96.4%  acc 100.0%  S 4401.1  step 0.00284  fout   32.67  safely_transposable
+tone   65.4  floor  55.0  st -12.0  fullrate  ok  96.1%  acc 100.0%  S 4401.1  step 0.00290  fout   32.67  safely_transposable
+tone   65.4  floor  55.0  st -24.0  decimated ok  96.4%  acc 100.0%  S 4401.4  step 0.00148  fout   16.37  below_audible_floor
+tone   65.4  floor  55.0  st -24.0  hybrid    ok  96.4%  acc 100.0%  S 4401.1  step 0.00149  fout   16.37  below_audible_floor
+tone   65.4  floor  55.0  st -24.0  fullrate  ok  96.1%  acc 100.0%  S 4401.1  step 0.00148  fout   16.37  below_audible_floor
+tone   65.4  floor  60.0  st  +0.0  decimated ok  96.3%  acc 100.0%  S 4401.3  step 0.00572  fout   65.39  safely_transposable
+tone   65.4  floor  60.0  st  +0.0  hybrid    ok  96.3%  acc 100.0%  S 4401.2  step 0.00572  fout   65.39  safely_transposable
+tone   65.4  floor  60.0  st  +0.0  fullrate  ok  96.1%  acc 100.0%  S 4401.0  step 0.00572  fout   65.39  safely_transposable
+tone   65.4  floor  60.0  st -12.0  decimated ok  96.3%  acc 100.0%  S 4401.3  step 0.00283  fout   32.67  safely_transposable
+tone   65.4  floor  60.0  st -12.0  hybrid    ok  96.3%  acc 100.0%  S 4401.2  step 0.00280  fout   32.67  safely_transposable
+tone   65.4  floor  60.0  st -12.0  fullrate  ok  96.1%  acc 100.0%  S 4401.0  step 0.00290  fout   32.66  safely_transposable
+tone   65.4  floor  60.0  st -24.0  decimated ok  96.3%  acc 100.0%  S 4401.3  step 0.00148  fout   16.37  below_audible_floor
+tone   65.4  floor  60.0  st -24.0  hybrid    ok  96.3%  acc 100.0%  S 4401.2  step 0.00149  fout   16.37  below_audible_floor
+tone   65.4  floor  60.0  st -24.0  fullrate  ok  96.1%  acc 100.0%  S 4401.0  step 0.00148  fout   16.37  below_audible_floor
+tone   65.4  floor  80.0  st  +0.0  decimated ok   0.0%  acc  98.8%  S 4186.0  step 0.00572  fout   65.39  not_detectable     
+tone   65.4  floor  80.0  st  +0.0  hybrid    ok   0.0%  acc  99.7%  S 4186.0  step 0.00572  fout   65.39  not_detectable     
+tone   65.4  floor  80.0  st  +0.0  fullrate  ok   0.0%  acc 100.0%  S 4193.0  step 0.00572  fout   65.39  not_detectable     
+tone   65.4  floor  80.0  st -12.0  decimated ok   0.0%  acc  98.8%  S 4186.0  step 0.00274  fout   32.64  not_detectable     
+tone   65.4  floor  80.0  st -12.0  hybrid    ok   0.0%  acc  99.7%  S 4186.0  step 0.00287  fout   32.63  not_detectable     
+tone   65.4  floor  80.0  st -12.0  fullrate  ok   0.0%  acc 100.0%  S 4193.0  step 0.00284  fout   32.67  not_detectable     
+tone   65.4  floor  80.0  st -24.0  decimated ok   0.0%  acc  98.8%  S 4186.0  step 0.00139  fout    7.11  not_detectable     
+tone   65.4  floor  80.0  st -24.0  hybrid    ok   0.0%  acc  99.7%  S 4186.0  step 0.00144  fout    7.14  not_detectable     
+tone   65.4  floor  80.0  st -24.0  fullrate  ok   0.0%  acc 100.0%  S 4193.0  step 0.00143  fout 2000.00  not_detectable     
+tone   82.4  floor  40.0  st  +0.0  decimated ok  96.4%  acc 100.0%  S 4078.3  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  40.0  st  +0.0  hybrid    ok  96.4%  acc 100.0%  S 4078.4  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  40.0  st  +0.0  fullrate  ok  96.4%  acc 100.0%  S 4078.4  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  40.0  st -12.0  decimated ok  96.4%  acc 100.0%  S 4078.3  step 0.00340  fout   41.19  safely_transposable
+tone   82.4  floor  40.0  st -12.0  hybrid    ok  96.4%  acc 100.0%  S 4078.4  step 0.00338  fout   41.19  safely_transposable
+tone   82.4  floor  40.0  st -12.0  fullrate  ok  96.4%  acc 100.0%  S 4078.4  step 0.00346  fout   41.19  safely_transposable
+tone   82.4  floor  40.0  st -24.0  decimated ok  96.4%  acc 100.0%  S 4078.3  step 0.00172  fout   20.56  safely_transposable
+tone   82.4  floor  40.0  st -24.0  hybrid    ok  96.4%  acc 100.0%  S 4078.4  step 0.00173  fout   20.56  safely_transposable
+tone   82.4  floor  40.0  st -24.0  fullrate  ok  96.4%  acc 100.0%  S 4078.4  step 0.00173  fout   20.56  safely_transposable
+tone   82.4  floor  55.0  st  +0.0  decimated ok  96.3%  acc 100.0%  S 4079.4  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  55.0  st  +0.0  hybrid    ok  96.3%  acc 100.0%  S 4079.2  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  55.0  st  +0.0  fullrate  ok  96.3%  acc 100.0%  S 4079.2  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  55.0  st -12.0  decimated ok  96.3%  acc 100.0%  S 4079.4  step 0.00348  fout   41.17  safely_transposable
+tone   82.4  floor  55.0  st -12.0  hybrid    ok  96.3%  acc 100.0%  S 4079.2  step 0.00343  fout   41.17  safely_transposable
+tone   82.4  floor  55.0  st -12.0  fullrate  ok  96.3%  acc 100.0%  S 4079.2  step 0.00345  fout   41.17  safely_transposable
+tone   82.4  floor  55.0  st -24.0  decimated ok  96.3%  acc 100.0%  S 4079.4  step 0.00173  fout   20.57  safely_transposable
+tone   82.4  floor  55.0  st -24.0  hybrid    ok  96.3%  acc 100.0%  S 4079.2  step 0.00173  fout   20.57  safely_transposable
+tone   82.4  floor  55.0  st -24.0  fullrate  ok  96.3%  acc 100.0%  S 4079.2  step 0.00173  fout   20.57  safely_transposable
+tone   82.4  floor  60.0  st  +0.0  decimated ok  96.0%  acc 100.0%  S 4079.6  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  60.0  st  +0.0  hybrid    ok  96.0%  acc 100.0%  S 4079.3  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  60.0  st  +0.0  fullrate  ok  96.3%  acc 100.0%  S 4079.2  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  60.0  st -12.0  decimated ok  96.0%  acc 100.0%  S 4079.6  step 0.00348  fout   41.17  safely_transposable
+tone   82.4  floor  60.0  st -12.0  hybrid    ok  96.0%  acc 100.0%  S 4079.3  step 0.00343  fout   41.17  safely_transposable
+tone   82.4  floor  60.0  st -12.0  fullrate  ok  96.3%  acc 100.0%  S 4079.2  step 0.00345  fout   41.17  safely_transposable
+tone   82.4  floor  60.0  st -24.0  decimated ok  96.0%  acc 100.0%  S 4079.6  step 0.00172  fout   20.58  safely_transposable
+tone   82.4  floor  60.0  st -24.0  hybrid    ok  96.0%  acc 100.0%  S 4079.3  step 0.00173  fout   20.55  safely_transposable
+tone   82.4  floor  60.0  st -24.0  fullrate  ok  96.3%  acc 100.0%  S 4079.2  step 0.00173  fout   20.55  safely_transposable
+tone   82.4  floor  80.0  st  +0.0  decimated ok  96.9%  acc 100.0%  S 4080.6  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  80.0  st  +0.0  hybrid    ok  96.9%  acc 100.0%  S 4080.5  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  80.0  st  +0.0  fullrate  ok  96.7%  acc 100.0%  S 4080.5  step 0.00678  fout   82.41  safely_transposable
+tone   82.4  floor  80.0  st -12.0  decimated ok  96.9%  acc 100.0%  S 4080.6  step 0.00345  fout   41.17  safely_transposable
+tone   82.4  floor  80.0  st -12.0  hybrid    ok  96.9%  acc 100.0%  S 4080.5  step 0.00348  fout   41.17  safely_transposable
+tone   82.4  floor  80.0  st -12.0  fullrate  ok  96.7%  acc 100.0%  S 4080.5  step 0.00347  fout   41.17  safely_transposable
+tone   82.4  floor  80.0  st -24.0  decimated ok  96.9%  acc 100.0%  S 4080.6  step 0.00172  fout   20.55  safely_transposable
+tone   82.4  floor  80.0  st -24.0  hybrid    ok  96.9%  acc 100.0%  S 4080.5  step 0.00173  fout   20.55  safely_transposable
+tone   82.4  floor  80.0  st -24.0  fullrate  ok  96.7%  acc 100.0%  S 4080.5  step 0.00173  fout   20.55  safely_transposable
+tone  110.0  floor  40.0  st  +0.0  decimated ok  97.6%  acc 100.0%  S 3926.0  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  40.0  st  +0.0  hybrid    ok  97.6%  acc 100.0%  S 3926.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  40.0  st  +0.0  fullrate  ok  97.1%  acc 100.0%  S 3926.0  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  40.0  st -12.0  decimated ok  97.6%  acc 100.0%  S 3926.0  step 0.00431  fout   55.01  safely_transposable
+tone  110.0  floor  40.0  st -12.0  hybrid    ok  97.6%  acc 100.0%  S 3926.1  step 0.00427  fout   55.01  safely_transposable
+tone  110.0  floor  40.0  st -12.0  fullrate  ok  97.1%  acc 100.0%  S 3926.0  step 0.00431  fout   55.01  safely_transposable
+tone  110.0  floor  40.0  st -24.0  decimated ok  97.6%  acc 100.0%  S 3926.0  step 0.00217  fout   27.56  safely_transposable
+tone  110.0  floor  40.0  st -24.0  hybrid    ok  97.6%  acc 100.0%  S 3926.1  step 0.00218  fout   27.55  safely_transposable
+tone  110.0  floor  40.0  st -24.0  fullrate  ok  97.1%  acc 100.0%  S 3926.0  step 0.00217  fout   27.55  safely_transposable
+tone  110.0  floor  55.0  st  +0.0  decimated ok  96.9%  acc 100.0%  S 3929.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  55.0  st  +0.0  hybrid    ok  96.9%  acc 100.0%  S 3929.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  55.0  st  +0.0  fullrate  ok  97.2%  acc 100.0%  S 3929.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  55.0  st -12.0  decimated ok  96.9%  acc 100.0%  S 3929.1  step 0.00431  fout   54.99  safely_transposable
+tone  110.0  floor  55.0  st -12.0  hybrid    ok  96.9%  acc 100.0%  S 3929.1  step 0.00437  fout   54.98  safely_transposable
+tone  110.0  floor  55.0  st -12.0  fullrate  ok  97.2%  acc 100.0%  S 3929.1  step 0.00433  fout   54.98  safely_transposable
+tone  110.0  floor  55.0  st -24.0  decimated ok  96.9%  acc 100.0%  S 3929.1  step 0.00218  fout   27.54  safely_transposable
+tone  110.0  floor  55.0  st -24.0  hybrid    ok  96.9%  acc 100.0%  S 3929.1  step 0.00218  fout   27.53  safely_transposable
+tone  110.0  floor  55.0  st -24.0  fullrate  ok  97.2%  acc 100.0%  S 3929.1  step 0.00217  fout   27.53  safely_transposable
+tone  110.0  floor  60.0  st  +0.0  decimated ok  97.1%  acc 100.0%  S 3929.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  60.0  st  +0.0  hybrid    ok  97.1%  acc 100.0%  S 3929.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  60.0  st  +0.0  fullrate  ok  96.7%  acc 100.0%  S 3929.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  60.0  st -12.0  decimated ok  97.1%  acc 100.0%  S 3929.1  step 0.00427  fout   54.97  safely_transposable
+tone  110.0  floor  60.0  st -12.0  hybrid    ok  97.1%  acc 100.0%  S 3929.1  step 0.00427  fout   54.97  safely_transposable
+tone  110.0  floor  60.0  st -12.0  fullrate  ok  96.7%  acc 100.0%  S 3929.1  step 0.00430  fout   54.97  safely_transposable
+tone  110.0  floor  60.0  st -24.0  decimated ok  97.1%  acc 100.0%  S 3929.1  step 0.00217  fout   27.53  safely_transposable
+tone  110.0  floor  60.0  st -24.0  hybrid    ok  97.1%  acc 100.0%  S 3929.1  step 0.00217  fout   27.53  safely_transposable
+tone  110.0  floor  60.0  st -24.0  fullrate  ok  96.7%  acc 100.0%  S 3929.1  step 0.00217  fout   27.53  safely_transposable
+tone  110.0  floor  80.0  st  +0.0  decimated ok 100.0%  acc 100.0%  S 3929.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  80.0  st  +0.0  hybrid    ok 100.0%  acc 100.0%  S 3929.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  80.0  st  +0.0  fullrate  ok 100.0%  acc 100.0%  S 3929.1  step 0.00865  fout  109.99  safely_transposable
+tone  110.0  floor  80.0  st -12.0  decimated ok 100.0%  acc 100.0%  S 3929.1  step 0.00429  fout   54.96  safely_transposable
+tone  110.0  floor  80.0  st -12.0  hybrid    ok 100.0%  acc 100.0%  S 3929.1  step 0.00427  fout   54.96  safely_transposable
+tone  110.0  floor  80.0  st -12.0  fullrate  ok 100.0%  acc 100.0%  S 3929.1  step 0.00428  fout   54.96  safely_transposable
+tone  110.0  floor  80.0  st -24.0  decimated ok 100.0%  acc 100.0%  S 3929.1  step 0.00218  fout   27.52  safely_transposable
+tone  110.0  floor  80.0  st -24.0  hybrid    ok 100.0%  acc 100.0%  S 3929.1  step 0.00218  fout   27.52  safely_transposable
+tone  110.0  floor  80.0  st -24.0  fullrate  ok 100.0%  acc 100.0%  S 3929.1  step 0.00218  fout   27.52  safely_transposable
+tone  220.0  floor  40.0  st  +0.0  decimated ok 100.0%  acc 100.0%  S 4146.9  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  40.0  st  +0.0  hybrid    ok 100.0%  acc 100.0%  S 4146.9  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  40.0  st  +0.0  fullrate  ok 100.0%  acc 100.0%  S 4146.9  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  40.0  st -12.0  decimated ok 100.0%  acc 100.0%  S 4146.9  step 0.00777  fout  110.07  safely_transposable
+tone  220.0  floor  40.0  st -12.0  hybrid    ok 100.0%  acc 100.0%  S 4146.9  step 0.00786  fout  110.06  safely_transposable
+tone  220.0  floor  40.0  st -12.0  fullrate  ok 100.0%  acc 100.0%  S 4146.9  step 0.00778  fout  110.05  safely_transposable
+tone  220.0  floor  40.0  st -24.0  decimated ok 100.0%  acc 100.0%  S 4146.9  step 0.00397  fout   55.02  safely_transposable
+tone  220.0  floor  40.0  st -24.0  hybrid    ok 100.0%  acc 100.0%  S 4146.9  step 0.00397  fout   55.02  safely_transposable
+tone  220.0  floor  40.0  st -24.0  fullrate  ok 100.0%  acc 100.0%  S 4146.9  step 0.00397  fout   55.02  safely_transposable
+tone  220.0  floor  55.0  st  +0.0  decimated ok 100.0%  acc 100.0%  S 4145.0  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  55.0  st  +0.0  hybrid    ok 100.0%  acc 100.0%  S 4145.6  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  55.0  st  +0.0  fullrate  ok 100.0%  acc 100.0%  S 4145.5  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  55.0  st -12.0  decimated ok 100.0%  acc 100.0%  S 4145.0  step 0.00785  fout  110.00  safely_transposable
+tone  220.0  floor  55.0  st -12.0  hybrid    ok 100.0%  acc 100.0%  S 4145.6  step 0.00788  fout  109.99  safely_transposable
+tone  220.0  floor  55.0  st -12.0  fullrate  ok 100.0%  acc 100.0%  S 4145.5  step 0.00789  fout  109.98  safely_transposable
+tone  220.0  floor  55.0  st -24.0  decimated ok 100.0%  acc 100.0%  S 4145.0  step 0.00397  fout   55.03  safely_transposable
+tone  220.0  floor  55.0  st -24.0  hybrid    ok 100.0%  acc 100.0%  S 4145.6  step 0.00397  fout   55.03  safely_transposable
+tone  220.0  floor  55.0  st -24.0  fullrate  ok 100.0%  acc 100.0%  S 4145.5  step 0.00396  fout   55.03  safely_transposable
+tone  220.0  floor  60.0  st  +0.0  decimated ok 100.0%  acc 100.0%  S 4146.4  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  60.0  st  +0.0  hybrid    ok 100.0%  acc 100.0%  S 4146.8  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  60.0  st  +0.0  fullrate  ok 100.0%  acc 100.0%  S 4146.8  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  60.0  st -12.0  decimated ok 100.0%  acc 100.0%  S 4146.4  step 0.00784  fout  109.99  safely_transposable
+tone  220.0  floor  60.0  st -12.0  hybrid    ok 100.0%  acc 100.0%  S 4146.8  step 0.00783  fout  109.98  safely_transposable
+tone  220.0  floor  60.0  st -12.0  fullrate  ok 100.0%  acc 100.0%  S 4146.8  step 0.00784  fout  109.97  safely_transposable
+tone  220.0  floor  60.0  st -24.0  decimated ok 100.0%  acc 100.0%  S 4146.4  step 0.00397  fout   55.04  safely_transposable
+tone  220.0  floor  60.0  st -24.0  hybrid    ok 100.0%  acc 100.0%  S 4146.8  step 0.00397  fout   55.03  safely_transposable
+tone  220.0  floor  60.0  st -24.0  fullrate  ok 100.0%  acc 100.0%  S 4146.8  step 0.00396  fout   55.03  safely_transposable
+tone  220.0  floor  80.0  st  +0.0  decimated ok 100.0%  acc 100.0%  S 4145.4  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  80.0  st  +0.0  hybrid    ok 100.0%  acc 100.0%  S 4145.4  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  80.0  st  +0.0  fullrate  ok 100.0%  acc 100.0%  S 4145.3  step 0.01574  fout  220.12  safely_transposable
+tone  220.0  floor  80.0  st -12.0  decimated ok 100.0%  acc 100.0%  S 4145.4  step 0.00783  fout  110.00  safely_transposable
+tone  220.0  floor  80.0  st -12.0  hybrid    ok 100.0%  acc 100.0%  S 4145.4  step 0.00788  fout  110.00  safely_transposable
+tone  220.0  floor  80.0  st -12.0  fullrate  ok 100.0%  acc 100.0%  S 4145.3  step 0.00789  fout  110.00  safely_transposable
+tone  220.0  floor  80.0  st -24.0  decimated ok 100.0%  acc 100.0%  S 4145.4  step 0.00397  fout   55.05  safely_transposable
+tone  220.0  floor  80.0  st -24.0  hybrid    ok 100.0%  acc 100.0%  S 4145.4  step 0.00397  fout   55.05  safely_transposable
+tone  220.0  floor  80.0  st -24.0  fullrate  ok 100.0%  acc 100.0%  S 4145.3  step 0.00397  fout   55.05  safely_transposable
 
-TOTAL 180 cases: shiftable=120 unity_parked=45 detectable-only=0 below-floor=15 FAIL=0
+verdict summary (audible floor 20 Hz; engine never clamps -- the
+verdict is a harness/docs concern, see the R22 findings):
+  not_detectable      : 141
+  detectable_only     : 18
+  below_audible_floor : 31
+  safely_transposable : 170

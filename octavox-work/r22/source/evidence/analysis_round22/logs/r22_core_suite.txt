@@ -1,118 +1,123 @@
 == group prepare_reset: 6 cases ==
-[  1/ 96] prepare_default                                ok          2.1 ms
-[  2/ 96] prepare_invalid_rejected                       ok          0.5 ms
-[  3/ 96] reset_determinism                              ok         63.0 ms
-[  4/ 96] repeated_prepare                               ok         33.8 ms
-[  5/ 96] block_size_invariance                          ok        200.5 ms
-[  6/ 96] steady_state_no_allocation                     ok         34.3 ms
+[  1/100] prepare_default                                ok          1.8 ms
+[  2/100] prepare_invalid_rejected                       ok          0.3 ms
+[  3/100] reset_determinism                              ok         55.1 ms
+[  4/100] repeated_prepare                               ok         29.1 ms
+[  5/100] block_size_invariance                          ok        176.3 ms
+[  6/100] steady_state_no_allocation                     ok         30.3 ms
 == group unity: 30 cases ==
-[  7/ 96] unity_tone_220_bitexact                        ok         19.7 ms
-[  8/ 96] unity_tone_1100_bitexact                       ok         20.0 ms
-[  9/ 96] unity_noise_bitexact                           ok         20.4 ms
-[ 10/ 96] unity_chord_bitexact                           ok         19.9 ms
-[ 11/ 96] unity_silence_bitexact                         ok          2.6 ms
-[ 12/ 96] unity_lowlevel_bitexact                        ok         18.3 ms
-[ 13/ 96] unity_enter_from_+400c_bitexact                ok         60.9 ms
-[ 14/ 96] unity_gain_exact                               ok         18.6 ms
-[ 15/ 96] unity_entry_continuity                         ok         57.9 ms
-[ 16/ 96] near_unity_+1c_fresh                           ok         61.6 ms
-[ 17/ 96] near_unity_-1c_fresh                           ok         61.0 ms
-[ 18/ 96] near_unity_+10c_fresh                          ok         61.4 ms
-[ 19/ 96] near_unity_-10c_fresh                          ok         61.5 ms
-[ 20/ 96] near_unity_+50c_fresh                          ok         61.8 ms
-[ 21/ 96] near_unity_-50c_fresh                          ok         61.6 ms
-[ 22/ 96] near_unity_+100c_fresh                         ok         62.0 ms
-[ 23/ 96] near_unity_-100c_fresh                         ok         61.8 ms
-[ 24/ 96] near_unity_+500c_fresh                         ok         62.0 ms
-[ 25/ 96] near_unity_-500c_fresh                         ok         61.6 ms
-[ 26/ 96] near_unity_+1200c_fresh                        ok         61.5 ms
-[ 27/ 96] near_unity_-1200c_fresh                        ok         61.8 ms
-[ 28/ 96] near_unity_+1c_via_unity                       ok         60.0 ms
-[ 29/ 96] near_unity_-1c_via_unity                       ok         59.9 ms
-[ 30/ 96] near_unity_+10c_via_unity                      ok         60.5 ms
-[ 31/ 96] near_unity_-10c_via_unity                      ok         60.2 ms
-[ 32/ 96] near_unity_+50c_via_unity                      ok         60.5 ms
-[ 33/ 96] near_unity_-50c_via_unity                      ok         60.3 ms
-[ 34/ 96] no_bypass_region                               ok        120.6 ms
-[ 35/ 96] unity_feedback_stability                       ok         89.9 ms
-[ 36/ 96] unity_8voice_unison_exact_mix                  ok         20.3 ms
+[  7/100] unity_tone_220_bitexact                        ok         17.6 ms
+[  8/100] unity_tone_1100_bitexact                       ok         17.8 ms
+[  9/100] unity_noise_bitexact                           ok         17.7 ms
+[ 10/100] unity_chord_bitexact                           ok         18.1 ms
+[ 11/100] unity_silence_bitexact                         ok          2.4 ms
+[ 12/100] unity_lowlevel_bitexact                        ok         16.6 ms
+[ 13/100] unity_enter_from_+400c_bitexact                ok         54.7 ms
+[ 14/100] unity_gain_exact                               ok         16.6 ms
+[ 15/100] unity_entry_continuity                         ok         51.8 ms
+[ 16/100] near_unity_+1c_fresh                           ok         55.0 ms
+[ 17/100] near_unity_-1c_fresh                           ok         54.6 ms
+[ 18/100] near_unity_+10c_fresh                          ok         55.1 ms
+[ 19/100] near_unity_-10c_fresh                          ok         55.1 ms
+[ 20/100] near_unity_+50c_fresh                          ok         54.9 ms
+[ 21/100] near_unity_-50c_fresh                          ok         55.1 ms
+[ 22/100] near_unity_+100c_fresh                         ok         55.1 ms
+[ 23/100] near_unity_-100c_fresh                         ok         55.6 ms
+[ 24/100] near_unity_+500c_fresh                         ok         55.4 ms
+[ 25/100] near_unity_-500c_fresh                         ok         55.2 ms
+[ 26/100] near_unity_+1200c_fresh                        ok         55.5 ms
+[ 27/100] near_unity_-1200c_fresh                        ok         55.2 ms
+[ 28/100] near_unity_+1c_via_unity                       ok         53.5 ms
+[ 29/100] near_unity_-1c_via_unity                       ok         53.4 ms
+[ 30/100] near_unity_+10c_via_unity                      ok         53.8 ms
+[ 31/100] near_unity_-10c_via_unity                      ok         53.7 ms
+[ 32/100] near_unity_+50c_via_unity                      ok         54.0 ms
+[ 33/100] near_unity_-50c_via_unity                      ok         53.9 ms
+[ 34/100] no_bypass_region                               ok        107.3 ms
+[ 35/100] unity_feedback_stability                       ok         81.5 ms
+[ 36/100] unity_8voice_unison_exact_mix                  ok         18.3 ms
 == group voices: 2 cases ==
-[ 37/ 96] voices_8_spread_+700c                          ok         96.1 ms
-[ 38/ 96] setvoices_midstream                            ok         82.1 ms
+[ 37/100] voices_8_spread_+700c                          ok         87.5 ms
+[ 38/100] setvoices_midstream                            ok         74.0 ms
 == group stereo: 3 cases ==
-[ 39/ 96] stereo_isolation_unity                         ok         22.4 ms
-[ 40/ 96] stereo_isolation_shifted                       ok         49.0 ms
-[ 41/ 96] stereo_independence                            ok         62.5 ms
+[ 39/100] stereo_isolation_unity                         ok         20.0 ms
+[ 40/100] stereo_isolation_shifted                       ok         44.1 ms
+[ 41/100] stereo_independence                            ok         55.5 ms
 == group rates_formats: 4 cases ==
-[ 42/ 96] rate_44100_+400c                               ok         65.6 ms
-[ 43/ 96] rate_96000_+400c                               ok        120.3 ms
-[ 44/ 96] wav_roundtrip_example_input                    ok         38.0 ms
-[ 45/ 96] wav_24bit_read                                 ok          0.1 ms
+[ 42/100] rate_44100_+400c                               ok         64.8 ms
+[ 43/100] rate_96000_+400c                               ok        107.5 ms
+[ 44/100] wav_roundtrip_example_input                    ok         34.3 ms
+[ 45/100] wav_24bit_read                                 ok          0.1 ms
 == group stability: 6 cases ==
-[ 46/ 96] longrun_60s_8voice_feedback                    ok       1886.5 ms
-[ 47/ 96] chirp_30s_+700c                                ok        613.0 ms
-[ 48/ 96] impulse_latency                                ok          7.3 ms
-[ 49/ 96] impulse_latency_unity                          ok          6.2 ms
-[ 50/ 96] dc_input_finite                                ok        192.1 ms
-[ 51/ 96] clipping_behaviour                             ok         30.4 ms
+[ 46/100] longrun_60s_8voice_feedback                    ok       1721.5 ms
+[ 47/100] chirp_30s_+700c                                ok        553.4 ms
+[ 48/100] impulse_latency                                ok          6.6 ms
+[ 49/100] impulse_latency_unity                          ok          5.6 ms
+[ 50/100] dc_input_finite                                ok        172.6 ms
+[ 51/100] clipping_behaviour                             ok         27.3 ms
 == group r13: 20 cases ==
-[ 52/ 96] cold_start_impulse_alignment_unity_1v          ok          6.2 ms
-[ 53/ 96] cold_start_impulse_alignment_unity_8v          ok          7.4 ms
-[ 54/ 96] cold_start_impulse_alignment_up_1v             ok          6.4 ms
-[ 55/ 96] cold_start_impulse_alignment_up_8v             ok         12.2 ms
-[ 56/ 96] cold_start_impulse_alignment_down_1v           ok          6.2 ms
-[ 57/ 96] cold_start_impulse_alignment_down_8v           ok         12.3 ms
-[ 58/ 96] cold_start_no_spurious_transient               ok        106.5 ms
-[ 59/ 96] detector_96000hz_sine_battery                  ok        478.7 ms
-[ 60/ 96] detector_44100hz_sine_battery                  ok        130.0 ms
-[ 61/ 96] detector_estimate_tracking_44100               ok         58.7 ms
-[ 62/ 96] detector_estimate_tracking_48000               ok         62.1 ms
-[ 63/ 96] detector_estimate_tracking_96000               ok        107.6 ms
-[ 64/ 96] detector_96k_estimate_stability                ok        143.9 ms
-[ 65/ 96] rt_reprepare_zero_allocation                   ok         32.4 ms
-[ 66/ 96] rt_reprepare_param_change_zero_allocation      ok         29.6 ms
-[ 67/ 96] rt_reprepare_multichannel_zero_allocation      ok         59.9 ms
-[ 68/ 96] rt_reset_no_allocation                         ok         32.3 ms
-[ 69/ 96] rt_setters_and_process_no_allocation           ok         15.9 ms
-[ 70/ 96] rt_reprepare_result_identity                   ok        197.1 ms
-[ 71/ 96] voicestats_ratio_diagnostics                   ok         19.9 ms
+[ 52/100] cold_start_impulse_alignment_unity_1v          ok          5.3 ms
+[ 53/100] cold_start_impulse_alignment_unity_8v          ok          6.1 ms
+[ 54/100] cold_start_impulse_alignment_up_1v             ok          5.4 ms
+[ 55/100] cold_start_impulse_alignment_up_8v             ok         10.8 ms
+[ 56/100] cold_start_impulse_alignment_down_1v           ok          5.4 ms
+[ 57/100] cold_start_impulse_alignment_down_8v           ok         11.0 ms
+[ 58/100] cold_start_no_spurious_transient               ok         95.9 ms
+[ 59/100] detector_96000hz_sine_battery                  ok        433.8 ms
+[ 60/100] detector_44100hz_sine_battery                  ok        129.9 ms
+[ 61/100] detector_estimate_tracking_44100               ok         57.7 ms
+[ 62/100] detector_estimate_tracking_48000               ok         48.7 ms
+[ 63/100] detector_estimate_tracking_96000               ok         97.5 ms
+[ 64/100] detector_96k_estimate_stability                ok        130.1 ms
+[ 65/100] rt_reprepare_zero_allocation                   ok         29.4 ms
+[ 66/100] rt_reprepare_param_change_zero_allocation      ok         26.5 ms
+[ 67/100] rt_reprepare_multichannel_zero_allocation      ok         54.4 ms
+[ 68/100] rt_reset_no_allocation                         ok         29.3 ms
+[ 69/100] rt_setters_and_process_no_allocation           ok         14.4 ms
+[ 70/100] rt_reprepare_result_identity                   ok        172.2 ms
+[ 71/100] voicestats_ratio_diagnostics                   ok         17.9 ms
 == group r15p1: 7 cases ==
-[ 72/ 96] per_voice_ratios_independent                   ok        722.0 ms
-[ 73/ 96] per_voice_gain_ramp_and_mute                   ok        231.0 ms
-[ 74/ 96] per_voice_delay_isolation                      ok        369.5 ms
-[ 75/ 96] wetdry_endpoints                               ok        247.8 ms
-[ 76/ 96] bypass_clickfree_and_transparent               ok        254.4 ms
-[ 77/ 96] new_setters_no_allocation                      ok         50.2 ms
+[ 72/100] per_voice_ratios_independent                   ok        655.8 ms
+[ 73/100] per_voice_gain_ramp_and_mute                   ok        207.3 ms
+[ 74/100] per_voice_delay_isolation                      ok        337.0 ms
+[ 75/100] wetdry_endpoints                               ok        232.1 ms
+[ 76/100] bypass_clickfree_and_transparent               ok        233.1 ms
+[ 77/100] new_setters_no_allocation                      ok         45.8 ms
 default_neutrality cfg1_default_unity_lcg_noise_b64_150_512: got 0x74318b06c182aacb expect 0x74318b06c182aacb
 default_neutrality cfg2_r700c_8v_spread_fb025_sine220: got 0x46a091e98f2a413a expect 0x46a091e98f2a413a
 default_neutrality cfg3_rm400c_4v_nospread_chirp200_800: got 0x9502cf8827e8782c expect 0x9502cf8827e8782c
 default_neutrality cfg4_stereo_2ch_4v_unity_then_r400c: got 0x6f7a2ce3ca310c25 expect 0x6f7a2ce3ca310c25
-[ 78/ 96] default_neutrality                             ok       2012.6 ms
+[ 78/100] default_neutrality                             ok       1912.1 ms
 == group r15acc: 7 cases ==
-[ 79/ 96] r15acc_ratio_change_isolation                  ok        506.1 ms
-[ 80/ 96] r15acc_level_accuracy                          ok        369.1 ms
-[ 81/ 96] r15acc_block_boundary_semantics                ok         79.7 ms
+[ 79/100] r15acc_ratio_change_isolation                  ok        459.9 ms
+[ 80/100] r15acc_level_accuracy                          ok        331.3 ms
+[ 81/100] r15acc_block_boundary_semantics                ok         71.5 ms
 r15acc_reset_reprepare_determinism hashes: run=0x35fe0d51a4372ac8 reset=0x35fe0d51a4372ac8 prepare=0x35fe0d51a4372ac8 fresh=0x35fe0d51a4372ac8
-[ 82/ 96] r15acc_reset_reprepare_determinism             ok        332.8 ms
-[ 83/ 96] r15acc_stereo_surface                          ok        494.9 ms
-[ 84/ 96] r15acc_robustness_battery                      ok        852.8 ms
-[ 85/ 96] r15acc_invalid_args                            ok        237.7 ms
+[ 82/100] r15acc_reset_reprepare_determinism             ok        303.4 ms
+[ 83/100] r15acc_stereo_surface                          ok        457.5 ms
+[ 84/100] r15acc_robustness_battery                      ok        780.7 ms
+[ 85/100] r15acc_invalid_args                            ok        214.8 ms
 == group r19: 8 cases ==
 default_neutrality_r19 cfg1_default_unity_lcg_noise_b64_150_512: got 0x74318b06c182aacb expect 0x74318b06c182aacb
 default_neutrality_r19 cfg2_r700c_8v_spread_fb025_sine220: got 0x9b7217813e519209 expect 0x9b7217813e519209
 default_neutrality_r19 cfg3_rm400c_4v_nospread_chirp200_800: got 0xb66549c1dca9d6ae expect 0xb66549c1dca9d6ae
 default_neutrality_r19 cfg4_stereo_2ch_4v_unity_then_r400c: got 0x38f625fec56dba45 expect 0x38f625fec56dba45
-[ 86/ 96] default_neutrality_r19                         ok        670.0 ms
-[ 87/ 96] detector_decimated_accuracy_battery            ok        467.8 ms
-[ 88/ 96] detector_decimated_vs_fullrate_delta           ok        703.8 ms
-[ 89/ 96] detector_hybrid_accuracy_battery               ok        506.8 ms
-[ 90/ 96] detector_hybrid_vs_fullrate_delta              ok       3970.9 ms
-[ 91/ 96] detector_hybrid_lowrate_config                 ok         44.2 ms
-[ 92/ 96] commit_crossfade_continuity                    ok        353.7 ms
-[ 93/ 96] voice_activation_clickfree                     ok        325.2 ms
-[ 94/ 96] basedelay_crossfade_clickfree                  ok        264.7 ms
-[ 95/ 96] read_suppression_bitidentity                   ok        228.3 ms
-[ 96/ 96] active_voices_processing_scope                 ok         51.1 ms
+[ 86/100] default_neutrality_r19                         ok        608.8 ms
+[ 87/100] detector_decimated_accuracy_battery            ok        420.4 ms
+[ 88/100] detector_decimated_vs_fullrate_delta           ok        657.9 ms
+[ 89/100] detector_hybrid_accuracy_battery               ok        464.3 ms
+[ 90/100] detector_hybrid_vs_fullrate_delta              ok       3798.5 ms
+[ 91/100] detector_hybrid_lowrate_config                 ok         43.9 ms
+[ 92/100] commit_crossfade_continuity                    ok        324.6 ms
+[ 93/100] voice_activation_clickfree                     ok        302.7 ms
+[ 94/100] basedelay_crossfade_clickfree                  ok        247.6 ms
+[ 95/100] read_suppression_bitidentity                   ok        203.7 ms
+[ 96/100] active_voices_processing_scope                 ok         45.9 ms
+== group r22: 4 cases ==
+[ 97/100] minpitch_gate_unification_bitexact             ok        141.1 ms
+[ 98/100] minpitch_distinction_diagnostics               ok        138.6 ms
+[ 99/100] minpitch_lowfloor_full_path                    ok         68.2 ms
+[100/100] minpitch_lowfreq_transposition_honesty         ok         70.4 ms
 CASE                                           PASS   MEASUREMENTS (selected)
 ----------------------------------------------------------------------------------------------------
 prepare_default                                ok     
@@ -583,6 +588,37 @@ read_suppression_bitidentity                   ok
 active_voices_processing_scope                 ok     
                                                       voice0_wraps_total = 6
                                                       voice1_wraps_during_8v_window = 3
+minpitch_gate_unification_bitexact             ok     
+                                                      fmin40_vs_default_identical = 1
+                                                      fmin30_vs_default_identical = 1
+                                                      fmin80_vs_default_differs = 1
+minpitch_distinction_diagnostics               ok     
+                                                      case_a_gate_hz = 55
+                                                      case_a_est_median_hz = 45.00000134
+                                                      case_a_est_last_hz = 44.99990253
+                                                      case_a_hist_steady_start = 8
+                                                      case_a_hist_steady_end = 8
+                                                      case_b_gate_hz = 55
+                                                      case_b_est_median_hz = 70.00000266
+                                                      case_b_hist_steady_end = 8
+                                                      case_c_gate_hz = 80
+                                                      case_c_est_median_hz = 80.26755853
+                                                      case_c_est_last_hz = 80.26755853
+minpitch_lowfloor_full_path                    ok     
+                                                      est_hz = 58.30009654
+                                                      accepted = 1
+                                                      hist = 8
+                                                      spacing_target = 4116.633843
+                                                      voice0_spacing = 4116.633242
+                                                      voice0_commits = 1
+                                                      steady_max_step = 0.001907861559
+                                                      steady_rms = 0.3532953543
+minpitch_lowfreq_transposition_honesty         ok     
+                                                      est_hz = 65.40083187
+                                                      accepted = 1
+                                                      measured_out_hz = 16.25
+                                                      expected_out_hz = 16.35
+                                                      steady_rms = 0.354364764
 ----------------------------------------------------------------------------------------------------
-octavox-native 16.2.0: 96 passed, 0 failed, 96 total
-TOTAL_WALL_MS 21050.1
+octavox-native 16.2.0: 100 passed, 0 failed, 100 total
+TOTAL_WALL_MS 19833.9

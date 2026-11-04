@@ -1,4 +1,0 @@
-variant Lagrange6  module sha256=fefe9faf642f71932c997702572bfd64a24520dd0d2a9c036a8d012b829f19d2 size=962048 bytes  OK
-variant ObsKernel6 module sha256=353342242a6ad38c7c0ecfe55525375d0a552396fb3bda6fa83b2d85f15aa12e size=962048 bytes  OK
-cross-variant: modules differ: True
-RESULT: ALL CHECKS PASSED

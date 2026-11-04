@@ -1,6 +1,0 @@
-000000180035BA70  4d5a                       pop      r10                                      reg=108
-000000180035BA72  90                         nop                                               
-000000180035BA73  0003                       add      byte ptr [rbx], al                       [base=37 idx=0 scale=1 disp=0x0]; reg=2
-000000180035BA75  0000                       add      byte ptr [rax], al                       [base=35 idx=0 scale=1 disp=0x0]; reg=2
-000000180035BA77  000400                     add      byte ptr [rax + rax], al                 [base=35 idx=35 scale=1 disp=0x0]; reg=2
-000000180035BA7A  0000                       add      byte ptr [rax], al                       [base=35 idx=0 scale=1 disp=0x0]; reg=2

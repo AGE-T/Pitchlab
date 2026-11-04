@@ -1,3 +1,0 @@
-/home/z/.venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E rm -f CMakeFiles/validator.dir/objects.a
-/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar qc CMakeFiles/validator.dir/objects.a @CMakeFiles/validator.dir/objects1.rsp
-/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-clang++  -Wno-multichar -O3 -DNDEBUG -static -Wl,/Brepro -municode -Wl,--whole-archive CMakeFiles/validator.dir/objects.a -Wl,--no-whole-archive -o ../../../../../bin/validator.exe -Wl,--out-implib,../../../../../lib/libvalidator.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/validator.dir/linkLibs.rsp

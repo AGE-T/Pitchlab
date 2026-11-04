@@ -1,7 +1,0 @@
-cfg1_default_unity_lcg_noise_b64_150_512  0x74318b06c182aacb
-cfg2_r700c_8v_spread_fb025_sine220       0x46a091e98f2a413a
-cfg3_rm400c_4v_nospread_chirp200_800    0x9502cf8827e8782c
-cfg4_stereo_2ch_4v_unity_then_r400c     0x6f7a2ce3ca310c25
-version: octavox-native 16.0.0
-interpolation: core-default-Lagrange6
-mode: legacy-15.0.0 (FullRate detector, instant commits, instant base-delay re-align)

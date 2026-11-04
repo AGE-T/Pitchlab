@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/octavox_r19_clickscan.dir/link.d CMakeFiles/octavox_r19_clickscan.dir/cli/r19_clickscan.cpp.o CMakeFiles/octavox_r19_clickscan.dir/tests/wav_io.cpp.o -o octavox_r19_clickscan  liboctavox_dsp.a

@@ -1,2 +1,0 @@
-/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ar qc ../../lib/libpluginterfaces.a CMakeFiles/pluginterfaces.dir/base/conststringtable.cpp.obj CMakeFiles/pluginterfaces.dir/base/coreiids.cpp.obj CMakeFiles/pluginterfaces.dir/base/funknown.cpp.obj CMakeFiles/pluginterfaces.dir/base/ustring.cpp.obj
-/home/z/tools/llvm-mingw/bin/x86_64-w64-mingw32-llvm-ranlib ../../lib/libpluginterfaces.a
