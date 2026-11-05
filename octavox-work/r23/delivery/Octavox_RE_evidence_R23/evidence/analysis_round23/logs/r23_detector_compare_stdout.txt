@@ -1,0 +1,421 @@
+sine110         44100 fullrate    v 100.00% med    0.006c p95    0.013c gr 0.000 oct 0.000 jit   0.009 cpu   1672.6
+sine110         44100 decimated   v 100.00% med    0.008c p95    0.011c gr 0.000 oct 0.000 jit   0.013 cpu    428.6
+sine110         44100 hybrid      v 100.00% med    0.005c p95    0.007c gr 0.000 oct 0.000 jit   0.009 cpu    434.1
+sine110         44100 paperW1     v 100.00% med    0.002c p95    0.002c gr 0.000 oct 0.000 jit   0.004 cpu 570764.4
+sine110         44100 fftW1       v 100.00% med    0.002c p95    0.002c gr 0.000 oct 0.000 jit   0.004
+sine110         44100 paperW15    v 100.00% med    0.001c p95    0.002c gr 0.000 oct 0.000 jit   0.003 cpu 868189.5
+sine110         44100 paperW2     v 100.00% med    0.001c p95    0.001c gr 0.000 oct 0.000 jit   0.002 cpu 1165547.4
+sine110         48000 fullrate    v 100.00% med    0.003c p95    0.003c gr 0.000 oct 0.000 jit   0.001 cpu   1386.8
+sine110         48000 decimated   v 100.00% med    0.002c p95    0.003c gr 0.000 oct 0.000 jit   0.003 cpu    362.9
+sine110         48000 hybrid      v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.001 cpu    367.2
+sine110         48000 paperW1     v 100.00% med    0.001c p95    0.001c gr 0.000 oct 0.000 jit   0.002 cpu 681764.4
+sine110         48000 fftW1       v 100.00% med    0.001c p95    0.001c gr 0.000 oct 0.000 jit   0.002
+sine110         48000 paperW15    v 100.00% med    0.001c p95    0.001c gr 0.000 oct 0.000 jit   0.001 cpu 1032782.6
+sine110         48000 paperW2     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.001 cpu 1383618.4
+sine110         96000 fullrate    v 100.00% med    0.001c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu   5128.3
+sine110         96000 decimated   v 100.00% med    0.002c p95    0.003c gr 0.000 oct 0.000 jit   0.002 cpu    364.0
+sine110         96000 hybrid      v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    395.4
+sine110         96000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 2774593.8
+sine110         96000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+sine110         96000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 4200299.5
+sine110         96000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 5591092.0
+sine110        192000 fullrate    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu  20855.8
+sine110        192000 decimated   v 100.00% med    0.002c p95    0.003c gr 0.000 oct 0.000 jit   0.001 cpu    352.0
+sine110        192000 hybrid      v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    503.5
+sine110        192000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 11178741.3
+sine110        192000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+sine110        192000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 16752942.0
+sine110        192000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 22384224.2
+harm220         44100 fullrate    v 100.00% med    0.011c p95    0.035c gr 0.000 oct 0.000 jit   0.003 cpu   1662.2
+harm220         44100 decimated   v 100.00% med    0.027c p95    0.334c gr 0.000 oct 0.000 jit   0.029 cpu    415.6
+harm220         44100 hybrid      v 100.00% med    0.002c p95    0.037c gr 0.000 oct 0.000 jit   0.003 cpu    424.7
+harm220         44100 paperW1     v 100.00% med    0.001c p95    0.016c gr 0.000 oct 0.000 jit   0.001 cpu 569366.5
+harm220         44100 fftW1       v 100.00% med    0.001c p95    0.016c gr 0.000 oct 0.000 jit   0.001
+harm220         44100 paperW15    v 100.00% med    0.001c p95    0.010c gr 0.000 oct 0.000 jit   0.000 cpu 867952.6
+harm220         44100 paperW2     v 100.00% med    0.001c p95    0.007c gr 0.000 oct 0.000 jit   0.001 cpu 1162031.6
+harm220         48000 fullrate    v 100.00% med    0.022c p95    0.054c gr 0.000 oct 0.000 jit   0.004 cpu   1383.3
+harm220         48000 decimated   v 100.00% med    0.011c p95    0.251c gr 0.000 oct 0.000 jit   0.016 cpu    355.2
+harm220         48000 hybrid      v 100.00% med    0.003c p95    0.056c gr 0.000 oct 0.000 jit   0.004 cpu    358.7
+harm220         48000 paperW1     v 100.00% med    0.002c p95    0.030c gr 0.000 oct 0.000 jit   0.002 cpu 675274.0
+harm220         48000 fftW1       v 100.00% med    0.002c p95    0.030c gr 0.000 oct 0.000 jit   0.002
+harm220         48000 paperW15    v 100.00% med    0.002c p95    0.020c gr 0.000 oct 0.000 jit   0.002 cpu 1025961.4
+harm220         48000 paperW2     v 100.00% med    0.002c p95    0.015c gr 0.000 oct 0.000 jit   0.001 cpu 1382164.3
+harm220         96000 fullrate    v 100.00% med    0.004c p95    0.047c gr 0.027 oct 0.000 jit   0.001 cpu   5083.0
+harm220         96000 decimated   v 100.00% med    0.011c p95    0.286c gr 0.000 oct 0.000 jit   0.011 cpu    350.4
+harm220         96000 hybrid      v 100.00% med    0.000c p95    0.038c gr 0.000 oct 0.000 jit   0.001 cpu    389.1
+harm220         96000 paperW1     v 100.00% med    0.000c p95    0.005c gr 0.000 oct 0.000 jit   0.000 cpu 2752509.6
+harm220         96000 fftW1       v 100.00% med    0.000c p95    0.005c gr 0.000 oct 0.000 jit   0.000
+harm220         96000 paperW15    v 100.00% med    0.000c p95    0.003c gr 0.000 oct 0.000 jit   0.000 cpu 4187224.6
+harm220         96000 paperW2     v 100.00% med    0.000c p95    0.003c gr 0.000 oct 0.000 jit   0.000 cpu 5568852.3
+harm220        192000 fullrate    v 100.00% med    0.001c p95    0.014c gr 0.033 oct 0.000 jit   0.000 cpu  20874.2
+harm220        192000 decimated   v 100.00% med    0.012c p95    0.239c gr 0.000 oct 0.000 jit   0.011 cpu    361.9
+harm220        192000 hybrid      v 100.00% med    0.000c p95    0.013c gr 0.000 oct 0.000 jit   0.000 cpu    506.6
+harm220        192000 paperW1     v 100.00% med    0.000c p95    0.002c gr 0.000 oct 0.000 jit   0.000 cpu 11164219.0
+harm220        192000 fftW1       v 100.00% med    0.000c p95    0.002c gr 0.000 oct 0.000 jit   0.000
+harm220        192000 paperW15    v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 16787263.3
+harm220        192000 paperW2     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 22442705.5
+strongH2_110    44100 fullrate    v 100.00% med 1205.702c p95 1228.162c gr 1.000 oct 1.000 jit  15.673 cpu   1680.2
+strongH2_110    44100 decimated   v 100.00% med 1199.968c p95 1220.689c gr 1.000 oct 1.000 jit  15.641 cpu    431.7
+strongH2_110    44100 hybrid      v 100.00% med 1199.990c p95 1220.918c gr 1.000 oct 1.000 jit  15.715 cpu    439.0
+strongH2_110    44100 paperW1     v 100.00% med    0.001c p95    0.004c gr 0.000 oct 0.000 jit   0.002 cpu 574057.6
+strongH2_110    44100 fftW1       v 100.00% med    0.001c p95    0.004c gr 0.000 oct 0.000 jit   0.002
+strongH2_110    44100 paperW15    v 100.00% med    0.000c p95    0.002c gr 0.000 oct 0.000 jit   0.001 cpu 871042.1
+strongH2_110    44100 paperW2     v 100.00% med    0.001c p95    0.002c gr 0.000 oct 0.000 jit   0.001 cpu 1192694.7
+strongH2_110    48000 fullrate    v 100.00% med 1205.782c p95 1250.887c gr 1.000 oct 0.947 jit  15.161 cpu   1393.5
+strongH2_110    48000 decimated   v 100.00% med 1200.658c p95 1245.185c gr 1.000 oct 0.986 jit  14.469 cpu    361.1
+strongH2_110    48000 hybrid      v 100.00% med 1199.558c p95 1243.671c gr 1.000 oct 0.986 jit  14.893 cpu    368.0
+strongH2_110    48000 paperW1     v 100.00% med    0.001c p95    0.002c gr 0.000 oct 0.000 jit   0.001 cpu 683851.0
+strongH2_110    48000 fftW1       v 100.00% med    0.001c p95    0.002c gr 0.000 oct 0.000 jit   0.001
+strongH2_110    48000 paperW15    v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 1032570.0
+strongH2_110    48000 paperW2     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.001 cpu 1385367.1
+strongH2_110    96000 fullrate    v 100.00% med 1206.608c p95 1256.086c gr 1.000 oct 0.927 jit  13.049 cpu   5223.3
+strongH2_110    96000 decimated   v 100.00% med 1199.755c p95 1244.498c gr 1.000 oct 0.993 jit  14.724 cpu    361.8
+strongH2_110    96000 hybrid      v 100.00% med 1200.126c p95 1247.916c gr 1.000 oct 0.921 jit  14.087 cpu    392.7
+strongH2_110    96000 paperW1     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 2817276.4
+strongH2_110    96000 fftW1       v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000
+strongH2_110    96000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 4227115.9
+strongH2_110    96000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 5562171.9
+strongH2_110   192000 fullrate    v 100.00% med 1206.696c p95 1256.298c gr 1.000 oct 0.930 jit   7.808 cpu  20922.6
+strongH2_110   192000 decimated   v 100.00% med 1199.952c p95 1244.117c gr 1.000 oct 0.990 jit   8.934 cpu    359.8
+strongH2_110   192000 hybrid      v 100.00% med 1200.283c p95 1243.646c gr 1.000 oct 0.930 jit   8.781 cpu    507.2
+strongH2_110   192000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 11139752.1
+strongH2_110   192000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+strongH2_110   192000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 16766036.2
+strongH2_110   192000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 22370460.6
+missingfund_220  44100 fullrate    v 100.00% med    0.011c p95    0.027c gr 0.000 oct 0.000 jit   0.007 cpu   1648.9
+missingfund_220  44100 decimated   v 100.00% med    0.029c p95    0.174c gr 0.000 oct 0.000 jit   0.063 cpu    416.1
+missingfund_220  44100 hybrid      v 100.00% med    0.003c p95    0.020c gr 0.000 oct 0.000 jit   0.007 cpu    425.3
+missingfund_220  44100 paperW1     v 100.00% med    0.001c p95    0.008c gr 0.000 oct 0.000 jit   0.003 cpu 568806.3
+missingfund_220  44100 fftW1       v 100.00% med    0.001c p95    0.008c gr 0.000 oct 0.000 jit   0.003
+missingfund_220  44100 paperW15    v 100.00% med    0.001c p95    0.005c gr 0.000 oct 0.000 jit   0.002 cpu 866884.2
+missingfund_220  44100 paperW2     v 100.00% med    0.001c p95    0.004c gr 0.000 oct 0.000 jit   0.001 cpu 1162084.2
+missingfund_220  48000 fullrate    v 100.00% med    0.021c p95    0.037c gr 0.000 oct 0.000 jit   0.007 cpu   1353.1
+missingfund_220  48000 decimated   v 100.00% med    0.008c p95    0.120c gr 0.000 oct 0.000 jit   0.030 cpu    353.6
+missingfund_220  48000 hybrid      v 100.00% med    0.002c p95    0.030c gr 0.000 oct 0.000 jit   0.007 cpu    359.0
+missingfund_220  48000 paperW1     v 100.00% med    0.002c p95    0.017c gr 0.000 oct 0.000 jit   0.007 cpu 676211.5
+missingfund_220  48000 fftW1       v 100.00% med    0.002c p95    0.017c gr 0.000 oct 0.000 jit   0.007
+missingfund_220  48000 paperW15    v 100.00% med    0.002c p95    0.011c gr 0.000 oct 0.000 jit   0.004 cpu 1025985.5
+missingfund_220  48000 paperW2     v 100.00% med    0.001c p95    0.008c gr 0.000 oct 0.000 jit   0.003 cpu 1376661.8
+missingfund_220  96000 fullrate    v 100.00% med    0.004c p95    0.013c gr 0.000 oct 0.000 jit   0.002 cpu   5092.6
+missingfund_220  96000 decimated   v 100.00% med    0.009c p95    0.117c gr 0.000 oct 0.000 jit   0.009 cpu    350.6
+missingfund_220  96000 hybrid      v 100.00% med    0.000c p95    0.015c gr 0.000 oct 0.000 jit   0.002 cpu    389.9
+missingfund_220  96000 paperW1     v 100.00% med    0.000c p95    0.003c gr 0.000 oct 0.000 jit   0.001 cpu 2760024.0
+missingfund_220  96000 fftW1       v 100.00% med    0.000c p95    0.003c gr 0.000 oct 0.000 jit   0.001
+missingfund_220  96000 paperW15    v 100.00% med    0.000c p95    0.002c gr 0.000 oct 0.000 jit   0.001 cpu 4176516.9
+missingfund_220  96000 paperW2     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 5572823.2
+missingfund_220 192000 fullrate    v 100.00% med    0.001c p95    0.004c gr 0.000 oct 0.000 jit   0.000 cpu  20947.0
+missingfund_220 192000 decimated   v 100.00% med    0.008c p95    0.121c gr 0.000 oct 0.000 jit   0.010 cpu    358.8
+missingfund_220 192000 hybrid      v 100.00% med    0.000c p95    0.005c gr 0.000 oct 0.000 jit   0.000 cpu    508.0
+missingfund_220 192000 paperW1     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 11167309.3
+missingfund_220 192000 fftW1       v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000
+missingfund_220 192000 paperW15    v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 16767623.2
+missingfund_220 192000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 22413150.3
+octrap_110      44100 fullrate    v 100.00% med    0.007c p95    0.030c gr 0.000 oct 0.000 jit   0.008 cpu   1684.5
+octrap_110      44100 decimated   v 100.00% med    0.004c p95    0.044c gr 0.000 oct 0.000 jit   0.012 cpu    428.3
+octrap_110      44100 hybrid      v 100.00% med    0.003c p95    0.029c gr 0.000 oct 0.000 jit   0.008 cpu    439.5
+octrap_110      44100 paperW1     v 100.00% med    0.001c p95    0.008c gr 0.000 oct 0.000 jit   0.003 cpu 573586.4
+octrap_110      44100 fftW1       v 100.00% med    0.001c p95    0.008c gr 0.000 oct 0.000 jit   0.003
+octrap_110      44100 paperW15    v 100.00% med    0.001c p95    0.005c gr 0.000 oct 0.000 jit   0.001 cpu 873636.8
+octrap_110      44100 paperW2     v 100.00% med    0.001c p95    0.004c gr 0.000 oct 0.000 jit   0.001 cpu 1168800.0
+octrap_110      48000 fullrate    v 100.00% med    0.004c p95    0.020c gr 0.000 oct 0.000 jit   0.007 cpu   1389.0
+octrap_110      48000 decimated   v 100.00% med    0.018c p95    0.110c gr 0.000 oct 0.000 jit   0.040 cpu    363.8
+octrap_110      48000 hybrid      v 100.00% med    0.003c p95    0.018c gr 0.000 oct 0.000 jit   0.007 cpu    364.8
+octrap_110      48000 paperW1     v 100.00% med    0.000c p95    0.004c gr 0.000 oct 0.000 jit   0.001 cpu 682004.8
+octrap_110      48000 fftW1       v 100.00% med    0.000c p95    0.004c gr 0.000 oct 0.000 jit   0.001
+octrap_110      48000 paperW15    v 100.00% med    0.000c p95    0.003c gr 0.000 oct 0.000 jit   0.001 cpu 1031879.2
+octrap_110      48000 paperW2     v 100.00% med    0.000c p95    0.002c gr 0.000 oct 0.000 jit   0.001 cpu 1394917.9
+octrap_110      96000 fullrate    v 100.00% med    0.001c p95    0.006c gr 0.000 oct 0.000 jit   0.002 cpu   5176.8
+octrap_110      96000 decimated   v 100.00% med    0.015c p95    0.109c gr 0.000 oct 0.000 jit   0.036 cpu    356.0
+octrap_110      96000 hybrid      v 100.00% med    0.001c p95    0.006c gr 0.000 oct 0.000 jit   0.002 cpu    390.0
+octrap_110      96000 paperW1     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.001 cpu 2761353.4
+octrap_110      96000 fftW1       v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.001
+octrap_110      96000 paperW15    v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 4183867.1
+octrap_110      96000 paperW2     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 5574588.4
+octrap_110     192000 fullrate    v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu  20938.5
+octrap_110     192000 decimated   v 100.00% med    0.016c p95    0.109c gr 0.000 oct 0.000 jit   0.021 cpu    366.0
+octrap_110     192000 hybrid      v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu    510.5
+octrap_110     192000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 11199034.9
+octrap_110     192000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+octrap_110     192000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 16793363.5
+octrap_110     192000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 22434318.8
+vibrato220      44100 fullrate    v 100.00% med   19.289c p95   27.304c gr 0.000 oct 0.000 jit   0.000 cpu   1666.6
+vibrato220      44100 decimated   v 100.00% med   19.341c p95   27.420c gr 0.000 oct 0.000 jit   0.000 cpu    417.5
+vibrato220      44100 hybrid      v 100.00% med   19.298c p95   27.308c gr 0.000 oct 0.000 jit   0.000 cpu    428.5
+vibrato220      44100 paperW1     v 100.00% med   24.907c p95   34.835c gr 0.000 oct 0.000 jit   0.000 cpu 569963.4
+vibrato220      44100 fftW1       v 100.00% med   24.907c p95   34.835c gr 0.000 oct 0.000 jit   0.000
+vibrato220      44100 paperW15    v 100.00% med   29.172c p95   40.465c gr 0.000 oct 0.000 jit   0.000 cpu 869678.9
+vibrato220      44100 paperW2     v 100.00% med   32.765c p95   45.801c gr 0.000 oct 0.000 jit   0.000 cpu 1167463.2
+vibrato220      48000 fullrate    v 100.00% med   18.290c p95   26.367c gr 0.000 oct 0.000 jit   0.000 cpu   1383.4
+vibrato220      48000 decimated   v 100.00% med   18.371c p95   26.450c gr 0.000 oct 0.000 jit   0.000 cpu    360.7
+vibrato220      48000 hybrid      v 100.00% med   18.308c p95   26.366c gr 0.000 oct 0.000 jit   0.000 cpu    362.3
+vibrato220      48000 paperW1     v 100.00% med   25.152c p95   34.598c gr 0.000 oct 0.000 jit   0.000 cpu 678461.5
+vibrato220      48000 fftW1       v 100.00% med   25.152c p95   34.598c gr 0.000 oct 0.000 jit   0.000
+vibrato220      48000 paperW15    v 100.00% med   28.686c p95   40.243c gr 0.000 oct 0.000 jit   0.000 cpu 1029434.8
+vibrato220      48000 paperW2     v 100.00% med   32.286c p95   45.853c gr 0.000 oct 0.000 jit   0.000 cpu 1381333.3
+vibrato220      96000 fullrate    v 100.00% med   17.839c p95   26.170c gr 0.000 oct 0.000 jit   0.000 cpu   5102.0
+vibrato220      96000 decimated   v 100.00% med   18.319c p95   26.593c gr 0.000 oct 0.000 jit   0.000 cpu    359.5
+vibrato220      96000 hybrid      v 100.00% med   17.836c p95   26.173c gr 0.000 oct 0.000 jit   0.000 cpu    391.9
+vibrato220      96000 paperW1     v 100.00% med   24.718c p95   34.750c gr 0.000 oct 0.000 jit   0.000 cpu 2762980.8
+vibrato220      96000 fftW1       v 100.00% med   24.718c p95   34.750c gr 0.000 oct 0.000 jit   0.000
+vibrato220      96000 paperW15    v 100.00% med   29.007c p95   40.226c gr 0.000 oct 0.000 jit   0.000 cpu 4174128.0
+vibrato220      96000 paperW2     v 100.00% med   32.827c p95   45.865c gr 0.000 oct 0.000 jit   0.000 cpu 5575009.7
+vibrato220     192000 fullrate    v 100.00% med   17.862c p95   26.176c gr 0.000 oct 0.000 jit   0.000 cpu  20965.0
+vibrato220     192000 decimated   v 100.00% med   18.357c p95   26.634c gr 0.000 oct 0.000 jit   0.000 cpu    362.7
+vibrato220     192000 hybrid      v 100.00% med   17.860c p95   26.178c gr 0.000 oct 0.000 jit   0.000 cpu    510.3
+vibrato220     192000 paperW1     v 100.00% med   24.595c p95   34.756c gr 0.000 oct 0.000 jit   0.000 cpu 11188913.4
+vibrato220     192000 fftW1       v 100.00% med   24.595c p95   34.756c gr 0.000 oct 0.000 jit   0.000
+vibrato220     192000 paperW15    v 100.00% med   28.682c p95   40.410c gr 0.000 oct 0.000 jit   0.000 cpu 16802173.9
+vibrato220     192000 paperW2     v 100.00% med   33.186c p95   45.795c gr 0.000 oct 0.000 jit   0.000 cpu 22411677.6
+gliss110_220    44100 fullrate    v 100.00% med    6.852c p95    7.323c gr 0.000 oct 0.000 jit   0.000 cpu   1684.7
+gliss110_220    44100 decimated   v 100.00% med    6.892c p95    7.362c gr 0.000 oct 0.000 jit   0.000 cpu    430.0
+gliss110_220    44100 hybrid      v 100.00% med    6.868c p95    7.332c gr 0.000 oct 0.000 jit   0.000 cpu    438.2
+gliss110_220    44100 paperW1     v 100.00% med    8.839c p95    9.342c gr 0.000 oct 0.000 jit   0.000 cpu 573921.5
+gliss110_220    44100 fftW1       v 100.00% med    8.839c p95    9.342c gr 0.000 oct 0.000 jit   0.000
+gliss110_220    44100 paperW15    v 100.00% med   10.425c p95   11.062c gr 0.000 oct 0.000 jit   0.000 cpu 871215.8
+gliss110_220    44100 paperW2     v 100.00% med   12.185c p95   12.658c gr 0.000 oct 0.000 jit   0.000 cpu 1171689.5
+gliss110_220    48000 fullrate    v 100.00% med    6.381c p95    7.111c gr 0.000 oct 0.000 jit   0.000 cpu   1393.1
+gliss110_220    48000 decimated   v 100.00% med    6.425c p95    7.179c gr 0.000 oct 0.000 jit   0.000 cpu    364.0
+gliss110_220    48000 hybrid      v 100.00% med    6.391c p95    7.126c gr 0.000 oct 0.000 jit   0.000 cpu    386.2
+gliss110_220    48000 paperW1     v 100.00% med    8.835c p95    9.394c gr 0.000 oct 0.000 jit   0.000 cpu 680182.7
+gliss110_220    48000 fftW1       v 100.00% med    8.835c p95    9.394c gr 0.000 oct 0.000 jit   0.000
+gliss110_220    48000 paperW15    v 100.00% med   10.516c p95   11.033c gr 0.000 oct 0.000 jit   0.000 cpu 1035425.1
+gliss110_220    48000 paperW2     v 100.00% med   12.148c p95   12.707c gr 0.000 oct 0.000 jit   0.000 cpu 1389347.8
+gliss110_220    96000 fullrate    v 100.00% med    6.295c p95    6.952c gr 0.000 oct 0.000 jit   0.000 cpu   5162.8
+gliss110_220    96000 decimated   v 100.00% med    6.440c p95    7.187c gr 0.000 oct 0.000 jit   0.000 cpu    360.8
+gliss110_220    96000 hybrid      v 100.00% med    6.297c p95    6.956c gr 0.000 oct 0.000 jit   0.000 cpu    394.9
+gliss110_220    96000 paperW1     v 100.00% med    8.855c p95    9.360c gr 0.000 oct 0.000 jit   0.000 cpu 2790918.3
+gliss110_220    96000 fftW1       v 100.00% med    8.855c p95    9.360c gr 0.000 oct 0.000 jit   0.000
+gliss110_220    96000 paperW15    v 100.00% med   10.479c p95   11.032c gr 0.000 oct 0.000 jit   0.000 cpu 4171376.8
+gliss110_220    96000 paperW2     v 100.00% med   12.173c p95   12.714c gr 0.000 oct 0.000 jit   0.000 cpu 5594002.4
+gliss110_220   192000 fullrate    v 100.00% med    6.296c p95    6.960c gr 0.000 oct 0.000 jit   0.000 cpu  20870.4
+gliss110_220   192000 decimated   v 100.00% med    6.440c p95    7.188c gr 0.000 oct 0.000 jit   0.000 cpu    352.4
+gliss110_220   192000 hybrid      v 100.00% med    6.297c p95    6.961c gr 0.000 oct 0.000 jit   0.000 cpu    502.9
+gliss110_220   192000 paperW1     v 100.00% med    8.826c p95    9.316c gr 0.000 oct 0.000 jit   0.000 cpu 11156855.6
+gliss110_220   192000 fftW1       v 100.00% med    8.826c p95    9.316c gr 0.000 oct 0.000 jit   0.000
+gliss110_220   192000 paperW15    v 100.00% med   10.463c p95   11.039c gr 0.000 oct 0.000 jit   0.000 cpu 16766316.4
+gliss110_220   192000 paperW2     v 100.00% med   12.149c p95   12.711c gr 0.000 oct 0.000 jit   0.000 cpu 22419869.1
+steps110_220    44100 fullrate    v 100.00% med    0.010c p95    0.044c gr 0.026 oct 0.019 jit   0.000 cpu   1662.0
+steps110_220    44100 decimated   v 100.00% med    0.012c p95    0.196c gr 0.027 oct 0.019 jit   0.000 cpu    420.4
+steps110_220    44100 hybrid      v 100.00% med    0.002c p95    0.045c gr 0.027 oct 0.019 jit   0.000 cpu    432.8
+steps110_220    44100 paperW1     v 100.00% med    0.001c p95    0.011c gr 0.026 oct 0.021 jit   0.000 cpu 569670.2
+steps110_220    44100 fftW1       v 100.00% med    0.001c p95    0.011c gr 0.026 oct 0.021 jit   0.000
+steps110_220    44100 paperW15    v 100.00% med    0.001c p95    0.008c gr 0.021 oct 0.021 jit   0.000 cpu 870300.0
+steps110_220    44100 paperW2     v 100.00% med    0.001c p95    0.006c gr 0.026 oct 0.026 jit   0.000 cpu 1165700.0
+steps110_220    48000 fullrate    v 100.00% med    0.020c p95    0.042c gr 0.024 oct 0.015 jit   0.000 cpu   1388.0
+steps110_220    48000 decimated   v 100.00% med    0.010c p95    0.152c gr 0.025 oct 0.016 jit   0.000 cpu    363.9
+steps110_220    48000 hybrid      v 100.00% med    0.002c p95    0.026c gr 0.025 oct 0.016 jit   0.000 cpu    363.1
+steps110_220    48000 paperW1     v 100.00% med    0.001c p95    0.018c gr 0.024 oct 0.024 jit   0.000 cpu 680365.4
+steps110_220    48000 fftW1       v 100.00% med    0.001c p95    0.018c gr 0.024 oct 0.024 jit   0.000
+steps110_220    48000 paperW15    v 100.00% med    0.001c p95    0.012c gr 0.029 oct 0.024 jit   0.000 cpu 1033570.0
+steps110_220    48000 paperW2     v 100.00% med    0.001c p95    0.009c gr 0.029 oct 0.029 jit   0.000 cpu 1386338.2
+steps110_220    96000 fullrate    v 100.00% med    0.003c p95    0.018c gr 0.027 oct 0.015 jit   0.000 cpu   5138.6
+steps110_220    96000 decimated   v 100.00% med    0.010c p95    0.153c gr 0.025 oct 0.016 jit   0.000 cpu    363.0
+steps110_220    96000 hybrid      v 100.00% med    0.001c p95    0.016c gr 0.025 oct 0.015 jit   0.000 cpu    395.3
+steps110_220    96000 paperW1     v 100.00% med    0.000c p95    0.003c gr 0.022 oct 0.019 jit   0.000 cpu 2769259.6
+steps110_220    96000 fftW1       v 100.00% med    0.000c p95    0.003c gr 0.022 oct 0.019 jit   0.000
+steps110_220    96000 paperW15    v 100.00% med    0.000c p95    0.002c gr 0.024 oct 0.024 jit   0.000 cpu 4215065.2
+steps110_220    96000 paperW2     v 100.00% med    0.000c p95    0.002c gr 0.029 oct 0.029 jit   0.000 cpu 5575167.1
+steps110_220   192000 fullrate    v 100.00% med    0.001c p95    0.006c gr 0.028 oct 0.015 jit   0.000 cpu  20910.6
+steps110_220   192000 decimated   v 100.00% med    0.010c p95    0.154c gr 0.025 oct 0.016 jit   0.000 cpu    360.1
+steps110_220   192000 hybrid      v 100.00% med    0.000c p95    0.005c gr 0.025 oct 0.016 jit   0.000 cpu    507.1
+steps110_220   192000 paperW1     v 100.00% med    0.000c p95    0.001c gr 0.023 oct 0.019 jit   0.000 cpu 11191395.9
+steps110_220   192000 fftW1       v 100.00% med    0.000c p95    0.001c gr 0.023 oct 0.019 jit   0.000
+steps110_220   192000 paperW15    v 100.00% med    0.000c p95    0.001c gr 0.027 oct 0.024 jit   0.000 cpu 16778446.9
+steps110_220   192000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.029 oct 0.028 jit   0.000 cpu 22682850.9
+am220           44100 fullrate    v 98.19% med    0.918c p95   34.849c gr 0.040 oct 0.001 jit   1.515 cpu   1688.0
+am220           44100 decimated   v 99.87% med    0.857c p95   39.836c gr 0.045 oct 0.001 jit   1.564 cpu    428.7
+am220           44100 hybrid      v 99.87% med    0.857c p95   39.421c gr 0.047 oct 0.002 jit   1.583 cpu    437.5
+am220           44100 paperW1     v 100.00% med    0.357c p95   12.413c gr 0.005 oct 0.000 jit   0.558 cpu 574099.5
+am220           44100 fftW1       v 100.00% med    0.357c p95   12.413c gr 0.005 oct 0.000 jit   0.558
+am220           44100 paperW15    v 100.00% med    0.236c p95    6.674c gr 0.000 oct 0.000 jit   0.388 cpu 870847.4
+am220           44100 paperW2     v 100.00% med    0.223c p95    4.380c gr 0.000 oct 0.000 jit   0.262 cpu 1169036.8
+am220           48000 fullrate    v 100.00% med    0.520c p95  114.441c gr 0.057 oct 0.014 jit   0.557 cpu   1392.5
+am220           48000 decimated   v 99.29% med    0.366c p95   38.870c gr 0.043 oct 0.014 jit   0.559 cpu    362.6
+am220           48000 hybrid      v 100.00% med    0.359c p95   33.201c gr 0.050 oct 0.014 jit   0.591 cpu    367.2
+am220           48000 paperW1     v 100.00% med    0.347c p95   11.931c gr 0.024 oct 0.000 jit   0.460 cpu 678865.4
+am220           48000 fftW1       v 100.00% med    0.347c p95   11.931c gr 0.024 oct 0.000 jit   0.460
+am220           48000 paperW15    v 100.00% med    0.217c p95   11.458c gr 0.010 oct 0.000 jit   0.341 cpu 1032115.9
+am220           48000 paperW2     v 100.00% med    0.224c p95    4.545c gr 0.000 oct 0.000 jit   0.235 cpu 1383729.5
+am220           96000 fullrate    v 100.00% med    1.092c p95  492.096c gr 0.075 oct 0.014 jit   1.194 cpu   5128.1
+am220           96000 decimated   v 99.29% med    0.359c p95   38.897c gr 0.047 oct 0.011 jit   0.427 cpu    361.5
+am220           96000 hybrid      v 99.29% med    0.701c p95   66.170c gr 0.050 oct 0.011 jit   1.218 cpu    395.2
+am220           96000 paperW1     v 100.00% med    0.359c p95   14.646c gr 0.000 oct 0.000 jit   0.520 cpu 2764644.2
+am220           96000 fftW1       v 100.00% med    0.359c p95   14.646c gr 0.000 oct 0.000 jit   0.520
+am220           96000 paperW15    v 100.00% med    0.221c p95   10.723c gr 0.000 oct 0.000 jit   0.274 cpu 4171067.6
+am220           96000 paperW2     v 100.00% med    0.225c p95    6.887c gr 0.000 oct 0.000 jit   0.207 cpu 5578094.4
+am220          192000 fullrate    v 100.00% med    1.043c p95 1189.503c gr 0.073 oct 0.014 jit   0.771 cpu  20963.6
+am220          192000 decimated   v 99.47% med    0.362c p95   60.852c gr 0.050 oct 0.013 jit   0.308 cpu    361.4
+am220          192000 hybrid      v 99.47% med    0.701c p95   59.998c gr 0.050 oct 0.014 jit   0.862 cpu    506.5
+am220          192000 paperW1     v 100.00% med    0.309c p95   23.421c gr 0.013 oct 0.000 jit   0.513 cpu 11147652.2
+am220          192000 fftW1       v 100.00% med    0.309c p95   23.421c gr 0.013 oct 0.000 jit   0.513
+am220          192000 paperW15    v 100.00% med    0.211c p95   13.397c gr 0.000 oct 0.000 jit   0.345 cpu 16778548.3
+am220          192000 paperW2     v 100.00% med    0.210c p95    7.410c gr 0.000 oct 0.000 jit   0.173 cpu 22376590.3
+whitenoise      44100 fullrate    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu   1657.4
+whitenoise      44100 decimated   v 99.42% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    418.5
+whitenoise      44100 hybrid      v 99.74% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    430.2
+whitenoise      44100 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 569722.5
+whitenoise      44100 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+whitenoise      44100 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 864105.3
+whitenoise      44100 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 1162547.4
+whitenoise      48000 fullrate    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu   1371.6
+whitenoise      48000 decimated   v 99.88% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    355.6
+whitenoise      48000 hybrid      v 99.94% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    365.9
+whitenoise      48000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 676860.6
+whitenoise      48000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+whitenoise      48000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 1027913.0
+whitenoise      48000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 1379376.8
+whitenoise      96000 fullrate    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu   5100.4
+whitenoise      96000 decimated   v 99.91% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    360.0
+whitenoise      96000 hybrid      v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    395.9
+whitenoise      96000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 2756353.4
+whitenoise      96000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+whitenoise      96000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 4181292.3
+whitenoise      96000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 5609687.7
+whitenoise     192000 fullrate    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu  21131.3
+whitenoise     192000 decimated   v 99.84% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    363.9
+whitenoise     192000 hybrid      v 99.99% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    518.6
+whitenoise     192000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 11148642.6
+whitenoise     192000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+whitenoise     192000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 16767129.2
+whitenoise     192000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 22440598.8
+snr10_220       44100 fullrate    v 100.00% med    2.157c p95    7.382c gr 0.000 oct 0.000 jit   1.265 cpu   1683.9
+snr10_220       44100 decimated   v 100.00% med    1.047c p95    3.797c gr 0.000 oct 0.000 jit   0.862 cpu    430.1
+snr10_220       44100 hybrid      v 100.00% med    2.107c p95    6.231c gr 0.000 oct 0.000 jit   1.258 cpu    438.8
+snr10_220       44100 paperW1     v 100.00% med    1.264c p95    3.037c gr 0.000 oct 0.000 jit   1.272 cpu 574586.4
+snr10_220       44100 fftW1       v 100.00% med    1.264c p95    3.037c gr 0.000 oct 0.000 jit   1.272
+snr10_220       44100 paperW15    v 100.00% med    1.108c p95    2.688c gr 0.000 oct 0.000 jit   0.839 cpu 869157.9
+snr10_220       44100 paperW2     v 100.00% med    1.005c p95    2.350c gr 0.000 oct 0.000 jit   0.681 cpu 1167594.7
+snr10_220       48000 fullrate    v 100.00% med    2.826c p95    7.444c gr 0.000 oct 0.000 jit   1.406 cpu   1362.6
+snr10_220       48000 decimated   v 100.00% med    1.410c p95    4.255c gr 0.000 oct 0.000 jit   0.793 cpu    353.0
+snr10_220       48000 hybrid      v 100.00% med    2.798c p95    7.013c gr 0.000 oct 0.000 jit   1.346 cpu    362.7
+snr10_220       48000 paperW1     v 100.00% med    1.172c p95    4.144c gr 0.000 oct 0.000 jit   1.348 cpu 679091.3
+snr10_220       48000 fftW1       v 100.00% med    1.172c p95    4.144c gr 0.000 oct 0.000 jit   1.348
+snr10_220       48000 paperW15    v 100.00% med    1.013c p95    3.276c gr 0.000 oct 0.000 jit   0.986 cpu 1032338.2
+snr10_220       48000 paperW2     v 100.00% med    0.802c p95    2.886c gr 0.000 oct 0.000 jit   0.654 cpu 1383898.6
+snr10_220       96000 fullrate    v 100.00% med    4.107c p95   91.004c gr 0.063 oct 0.000 jit   1.222 cpu   5113.1
+snr10_220       96000 decimated   v 100.00% med    0.936c p95    2.661c gr 0.000 oct 0.000 jit   0.318 cpu    352.8
+snr10_220       96000 hybrid      v 100.00% med    2.233c p95    6.768c gr 0.000 oct 0.000 jit   0.644 cpu    389.6
+snr10_220       96000 paperW1     v 100.00% med    1.374c p95    4.601c gr 0.000 oct 0.000 jit   0.964 cpu 2758927.9
+snr10_220       96000 fftW1       v 100.00% med    1.374c p95    4.601c gr 0.000 oct 0.000 jit   0.964
+snr10_220       96000 paperW15    v 100.00% med    1.192c p95    4.098c gr 0.000 oct 0.000 jit   0.542 cpu 4164053.1
+snr10_220       96000 paperW2     v 100.00% med    1.028c p95    3.749c gr 0.000 oct 0.000 jit   0.435 cpu 5566167.1
+snr10_220      192000 fullrate    v 100.00% med    9.213c p95  125.960c gr 0.080 oct 0.000 jit   0.585 cpu  20864.1
+snr10_220      192000 decimated   v 100.00% med    0.655c p95    1.815c gr 0.000 oct 0.000 jit   0.125 cpu    350.7
+snr10_220      192000 hybrid      v 100.00% med    1.968c p95    5.749c gr 0.000 oct 0.000 jit   0.217 cpu    504.4
+snr10_220      192000 paperW1     v 100.00% med    2.922c p95    8.845c gr 0.000 oct 0.000 jit   0.731 cpu 11149126.4
+snr10_220      192000 fftW1       v 100.00% med    2.922c p95    8.845c gr 0.000 oct 0.000 jit   0.731
+snr10_220      192000 paperW15    v 100.00% med    1.985c p95    6.640c gr 0.000 oct 0.000 jit   0.345 cpu 16768334.5
+snr10_220      192000 paperW2     v 100.00% med    1.391c p95    6.381c gr 0.000 oct 0.000 jit   0.275 cpu 22418818.2
+silence         44100 fullrate    v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     53.3
+silence         44100 decimated   v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     40.1
+silence         44100 hybrid      v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     41.6
+silence         44100 paperW1     v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 571418.8
+silence         44100 fftW1       v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+silence         44100 paperW15    v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 867647.4
+silence         44100 paperW2     v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 1163268.4
+silence         48000 fullrate    v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     53.2
+silence         48000 decimated   v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     40.2
+silence         48000 hybrid      v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     41.7
+silence         48000 paperW1     v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 680360.6
+silence         48000 fftW1       v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+silence         48000 paperW15    v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 1054555.6
+silence         48000 paperW2     v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 1390637.7
+silence         96000 fullrate    v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     88.6
+silence         96000 decimated   v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     40.4
+silence         96000 hybrid      v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     43.1
+silence         96000 paperW1     v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 2773427.9
+silence         96000 fftW1       v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+silence         96000 paperW15    v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 4172014.5
+silence         96000 paperW2     v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 5582368.0
+silence        192000 fullrate    v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    168.8
+silence        192000 decimated   v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     40.6
+silence        192000 hybrid      v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu     62.3
+silence        192000 paperW1     v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 11217255.1
+silence        192000 fftW1       v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+silence        192000 paperW15    v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 16795561.6
+silence        192000 paperW2     v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 22459796.4
+dc05            44100 fullrate    v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu   1683.2
+dc05            44100 decimated   v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    426.9
+dc05            44100 hybrid      v  0.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    430.8
+dc05            44100 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 571329.8
+dc05            44100 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+dc05            44100 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 868115.8
+dc05            44100 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 1165331.6
+dc05            48000 fullrate    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu   1387.2
+dc05            48000 decimated   v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    357.0
+dc05            48000 hybrid      v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    356.4
+dc05            48000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 678504.8
+dc05            48000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+dc05            48000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 1030256.0
+dc05            48000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 1379425.1
+dc05            96000 fullrate    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu   5127.7
+dc05            96000 decimated   v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    354.4
+dc05            96000 hybrid      v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    375.7
+dc05            96000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 2775045.7
+dc05            96000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+dc05            96000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 4171992.8
+dc05            96000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 5599188.9
+dc05           192000 fullrate    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu  20991.4
+dc05           192000 decimated   v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    361.2
+dc05           192000 hybrid      v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu    498.2
+dc05           192000 paperW1     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 11150824.3
+dc05           192000 fftW1       v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000
+dc05           192000 paperW15    v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 16816974.6
+dc05           192000 paperW2     v 100.00% med    0.000c p95    0.000c gr 0.000 oct 0.000 jit   0.000 cpu 22446164.8
+clipped220      44100 fullrate    v 100.00% med    0.013c p95    0.034c gr 0.000 oct 0.000 jit   0.010 cpu   1669.0
+clipped220      44100 decimated   v 100.00% med    0.024c p95    0.220c gr 0.000 oct 0.000 jit   0.031 cpu    424.2
+clipped220      44100 hybrid      v 100.00% med    0.006c p95    0.025c gr 0.000 oct 0.000 jit   0.010 cpu    432.9
+clipped220      44100 paperW1     v 100.00% med    0.003c p95    0.012c gr 0.000 oct 0.000 jit   0.003 cpu 571471.2
+clipped220      44100 fftW1       v 100.00% med    0.003c p95    0.012c gr 0.000 oct 0.000 jit   0.003
+clipped220      44100 paperW15    v 100.00% med    0.003c p95    0.008c gr 0.000 oct 0.000 jit   0.001 cpu 888036.8
+clipped220      44100 paperW2     v 100.00% med    0.002c p95    0.007c gr 0.000 oct 0.000 jit   0.001 cpu 1169126.3
+clipped220      48000 fullrate    v 100.00% med    0.023c p95    0.050c gr 0.000 oct 0.000 jit   0.004 cpu   1388.1
+clipped220      48000 decimated   v 100.00% med    0.012c p95    0.127c gr 0.000 oct 0.000 jit   0.017 cpu    361.5
+clipped220      48000 hybrid      v 100.00% med    0.004c p95    0.030c gr 0.000 oct 0.000 jit   0.004 cpu    362.8
+clipped220      48000 paperW1     v 100.00% med    0.005c p95    0.021c gr 0.000 oct 0.000 jit   0.005 cpu 679870.2
+clipped220      48000 fftW1       v 100.00% med    0.005c p95    0.021c gr 0.000 oct 0.000 jit   0.005
+clipped220      48000 paperW15    v 100.00% med    0.005c p95    0.016c gr 0.000 oct 0.000 jit   0.002 cpu 1032980.7
+clipped220      48000 paperW2     v 100.00% med    0.005c p95    0.013c gr 0.000 oct 0.000 jit   0.002 cpu 1385671.5
+clipped220      96000 fullrate    v 100.00% med    0.005c p95    0.019c gr 0.000 oct 0.000 jit   0.002 cpu   5155.5
+clipped220      96000 decimated   v 100.00% med    0.011c p95    0.134c gr 0.000 oct 0.000 jit   0.011 cpu    360.8
+clipped220      96000 hybrid      v 100.00% med    0.002c p95    0.020c gr 0.000 oct 0.000 jit   0.002 cpu    394.4
+clipped220      96000 paperW1     v 100.00% med    0.001c p95    0.004c gr 0.000 oct 0.000 jit   0.001 cpu 2841197.1
+clipped220      96000 fftW1       v 100.00% med    0.001c p95    0.004c gr 0.000 oct 0.000 jit   0.001
+clipped220      96000 paperW15    v 100.00% med    0.001c p95    0.003c gr 0.000 oct 0.000 jit   0.001 cpu 4194582.1
+clipped220      96000 paperW2     v 100.00% med    0.001c p95    0.002c gr 0.000 oct 0.000 jit   0.001 cpu 5586215.5
+clipped220     192000 fullrate    v 100.00% med    0.001c p95    0.006c gr 0.000 oct 0.000 jit   0.000 cpu  20941.5
+clipped220     192000 decimated   v 100.00% med    0.009c p95    0.129c gr 0.000 oct 0.000 jit   0.019 cpu    363.1
+clipped220     192000 hybrid      v 100.00% med    0.000c p95    0.006c gr 0.000 oct 0.000 jit   0.000 cpu    512.9
+clipped220     192000 paperW1     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 11179601.7
+clipped220     192000 fftW1       v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000
+clipped220     192000 paperW15    v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 16764786.2
+clipped220     192000 paperW2     v 100.00% med    0.000c p95    0.001c gr 0.000 oct 0.000 jit   0.000 cpu 22480764.8
+transients220   44100 fullrate    v 99.74% med    0.011c p95    3.007c gr 0.009 oct 0.001 jit   0.000 cpu   1672.1
+transients220   44100 decimated   v 99.94% med json written: /home/z/my-project/octavox-work/r23/evidence/analysis_round23/r23_detector_compare.json
+   0.021c p95    2.623c gr 0.008 oct 0.000 jit   0.000 cpu    429.2
+transients220   44100 hybrid      v 99.94% med    0.002c p95    2.603c gr 0.008 oct 0.000 jit   0.000 cpu    438.2
+transients220   44100 paperW1     v 100.00% med    0.001c p95    1.459c gr 0.005 oct 0.000 jit   0.000 cpu 574544.5
+transients220   44100 fftW1       v 100.00% med    0.001c p95    1.459c gr 0.005 oct 0.000 jit   0.000
+transients220   44100 paperW15    v 100.00% med    0.001c p95    1.095c gr 0.000 oct 0.000 jit   0.000 cpu 868900.0
+transients220   44100 paperW2     v 100.00% med    0.001c p95    0.787c gr 0.000 oct 0.000 jit   0.000 cpu 1168731.6
+transients220   48000 fullrate    v 100.00% med    0.021c p95    2.778c gr 0.012 oct 0.000 jit   0.000 cpu   1390.8
+transients220   48000 decimated   v 100.00% med    0.011c p95    1.651c gr 0.009 oct 0.000 jit   0.000 cpu    359.3
+transients220   48000 hybrid      v 100.00% med    0.003c p95    1.882c gr 0.007 oct 0.000 jit   0.000 cpu    362.6
+transients220   48000 paperW1     v 100.00% med    0.002c p95    1.618c gr 0.000 oct 0.000 jit   0.000 cpu 679658.7
+transients220   48000 fftW1       v 100.00% med    0.002c p95    1.618c gr 0.000 oct 0.000 jit   0.000
+transients220   48000 paperW15    v 100.00% med    0.001c p95    1.471c gr 0.000 oct 0.000 jit   0.000 cpu 1031430.0
+transients220   48000 paperW2     v 100.00% med    0.001c p95    0.846c gr 0.000 oct 0.000 jit   0.000 cpu 1384903.4
+transients220   96000 fullrate    v 100.00% med    0.004c p95    3.770c gr 0.012 oct 0.000 jit   0.000 cpu   5126.3
+transients220   96000 decimated   v 99.88% med    0.011c p95    1.688c gr 0.008 oct 0.000 jit   0.000 cpu    363.8
+transients220   96000 hybrid      v 99.88% med    0.001c p95    3.179c gr 0.008 oct 0.000 jit   0.000 cpu    397.2
+transients220   96000 paperW1     v 100.00% med    0.000c p95    1.083c gr 0.002 oct 0.000 jit   0.000 cpu 2774521.6
+transients220   96000 fftW1       v 100.00% med    0.000c p95    1.083c gr 0.002 oct 0.000 jit   0.000
+transients220   96000 paperW15    v 100.00% med    0.000c p95    1.146c gr 0.000 oct 0.000 jit   0.000 cpu 4178910.6
+transients220   96000 paperW2     v 100.00% med    0.000c p95    1.058c gr 0.000 oct 0.000 jit   0.000 cpu 5931779.7
+transients220  192000 fullrate    v 100.00% med    0.001c p95    3.834c gr 0.011 oct 0.000 jit   0.000 cpu  21024.8
+transients220  192000 decimated   v 99.88% med    0.011c p95    1.536c gr 0.008 oct 0.000 jit   0.000 cpu    361.6
+transients220  192000 hybrid      v 99.88% med    0.000c p95    3.121c gr 0.009 oct 0.000 jit   0.000 cpu    512.7
+transients220  192000 paperW1     v 100.00% med    0.000c p95    1.593c gr 0.000 oct 0.000 jit   0.000 cpu 11179040.9
+transients220  192000 fftW1       v 100.00% med    0.000c p95    1.593c gr 0.000 oct 0.000 jit   0.000
+transients220  192000 paperW15    v 100.00% med    0.000c p95    1.211c gr 0.000 oct 0.000 jit   0.000 cpu 16886090.6
+transients220  192000 paperW2     v 100.00% med    0.000c p95    1.087c gr 0.000 oct 0.000 jit   0.000 cpu 22403813.3

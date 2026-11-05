@@ -1,0 +1,12 @@
+[
+{"case": "vector_A_fixedW", "d_ok": true},
+{"case": "vector_B_shrink"},
+{"case": "fft_equivalence", "max_rel_err": 3.690e-09},
+{"case": "boundary_tests", "flat": 1, "silence": 1, "nan": 1, "inf": 1, "tiny": 1, "tau_boundary": 1},
+{"case": "tone_55", "A_rawD": -0.0002, "A_cmndf": 0.0007, "B_shrink": 0.0007, "C_legacy": -0.0008, "cmndf_A": 0.0000, "cmndf_C": 0.0000},
+{"case": "tone_110", "A_rawD": 0.0001, "A_cmndf": 0.0029, "B_shrink": 0.0027, "C_legacy": 0.0034, "cmndf_A": 0.0000, "cmndf_C": 0.0000},
+{"case": "tone_220", "A_rawD": 0.0007, "A_cmndf": 0.0171, "B_shrink": 0.0159, "C_legacy": 0.0211, "cmndf_A": 0.0000, "cmndf_C": 0.0000},
+{"case": "tone_440", "A_rawD": 0.0029, "A_cmndf": 0.0738, "B_shrink": 0.0725, "C_legacy": 0.1113, "cmndf_A": 0.0000, "cmndf_C": 0.0000},
+{"case": "tone_880", "A_rawD": -0.0225, "A_cmndf": 0.0858, "B_shrink": 0.0858, "C_legacy": 0.3327, "cmndf_A": 0.0038, "cmndf_C": 0.0064},
+{"case": "step6_demo", "s5_med": 0.0008, "s5_p95": 0.0910, "s6_med": 0.0008, "s6_p95": 0.0910}
+]

@@ -1,0 +1,5 @@
+=== g++ version + system ===
+g++ (Debian 14.2.0-19) 14.2.0
+Copyright (C) 2024 Free Software Foundation, Inc.
+Linux c-6aeb9b72-14127d0f-8455ca74f57e 5.10.134-013.15.kangaroo.al8.x86_64 #1 SMP Thu Jul 30 12:54:59 UTC 2026 x86_64 GNU/Linux
+model name	: Intel(R) Xeon(R) Processor

@@ -1,0 +1,84 @@
+OCTAVOX 15.0.0 -- DEFAULT-CONFIG NEUTRALITY REFERENCE HASHES (R15-REB1)
+=======================================================================
+Recorded 2026-10-26 by agent REB-1 (task R15-REB1). These four FNV-1a-64
+hashes are the NEW reference record replacing the lost round-15 P1
+default_neutrality capture (its three hashes 0xc7179361b0a1ca4f /
+0xa894e57671084f9f / 0x638ce760ed3cd10a were captured by the lost
+r15p1_refcapture tool over configs that were not preserved).
+
+PROTOCOL
+--------
+Tool:  native/cli/r15ref_capture.cpp (CMake target octavox_r15refcap).
+       It uses ONLY the round-12 public API so the identical logic links
+       against both cores.
+       ./build/octavox_r15refcap            -> the four hashes below
+       ./build/octavox_r15refcap --probe96  -> the detector-at-96kHz probe
+Hash:  FNV-1a 64 over the raw output float bits (little-endian bytes), the
+       same law as the acceptance suite's default_neutrality cases.
+Input: pure-formula generators (shared 64-bit LCG spec / sine / chirp),
+       N = 2^18 = 262144 samples per config at 48 kHz, fixed cycling block
+       patterns -- fully deterministic.
+
+THE FOUR CONFIGURATIONS (all defaults unless stated)
+----------------------------------------------------
+cfg1  default unity + deterministic LCG noise (seed 987654321, amp 0.5);
+      blocks 64/150/512 mixed.
+cfg2  ratio 2^(700/1200), 8 voices, spread on, feedback 0.25, 220 Hz sine
+      (amp 0.5); blocks 150/512/64.
+cfg3  ratio 2^(-400/1200), 4 voices, spread off, chirp 200->800 Hz
+      (amp 0.5); blocks 64/512/150.
+cfg4  MultichannelShifter stereo 2ch, different per-channel inputs (LCG
+      seeds 1111111111 / 2222222222, amp 0.4), 4 voices, unity ->
+      2^(400/1200) mid-stream (setRatio at the first block boundary at/after
+      N/2); blocks 1024/64/512. Hash = L bits then R bits in ONE FNV stream.
+
+RESULT: 12.0.0 vs 15.0.0 -- BIT-IDENTICAL, 4/4 (the PRIMARY gate of the
+-----------------------------------------------------------------------------
+rebuild; the 15.0.0 core is behaviour-neutral under the default surface:
+  cfg1_default_unity_lcg_noise_b64_150_512  0x74318b06c182aacb
+  cfg2_r700c_8v_spread_fb025_sine220       0x46a091e98f2a413a
+  cfg3_rm400c_4v_nospread_chirp200_800     0x9502cf8827e8782c
+  cfg4_stereo_2ch_4v_unity_then_r400c      0x6f7a2ce3ca310c25
+-----------------------------------------------------------------------------
+Both versions produce exactly these four values (verified on the release
+build and re-verified under ASan+UBSan; the mechanism is the special-cased
+wet == 1 && !bypass-blend legacy output path plus the bit-neutral gain == 1
+multiplication -- x*1.0 == x).
+
+DETECTOR-AT-96 kHz PROBE (R13-b evidence; NOT part of the neutrality gate)
+--------------------------------------------------------------------------
+Config: steady 110 Hz sine at 96 kHz, grain 8192 / base 512 (the
+sample-domain rate-scaled acceptance config), estimates sampled at every
+1024-sample block boundary after 1 s:
+  12.0.0 core:  estimate_min/max/last = 0.000000 / 0.000000 / 0.000000 Hz
+                (the fixed 2048 window is BLIND at 96 kHz: m < 32 -- the
+                R13-b motivation, measured here on the round-12 base)
+  15.0.0 core:  estimate_min = 110.000030 Hz, estimate_max = 110.000093 Hz,
+                estimate_last = 110.000083 Hz  (sub-milli-cent tracking)
+The R13-b law (win = max(2048, ceil(2.5*tau_max))) keeps 44.1/48 kHz
+bit-identical (win == 2048 there -- see the neutrality hashes above) and
+makes the detector track at 96 kHz.
+
+REBUILD VERIFICATION SUMMARY (see the worklog R15-REB1 entry)
+-------------------------------------------------------------
+* 51/51 round-12 tests green on 12.0.0, on 15.0.0 (frozen gates), and on
+  15.0.0 with the corrected Hann-exact pitchFFT estimator (release AND
+  ASan+UBSan, zero sanitizer reports).
+* The extended 15.0.0 benchmark (bench/bench_main.cpp) runs all 11 cases
+  incl. the 96 kHz variants and the active-surface case with ZERO
+  steady-state allocations: mono_1v_b128 1318.97 ns/frame (15.80x RT),
+  mono_8v_b128 1509.75 (13.80x), ctrl512 417.57 (49.89x),
+  mono_8v_b128_surface 1533.93 (13.58x), 96k cases 5002.73 / 5217.07
+  (2.08x / 2.00x), RSS 16484 KB -- consistent with the recorded P1
+  measurements (unchanged vs the 14.0.0 baseline; +2 MiB/engine dry ring).
+
+NEXT AGENT: the 7 r15acc_* acceptance cases (tests/r15_acceptance_cases.cpp.inc)
+are designed but NOT wired; after wiring them, re-run this capture tool and
+check the four hashes above still match (they are the regression record for
+any future core change).
+[R16-P1 CORRECTION, 2026-10-28: the statement above is SUPERSEDED — the 7
+r15acc_* cases were wired into tests/test_main.cpp by R15-REB2 and the
+delivered suite is 85/85 (release + ASan/UBSan). The regression instruction
+STANDS: re-run this capture tool after any future core change and check the
+four hashes. Re-verified 2026-10-28 (R16-R0, pre-edit baseline): all four
+match. See evidence/analysis_round16/R16_P1_RECONCILIATION_LOG.md.]

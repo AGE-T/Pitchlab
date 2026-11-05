@@ -1,0 +1,344 @@
+{
+  "meta": {
+    "sr": 48000,
+    "poc": "poc",
+    "native_cli": "/home/z/octavox/native-build/octavox_cli"
+  },
+  "unity_comb": [
+    {
+      "f_hz": 110.0,
+      "native_gain_db": 0.0,
+      "v2_gain_db": -9.154600216271039
+    },
+    {
+      "f_hz": 165.0,
+      "native_gain_db": 0.0,
+      "v2_gain_db": -0.2774199839014636
+    },
+    {
+      "f_hz": 220.0,
+      "native_gain_db": 0.0,
+      "v2_gain_db": -2.418344221250694
+    },
+    {
+      "f_hz": 330.0,
+      "native_gain_db": 0.0,
+      "v2_gain_db": -1.1470453876103974
+    },
+    {
+      "f_hz": 440.0,
+      "native_gain_db": 0.0,
+      "v2_gain_db": -16.709127246770436
+    },
+    {
+      "f_hz": 660.0,
+      "native_gain_db": 0.0,
+      "v2_gain_db": -5.419747691508457
+    },
+    {
+      "f_hz": 880.0,
+      "native_gain_db": 0.0,
+      "v2_gain_db": -0.3791614273752209
+    },
+    {
+      "f_hz": 1320.0,
+      "native_gain_db": 0.0,
+      "v2_gain_db": -7.416457425814635
+    }
+  ],
+  "pitch_battery": [
+    {
+      "cents": 0.0,
+      "measured_f0": 219.96485303103503,
+      "error_cents": -0.27660222903666387,
+      "env_mod_db": 0.006346055507030041
+    },
+    {
+      "cents": 1.0,
+      "measured_f0": 220.1499213387515,
+      "error_cents": 0.17936604680643664,
+      "env_mod_db": 0.012961826244399597
+    },
+    {
+      "cents": -1.0,
+      "measured_f0": 219.83847120284238,
+      "error_cents": -0.27157665563498545,
+      "env_mod_db": 0.017393199433052654
+    },
+    {
+      "cents": 10.0,
+      "measured_f0": 221.2718833971048,
+      "error_cents": -0.02005781896023784,
+      "env_mod_db": 0.8755622382217759
+    },
+    {
+      "cents": -10.0,
+      "measured_f0": 218.74435501302494,
+      "error_cents": 0.09071562943636025,
+      "env_mod_db": 0.8742492308620216
+    },
+    {
+      "cents": 50.0,
+      "measured_f0": 226.41756974869443,
+      "error_cents": -0.22113166892873437,
+      "env_mod_db": 0.43215426955786446
+    },
+    {
+      "cents": -50.0,
+      "measured_f0": 213.7663147713838,
+      "error_cents": 0.23720934566265583,
+      "env_mod_db": 0.4875571353136842
+    },
+    {
+      "cents": 100.0,
+      "measured_f0": 233.04652465103874,
+      "error_cents": -0.26263019987553093,
+      "env_mod_db": 0.0017227867398856198
+    },
+    {
+      "cents": -100.0,
+      "measured_f0": 207.65894846922103,
+      "error_cents": 0.05502180896222342,
+      "env_mod_db": 0.004234777042905717
+    },
+    {
+      "cents": 500.0,
+      "measured_f0": 293.6744085534413,
+      "error_cents": 0.05683325079064616,
+      "env_mod_db": 0.024097173713782737
+    },
+    {
+      "cents": -500.0,
+      "measured_f0": 164.80859056309484,
+      "error_cents": -0.05449543743532104,
+      "env_mod_db": 0.007116896267420257
+    },
+    {
+      "cents": 1200.0,
+      "measured_f0": 440.03901391186054,
+      "error_cents": 0.1534982235489224,
+      "env_mod_db": 0.007272817276377665
+    },
+    {
+      "cents": -1200.0,
+      "measured_f0": 109.96844505906752,
+      "error_cents": -0.49669841070772236,
+      "env_mod_db": 0.006751391142042809
+    }
+  ],
+  "stereo": {
+    "native_R_peak": 0.0,
+    "native_R_peak_db": -6000.0,
+    "v2_R_peak": 0.0,
+    "v2_R_peak_db": -6000.0
+  },
+  "python_timing": [
+    {
+      "voices": 1,
+      "seconds_audio": 5.0,
+      "cpu_s": 11.429261181000584,
+      "x_realtime": 0.43747359700833005,
+      "ns_per_frame": 47621.92158750243
+    },
+    {
+      "voices": 8,
+      "seconds_audio": 5.0,
+      "cpu_s": 19.092101246999846,
+      "x_realtime": 0.26188840795015716,
+      "ns_per_frame": 79550.42186249937
+    }
+  ],
+  "native_bench": {
+    "bench": "octavox_native",
+    "version": "octavox-native 12.0.0",
+    "sample_rate": 48000,
+    "input": "LCG(2025) noise, amp 0.5, 5 s per case, best of 3",
+    "rows": [
+      {
+        "name": "mono_1v_b64",
+        "voices": 1,
+        "channels": 1,
+        "block": 64,
+        "detection_interval": 64,
+        "ns_per_frame": 1345.995,
+        "realtime_factor": 15.478,
+        "rss_kb": 8204,
+        "steady_allocs": 0,
+        "seconds": 0.323039
+      },
+      {
+        "name": "mono_1v_b128",
+        "voices": 1,
+        "channels": 1,
+        "block": 128,
+        "detection_interval": 64,
+        "ns_per_frame": 1352.3233,
+        "realtime_factor": 15.4056,
+        "rss_kb": 8644,
+        "steady_allocs": 0,
+        "seconds": 0.324558
+      },
+      {
+        "name": "mono_1v_b512",
+        "voices": 1,
+        "channels": 1,
+        "block": 512,
+        "detection_interval": 64,
+        "ns_per_frame": 1347.7565,
+        "realtime_factor": 15.4578,
+        "rss_kb": 8644,
+        "steady_allocs": 0,
+        "seconds": 0.323462
+      },
+      {
+        "name": "mono_8v_b64",
+        "voices": 8,
+        "channels": 1,
+        "block": 64,
+        "detection_interval": 64,
+        "ns_per_frame": 1552.0955,
+        "realtime_factor": 13.4227,
+        "rss_kb": 8644,
+        "steady_allocs": 0,
+        "seconds": 0.372503
+      },
+      {
+        "name": "mono_8v_b128",
+        "voices": 8,
+        "channels": 1,
+        "block": 128,
+        "detection_interval": 64,
+        "ns_per_frame": 1502.5984,
+        "realtime_factor": 13.8649,
+        "rss_kb": 8644,
+        "steady_allocs": 0,
+        "seconds": 0.360624
+      },
+      {
+        "name": "mono_8v_b512",
+        "voices": 8,
+        "channels": 1,
+        "block": 512,
+        "detection_interval": 64,
+        "ns_per_frame": 1513.2563,
+        "realtime_factor": 13.7672,
+        "rss_kb": 8644,
+        "steady_allocs": 0,
+        "seconds": 0.363182
+      },
+      {
+        "name": "stereo_1v_b128",
+        "voices": 1,
+        "channels": 2,
+        "block": 128,
+        "detection_interval": 64,
+        "ns_per_frame": 2591.5922,
+        "realtime_factor": 8.0388,
+        "rss_kb": 12740,
+        "steady_allocs": 0,
+        "seconds": 0.621982
+      },
+      {
+        "name": "stereo_8v_b128",
+        "voices": 8,
+        "channels": 2,
+        "block": 128,
+        "detection_interval": 64,
+        "ns_per_frame": 3088.8193,
+        "realtime_factor": 6.7448,
+        "rss_kb": 12740,
+        "steady_allocs": 0,
+        "seconds": 0.741317
+      },
+      {
+        "name": "mono_8v_b128_ctrl512",
+        "voices": 8,
+        "channels": 1,
+        "block": 128,
+        "detection_interval": 512,
+        "ns_per_frame": 409.5663,
+        "realtime_factor": 50.8668,
+        "rss_kb": 12740,
+        "steady_allocs": 0,
+        "seconds": 0.098296
+      }
+    ]
+  },
+  "gates": [
+    {
+      "name": "native_unity_comb_flat",
+      "pass": true,
+      "detail": "native gain spread 0.0000 dB across the tone battery"
+    },
+    {
+      "name": "v2_unity_comb_measured",
+      "pass": true,
+      "detail": "v2 reference comb spread 16.4317 dB (the documented two-tap unity comb -- BEFORE case)"
+    },
+    {
+      "name": "pitch_+1c",
+      "pass": true,
+      "detail": "pitch error +0.1794 cents"
+    },
+    {
+      "name": "pitch_-1c",
+      "pass": true,
+      "detail": "pitch error -0.2716 cents"
+    },
+    {
+      "name": "pitch_+10c",
+      "pass": true,
+      "detail": "pitch error -0.0201 cents"
+    },
+    {
+      "name": "pitch_-10c",
+      "pass": true,
+      "detail": "pitch error +0.0907 cents"
+    },
+    {
+      "name": "pitch_+50c",
+      "pass": true,
+      "detail": "pitch error -0.2211 cents"
+    },
+    {
+      "name": "pitch_-50c",
+      "pass": true,
+      "detail": "pitch error +0.2372 cents"
+    },
+    {
+      "name": "pitch_+100c",
+      "pass": true,
+      "detail": "pitch error -0.2626 cents"
+    },
+    {
+      "name": "pitch_-100c",
+      "pass": true,
+      "detail": "pitch error +0.0550 cents"
+    },
+    {
+      "name": "pitch_+500c",
+      "pass": true,
+      "detail": "pitch error +0.0568 cents"
+    },
+    {
+      "name": "pitch_-500c",
+      "pass": true,
+      "detail": "pitch error -0.0545 cents"
+    },
+    {
+      "name": "pitch_+1200c",
+      "pass": true,
+      "detail": "pitch error +0.1535 cents"
+    },
+    {
+      "name": "pitch_-1200c",
+      "pass": true,
+      "detail": "pitch error -0.4967 cents"
+    },
+    {
+      "name": "native_stereo_isolation",
+      "pass": true,
+      "detail": "native R-channel peak 0.000e+00 (-6000.0 dB)"
+    }
+  ]
+}

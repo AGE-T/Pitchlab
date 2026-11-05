@@ -1,0 +1,37 @@
+module: ./bin/Release/../../VST3/Release/PitchLab_Lagrange6_Balanced.vst3
+build variant: PitchLab_Lagrange6_Balanced (default interpolation: Lagrange6)
+harness scope: SDK module loader + factory + full interface contract vs the hand-driven core (NOT a DAW test)
+
+[module_load_factory               ] ok   
+                                        factory_class_count = 1
+[processor_creation                ] ok   
+[component_initialize_buses        ] ok   
+                                        audio_input_buses = 1
+                                        audio_output_buses = 1
+                                        parameter_count = 38
+[bus_negotiation_mono              ] ok   
+[bus_negotiation_stereo            ] ok   
+[activation_lifecycle              ] ok   
+[process_mono_bitexact             ] ok   
+                                        mono_max_abs_diff = 0
+                                        mono_bit_exact = 1
+[process_stereo_bitexact           ] ok   
+                                        stereo_L_max_abs_diff = 0
+                                        stereo_R_max_abs_diff = 0
+                                        stereo_bit_exact = 1
+[param_queue_events                ] ok   
+                                        queue_surface_vs_reference_maxdiff = 0
+                                        midblock_event_effect_maxdiff = 0.2082225084
+[state_save_restore_second_instance] ok   
+                                        state_blob_bytes = 456
+                                        restored_replay_bit_exact = 1
+                                        restored_replay_maxdiff = 0
+[latency_reporting                 ] ok   
+                                        expected_latency_samples = 2304
+                                        reported_latency_samples = 2304
+                                        reported_tail_samples = 15080
+[terminate_unload                  ] ok   
+                                        module_name_len = 32
+
+octavox-module-integration: 12 passed, 0 failed, 12 total
+TOTAL_CASES 12

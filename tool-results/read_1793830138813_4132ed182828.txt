@@ -1,0 +1,652 @@
+     1→     1→nbformat 4 kernel python3
+     2→     2→===== CELL 0 [markdown] 1233 chars =====
+     3→     3→## Abstract
+     4→     4→
+     5→     5→The ability to detect pitch in complex audio signals is a fundamental problem in signal processing, with applications ranging from music analysis to speech recognition. While human perception intuitively identifies pitch even in harmonically rich or noisy signals, translating this process into computational algorithms remains a challenge. This project explores the **YIN algorithm**, a widely cited pitch detection method, which combines autocorrelation with cumulative mean normalization to accurately extract periodicity from audio waveforms.
+     6→     6→
+     7→     7→To test the algorithm's performance, a synthetic audio signal with realistic harmonic overtones was generated to closely mimic the complexity of musical instrument sounds. I extended the autocorrelation function to use FFT for faster computation. The implementation successfully estimated the fundamental frequency with high precision, producing a result of $440.06$ Hz for a signal with an expected pitch of $440$ Hz. This outcome demonstrates the effectiveness of the YIN algorithm in detecting pitch from non-trivial waveforms. Through this project, I strengthened my understanding of the mathematical/computational foundations of autocorrelation-based pitch detection.
+     8→     8→===== CELL 1 [markdown] 1583 chars =====
+     9→     9→## Introduction
+    10→    10→
+    11→    11→### A very abridged physics of sound
+    12→    12→When we listen to pitched sound, the 'pitch' of what we are hearing is often described in terms of frequency. This is because the way our ears perceive sound is through hearing the intensity (amplitude) and frequency at which the sound (a pressure wave) is hitting our eardrums. The simplest example is a pure sine wave, which we can easily manipulate the frequency of to produce different pitches.
+    13→    13→
+    14→    14→However, these pure waves often sound 'harsh' and obviously synthetic. This is because in real life, and for most musical instruments, the actual generated wave is quite complex and consists of multiple waves interacting con/de-structively with each other to smoothen out the sound. And audio waves with no distinct noticable periodicity are often perceived not as pitched, but as 'noise'. This is again due to the lack of some distinct patterning frequency which our ears can attune to.
+    15→    15→
+    16→    16→### Pitch detection algorithms
+    17→    17→The goal of pitch detection algorithms is to parse together the often complex frequency waveforms to find the repeating unit of pitch which corresponds to the 'pitch'. Since humans have an innate subjective sense of pitch and for parsing out these complex waves in our own ears, we want the algorithm to also determine the pitch and recreate the processes happening in our brains, computationally.
+    18→    18→
+    19→    19→My following project hopes to explore one of the most ubiquitously cited pitch detection algorithms - the YIN algorithm, and how it navigates the challenges of extracting periodicity from complex audio signals.
+    20→    20→===== CELL 2 [markdown] 1136 chars =====
+    21→    21→### Equations
+    22→    22→
+    23→    23→The specifics of each computational method used are included in markdown in the Implementation section. However for reference, I am using the following equations:
+    24→    24→
+    25→    25→1. Autocorrelation - The basis for time-based signal processing
+    26→    26→
+    27→    27→$$r_t(\tau) = \sum^{t+W-\tau}_{j=t+1}x_j x_{j+\tau}$$
+    28→    28→
+    29→    29→2. Wiener-Khinchin theorem - Faster autocorrelation with FFT
+    30→    30→
+    31→    31→$$r_t(\tau) = \mathcal{F}^{-1}(x) \left ( \left | \mathcal{F}(x) \right |^2 \right )$$
+    32→    32→
+    33→    33→3. Difference function - Variant of autocorrelation
+    34→    34→
+    35→    35→$$d_t(\tau) = \sum^{t+W}_{j=t+1} (x_j - x_{j+T})^2$$
+    36→    36→
+    37→    37→4. Cumulative Mean-Normalized Difference Function (CMNDF) - Variant of difference function, for peak-picking
+    38→    38→
+    39→    39→$$
+    40→    40→d_t'(\tau) =
+    41→    41→\begin{cases}
+    42→    42→    1, & \text{if } \tau = 0, \\
+    43→    43→    \frac{d_t(\tau)}{\left[\frac{1}{\tau} \sum\limits_{j=1}^{\tau} d_t(j)\right]}, & \text{otherwise}.
+    44→    44→\end{cases}
+    45→    45→$$
+    46→    46→
+    47→    47→5. Parabolic interpolation - To refine final pitch estimates
+    48→    48→
+    49→    49→$$f(x) = Ax^2 + Bx + C$$
+    50→    50→
+    51→    51→Equations 1, 3, 4 are from the YIN paper [1].
+    52→    52→
+    53→    53→I explain my rationale for why each of these equations is significant to the final pitch detection algorithm more in-depth in the Implementation section.
+    54→    54→===== CELL 3 [markdown] 3 chars =====
+    55→    55→---
+    56→    56→===== CELL 4 [markdown] 790 chars =====
+    57→    57→### Create synthetic audio
+    58→    58→
+    59→    59→Here, you can either load in your audio file of choice (place in the same directory), or run it with the testing synthetic audio.
+    60→    60→
+    61→    61→Since the algorithm is intended for use on musical instruments, it is useful to consider those waveforms which display the same harmonic overtone qualities as certain actual musical signals. For example, stringed instruments have a harmonic series where the fundamental frequency is present in the waveform but in increasingly higher frequency multiples of the base frequency, and at lower amplitudes. This sometimes causes issues in pitch detection, as we will see later, but the YIN algorithm was designed with musical pitch detection in mind and has a couple measures baked in to help mitigate the influence of signal messiness.
+    62→    62→===== CELL 5 [code] 217 chars =====
+    63→    63→# pip install numpy matplotlib scipy ipython
+    64→    64→import numpy as np 
+    65→    65→# import librosa # optional, for if you want to load in your own audio
+    66→    66→import matplotlib.pyplot as plt
+    67→    67→import scipy.signal
+    68→    68→import IPython.display as ipd
+    69→    69→===== CELL 6 [code] 2106 chars =====
+    70→    70→# alternative! load in your desired audio with librosa
+    71→    71→# signal, SAMPLE_RATE = librosa.load('violin.mp3', sr=None)
+    72→    72→
+    73→    73→# basic parameters
+    74→    74→SAMPLE_RATE = 44100  # sampling rate
+    75→    75→FRAME_SIZE = 4096
+    76→    76→
+    77→    77→# synthetic audio generation
+    78→    78→def create_signal(f0: float, duration: float):
+    79→    79→    """
+    80→    80→    Create a synthetic audio signal given a desired fundamental frequency and a duration.
+    81→    81→    Simulates (poorly) the harmonic overtone series found in stringed instruments.
+    82→    82→
+    83→    83→    Args:
+    84→    84→        f0: The fundamental frequency to generate
+    85→    85→        duration: How long the pitch should last
+    86→    86→    """
+    87→    87→    f0 = 440.0  # fundamental frequency (A4)
+    88→    88→    duration = 2.0  # sec
+    89→    89→    t = np.linspace(0, duration, int(SAMPLE_RATE * duration), endpoint=False)
+    90→    90→
+    91→    91→    # create harmonic series
+    92→    92→    harmonics = [1, 2, 3, 4, 5, 6, 7] 
+    93→    93→    amplitudes = [1.0, 0.8, 0.6, 0.45, 0.2, 0.1, 0.05]  # each harmonic with decaying amplitude
+    94→    94→    signal = np.zeros_like(t)
+    95→    95→
+    96→    96→    for harmonic, amplitude in zip(harmonics, amplitudes):
+    97→    97→        signal += amplitude * np.sin(2 * np.pi * harmonic * f0 * t)
+    98→    98→
+    99→    99→    # add some noise
+   100→   100→    noise = 0.02 * np.random.randn(len(t))  # Small random noise
+   101→   101→    signal += noise
+   102→   102→
+   103→   103→    # envelope parameters (sec)
+   104→   104→    attack_time = 0.1
+   105→   105→    decay_time = 0.3 
+   106→   106→    release_time = 0.5 
+   107→   107→
+   108→   108→    sustain_level = 0.7
+   109→   109→
+   110→   110→    attack = np.linspace(0, 1, int(SAMPLE_RATE * attack_time))
+   111→   111→    decay = np.linspace(1, sustain_level, int(SAMPLE_RATE * decay_time))
+   112→   112→    sustain = np.ones(int(SAMPLE_RATE * (duration - attack_time - decay_time - release_time))) * sustain_level
+   113→   113→    release = np.linspace(sustain_level, 0, int(SAMPLE_RATE * release_time))
+   114→   114→
+   115→   115→    # concatenate the envelope parts
+   116→   116→    envelope = np.concatenate([attack, decay, sustain, release])
+   117→   117→
+   118→   118→    # adjust envelope length to match signal length
+   119→   119→    if len(envelope) < len(signal):
+   120→   120→        envelope = np.pad(envelope, (0, len(signal) - len(envelope)))  # Pad with zeros if too short
+   121→   121→    elif len(envelope) > len(signal):
+   122→   122→        envelope = envelope[: len(signal)]  # Trim if too long
+   123→   123→
+   124→   124→    # apply the envelope
+   125→   125→    signal *= envelope
+   126→   126→    signal /= np.max(np.abs(signal)) # normalize
+   127→   127→
+   128→   128→    return signal
+   129→   129→===== CELL 7 [code] 342 chars =====
+   130→   130→signal = create_signal(440, 2)
+   131→   131→start_idx = FRAME_SIZE
+   132→   132→end_idx = start_idx + FRAME_SIZE
+   133→   133→audio_frame = signal[start_idx:end_idx]
+   134→   134→
+   135→   135→# Plot the signal
+   136→   136→plt.figure(figsize=(9, 3))
+   137→   137→plt.plot(audio_frame)
+   138→   138→plt.title("Simulated 440.0 Hz (A4) Audio")
+   139→   139→plt.xlabel("Samples")
+   140→   140→plt.ylabel("Amplitude")
+   141→   141→plt.grid()
+   142→   142→plt.show()
+   143→   143→
+   144→   144→ipd.Audio(signal, rate=SAMPLE_RATE)
+   145→   145→===== CELL 8 [markdown] 866 chars =====
+   146→   146→# Pitch Detection: Autocorrelation
+   147→   147→
+   148→   148→**Autocorrelation**-based methods represent one of the most popular categories of pitch detection algorithms, and is also the method which underlies the YIN algorithm. It tries to analyze the audio signal within the *time domain* by detecting how similar the signal is to a shifted version to itself.
+   149→   149→
+   150→   150→### Problem statement
+   151→   151→We have some audio signal $x$, represented as a numpy array of samples, where each sample contains a quantized representation of the pressure of the physical audio wave at the given time of 'sampling'.
+   152→   152→
+   153→   153→**Basic idea:** We want to estimate the fundamental frequency $F_0$ for a given frame of audio data by comparing how different the original signal is to a signal shifted over by some lag. The specific lag which minimizes this difference, we call the fundamental period, which is equivalent to $1 / F_0$.
+   154→   154→===== CELL 9 [markdown] 2364 chars =====
+   155→   155→## Autocorrelation
+   156→   156→We define the autocorrelation function $r_t(\tau)$ as a function of some $\tau$, which is a duration (in samples) of how much to x-shift each point in the curve by. 
+   157→   157→
+   158→   158→The goal of this function is to identify those periods under which the function most resembles itself. The function multiplies each new pair of x's together (where $x_j$ represents the audio signal value at the $j$ th sample), so higher values represent a value of $\tau$ under which the curve looks more like itself.
+   159→   159→
+   160→   160→$$r_t(\tau) = \sum^{t+W}_{j=t+1}x_j x_{j+\tau}$$
+   161→   161→
+   162→   162→Equation from the YIN paper [1]
+   163→   163→
+   164→   164→In the code, we use a slightly modified definition from the YIN paper [1] which defines a second slightly different definition which allows the integration window size to shrink with increasing values of $\tau$.
+   165→   165→
+   166→   166→$$r_t(\tau) = \sum^{t+W-\tau}_{j=t+1}x_j x_{j+\tau}$$
+   167→   167→
+   168→   168→This makes it so that larger $\tau$ values are weighted slightly less, under the assumption that the true fundamental frequency is closer to the origin point.
+   169→   169→
+   170→   170→### FFT-enabled autocorrelation with Wiener-Khinchin
+   171→   171→The **Wiener-Khinchin theorem** enables us to compute the autocorrelation much faster. We can rewrite the audio signal 'array' $x$ as a function $x(t)$ where $t$ is the index of the sample in the array. Then we can rewrite the autocorrelation function as an integral on this function $x(t)$ as such:
+   172→   172→
+   173→   173→$$r_t(\tau) = \int^{\infty}_{\infty} \bar{x}(\tau)x(t+\tau) d\tau$$
+   174→   174→
+   175→   175→where $\bar{x}(\tau)$ is the complex conjugate of $x$. A short proof of the theorem can be found at [[2](https://mathworld.wolfram.com/Wiener-KhinchinTheorem.html)], but the result that we are using for this autocorrelation implementation is the ability to compute the autocorrelation not by iterating through all possible samples for all possible frames and multiplying each sample pointwise, but rather it allows us to use the fast fourier transform which runs in $O(N \log n)$ time per frame, whereas the other method would be $O(N^2)$ per frame.
+   176→   176→
+   177→   177→It suffices to compute:
+   178→   178→
+   179→   179→$$r_t(\tau) = \mathcal{F}^{-1}(x) \left ( \left | \mathcal{F}(x) \right |^2 \right )$$
+   180→   180→
+   181→   181→where $\mathcal{F}(x)$ is the fourier transform of the audio signal. Note $\left | \mathcal{F}(x) \right |^2$ is also how we define the power spectrum of the signal, which shows how much each individual frequency component is contributing to the audio waveform.
+   182→   182→===== CELL 10 [code] 1660 chars =====
+   183→   183→# define autocorrelation function
+   184→   184→def autocorrelation_fft(audio_frame: np.ndarray, tau_max: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+   185→   185→    """
+   186→   186→    Fast autocorrelation function using Wiener-Khinchin theorem,
+   187→   187→    which computes autocorrelation as the inverse FFT of the signal's power spectrum.
+   188→   188→
+   189→   189→    Args:
+   190→   190→        audio_frame: The current frame of audio samples in Yin algorithm
+   191→   191→        tau_max: Check for all time lags up to this value for in autocorrelatioin
+   192→   192→
+   193→   193→    Returns:
+   194→   194→        autocorrelation: The similarity curve
+   195→   195→        power_spec: The power spectrum of the frame
+   196→   196→        amplitudes: Amplitudes of the frame
+   197→   197→    """
+   198→   198→    w = audio_frame.size
+   199→   199→    tau_max = min(tau_max, w)  # ensure tau_max is within the window size
+   200→   200→
+   201→   201→    # Zero-pad the audio signal array by the minimum power of 2 which
+   202→   202→    # is larger than the window size + tau_max.
+   203→   203→    # (circular instead of linear convolution, avoids errors)
+   204→   204→    min_fft_size = w + tau_max  # (pad by >tau_max for frame end)
+   205→   205→
+   206→   206→    p2 = (min_fft_size // 32).bit_length()
+   207→   207→    fft_sizes = (16, 18, 20, 24, 25, 27, 30, 32)
+   208→   208→    size_pad = min(size * (2 ** p2) for size in fft_sizes if size * 2 ** p2 >= min_fft_size)
+   209→   209→
+   210→   210→    # -- Wiener-Khinchin Autocorrelation --
+   211→   211→    # take FFT to decompose signal into its frequency components
+   212→   212→    fft_frame = np.fft.rfft(audio_frame, size_pad)
+   213→   213→    power_spectrum = fft_frame * fft_frame.conjugate()
+   214→   214→    autocorrelation = np.fft.irfft(power_spectrum)[:tau_max]
+   215→   215→
+   216→   216→    amplitudes = np.abs(fft_frame)
+   217→   217→
+   218→   218→    # only return valid overlapping values up to window_size-tau_max
+   219→   219→    # (type II autocorrelation from jasa 2002)
+   220→   220→    return autocorrelation[:w-tau_max], power_spectrum, amplitudes
+   221→   221→===== CELL 11 [markdown] 773 chars =====
+   222→   222→### Autocorrelation acts frame-by-frame
+   223→   223→
+   224→   224→The autocorrelation function acts on the audio signal, and is often applied on a frame-by-frame basis. 
+   225→   225→
+   226→   226→We define a frame as some window of samples, small enough so that the pitch remains relatively constant within this window, but large enough to capture the true fundamental period of the audio. 
+   227→   227→
+   228→   228→Hence we say that we apply autocorrelation over a small window of samples where inside, the pitch does not change much. Then we can iterate through all frames in the audio signal in order to see how the pitch evolves over time.
+   229→   229→
+   230→   230→In this notebook, I will show how the algorithm can act upon a single frame, but it can be, and often is, easily extended to compute the pitch across multiple frames on longer segments of audio as well.
+   231→   231→===== CELL 12 [code] 981 chars =====
+   232→   232→# define a minimum frequency to avoid picking up on noise
+   233→   233→MIN_VIOLIN_FREQ = 196.0 # let's just use this becuase i like the violin
+   234→   234→tau_max = int(SAMPLE_RATE/MIN_VIOLIN_FREQ)
+   235→   235→print(f"Computing pitches with tau_max {tau_max}")
+   236→   236→
+   237→   237→# call autocorrelation function
+   238→   238→autocorr, power_spec, amplitudes = autocorrelation_fft(audio_frame, tau_max)
+   239→   239→
+   240→   240→# plot the curves 🏔️ 🏔️
+   241→   241→fig, axs = plt.subplots(4, 1, figsize=(12, 8))
+   242→   242→
+   243→   243→axs[0].plot(audio_frame)
+   244→   244→axs[0].set_title('Audio frame')
+   245→   245→axs[0].set_xlabel('Samples')
+   246→   246→axs[0].set_ylabel('Amplitude')
+   247→   247→
+   248→   248→axs[1].plot(autocorr)
+   249→   249→axs[1].set_title('Autocorrelation')
+   250→   250→axs[1].set_xlabel('$\\tau$ Lag (Samples)')
+   251→   251→axs[1].set_ylabel('Autocorrelation')
+   252→   252→
+   253→   253→axs[2].plot(power_spec)
+   254→   254→axs[2].set_title('Power Spectrum')
+   255→   255→axs[2].set_xlabel('Frequency (Hz)')
+   256→   256→axs[2].set_ylabel('Power')
+   257→   257→
+   258→   258→axs[3].plot(amplitudes)
+   259→   259→axs[3].set_title('Amplitudes')
+   260→   260→axs[3].set_xlabel('Frequency (Hz)')
+   261→   261→axs[3].set_ylabel('Amplitude')
+   262→   262→
+   263→   263→fig.tight_layout()
+   264→   264→plt.show()
+   265→   265→
+   266→   266→ipd.Audio(audio_frame, rate=SAMPLE_RATE)
+   267→   267→===== CELL 13 [markdown] 1445 chars =====
+   268→   268→## YIN's CMNDF
+   269→   269→YIN's unique contribution to autocorrelation-based pitch detection methods is its **cumulative mean-normalized difference function** (CMNDF). We will first define the raw difference function, then see how YIN modifies it, then see how we use the curve to detect periodicity in the audio signal.
+   270→   270→
+   271→   271→### Background: The difference function
+   272→   272→If we assume that the signal is periodic with some period $T$, we can construct an equality which we can solve to form a 'difference function' which is able to be minimized to find the period (or 'lag' in autocorrelation terms) under which the signal most closely resembles itself.
+   273→   273→
+   274→   274→We can model a periodic signal $x$ with period $T$ to be by definition invariant when we shift it by that period:
+   275→   275→
+   276→   276→$$x_t - x_{t+T} = 0 \quad \forall t$$
+   277→   277→
+   278→   278→Which can be rewritten to still equal $0$ after squaring the result and summing the result over a window of different $t$ values. We use this fact to construct the following definition of the difference function $d_t(\tau)$, and search for values of $\tau$ which minimize this difference.
+   279→   279→
+   280→   280→$$d_t(\tau) = \sum^{t+W}_{j=t+1} (x_j - x_{j+T})^2$$
+   281→   281→
+   282→   282→Expanding, the RHS and substituting our definition of the autocorrelation function $r_t(\tau)$, we get the following equation for constructing the difference function:
+   283→   283→
+   284→   284→$$
+   285→   285→\begin{align*}
+   286→   286→d_t(\tau)&= \sum^{t+W}_{j=t+1} x_j x_j - x_j x_{j+\tau} - 2x_j x_{j+\tau} \\
+   287→   287→&=r_t(0)+r_{t+\tau}(0)-2r_t(\tau)
+   288→   288→\end{align*}
+   289→   289→$$
+   290→   290→===== CELL 14 [code] 1299 chars =====
+   291→   291→def difference_function(audio_frame: np.ndarray, tau_max: int):
+   292→   292→    """
+   293→   293→    Compute the raw difference function for the YIN algorithm without assuming constant energy.
+   294→   294→    
+   295→   295→    Args:
+   296→   296→        audio_frame: The current frame of audio samples.
+   297→   297→        tau_max: The maximum lag to compute up to.
+   298→   298→        
+   299→   299→    Returns:
+   300→   300→        diff_fct: The difference function values for lags 0 to tau_max.
+   301→   301→        power_spec: The power spectrum of the audio frame.
+   302→   302→        amplitudes: Amplitudes of the frame.
+   303→   303→    """
+   304→   304→    x = np.array(audio_frame, dtype=np.float64)  # Ensure float64 precision
+   305→   305→    w = x.size
+   306→   306→    tau_max = min(tau_max, w)  # Ensure tau_max is within the window size
+   307→   307→
+   308→   308→    # compute fast autocorrelation using FFT
+   309→   309→    autocorr, power_spec, amplitudes = autocorrelation_fft(x, tau_max)
+   310→   310→
+   311→   311→    # compute the energy (r_t(0) and r_{t+\tau}(0)) for each lag
+   312→   312→    r_0 = np.sum(x**2)
+   313→   313→    energy = np.full(autocorr.shape, r_0)
+   314→   314→
+   315→   315→    diff_fct = energy[0] + energy - 2 * autocorr
+   316→   316→    diff_fct[0] = 0
+   317→   317→
+   318→   318→    return diff_fct, power_spec, amplitudes
+   319→   319→
+   320→   320→
+   321→   321→diff_fct, power_spec, amplitudes = difference_function(audio_frame, tau_max)
+   322→   322→
+   323→   323→fig = plt.figure(figsize=(6,2))
+   324→   324→axs = fig.add_subplot(1, 1, 1)
+   325→   325→
+   326→   326→axs.plot(diff_fct)
+   327→   327→axs.set_title("Difference function")
+   328→   328→axs.set_xlabel("Lag (samples)")
+   329→   329→axs.set_ylabel("$d_t(\\tau)$")
+   330→   330→
+   331→   331→plt.show()
+   332→   332→===== CELL 15 [markdown] 1145 chars =====
+   333→   333→# Trough-picking
+   334→   334→Recall that the fundamental period ($1/f_0$) corresponds to the point in which this difference function is minimized. Thus we would want to pick out some minima ('troughs') within the above curve. But how do we choose which trough to call the fundamental period?
+   335→   335→
+   336→   336→## Step 1: Cumulative mean normalization
+   337→   337→The solution to this problem has multiple parts, but the first step is to modify the autocorrelation curve itself to bias against choosing lags near the beginning, and normalizing the range of the function.
+   338→   338→
+   339→   339→The way the original YIN algorithm does this is through **cumulative mean normalization**. This is where we finally construct the CMNDF, which is given by the following equation (and as equation 8 in [1]):
+   340→   340→
+   341→   341→$$
+   342→   342→d_t'(\tau) =
+   343→   343→\begin{cases}
+   344→   344→    1, & \text{if } \tau = 0, \\
+   345→   345→    \frac{d_t(\tau)}{\left[\frac{1}{\tau} \sum\limits_{j=1}^{\tau} d_t(j)\right]}, & \text{otherwise}.
+   346→   346→\end{cases}
+   347→   347→$$
+   348→   348→
+   349→   349→The idea is to normalize each $d_t(\tau)$, $\forall \tau \in [0, \tau _{\text{max}}]$ by the 'cumulative mean' of all $d_t(\tau)$ values up until that point, and artificially set the zero lag value to have a difference of $1$.
+   350→   350→===== CELL 16 [code] 1224 chars =====
+   351→   351→def cmndf(audio_frame: np.ndarray, tau_max: int):
+   352→   352→    """
+   353→   353→    Cumulative Mean Normalized Difference Function (CMNDF).
+   354→   354→
+   355→   355→    The idea is to normalize each d_t(tau) value for all lags based on the mean of the
+   356→   356→    cumulative sum of all differences leading up to that point. YIN solution to not
+   357→   357→    picking the zero-lag peak.
+   358→   358→
+   359→   359→    Args:
+   360→   360→        audio_frame: The current frame of audio samples in Yin algorithm
+   361→   361→        tau_max: Check for all time lags up to this value for in autocorr
+   362→   362→
+   363→   363→    Returns:
+   364→   364→        cmndf: Array of values where index=tau and value=CMNDF(tau)
+   365→   365→        power_spec: The power spectrum of the audio frame
+   366→   366→        amplitudes: Amplitudes of the frame
+   367→   367→    """
+   368→   368→    x = np.array(audio_frame, np.float64)
+   369→   369→    w = x.size # window size
+   370→   370→    tau_max = min(tau_max, w)  # ensure tau_max is within the window size
+   371→   371→
+   372→   372→    # compute difference function
+   373→   373→    diff_fct, power_spec, amplitudes = difference_function(x, tau_max)
+   374→   374→
+   375→   375→    # compute the CMNDF (jasa, 2002)
+   376→   376→    cmndf = np.zeros(tau_max)
+   377→   377→    cmndf[0] = 1  
+   378→   378→    total_diff = 0.0
+   379→   379→
+   380→   380→    for tau in range(1, tau_max):
+   381→   381→        total_diff += diff_fct[tau]
+   382→   382→        avg_diff = total_diff / tau
+   383→   383→        cmndf[tau] = diff_fct[tau] / avg_diff
+   384→   384→
+   385→   385→    return cmndf, power_spec, amplitudes
+   386→   386→===== CELL 17 [markdown] 757 chars =====
+   387→   387→Since the first lag $d_t(\tau=0)$ always $=1$, this biases the beginning lags which would otherwise have a very small difference until the number of $\tau$ samples can make up for the 1. This also avoids picking a strong local minimum near the beginning as an incorrect fundamental period.
+   388→   388→
+   389→   389→We can observe this by looking at the following graphs as well, of before / after cumulative mean normalization. 
+   390→   390→
+   391→   391→Though because our example is still pretty pure, the troughs near the beginning are actually smaller after cumulative mean normalization than before. While the CMNDF is still useful in normalizing everything down to a comparable scale, this is an annoying quirk to note about the YIN algorithm. (Many people online have gripes about the CMNDF as well)
+   392→   392→===== CELL 18 [code] 403 chars =====
+   393→   393→cmndf_frame, power_spec, amplitudes = cmndf(audio_frame, tau_max)
+   394→   394→
+   395→   395→fig, axs = plt.subplots(2, 1, figsize=(6,4))
+   396→   396→
+   397→   397→axs[0].plot(diff_fct)
+   398→   398→axs[0].set_title("Difference Function")
+   399→   399→axs[0].set_xlabel("Lag (samples)")
+   400→   400→axs[0].set_ylabel("$d_t(\\tau)$")
+   401→   401→
+   402→   402→axs[1].plot(cmndf_frame)
+   403→   403→axs[1].set_title("CMNDF")
+   404→   404→axs[1].set_xlabel("Lag (samples)")
+   405→   405→axs[1].set_ylabel("$d_t^\\prime(\\tau)$")
+   406→   406→
+   407→   407→plt.tight_layout()
+   408→   408→plt.show()
+   409→   409→===== CELL 19 [markdown] 668 chars =====
+   410→   410→### Computing trough locations
+   411→   411→
+   412→   412→We can pick out the relative minima of the curve now and see what we get for the fundamental period estimates. We can easily do this using SciPy's `argrelmin` function.
+   413→   413→
+   414→   414→We recall that each local minima point represents those lags with which the signal somewhat resembles itself. Hence, each one can be called a probable estimate for the fundamental period under which the audio signal seems to repeat itself. Again, the goal of pitch detection is to detect the fundamental frequency of the current audio wave, so we can take 1 / the x-value (lag, in samples) of any of these local minima to get our valid pitch estimates for the audio.
+   415→   415→===== CELL 20 [code] 1009 chars =====
+   416→   416→diff_trough_indices = scipy.signal.argrelmin(diff_fct, order=1)[0]
+   417→   417→cmndf_trough_indices = scipy.signal.argrelmin(cmndf_frame, order=1)[0]
+   418→   418→
+   419→   419→fig, axs = plt.subplots(2, 1, figsize=(6,4))
+   420→   420→
+   421→   421→# plot the troughs from the difference function
+   422→   422→axs[0].plot(diff_fct)
+   423→   423→axs[0].set_title("Difference Function")
+   424→   424→axs[0].plot(diff_trough_indices, diff_fct[diff_trough_indices], 'ro')
+   425→   425→axs[0].set_xlabel("Lag (samples)")
+   426→   426→axs[0].set_ylabel("$d_t(\\tau)$")
+   427→   427→
+   428→   428→# print
+   429→   429→pitch_estimates1 = [SAMPLE_RATE/x for x in diff_trough_indices]
+   430→   430→print(f"Freq estimates (Hz) from diff_fct: {[f'{p:.2f}' for p in pitch_estimates1]}")
+   431→   431→
+   432→   432→# plot the cmndf troughs
+   433→   433→axs[1].plot(cmndf_frame)
+   434→   434→axs[1].set_title("CMNDF")
+   435→   435→axs[1].plot(cmndf_trough_indices, cmndf_frame[cmndf_trough_indices], 'ro')
+   436→   436→axs[1].set_xlabel("Lag (samples)")
+   437→   437→axs[1].set_ylabel("$d_t^\\prime(\\tau)$")
+   438→   438→
+   439→   439→# print
+   440→   440→pitch_estimates2 = [SAMPLE_RATE/x for x in cmndf_trough_indices]
+   441→   441→print(f"Freq estimates (Hz) from CMNDF: {[f'{p:.2f}' for p in pitch_estimates2]}")
+   442→   442→
+   443→   443→plt.tight_layout()
+   444→   444→plt.show()
+   445→   445→===== CELL 21 [markdown] 890 chars =====
+   446→   446→### Pitches! Multiple...
+   447→   447→
+   448→   448→So for our audio, we have a couple pitch estimates, some of which resemble the true fundamental frequency (440Hz) and one of its harmonic multiples (880Hz).
+   449→   449→
+   450→   450→```shell
+   451→   451→Freq (Hz) from diff_fct: ['882.00', '441.00', '294.00', '220.50']
+   452→   452→Freq (Hz) from CMNDF: ['801.82', '441.00', '352.80', '290.13', '220.50']
+   453→   453→```
+   454→   454→
+   455→   455→But a couple of problems:
+   456→   456→
+   457→   457→1. We get some incorrect guesses as the waveform repeats itself. $294.00$ and $220.50 $represent the frequencies at which the $880$ and $440$ frequency waves come again.
+   458→   458→2. We want to choose the actual fundamental frequency $F_0=440$ and not $880$.
+   459→   459→3. The CMNDF's frequencies are slightly biased, and differ from the raw difference function.
+   460→   460→
+   461→   461→### Inspecting the lags
+   462→   462→To qualitatively assess which peaks seem more accurate, we can plot the effect of actually shifting the signals over by the lags and inspecting the difference.
+   463→   463→===== CELL 22 [code] 1219 chars =====
+   464→   464→x_vals = np.arange(len(audio_frame))
+   465→   465→shifted_x_vals1 = [x_vals + diff_trough_indices[i] for i in range(0, len(diff_trough_indices)-1)]
+   466→   466→shifted_x_vals2 = [x_vals + cmndf_trough_indices[i] for i in range(0, len(cmndf_trough_indices)-1)]
+   467→   467→
+   468→   468→fig, axs = plt.subplots(2, 1, figsize=(9,4))
+   469→   469→axs[0].plot(x_vals, audio_frame, 'b-', label="Original")
+   470→   470→axs[1].plot(x_vals, audio_frame, 'b-', label="Original")
+   471→   471→
+   472→   472→for i, x_vals1 in enumerate(shifted_x_vals1):
+   473→   473→    shift = diff_trough_indices[i]
+   474→   474→    freq = SAMPLE_RATE / shift
+   475→   475→    axs[0].plot(x_vals1, audio_frame, '--', label=f"Shift={shift} ({freq:.2f} Hz)")
+   476→   476→
+   477→   477→for i, x_vals2 in enumerate(shifted_x_vals2):
+   478→   478→    shift = cmndf_trough_indices[i]
+   479→   479→    freq = SAMPLE_RATE / shift
+   480→   480→    axs[1].plot(x_vals2, audio_frame, '--', label=f"Shift={shift} ({freq:.2f} Hz)")
+   481→   481→
+   482→   482→axs[0].set_title("Audio signal: Shifted by raw difference periods")
+   483→   483→axs[0].set_xlabel("Samples")
+   484→   484→axs[0].set_ylabel("Amplitude")
+   485→   485→axs[0].set_xlim(0, 900)
+   486→   486→
+   487→   487→axs[1].set_title("Audio signal: Shifted by CMNDF periods")
+   488→   488→axs[1].set_xlabel("Samples")
+   489→   489→axs[1].set_ylabel("Amplitude")
+   490→   490→axs[1].set_xlim(0, 900)
+   491→   491→
+   492→   492→axs[0].legend(loc='upper right', fontsize='small')
+   493→   493→axs[1].legend(loc='upper right', fontsize='small')
+   494→   494→plt.tight_layout()
+   495→   495→plt.show()
+   496→   496→===== CELL 23 [markdown] 784 chars =====
+   497→   497→### Evaluation: Inspecting the lags
+   498→   498→From the shifts, it seems like the raw difference function gives us the x-values which are more accurate to the actual sinusoidal behavior of the signal. This aligns with how we know the wave should contain 440 and 880 frequency components, instead of 800 frequency components.
+   499→   499→
+   500→   500→This likely comes as an artefact from the $d_t^\prime(\tau=0)=1$ bias in the CMNDF which can lead to unexpected local minima that are less reflective of the true signal shape. (Another gripe with the CMNDF). Cheveigne and Kawahara, perhaps as a function of ego, push through and keep using the CMNDF anyways but instead deal with this by only using the CMNDF for absolute thresholding (the next step) and use the raw difference function's x-values for everything else.
+   501→   501→
+   502→   502→===== CELL 24 [markdown] 957 chars =====
+   503→   503→## Step 2: Absolute thresholding
+   504→   504→
+   505→   505→Now that we have our pitch estimates, how do we choose which pitch actually corresponds to the true fundamental frequency of the signal? We have an intuition that if the difference function is smaller at the given lag, then it is more likely to be the true fundamental frequency as more of the wave patterns will align than with those at subharmonic multiples.
+   506→   506→
+   507→   507→**Absolute thresholding** tries to account for the problem of accidentally picking octave errors, which we saw as the minima of the difference function which occur at period multipels of the fundamental. We essentially go through all the possible pitch estmates in successive order from the smallest to the greatest 'lag', and then we choose the first one that is below a given difference threshold. If no estimates are below the threshold, we take the global minima as the pitch.
+   508→   508→
+   509→   509→This is where we finally use our CMNDF's y-values to choose a particular pitch.
+   510→   510→===== CELL 25 [code] 784 chars =====
+   511→   511→def absolute_threshold(cmndf_frame: np.ndarray, local_minima: list[int], threshold: float=0.1):
+   512→   512→    """
+   513→   513→    Apply the absolute thresholding step by searching for the first trough
+   514→   514→    below a certain 'absolute threshold'
+   515→   515→
+   516→   516→    Args:
+   517→   517→        cmndf_frame: Output from applying CMNDF over a frame of audio samples
+   518→   518→        local_minima: Indices of local minima of the raw diff_fct
+   519→   519→        threshold: Take the first trough below this value of d'(tau)
+   520→   520→    
+   521→   521→    Returns:
+   522→   522→        if possible, the first tau st. d'(tau) < threshold. Else, the x of the global minima
+   523→   523→    """
+   524→   524→    for min in local_minima:
+   525→   525→        if cmndf_frame[min] <= threshold:
+   526→   526→            return min
+   527→   527→    
+   528→   528→    # no min found below threshold, return the global minima
+   529→   529→    global_min = np.argmin(cmndf_frame)
+   530→   530→    return global_min
+   531→   531→===== CELL 26 [code] 152 chars =====
+   532→   532→fundamental_period = absolute_threshold(cmndf_frame, diff_trough_indices, 0.1)
+   533→   533→fundamental_freq = SAMPLE_RATE/fundamental_period
+   534→   534→print(fundamental_freq)
+   535→   535→===== CELL 27 [markdown] 1504 chars =====
+   536→   536→## Step 3: Peak refinement with parabolic interpolation
+   537→   537→
+   538→   538→The last step we will explore in the YIN algorithm is **parabolic interpolation** around each local minima to refine our final pitch estimate.
+   539→   539→
+   540→   540→For parabolic interpolation, for each local minima we take three points - the minima + its two adjacent neighbors - then fit a parabola through the 3 points and take the x value for minima of the parabola as the new true fundamental period. 
+   541→   541→
+   542→   542→The YIN paper (Cheveigne, Kawahara 2002) explains the reasoning in more detail, but the gist is that otherwise for periods that are not a multiple of the sampling period (eg, fits neatly within 44100 samples/sec) then the estimate may be incorrect by up to half the sampling period.
+   543→   543→
+   544→   544→Again, recalling the slight bias from the $d_t^\prime(\tau=0)=1$ from the CMNDF, we interpolate based on the raw difference $d_t$ function rather than the CMNDF.
+   545→   545→
+   546→   546→Our basic method is that given our 3 points:
+   547→   547→
+   548→   548→$$(x-1, y_1), (x, y_2), (x+1, y_3)$$
+   549→   549→
+   550→   550→We solve for the equation of the parabola passing through them by solving the system of 3 equations by plugging the points into the following equation:
+   551→   551→
+   552→   552→$$y = Ax^2 + Bx + C$$
+   553→   553→
+   554→   554→And then we get the following values for the interpolated $x_{\text{min}}$ and $y_{\text{max}}$ of the parabola.
+   555→   555→
+   556→   556→$$
+   557→   557→x_{\text{min}} = x + \frac{y_1 - y_3}{2(y_1 - 2y_2 + y_3)}
+   558→   558→$$
+   559→   559→$$
+   560→   560→{\text{min}} = y_2 - \frac{(y_1 - y_3)^2}{4(y_1 - 2y_2 + y_3)}
+   561→   561→$$
+   562→   562→
+   563→   563→This allows us to refine the minimum point of the difference function and adds precision to our answers.
+   564→   564→===== CELL 28 [code] 1177 chars =====
+   565→   565→# note: njit is something to speed up the computation - useful for running
+   566→   566→# the function multiple times across a long audio file
+   567→   567→# in a real case i would include this
+   568→   568→# @njit
+   569→   569→def parabolic_interpolation(diff_fct: np.ndarray, trough_index: int) -> tuple[float, float]:
+   570→   570→    """
+   571→   571→    Perform parabolic interpolation around a minimum point using Numba for optimization.
+   572→   572→    Done on diff_fct to avoid + bias for small lags from CMNDF.
+   573→   573→    
+   574→   574→    Args:
+   575→   575→        diff_fct: A 1D array of y-values (e.g., diff_fct values).
+   576→   576→        trough_index: The index of the minimum point in diff_frame.
+   577→   577→
+   578→   578→    Returns:
+   579→   579→        A tuple with the interpolated x & y coordinates of the minimum.
+   580→   580→    """
+   581→   581→    x = trough_index
+   582→   582→
+   583→   583→    # don't interpolate at boundaries - need at least 3 points
+   584→   584→    if x <= 0 or x >= len(diff_fct) - 1:
+   585→   585→        return float(x), diff_fct[x]  
+   586→   586→   
+   587→   587→    y_1 = diff_fct[x - 1]
+   588→   588→    y_2 = diff_fct[x]
+   589→   589→    y_3 = diff_fct[x + 1]
+   590→   590→
+   591→   591→    denominator = 2 * (y_1 - 2 * y_2 + y_3)
+   592→   592→    if denominator == 0:
+   593→   593→        return float(x), y_2
+   594→   594→    
+   595→   595→    x_interpolated = x + (y_1 - y_3) / denominator
+   596→   596→    y_interpolated = y_2 - ((y_1 - y_3)**2) / (4 * denominator)
+   597→   597→
+   598→   598→    return x_interpolated, y_interpolated
+   599→   599→===== CELL 29 [markdown] 491 chars =====
+   600→   600→## Evaluate: The final pitch
+   601→   601→
+   602→   602→### Interpolation: Effect
+   603→   603→The paper says the process of interpolating had little effect on gross error rates over the database (0.77% vs 0.78%) but that when tested on synthetic stimuli, that it reduced fine errors at all $F_0$ and avoided gross errors at high $F_0$.
+   604→   604→
+   605→   605→### Our result: Success!
+   606→   606→We see that for our synthetic signal, that interpolation slightly improved our accuracy! We successfully recovered the original pitch, within some degree of certainty.
+   607→   607→===== CELL 30 [code] 376 chars =====
+   608→   608→# interpolate + test the final pitch
+   609→   609→interpolated_fundamental_period, _ = parabolic_interpolation(diff_fct, fundamental_period)
+   610→   610→final_pitch = SAMPLE_RATE / interpolated_fundamental_period
+   611→   611→
+   612→   612→EXPECTED_PITCH = 440.0 # hz
+   613→   613→np.testing.assert_almost_equal(final_pitch, EXPECTED_PITCH, decimal=1)
+   614→   614→
+   615→   615→print(f"Test passed! Final pitch estimate is {final_pitch:.2f} Hz (expected ~440 Hz)")
+   616→   616→
+   617→   617→===== CELL 31 [markdown] 617 chars =====
+   618→   618→### Step 4: "Best local estimate" (omitted)
+   619→   619→
+   620→   620→There is a final step in the YIN algorithm, which is to find the 'best local estimate' by rerunning the algorithm on different window sizes of successively smaller values around a point if we are at an inflection point in the pitch curve where the pitch is changing within the frame. However for the sake of time (because this project is long enough as is) and since we see how the fundamental idea of the algorithm works on a single frame, I will omit this step. But the details are in the paper (step 6) if you are interested to see how they deal with inflection points.
+   621→   621→===== CELL 32 [markdown] 2095 chars =====
+   622→   622→## Overall: Success!
+   623→   623→
+   624→   624→The project successfully detected the pitch of a synthetic audio signal with realistic harmonic overtone complexity, such that it mirror show actual musical signals look. The final pitch estimate of $440.06$ Hz is within 1 degree of precision compared to the expected value of $440$ Hz, which is within an undetectable level of tolerance to the human ear!
+   625→   625→
+   626→   626→The numerical results are trustworthy because I verified each step of the implementation. The autocorrelation results, differnce function, and interpolation all come together to enable the final pitch estimate to come together - without any of these components, the final pitch would not be as accurate or even within the same ballpark as what we got - so I am fairly confident that the method itself is okay.
+   627→   627→
+   628→   628→Every stage / validation of the process is documented more in-depth in the Implementation section.
+   629→   629→
+   630→   630→### Reflection
+   631→   631→
+   632→   632→Working on this project reinforced how signal processing is such a deep and complex topic. Even though I use a tuner app every day, I didn't expect the math behind getting a simple pitch would be so complicated. Reading through the YIN paper was honestly humbling and a lesson in extreme patience.
+   633→   633→
+   634→   634→### Next steps
+   635→   635→
+   636→   636→I have a couple ideas for next steps for further learning:
+   637→   637→
+   638→   638→1. Scaling the YIN algorithm across an entire audio file, or noisier signals
+   639→   639→2. Improving the CMNDF step - While YIN's CMNDF solution avoids picking small lags, the approach is pretty convoluted and we still use the difference function for the ground truth fundamental periods. I wonder if there is a simpler solution.
+   640→   640→3. Exploring alternate machine learning / CNN-based methods for pitch detection as well, and seeing how they compare to the more traditional approach.
+   641→   641→4. Unpacking the math behind the FFT and the Wiener-Khinchin theorem, instead of black-boxing it as I did for this project.
+   642→   642→5. Exploring polyphonic pitch detection algorithms.
+   643→   643→6. Finally, some music visualization / smart-home music visualization projects would be cool. Maybe with a Raspberry Pi?
+   644→   644→
+   645→   645→Thank you for reading through my long project.
+   646→   646→===== CELL 33 [markdown] 395 chars =====
+   647→   647→### References
+   648→   648→
+   649→   649→[1] A. de Cheveigné and H. Kawahara, "YIN, a fundamental frequency estimator for speech and music," *J. Acoust. Soc. Am.*, vol. 111, no. 4, pp. 1917–1930, Apr. 2002, doi: 10.1121/1.1458024.
+   650→   650→
+   651→   651→[2] E. W. Weisstein, “Wiener-Khinchin Theorem,” *MathWorld--A Wolfram Web Resource*. Accessed: Apr. 12, 2024. [Online]. Available: https://mathworld.wolfram.com/Wiener-KhinchinTheorem.html
+   652→   652→

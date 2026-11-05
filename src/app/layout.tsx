@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Octavox Research — Round 22 Findings",
+  title: "Octavox Research — Round 23 Findings",
   description:
-    "Round 22 (recovery round): the complete Minimum Pitch signal path — the unified engine spacing-accept gate max(fmin, f0_min) (bit-exact at every historical configuration), four new diagnostics, the 10-frequency × 4-floor × 3-shift × 3-detector transposition-safety matrix (360 cells: detectable vs safely transposable), suite 96→100 with all reference hashes unchanged — Eventide Octavox reverse engineering, round 22.",
+    "Round 23 (YIN research round): the canonical YIN reference implementation validated against independent vectors (FFT acceleration equivalence 3.7e-9), five open-source implementations reviewed, the 15-signal x 4-rate x 7-variant detector comparison, the independent Pitch Control Layer (290/290), the R22 measurement-harness repair (58 false boundary cells removed) and the four user-symptom root-cause analysis (NaN propagation fixed) — Eventide Octavox reverse engineering, round 23.",
   keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting", "minimum pitch"],
   authors: [{ name: "Z.ai Team" }],
   icons: {

@@ -2,28 +2,30 @@ import fs from "node:fs";
 import path from "node:path";
 import { ReportViewer } from "../components/report-viewer";
 
-const ROUND22_PATH =
-  "/home/z/my-project/octavox-work/r22/package/Octavox_RE_evidence/docs/OCTAVOX_ROUND22_FINDINGS.md";
-const LOCAL_FALLBACK = path.join(process.cwd(), "OCTAVOX_ROUND22_FINDINGS.md");
+const ROUND23_PATH =
+  "/home/z/my-project/octavox-work/r23/docs/PITCHLAB_R23_YIN_RESEARCH.md";
+const ROUND23_ALT =
+  "/home/z/my-project/octavox-work/r23/docs/PITCHLAB_R23_DECISION_RECORD.md";
+const LOCAL_FALLBACK = path.join(process.cwd(), "PITCHLAB_R23_YIN_RESEARCH.md");
 
-const ZIP_NAME = "Octavox_RE_evidence_round22.zip";
+const ZIP_NAME = "Octavox_RE_evidence_round23.zip";
+const R22_ZIP_NAME = "Octavox_RE_evidence_round22.zip";
 const R21_ZIP_NAME = "Octavox_RE_evidence_round21.zip";
 
 function readMarkdown(): string {
-  try {
-    return fs.readFileSync(ROUND22_PATH, "utf8");
-  } catch {
+  for (const p of [ROUND23_PATH, ROUND23_ALT, LOCAL_FALLBACK]) {
     try {
-      return fs.readFileSync(LOCAL_FALLBACK, "utf8");
+      return fs.readFileSync(p, "utf8");
     } catch {
-      return "# OCTAVOX_ROUND22_FINDINGS\n\nA 22. körös megállapítások fájlja nem található sem a kutatási fában, sem a projekt gyökerében (`OCTAVOX_ROUND22_FINDINGS.md`).";
+      // try next
     }
   }
+  return "# PITCHLAB_R23_YIN_RESEARCH\n\nAz R23 kutatási dokumentum nem található.";
 }
 
 function readDelivery() {
   const entries: { fileName: string; url: string; sizeBytes: number; sha256: string | null }[] = [];
-  for (const name of [ZIP_NAME, R21_ZIP_NAME]) {
+  for (const name of [ZIP_NAME, R22_ZIP_NAME, R21_ZIP_NAME]) {
     try {
       const zipPath = path.join(process.cwd(), "public", name);
       const sizeBytes = fs.statSync(zipPath).size;

@@ -1,0 +1,5 @@
+[
+{"case": "nan_guard", "finite": true, "tail_rms": 0.395285},
+{"case": "tracking_gate", "commits_off": 0.000000, "commits_on": 0.000000, "s_off": 4145.090108, "s_on": 4080.000000},
+{"case": "determinism_off", "bit_identical": true}
+]

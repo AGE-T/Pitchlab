@@ -1,0 +1,38 @@
+json written: ../evidence/analysis_round20/r20_dualmono.json
+
+USER-REPORT DOUBLING PROBE (Global Shift=0, offsets=0, 2 voices, dual-mono input)
+  RATE INTERP     ECHO LAG(smpl)   ECHO LAG(ms)
+ 48000 lagrange6          32.000         0.6667
+ 48000 obskernel6         32.000         0.6667
+ 96000 lagrange6          31.999         0.3333
+ 96000 obskernel6         31.999         0.3333
+SCENARIO               RATE INTERP       MAX|L-R|     RMS dB    LAG(smpl)   SIDE/MID   CMTS L   CMTS R  BIT=
+--------------------------------------------------------------------------------------------------------------
+dual_mono_1v_equal    48000 lagrange6    0.000000    -999.00        0.000    -999.00        1        1   yes
+dual_mono_2v_equal    48000 lagrange6    0.000000    -999.00        0.000    -999.00        1        1   yes
+dual_mono_8v_equal    48000 lagrange6    0.000000    -999.00        0.000    -999.00        1        1   yes
+amp_0.1pct            48000 lagrange6    0.000085     -60.00        0.000     -66.02        1        1    no
+amp_1pct              48000 lagrange6    0.000851     -40.04        0.000     -46.06        1        1    no
+one_sample_offset     48000 lagrange6    0.023135     -20.90      326.163     -26.92        1        1    no
+true_stereo_decorr    48000 lagrange6    0.089042      -6.72      986.074     -12.74        1        1    no
+dual_mono_1v_equal    48000 obskernel6   0.000000    -999.00        0.000    -999.00        1        1   yes
+dual_mono_2v_equal    48000 obskernel6   0.000000    -999.00        0.000    -999.00        1        1   yes
+dual_mono_8v_equal    48000 obskernel6   0.000000    -999.00        0.000    -999.00        1        1   yes
+amp_0.1pct            48000 obskernel6   0.000090     -60.00        0.000     -66.02        1        1    no
+amp_1pct              48000 obskernel6   0.000850     -40.04        0.000     -46.06        1        1    no
+one_sample_offset     48000 obskernel6   0.023066     -20.92      326.163     -26.94        1        1    no
+true_stereo_decorr    48000 obskernel6   0.088703      -6.73      986.074     -12.75        1        1    no
+dual_mono_1v_equal    96000 lagrange6    0.000000    -999.00        0.000    -999.00        1        1   yes
+dual_mono_2v_equal    96000 lagrange6    0.000000    -999.00        0.000    -999.00        1        1   yes
+dual_mono_8v_equal    96000 lagrange6    0.000000    -999.00        0.000    -999.00        1        1   yes
+amp_0.1pct            96000 lagrange6    0.000087     -60.00        0.000     -66.02        1        1    no
+amp_1pct              96000 lagrange6    0.000869     -40.04        0.000     -46.06        1        1    no
+one_sample_offset     96000 lagrange6    0.005096     -32.47        0.764     -38.49        1        1    no
+true_stereo_decorr    96000 lagrange6    0.055253     -17.19       -2.000     -23.21        1        1    no
+dual_mono_1v_equal    96000 obskernel6   0.000000    -999.00        0.000    -999.00        1        1   yes
+dual_mono_2v_equal    96000 obskernel6   0.000000    -999.00        0.000    -999.00        1        1   yes
+dual_mono_8v_equal    96000 obskernel6   0.000000    -999.00        0.000    -999.00        1        1   yes
+amp_0.1pct            96000 obskernel6   0.000093     -60.00        0.000     -66.02        1        1    no
+amp_1pct              96000 obskernel6   0.000867     -40.04        0.000     -46.06        1        1    no
+one_sample_offset     96000 obskernel6   0.004660     -32.66        0.759     -38.68        1        1    no
+true_stereo_decorr    96000 obskernel6   0.055124     -17.19       -2.000     -23.21        1        1    no

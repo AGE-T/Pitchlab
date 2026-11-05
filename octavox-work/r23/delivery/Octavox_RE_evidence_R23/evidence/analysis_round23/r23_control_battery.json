@@ -1,0 +1,14 @@
+[
+{"case": "acq_frames", "value": 3.000000},
+{"case": "acq_seconds", "value": 0.004000},
+{"case": "hold_frames", "value": 75.000000},
+{"case": "release_frame", "value": 74.000000},
+{"case": "relock_frames_short_dropout", "value": 1.000000},
+{"case": "octave_accept_frames", "value": 2.000000},
+{"case": "jitter_linear", "raw": 4.2888, "trk": 0.1716, "atten": 0.0400},
+{"case": "glissando_linear", "max_err_c": 47.3179},
+{"case": "jitter_cents", "raw": 4.2888, "trk": 0.1717, "atten": 0.0400},
+{"case": "glissando_cents", "max_err_c": 48.0000},
+{"case": "invalid_never_overwrites", "value": 1.000000},
+{"case": "nonfinite_no_propagation", "value": 1.000000}
+]

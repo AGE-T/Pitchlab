@@ -1,0 +1,31 @@
+{
+  "Name": "PitchLab Harmonizer Lagrange6 Decimated",
+  "Version": "17.0.0",
+  "SDKVersion": "3.7.12",
+  "Compatibility": "3.7.12",
+  "Factory Info": {
+    "Vendor": "PitchLab Research",
+    "URL": "",
+    "E-Mail": "",
+    "Flags": {
+      "Discardable": false,
+      "LicenseCheck": false,
+      "SilentOverride": false,
+      "Unicode": false
+    }
+  },
+  "Classes": [
+    {
+      "CID": "6F4E62589A3142E18F3C5A971D2B4E60",
+      "Category": "Audio Module Class",
+      "Name": "PitchLab Harmonizer",
+      "Vendor": "PitchLab Research",
+      "Version": "17.0.0",
+      "SDKVersion": "3.7.12",
+      "Sub Categories": ["Fx|Pitch Shift"],
+      "Class Flags": 0,
+      "Cardinality": 2147483647,
+      "Compatibility": "3.7.12"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "suite": "octavox-module-integration",
+  "build_variant": "PitchLab_Lagrange6_Balanced",
+  "default_interpolation": "Lagrange6",
+  "module_path": "build_r23/VST3/Release/PitchLab_Lagrange6_Decimated.vst3",
+  "cases": [
+    {"name": "module_load_factory", "pass": true, "values": {"factory_class_count": 1}, "note": ""},
+    {"name": "processor_creation", "pass": true, "note": ""},
+    {"name": "component_initialize_buses", "pass": true, "values": {"audio_input_buses": 1, "audio_output_buses": 1, "parameter_count": 38}, "note": ""},
+    {"name": "bus_negotiation_mono", "pass": true, "note": ""},
+    {"name": "bus_negotiation_stereo", "pass": true, "note": ""},
+    {"name": "activation_lifecycle", "pass": true, "note": ""},
+    {"name": "process_mono_bitexact", "pass": true, "values": {"mono_max_abs_diff": 0, "mono_bit_exact": 1}, "note": ""},
+    {"name": "process_stereo_bitexact", "pass": true, "values": {"stereo_L_max_abs_diff": 0, "stereo_R_max_abs_diff": 0, "stereo_bit_exact": 1}, "note": ""},
+    {"name": "param_queue_events", "pass": true, "values": {"queue_surface_vs_reference_maxdiff": 0, "midblock_event_effect_maxdiff": 0.2082225084}, "note": ""},
+    {"name": "state_save_restore_second_instance", "pass": true, "values": {"state_blob_bytes": 456, "restored_replay_bit_exact": 1, "restored_replay_maxdiff": 0}, "note": ""},
+    {"name": "latency_reporting", "pass": true, "values": {"expected_latency_samples": 2304, "reported_latency_samples": 2304, "reported_tail_samples": 15080}, "note": ""},
+    {"name": "terminate_unload", "pass": true, "values": {"module_name_len": 33}, "note": ""}
+  ],
+  "summary": {"passed": 12, "failed": 0, "total": 12}
+}
