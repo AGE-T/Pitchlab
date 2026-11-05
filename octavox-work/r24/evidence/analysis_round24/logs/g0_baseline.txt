@@ -1,0 +1,20 @@
+=== R24 G0 baseline (pristine R23 source, fresh cmake 4.4.4 build) ===
+Thu Nov  5 21:14:51 UTC 2026
+--- compiler: g++ (Debian 14.2.0-19) 14.2.0
+--- cpu: model name	: Intel(R) Xeon(R) Processor
+--- flags: avx2 fma 
+
+--- octavox_tests:
+octavox-native 16.2.0: 100 passed, 0 failed, 100 total
+TOTAL_WALL_MS 20067.3
+
+--- r15refcap --legacy (hash gate):
+cfg1_default_unity_lcg_noise_b64_150_512  0x74318b06c182aacb
+cfg2_r700c_8v_spread_fb025_sine220       0x46a091e98f2a413a
+cfg3_rm400c_4v_nospread_chirp200_800    0x9502cf8827e8782c
+cfg4_stereo_2ch_4v_unity_then_r400c     0x6f7a2ce3ca310c25
+expected: 0x74318b06c182aacb 0x46a091e98f2a413a 0x9502cf8827e8782c 0x6f7a2ce3ca310c25
+
+--- module integration:
+octavox-module-integration: 12 passed, 0 failed, 12 total
+TOTAL_CASES 12

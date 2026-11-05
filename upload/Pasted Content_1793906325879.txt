@@ -1,0 +1,686 @@
+PITCHLAB R23
+YIN PITCH TRACKING RESEARCH, VALIDATION AND ARTIFACT-FREE DSP INTEGRATION
+1. Mission
+The objective of R23 is to establish a reliable, accurate, low-latency and artifact-free YIN-based pitch tracking subsystem for PitchLab Harmonizer.
+
+This is not simply an algorithm implementation task.
+
+We need to understand the mathematical foundations of YIN, evaluate available implementations, establish a robust real-time processing architecture, and integrate the resulting pitch estimates into the existing pitch-shifting engine without introducing audible artifacts.
+
+The priority is audio integrity and stable tracking, not minimum CPU consumption at any cost.
+
+The investigation must also address the previously reported PitchLab problems:
+1. High-frequency crackling during negative pitch movement.
+2. Unexpected stereo offset with a single voice and dual-mono input.
+3. Plugin processing becoming silent or stuck while the DAW remains responsive.
+4. No obvious audible or CPU differences between the R21 detector/interpolation builds.
+Do not assume these symptoms originate in YIN. Investigate the detector, control layer, pitch shifter, stereo path and VST3 integration independently.
+2. Reference material
+Review the following sources in detail.
+Primary source material
+1. https://github.com/hyuncat/YIN-algorithm
+2. https://hyuncat.com/blog/yin/
+3. https://github.com/ABSounds/YIN-Pitch
+4. https://tonalux.org/blog/yin-pitch-detection-algorithm-explained
+5. https://docs.rs/pitch-detection/latest/pitch_detection/
+Original research paper
+de Cheveigné, A. and Kawahara, H. (2002).
+
+YIN, a fundamental frequency estimator for speech and music.
+
+Journal of the Acoustical Society of America, 111(4), 1917–1930.
+
+https://doi.org/10.1121/1.1458024
+Source review requirements
+Inspect actual implementation code, not only README files or descriptions.
+
+For each reference, document:
+- Algorithm variant.
+- Difference-function implementation.
+- CMNDF calculation.
+- Threshold selection.
+- Local-minimum selection.
+- Parabolic interpolation.
+- Frequency search range.
+- Window size and hop size.
+- Boundary conditions.
+- Numerical stability.
+- Performance characteristics.
+- Known limitations.
+- License.
+Do not blindly copy the Python or Rust implementations.
+
+The ABSounds repository uses AGPL-3.0. Do not copy its implementation into the proprietary VST3 source code.
+
+The Rust crate uses MIT/Apache-2.0 licensing, but its algorithmic behavior must still be independently verified.
+
+Identify implementation differences against the original YIN algorithm. Explicitly document the Rust implementation's handling of the original algorithm's later processing steps.
+
+Create PITCHLAB_R23_YIN_SOURCE_COMPARISON.md.
+3. Mathematical implementation
+Verify the complete YIN process.
+3.1 Difference function
+d(tau) = sum((x[j] - x[j + tau])^2)
+
+Verify window boundaries and the number of samples used for each lag.
+3.2 Cumulative Mean Normalized Difference Function
+CMNDF(0) = 1
+
+CMNDF(tau) = d(tau) / (cumulative_sum(d(1...tau)) / tau)
+
+Verify the implementation against independently generated reference vectors.
+3.3 Threshold selection
+Compare:
+- First acceptable local minimum.
+- Global minimum.
+- Different threshold values.
+Do not silently substitute one selection method for another.
+
+Use 0.1 as an initial reference threshold, then evaluate:
+
+0.05, 0.1, 0.15, 0.2 and 0.4.
+
+Measure false detections, octave errors, missed detections and frame rejection rates.
+
+Do not assume one threshold is universally optimal.
+3.4 Parabolic interpolation
+Verify sub-sample refinement.
+
+Test:
+- Flat minima.
+- Asymmetric minima.
+- Zero or near-zero denominator.
+- Boundary minima.
+- Non-finite input values.
+Never allow NaN or Inf to propagate into the pitch-control system.
+3.5 Frequency conversion
+f0 = analysis_sample_rate / refined_tau
+
+The actual analysis sample rate must be used, including decimation and resampling.
+
+Avoid integer-rounded sample-rate conversions where they produce measurable frequency errors.
+3.6 Search range
+Derive minimum and maximum lag values from the configured frequency range.
+
+Make all bounds explicit and validate them before processing.
+
+Ensure that the selected window size is sufficient for the minimum supported frequency.
+3.7 Unvoiced and invalid input
+Correctly handle:
+- Silence.
+- Noise-only signals.
+- Non-periodic transients.
+- Invalid numerical input.
+- Insufficiently periodic signals.
+- Extremely low signal levels.
+Do not generate arbitrary pitch estimates when no reliable periodicity exists.
+4. Detector variants
+Preserve the existing R19/R20 detector implementations as a historical baseline.
+
+Compare:
+A. FullRate YIN
+Full-resolution reference implementation.
+
+Keep it as the accuracy reference even if its computational cost is higher.
+B. Decimated YIN
+Reduced-rate implementation using proper anti-alias filtering.
+
+Simple sample dropping is not acceptable.
+C. Hybrid YIN
+Decimated candidate estimation followed by full-rate local refinement.
+
+This remains the leading candidate for the production detector, subject to validation.
+D. FFT-based YIN
+Implement an experimental FFT-based difference-function variant.
+
+Validate mathematical equivalence against direct computation within a documented numerical tolerance.
+
+Do not assume FFT is faster for the small windows used by PitchLab. Benchmark actual workloads.
+
+Compare all four implementations on identical signals, frame positions, frequency ranges and sample rates.
+5. Real-time processing architecture
+The implementation must work reliably inside the VST3 processing architecture.
+
+Requirements:
+- No dynamic memory allocation in the audio callback.
+- No locks or blocking operations.
+- No file access from the audio thread.
+- No unpredictable computation spikes.
+- Persistent state across processing blocks.
+- Correct handling of variable DAW block sizes.
+- Correct behavior at 44.1, 48, 96 and 192 kHz.
+- Explicit channel ownership and processing rules.
+- No out-of-range buffer access.
+- Deterministic behavior.
+Design a causal, stateful anti-alias decimator suitable for real-time processing.
+
+Do not directly reuse SciPy zero-phase offline filtering in the live processing path.
+
+Document:
+- Window size.
+- Hop size.
+- Effective update rate.
+- Detection latency.
+- Filter group delay.
+- Total tracking latency.
+- Look-ahead requirements.
+- CPU and memory requirements.
+The detector must preserve continuous state when audio arrives in blocks of arbitrary sizes.
+6. Required architecture: separate Pitch Control Layer
+This is a central architectural requirement.
+
+Do not connect raw YIN estimates directly to the pitch shifter.
+
+Build three logically separate components:
+Component 1: YIN Detector
+Its responsibility is to estimate input fundamental frequency.
+
+It must produce a structured result containing:
+- frequency_hz
+- refined_period_samples
+- cmndf_minimum
+- confidence
+- voiced
+- valid
+- frame_timestamp
+- analysis_sample_rate
+The detector must not modify pitch-shifter internal state.
+Component 2: Pitch Control Layer
+Implement this as an independently testable module.
+
+Its responsibility is to transform detector estimates into a stable, continuous pitch-control trajectory.
+
+Required behavior:
+- Confidence gating.
+- Invalid-frame handling.
+- Outlier rejection.
+- Octave-jump detection.
+- Pitch lock acquisition.
+- Pitch lock retention.
+- Pitch lock release.
+- Hysteresis.
+- Temporal smoothing.
+- Configurable slew limits.
+- Pitch-loss behavior.
+- Recovery after noisy or transient frames.
+- Correct handling of abrupt input pitch changes.
+Do not allow an invalid estimate to overwrite the last valid tracking state.
+
+Do not freeze the previous pitch indefinitely after tracking loss. Define a controlled and documented loss-of-lock policy.
+
+Compare smoothing in:
+1. Linear frequency space.
+2. Log-frequency/cents space.
+Prefer the representation that produces the most stable musical behavior without unnecessary latency.
+
+All smoothing and hold behavior must have documented time constants and measurable response.
+
+The control layer must be testable without instantiating the pitch shifter.
+Component 3: Pitch Shifter Interface
+The pitch shifter receives a continuous pitch-ratio trajectory.
+
+The interface must define:
+- Pitch ratio.
+- Update timing.
+- Interpolation between updates.
+- Slew limits.
+- Parameter validity.
+- State-transition behavior.
+- Reset and recovery conditions.
+The detector must never directly modify delay pointers, ring-buffer positions, grain states or interpolation state.
+
+Keep pitch estimation, control decisions and audio rendering independent.
+7. Artifact-free pitch-shifter control
+This is a critical investigation.
+
+The detector may produce correct estimates while the pitch shifter still creates audible artifacts.
+
+Investigate independently:
+- Pitch-ratio slew limiting.
+- Sample-accurate parameter interpolation.
+- Grain transition continuity.
+- Delay read-pointer continuity.
+- Ring-buffer boundary handling.
+- Interpolation kernel boundaries.
+- Crossfade continuity.
+- Rapid pitch changes.
+- Pitch loss and reacquisition transitions.
+- Negative pitch movement.
+No abrupt pitch-ratio jump should create an audible discontinuity.
+
+No invalid tracking state may corrupt delay or grain state.
+
+Do not reset internal DSP states unless the transition is explicitly designed and proven artifact-free.
+
+Reproduce the previously reported high-frequency crackling during negative pitch movement.
+
+Use identical input audio and compare processed output against the original input.
+
+Measure both waveform discontinuities and spectral/transient behavior.
+
+Do not assume that improving YIN automatically solves pitch-shifter crackling.
+8. Dedicated artifact investigation
+Reproduce all previously reported issues.
+8.1 Negative pitch crackling
+Determine whether the cause originates in:
+- Detector jitter.
+- Pitch-control discontinuities.
+- Ratio smoothing.
+- Interpolation.
+- Delay-pointer movement.
+- Grain transitions.
+- Crossfade handling.
+- Buffer boundaries.
+8.2 Single-voice dual-mono stereo offset
+With identical L/R input and identical parameters, determine whether the output channels remain bit-identical.
+
+Test separately:
+- Native DSP engine.
+- Multichannel processing.
+- VST3 wrapper.
+- Complete DAW processing.
+A passing native test is not proof of correct VST3 behavior.
+8.3 Silent or stuck processing state
+Investigate:
+- NaN and Inf propagation.
+- Invalid pitch estimates.
+- Invalid delay indices.
+- Feedback state.
+- Ring-buffer state.
+- Output-buffer initialization.
+- Denormal handling.
+- Parameter event delivery.
+- Recovery from invalid processing states.
+Implement defensive validation where appropriate, but do not hide the underlying defect by silently replacing all invalid output with zero.
+8.4 Detector build differences
+Verify that the R21 detector/interpolation builds actually execute different code paths.
+
+Check compile-time configuration, binary identity, build metadata and runtime diagnostics.
+
+Measure actual detector computation costs under controlled conditions.
+
+No build should be considered different merely because it has a different filename or configuration label.
+9. Test matrix
+Build a deterministic synthetic test suite.
+Signal types
+- Pure sine.
+- Harmonic-rich signals.
+- Strong second harmonic.
+- Strong third harmonic.
+- Missing fundamental.
+- Vibrato.
+- Glissando.
+- Abrupt pitch steps.
+- Amplitude modulation.
+- White noise.
+- Colored noise.
+- Variable SNR.
+- Silence.
+- Noise-only frames.
+- DC offset.
+- Clipped input.
+- Attack and release transients.
+Real recorded audio
+Use recordings of:
+- Male and female singing.
+- Sustained vowels.
+- Spoken voice.
+- Guitar.
+- Bass.
+- Monophonic wind instruments.
+- Reverberant and noisy recordings.
+Only use known ground truth where available.
+
+Clearly distinguish:
+- Synthetic.
+- Recorded.
+- Annotated.
+Never label synthetic test results as real-audio results.
+Sample rates
+44.1 kHz, 48 kHz, 96 kHz and 192 kHz.
+DAW block sizes
+At minimum:
+
+32, 64, 128, 256, 512 and 1024 samples.
+
+Verify arbitrary block transitions and changing block sizes where the host supports them.
+10. Metrics
+For all detector configurations measure:
+- Median pitch error in cents.
+- 95th percentile pitch error.
+- Gross pitch error rate.
+- Octave error rate.
+- Voiced/unvoiced classification error.
+- Invalid frame ratio.
+- Pitch jitter.
+- Lock acquisition time.
+- Lock release time.
+- Tracking recovery time.
+- Average processing time.
+- Worst-case processing time.
+- Memory consumption.
+- End-to-end latency.
+- CPU usage under identical conditions.
+For the final audio output measure:
+- Sample discontinuities.
+- Transient peaks.
+- Short-time spectral differences.
+- High-frequency noise increase.
+- Output clipping.
+- Silent or invalid output events.
+Benchmark using identical input and processing conditions.
+11. Regression and compatibility
+Preserve existing VST3 parameter IDs 0–73.
+
+Do not renumber existing parameters.
+
+Preserve the existing state migration behavior.
+
+Keep FullRate YIN available as a reference mode.
+
+Verify old project-state restoration and parameter default initialization.
+
+Do not introduce unnecessary host parameters.
+
+Keep internal detector configuration separate from user-facing controls unless there is a clearly justified product requirement.
+12. Required deliverables
+Create the following documents:
+1. PITCHLAB_R23_YIN_SOURCE_COMPARISON.md
+2. PITCHLAB_R23_YIN_RESEARCH.md
+3. PITCHLAB_R23_YIN_IMPLEMENTATION_SPEC.md
+4. PITCHLAB_R23_TRACKING_CONTROL_SPEC.md
+5. PITCHLAB_R23_ARTIFACT_ANALYSIS.md
+6. PITCHLAB_R23_BENCHMARK_RESULTS.md
+Also provide:
+- Reproducible test harness.
+- Deterministic test vectors.
+- Reference comparison results.
+- Updated source code where justified.
+- Complete build logs.
+- Complete regression logs.
+- Updated archive manifest.
+- SHA-256 checksums.
+Classify findings:
+- OBS: directly observed in source or test output.
+- DER: mathematically derived or measured.
+- HYP: hypothesis awaiting validation.
+- UNK: unresolved.
+Do not represent a hypothesis as a proven result.
+13. Execution order
+Phase 1: Source analysis
+Review all five supplied sources and the original YIN paper.
+
+Verify equations, implementation differences and limitations.
+
+Deliver the source comparison and mathematical findings.
+Phase 2: Reference implementation
+Build an independent reference implementation.
+
+Verify it against deterministic reference vectors.
+
+Test all lag, threshold and interpolation boundaries.
+Phase 3: Detector comparison
+Compare FullRate, Decimated, Hybrid and FFT-based variants.
+
+Use identical test inputs.
+Phase 4: Pitch Control Layer
+Implement and independently validate the control layer.
+
+Measure lock, jitter, hysteresis, slew and tracking recovery.
+Phase 5: Native DSP artifact investigation
+Reproduce negative-pitch crackling, stereo offset and silent/stuck behavior.
+
+Separate detector errors from pitch-shifter defects.
+Phase 6: VST3 integration
+Integrate only after the detector and control layer pass their independent tests.
+
+Verify host behavior and state compatibility.
+Phase 7: Real-audio evaluation
+Test on recorded audio with documented ground truth where available.
+
+Collect CPU, latency and output-quality metrics.
+Phase 8: Final review
+Review every finding, regression result and unresolved limitation.
+
+Do not claim artifact-free behavior without measured output evidence and independent listening tests.
+
+Do not begin a custom GUI.
+14. Decision criteria
+The detector must be selected using measured results, not assumptions.
+
+Current candidates:
+- FullRate YIN: accuracy reference.
+- Decimated YIN: low-CPU reference.
+- Hybrid YIN: preferred production candidate.
+- FFT-based YIN: experimental candidate.
+Hybrid is the leading candidate, not a predetermined winner.
+
+Select the final configuration only after comparing:
+1. Audio integrity.
+2. Pitch accuracy.
+3. Tracking stability.
+4. Latency.
+5. CPU consumption.
+A lower CPU result is never acceptable if it produces audible instability or degraded pitch tracking.
+15. Final objective
+Deliver a professional real-time YIN-based pitch tracking subsystem for PitchLab Harmonizer.
+
+The final architecture must separate:
+1. Pitch detection.
+2. Pitch tracking and confidence management.
+3. Pitch-control trajectory generation.
+4. Pitch-shifter audio rendering.
+Every layer must be independently measurable and testable.
+
+The most important requirement is simple:
+
+The pitch tracker must provide a stable and musically meaningful control signal, and the pitch shifter must execute that signal without introducing audible discontinuities.
+
+Do not optimize away correctness.
+
+Do not conceal failures.
+
+Measure, reproduce, understand, then implement.
+AUTHORITATIVE R23 RESEARCH EXPANSION AND CORRECTIONS
+This section is an integral part of the R23 task. It takes precedence over any shorter, ambiguous or conflicting instruction above. The original task is retained in full below/above for continuity. Do not treat the expansion as optional reading.
+16. Critical architectural correction: inspect the actual R22 engine before designing the new control layer
+R23 must start from the delivered and verified R22 archive:
+
+Octavox_RE_evidence_round22.zip
+
+Expected SHA-256:
+
+782e7ab8111630518eb99ffb7cb7e7403c7917af410ecc48e1f859936b0a1e61
+
+Do not design the new control interface from a generic pitch-shifter architecture. The current PitchLab engine has a specific signal path that must be preserved or intentionally changed with evidence.
+
+Inspect the actual implementation, not only comments or previous findings. At minimum inspect:
+- native/src/dsp.cpp
+- native/include/octavox/dsp.hpp
+- native/vst3/octavox_native_processor.cpp
+- native/vst3/octavox_native_processor.h
+- detector and stereo test harnesses
+- R21/R22 build configuration headers and wrapper build settings
+Trace these functions and their callers/callees:
+- PitchDetector::configure
+- PitchDetector::pushBlock
+- PitchDetector::pushDecimated
+- PitchDetector::estimate
+- PitchDetector::estimateHybrid
+- PitchDetector::designAntiAlias
+- AlignedDelayLine::process
+- Impl::updateSpacingTarget
+- Impl::commitSpacing
+- Impl::exitCommitSpacing
+- Impl::readVoiceAt
+- Impl::processVoiceSample
+- VST3 audio bus and channel mapping
+16.1 Existing detector behavior to verify against source
+The R22 native source currently appears to contain three detector modes: FullRate, Decimated and Hybrid. Verify every item below against the exact R22 source and record the exact file/function/line evidence. Do not accept this list as a substitute for source review.
+
+The current implementation appears to use:
+- Default detector lower validity floor f0_min = 60 Hz, configurable in [20, 200] Hz.
+- Upper detector validity limit 1200 Hz.
+- A threshold value of 0.20 in the FullRate, Decimated and Hybrid candidate-selection paths.
+- A first-local-minimum-below-threshold search, followed by a global minimum fallback if no acceptable local minimum is found.
+- A FullRate window law max(2048, ceil(2.5 * tau_max)).
+- A Decimated window law max(1024, ceil(2.5 * tau_max_dec)).
+- A fixed comparison segment length derived as m = window_size / 2 - tau_max.
+- Comparison samples taken from the second half of the rolling window, with the shifted segment at tau samples offset.
+- FullRate cumulative normalization beginning at tau_min, not at lag 1.
+- Decimated/Hybrid cumulative normalization warmed from max(2, tau_min - 18), also not necessarily from lag 1.
+- FullRate parabolic refinement on the CMNDF array.
+- Decimated coarse refinement on the raw difference function.
+- Hybrid coarse search on the decimated signal followed by a narrow full-rate raw-difference refinement.
+- A causal sixth-order Butterworth anti-alias filter in the decimated modes, with the existing cutoff law to be measured rather than assumed adequate.
+- A decimation factor intended to keep detector rate near 24 kHz.
+- A detector update cadence of detection_interval stream samples, with R22 default 64.
+- A rolling period history, with default f0_history = 8, followed by a median before spacing-target calculation.
+Important: the current FullRate implementation is the historical project reference, not automatically a mathematically canonical implementation of every step of the 2002 YIN paper. Use the label legacy FullRate reference where appropriate. Do not use “FullRate equals canonical YIN” unless the source comparison proves it.
+16.2 Critical distinction: YIN output does not directly drive the voice pitch ratio
+The existing engine does not use the detector's estimated f0 as the per-voice transposition ratio.
+
+The current path appears to be:
+
+input samples -> YIN detector -> f0 estimate -> period (sample_rate / f0) -> period history/median -> S_target -> grain-wrap spacing commit -> delay/grain rendering
+
+The voice's actual transposition ratio is a separate per-voice control (ratio / ratio_t) derived from the voice interval or ratio parameter. The grain phase update uses the ratio together with the spacing state.
+
+Therefore, the earlier generic requirement that the new Pitch Control Layer should output a “continuous pitch-ratio trajectory” is not an accurate description of the current architecture and must be corrected.
+
+The R23 design must explicitly distinguish:
+1. Input F0 estimate: what pitch/period the detector believes is present in the input.
+2. Tracking decision: whether the estimate is trustworthy and should update the engine's input-period/spacing history.
+3. Engine spacing target: the existing grain-spacing target calculated from the accepted input period.
+4. Per-voice transposition ratio: the musical interval applied by each voice; this is not the detector F0 and must not be overwritten by the new tracker.
+5. Audio read/grain state: the pitch shifter's own per-sample phase, delay and interpolation machinery.
+The new Pitch Control Layer should initially be specified as an Input Pitch/Period Tracking and Spacing-Control Gate. Its output contract should carry a validated F0 or period estimate plus tracking state. It should feed the existing spacing-target/history pathway through an explicitly documented interface. It must not silently replace the per-voice ratio_t control.
+
+The agent must compare at least three integration strategies:
+- Keep the existing 8-entry period median and add only detector confidence/outlier gating before it.
+- Replace the existing median with a more explicit stateful tracker.
+- Combine a confidence/lock state machine with the existing median, while proving that latency is not doubled unnecessarily.
+Measure the behavior and total latency of each strategy. Do not stack multiple smoothing filters by default.
+16.3 Existing grain and crossfade path must be audited accurately
+Inspect the actual current readVoiceAt weighting function and grain phase law. The R22 source appears to contain a raised-cosine/half-cosine weighting law of the form:
+
+w = 0.5 - 0.5 * cos(pi * frac)
+
+and the grain phase increment appears to use:
+
+frac_next = frac + (1 - ratio) / S
+
+Verify these expressions in source.
+
+Earlier artifact notes refer to a triangular window. Do not repeat that claim unless the exact active R22 code path actually uses a triangle. If the implementation is already a half-cosine, identify which other mechanism could create the observed high-frequency crackle.
+
+Likewise, do not add a negative-shift anti-alias filter based only on the verbal statement that negative pitch “downsamples” the signal. Derive the actual read-rate convention from the source. Under ordinary resampling, the aliasing risk depends on the read-rate direction; the granular implementation may introduce additional modulation sidebands, so analyze its actual transfer behavior rather than importing a generic rule.
+
+The prior R23 artifact note's reference to a yin.ts TypeScript implementation must be treated as unverified and likely unrelated until the actual R22 C++ source proves otherwise. No TypeScript defect may be labeled as an R22 root cause without exact source provenance.
+17. Deep mathematical research: canonical YIN, not just a short equation summary
+The research document must explain the method deeply enough that an implementer can independently derive and test it.
+
+Use the original 2002 paper as the primary authority. Distinguish the paper's definitions from later library conventions.
+17.1 Signal model and what YIN estimates
+Explain the periodic-signal model and the difference between:
+- fundamental frequency of a periodic/voiced source;
+- perceived pitch;
+- a dominant spectral component;
+- the pitch of a polyphonic mixture;
+- an unvoiced or non-periodic frame.
+YIN is a monophonic periodicity/F0 estimator. Do not claim it solves general polyphonic pitch estimation. Identify where harmonic mixtures, missing fundamentals, diplophony, vocal fry, breath, consonants and transients violate or weaken its signal model.
+17.2 The autocorrelation starting point and why YIN changes it
+Explain the conventional autocorrelation function and its failure modes:
+- amplitude variation across the frame;
+- selection of a higher-order period peak;
+- the difference between fixed-window and shifted-window/biased definitions;
+- why the energy of the shifted window cannot always be treated as constant.
+Derive the relation between the difference function and autocorrelation:
+
+d_t(tau) = r_t(0) + r_(t+tau)(0) - 2*r_t(tau)
+
+Use the exact index conventions from the original paper and define them clearly. Explain why dropping the shifted-energy term is not generally valid.
+17.3 Difference-function support: mandatory distinction
+This is one of the most important research topics and must not be compressed into a single formula.
+
+Define separately:
+- W: number of difference terms integrated at each lag;
+- tau: candidate period/lag;
+- N: finite input frame or buffer length;
+- N_required: total input support needed to evaluate a fixed-W difference function up to tau_max.
+For a fixed integration length W using a one-sided frame definition, the input support must include both the W-sample reference segment and its shifted copy. In other words, the required input support grows with the maximum lag (approximately W + tau_max, subject to the exact indexing convention).
+
+A different common implementation uses a fixed N-sample frame and sums only N - tau terms at each lag. This changes the integration length as a function of tau. It is a valid implementation convention used by established libraries, but it is not identical to the fixed-W formulation. The agent must derive and compare both forms, not mix their indexing rules.
+
+Also inspect symmetric window alignment, where the reference and shifted windows move symmetrically around the analysis timestamp. This changes timestamp alignment and latency behavior.
+
+For every variant document:
+- exact summation limits;
+- number of terms per lag;
+- required buffer support;
+- timestamp represented by the estimate;
+- edge padding/startup behavior;
+- whether integration duration changes with tau;
+- numerical equivalence or non-equivalence.
+17.4 CMNDF derivation and interpretation
+Derive the cumulative mean normalized difference function:
+
+d'(0) = 1
+
+d'(tau) = d(tau) / ((1/tau) * sum(d(j), j=1..tau))
+
+Explain:
+- why the zero-lag value must be handled specially;
+- why normalization is cumulative from lag 1 in the canonical definition;
+- how truncating the cumulative sum below tau_lo changes the result;
+- how CMNDF responds to amplitude scaling;
+- how numerical guards should behave for silence, DC and near-zero cumulative energy.
+The R22 detector appears to begin its running normalization at tau_lo, with FullRate using tau_min and Decimated/Hybrid warming only a bounded number of lags below the search floor. Quantify the difference between this truncated normalization and canonical CMNDF for actual PitchLab parameter ranges. Do not automatically change it: preserve the legacy path as a baseline and measure alternatives.
+
+The original paper interprets the normalized difference at the period as approximately related to the aperiodic-to-total power ratio. This is not a calibrated probability. In particular, do not define confidence = 1 - CMNDF_min and then report it as a probability without calibration. Use names such as clarity, periodicity_score or aperiodicity_measure until a calibrated probability model is demonstrated.
+17.5 Absolute threshold and candidate-selection semantics
+Document the exact canonical rule:
+- find local minima of CMNDF;
+- choose the smallest lag whose minimum is below the threshold;
+- if no such minimum exists, the original method falls back to the global minimum in the allowed search interval.
+Do not simplify this into “reject frame if no trough is below threshold” unless that is deliberately tested as a different detector mode.
+
+Compare at minimum thresholds 0.05, 0.10, 0.15, 0.20 and 0.40, but also report distributions of minimum values on voiced and unvoiced audio. Do not infer that 0.15 is best from a single synthetic corpus.
+
+Separate these decisions:
+- selecting a period candidate;
+- deciding whether a frame is voiced/periodic enough to use;
+- deciding whether the estimate should update the existing engine's spacing history.
+They are three related but distinct gates.
+17.6 Parabolic interpolation: canonical nuance and implementation alternatives
+The original paper's Step 5 has a specific nuance:
+- fit a parabola around each local CMNDF dip;
+- use the interpolated dip ordinate in the candidate-selection process;
+- the paper notes a bias in the interpolated CMNDF abscissa and uses the abscissa of the corresponding raw difference-function minimum for the period estimate.
+Many practical implementations instead directly parabolically refine the selected CMNDF minimum. Others refine the raw difference function. These are not automatically identical.
+
+Implement or script a reference comparison for:
+1. integer-lag estimate;
+2. parabolic interpolation on CMNDF;
+3. parabolic interpolation on raw difference function;
+4. original-paper selection/refinement behavior;
+5. a more accurate local interpolation alternative if useful.
+For every approach test boundary minima, flat valleys, non-convex neighborhoods, near-zero curvature and strong high-frequency content. The original paper specifically discusses reduced parabolic accuracy when strong components exist above roughly one-quarter of the sampling rate. Test this behavior instead of assuming three-point interpolation is universally accurate.
+
+Use a scale-aware numerical guard for interpolation on raw d(tau) values. A single fixed absolute epsilon can behave differently when input level changes because the raw difference values scale approximately with signal amplitude squared.
+17.7 Original YIN Step 6: Best Local Estimate
+This must be researched and documented separately from Pitch Control Layer smoothing.
+
+The original paper's Step 6:
+- examines estimates in a temporal neighborhood around each analysis time;
+- searches approximately [t - T_max/2, t + T_max/2] for a better-quality estimate using d'_theta(T_theta);
+- re-runs the estimator using a restricted lag range around the chosen candidate (the paper's example uses approximately ±20%);
+- selects based on estimate quality, not merely smoothness or continuity.
+The original evaluation reports a gross-error reduction from approximately 0.77% after Step 5 to 0.50% after Step 6 in its specific speech evaluation setup. Do not assume this gain transfers to PitchLab.
+
+Exact Step 6 requires future context around the target time and therefore introduces look-ahead/latency in a real-time implementation. Evaluate:
+- exact non-causal/original Step 6 as an offline reference;
+- buffered real-time Step 6 with explicit look-ahead;
+- causal approximation using only past/current frames;
+- omission of Step 6 with a separate Pitch Control Layer.
+Quantify the extra latency and quality difference. Do not rename a median filter or a hysteresis state machine as original YIN Step 6.
