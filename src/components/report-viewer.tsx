@@ -71,7 +71,7 @@ const META = [
   { label: "Kanonikus YIN", value: "referencia 12/12 · FFT-ekvivalencia 3.7e-9 · 5 forrás felülvizsgálva" },
   { label: "Vezérlőréteg", value: "Pitch Control Layer · 290/290 · Strategy A · bit-exakt default" },
   { label: "Artefaktok", value: "NaN-propagáció reprodukálva és JAVÍTVA · kattogás-mechanizmus megmérve" },
-  { label: "Kapuk", value: "100/100 core · 12/12 VST3-modul · 105 fájl archívum" },
+  { label: "Kapuk", value: "100/100 core · 12/12 VST3-modul · 93 fájl archívum" },
 ];
 
 export function ReportViewer({
@@ -124,7 +124,7 @@ export function ReportViewer({
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
                 Octavox Research — 23. kör
               </h1>
-              <p className="text-xs text-muted-foreground sm:text-sm">
+              <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm sm:line-clamp-none">
                 YIN alapkutatás: kanonikus referencia-implementáció független vektorokkal, öt nyílt forrás implementáció felülvizsgálata, 15 jel × 4 mintavételi frekvencia × 7 variáns detektor-összehasonlítás, független Pitch Control Layer (290/290), az R22 mérési harnes javítása és a négy felhasználói tünet gyökérok-vizsgálata · Eventide Octavox RE statikus reverzibilis projekt
               </p>
             </div>
@@ -135,12 +135,15 @@ export function ReportViewer({
               ROUND 23 · KÉSZ
             </Badge>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div
+            className="mt-3 flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label="Kör összefoglaló adatok"
+          >
             {META.map((m) => (
               <Badge
                 key={m.label}
                 variant="outline"
-                className="h-auto max-w-full whitespace-normal text-left text-[11px] font-normal leading-relaxed"
+                className="h-auto shrink-0 whitespace-nowrap text-left text-[11px] font-normal leading-relaxed sm:max-w-full sm:whitespace-normal"
               >
                 <span className="text-muted-foreground">{m.label}:</span>&nbsp;{m.value}
               </Badge>
@@ -168,7 +171,9 @@ export function ReportViewer({
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
                     {di === 0
                       ? "A 23. kör teljes kutatási csomagja: 16 dokumentum (forrás-összehasonlítás, kanonikus matematikai levezetés, ablak/lag/latencia tanulmány, variáns-taxonómia, decimáló szűrő tanulmány, confidence/voicing tanulmány, Step-6 valós idejű tanulmány, benchmark protokoll és eredmények, döntési rekord), a kanonikus YIN referencia implementáció (12/12 — FFT-gyorsítás ekvivalenciája 3.7e-9 relatív hibán belül bizonyítva), a 15 jel × 4 mintavételi frekvencia × 7 variáns detektor-mátrix (a motor Decimated módja: 0.02 cent medián, 361 ns/minta síkban 44.1–192 kHz-ig), a független Pitch Control Layer (290/290 elfogadási teszt — lock/hold/outlier/oktáv/jitter/glissando/recovery), az R22 mérési harnes mind a nyolc §27 javítása (58 hamis 2000 Hz-es határcella eltávolítva, a verdiktumok 141/18/31/170 null eltéréssel reprodukálva), és a négy felhasználói tünet gyökérok-vizsgálata: a NaN/Inf propagáció reprodukálva ÉS javítva (rögzített motor-delta), a kattogás-mechanizmus megmérve (spacing-commit ugrások mozgás+jitter alatt — a default 8 ms crossfade véd), a dual-mono sztereó bit-exakt a natív ÉS a valódi VST3-modul szintjén (12/12), a build-különbségek 3.8–58× CPU-n mérve."
-                      : "A 22. kör leszállított bizonyítékarchívuma — az R23 kiinduló alapvonala (SHA-256 782e7ab8…, újraellenőrizve). Tartalmazza a Minimum Pitch jelútvonal teljes 8 szintű láncolatát, az egységesített spacing-kaput, a 360 cellás mátrixot és a 100/100 alapvonál-tesztcsomagot — minden, amire az R23 épült."}
+                      : di === 1
+                      ? "A 22. kör leszállított bizonyítékarchívuma — az R23 kiinduló alapvonala (SHA-256 782e7ab8…, újraellenőrizve). Tartalmazza a Minimum Pitch jelútvonal teljes 8 szintű láncolatát, az egységesített spacing-kaput, a 360 cellás mátrixot és a 100/100 alapvonál-tesztcsomagot — minden, amire az R23 épült."
+                      : "A 21. kör bizonyítékarchívuma — a teljes R21 kutatási fa (633 fájl: natív forrás, dokumentumok, PoC-mérések és a háromvariáns Windows-kiadás validációs láncolata: Lagrange6 / ObsKernel6 / Lagrange6+ObsKernel6). A körök közti bináris-azonosság és visszamenőleges alapvonal-ellenőrzés céljából őrizzük meg."}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
@@ -178,7 +183,7 @@ export function ReportViewer({
                       {formatBytes(entry.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      {di === 0 ? "105 fájl · 16 dokumentum · sha256sum -c" : di === 1 ? "638 fájl · R23-alapvonal" : "632 fájl · alapvonal"}
+                      {di === 0 ? "93 fájl · 16 dokumentum · friss cmake-build 100/100" : di === 1 ? "638 fájl · R23-alapvonal" : "632 fájl · alapvonal"}
                     </Badge>
                   </div>
                   {entry.sha256 ? (

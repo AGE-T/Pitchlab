@@ -1,4 +1,35 @@
-# PitchLab Harmonizer / Octavox (Eventide) RE - evidence package - round 22
+# PitchLab Harmonizer / Octavox (Eventide) RE - evidence package - round 23
+
+Round-23 delta (YIN RESEARCH ROUND — full programme in
+`docs/PITCHLAB_R23_*.md`, 16 documents): the R22 baseline archive
+(SHA-256 782e7ab8...; verified, then clean-rebuilt 100/100 Release +
+ASan/UBSan before any edit — `evidence/analysis_round23/logs/g0_*`). New
+this round: (a) the R22 measurement-harness repair — all eight §27 items
+(the global-argmax fallback produced 58 false 2000.0 Hz boundary cells —
+removed; explicit valid/invalid/unvoiced states; anti-aliased measurement
+decimation; derived tone-free spacing-lock criterion) with the 360-cell
+matrix re-run at 0 verdict deltas; (b) the canonical YIN reference
+implementation `native/cli/r23_yin_reference.cpp` + `r23_yin_core.h`
+(12/12; FFT-acceleration equivalence proven at 3.7e-9 relative error);
+(c) the 15-signal x 4-rate x 7-variant detector comparison
+(`native/cli/r23_detector_compare.cpp`); (d) the independent Pitch Control
+Layer `native/include/octavox/pitch_control.hpp` +
+`native/src/pitch_control.cpp` (290/290 acceptance battery
+`native/cli/r23_control_battery.cpp`; integrated as Strategy A via
+`Config::tracking_gate`, default OFF = bit-exact); (e) the four-symptom
+artifact battery `native/cli/r23_artifacts.cpp` (NaN/Inf propagation
+REPRODUCED and FIXED by the process-boundary non-finite guard; negative-
+shift crackle mechanism measured; dual-mono bit-exact native AND
+real-VST3-module 12/12 `octavox_r23_vst3_module_integration`; R21 build
+differences measured 3.8-58x CPU); (f) the engine-level integration check
+`native/cli/r23_integration_check.cpp` (5/5). Suite 100/100 with the
+shipped deltas; default-config output bit-exact vs R22. The manifest is
+REGENERATED from this round's actual tree — this archive is a DELTA
+package (93 files: the R23 documents, instruments, evidence and the
+current native tree); the historical rounds 15-21 archives remain the
+authoritative record for their own content. Recorded-audio (PTDB-TUG/
+GuitarSet) and Windows-DAW verification levels are OPEN — no real-audio
+accuracy claim is made anywhere in this package.
 
 Round-22 delta (RECOVERY ROUND — see the findings' section 0): the R21
 baseline was recovered from the owner-supplied round-21 evidence archive

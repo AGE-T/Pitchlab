@@ -398,3 +398,90 @@ Stage Summary:
 - P5: ALL GATES HELD: 96/96 release AND ASan/UBSan zero reports; 8/8 reference hashes exact (4 legacy 15.0.0 + 4 16.0.0 defaults) + 4/4 ObsKernel6; wrapper 20/20 x2 variants, integration 12/12 x2, validator 47/47 x2; Windows dual modules byte-reproducible (LEG 4). Windows chain: ALL GATES PASSED (227 s).
 - Windows modules (R20, llvm-mingw clang 23.1.2 — toolchain deviation vs R19's 23.1.4 recorded): Lagrange6 sha256 d25902d6321950da4ddf622293132518768795a6c32ede3fc23a25cbb91aab50; ObsKernel6 sha256 0040425897a6aea318c0c18065a169627d350a9dabcef4134aa7e6b73fe4b966.
 - Environment: 5th sandbox reset at round start (cmake lost -> pip cmake-4.4.4; llvm-mingw re-acquired as release 20260922 = clang 23.1.2; winshims recreated). windows_dual_build.sh updated for the reset environment (explicit CMAKE_MAKE_PROGRAM — pip-cmake 4.4 cannot find make on fresh cross-configure; LEG 3 now full-fresh builds — the R19 dirs carried objects from the previous toolchain, mixing two compiler generations and breaking LEG 4 byte-reproducibility; hash-gate refcap runs pinned to --legacy for the r15/r18_obs records + a new 16.0.0-default r19-record gate).
+
+---
+
+## ROUND 23 DELIVERY (2026-11-05) — YIN Pitch Tracking Research, Validation and Artifact-Free Integration
+
+**Package:** `Octavox_RE_evidence_round23.zip` (715 147 B, 93 files + manifest)
+**SHA-256:** `9acf799e05c3bffe7278359bcf3aa327b59050e9e5367d80f24417d2aa89fc6e`
+**Core:** octavox-native 16.2.0 + the R23 deltas · **Original binary: never executed.**
+
+- G0: R22 archive 782e7ab8… verified; clean rebuild 100/100 (Release +
+  ASan/UBSan) before any edit; baseline snapshot logged
+  (r23/evidence/analysis_round23/logs/g0_*).
+- G1: R22 measurement harness repaired — all eight §27 items (the
+  global-argmax fallback had produced 58 false 2000.0 Hz boundary cells —
+  removed; explicit valid/invalid/unvoiced states; anti-aliased measurement
+  decimation — no unfiltered sample dropping; derived tone-free lock
+  criterion); the 360-cell matrix re-run with **0 verdict deltas**
+  (r22_minpitch_legacy_rerun.json vs r23_minpitch_v2.json).
+- G2: forensic audit of the actual R22 detector/spacing path — every §16.1
+  item verified against source with file/function/line evidence
+  (PITCHLAB_R23_CURRENT_ENGINE_YIN_AUDIT.md); the §16.2/§16.3 corrections
+  honoured: detector-F0 → period-history → S_target vs per-voice ratio_t
+  kept SEPARATE; the active window law IS the half-cosine
+  w = 0.5−0.5·cos(π·frac) with frac_next = frac + (1−ratio)/S (OBS,
+  line-cited) — the "triangular window" claim refuted for R22; no
+  negative-shift anti-alias filter added (downshifts read SLOWER — the
+  aliasing direction refuted by derivation + measured HF −11…−43 dB).
+- G3: source comparison + variant taxonomy from five FETCHED
+  implementations (hyuncat, ABSounds, tonalux, Rust pitch-detection,
+  librosa + aubio as additional refs; agent reports with URL appendices);
+  paper mirrors blocked → canonical math reconstructed and cross-validated
+  by implementation instead (all [UNK]s labelled honestly).
+- G4: canonical YIN reference implementation (r23_yin_core.h +
+  r23_yin_reference.cpp): 12/12 vs independent vectors; the
+  FFT-acceleration equivalence proven at 3.7e-9 relative error
+  (yinfast-type = EXACT acceleration; yinfft = spectrally weighted
+  DIFFERENT algorithm — taxonomy kept separate).
+- G5: 15-signal × 4-rate × 7-variant detector comparison
+  (r23_detector_compare.json): the R22 Decimated mode retained as
+  production default (0.02 c median, 361–427 ns/sample FLAT 44.1–192 kHz,
+  best moving-pitch tracking); FullRate = legacy reference; Hybrid
+  retained; canonical/FFT = research references; W ≥ T_max tested both
+  ways (≤ +0.09 c accuracy vs −6…−11 c tracking).
+- G6: the Pitch Control Layer (pitch_control.{hpp,cpp} +
+  r23_control_battery): **290/290** (lock/hold/release/outlier/octave/
+  jitter/glissando/recovery/invalid-frame safety); integrated as Strategy
+  A — a gate BEFORE the existing 8-entry period median via
+  Config::tracking_gate (default OFF = bit-exact); per-voice ratio_t
+  untouched; no double smoothing; zero added latency.
+- G7: the four user symptoms — NaN/Inf propagation REPRODUCED and FIXED
+  (process-boundary non-finite guard; the one genuine engine defect
+  found this round); negative-shift crackle mechanism measured
+  (spacing-commit jumps under pitch movement + jitter; the default 8 ms
+  crossfade protects; positive-shift pre-read filter recorded as the top
+  R24 candidate with measured +9.4 dB HF @ +12 st justification);
+  dual-mono bit-exact native AND real-VST3-module (12/12,
+  octavox_r23_vst3_module_integration driving the actual .vst3 bundle);
+  R21 build differences measured 3.8–58× CPU (they DO execute different
+  paths; the audible agreement at steady material is honest).
+- G8: engine integration — non-finite guard + CMNDF telemetry
+  side-channel (observer only) + tracking_gate: 100/100 + 12/12 + 5/5;
+  VST3 surface untouched (38 ids, state blob v2, restored replay
+  bit-exact).
+- G9: synthetic + module levels complete; PTDB-TUG/GuitarSet
+  (interactive-landing-page access) and Windows-DAW levels OPEN —
+  recorded honestly, no real-audio accuracy claim anywhere.
+
+### Packaging post-audit (final session, this round)
+
+Three delivery-integrity defects found during the mandatory
+fresh-extraction audit and FIXED (recorded in DELIVERY_ROUND23.md §
+"Packaging post-audit"): (1) stale R22 cumulative manifest (638 records
+vs 93 shipped files → sha256sum -c failed on 596 paths) — regenerated
+93/93; (2) README still the round-22 header — R23 delta section
+prepended; (3) CMake fresh-build link failure [OBS, reproduced]:
+octavox_dsp references PitchControlLayer but pitch_control.cpp was only
+in the separate octavox_pitch_control library — fixed with one idiomatic
+line (target_link_libraries(octavox_dsp PUBLIC octavox_pitch_control));
+bench/bench_main.cpp added to the package (referenced by the CMake
+octavox_bench target). Final archive re-verified END-TO-END from fresh
+extraction: manifest 93/93 · cmake + ALL targets build · octavox_tests
+100/100 · 12/12 · 290/290 · 5/5 · r15refcap hashes bit-exact.
+Web page: delivery cards (R23 + R22 + R21 baselines) with live
+sidecar-read SHA-256; mobile sticky-header overflow fixed (488 px →
+131 px at 390 px width); R21 card copy bug fixed; lint clean; browser
+verified (downloads byte-identical over HTTP, TOC anchors, copy button,
+responsive 390/1920, no console errors).

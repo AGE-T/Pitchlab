@@ -293,6 +293,12 @@ endif()
 
 add_library(octavox_pitch_control STATIC src/pitch_control.cpp)
 target_include_directories(octavox_pitch_control PUBLIC include)
+# R23 packaging fix: src/dsp.cpp references PitchControlLayer (the
+# tracking_gate integration), so the DSP core publicly depends on the
+# control layer — every target linking octavox_dsp gets it transitively
+# and a FRESH cmake build links (the delta package previously failed at
+# `undefined reference to octavox::PitchControlLayer::*`).
+target_link_libraries(octavox_dsp PUBLIC octavox_pitch_control)
 
 add_executable(octavox_r23_control_battery
     cli/r23_control_battery.cpp

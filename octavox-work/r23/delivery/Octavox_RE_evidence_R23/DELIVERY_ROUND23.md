@@ -56,3 +56,35 @@ VST3 parameter ids 0..37 (38 params) unchanged; state blob v2 unchanged
 (restored replay bit-exact); default-config DSP output bit-exact vs R22.
 (The brief's "0-73" is the ORIGINAL's 73 host parameters from static RE —
 documented in the audit.)
+
+## Packaging post-audit (this release, re-verified)
+
+Three delivery-integrity defects found and fixed during the final
+fresh-extraction audit, then the archive rebuilt and re-verified
+end-to-end:
+
+1. **Stale manifest**: checksums.txt was the R22 cumulative manifest
+   (638 records) while this delta package ships 93 files —
+   `sha256sum -c` failed on 596 missing paths. REGENERATED for this
+   tree (93/93 OK; section headers follow the R22 convention).
+2. **README not updated**: the package README was still the round-22
+   header. The round-23 delta section is now prepended.
+3. **CMake fresh-build link failure** [OBS, reproduced]: `octavox_tests`
+   (and every octavox_dsp-linked target) failed to link from a clean
+   configure — `src/dsp.cpp` references `PitchControlLayer` (the G8
+   integration) while `pitch_control.cpp` built only into the separate
+   `octavox_pitch_control` library. FIXED by one idiomatic line:
+   `target_link_libraries(octavox_dsp PUBLIC octavox_pitch_control)`.
+   No source behaviour change (the working-tree binaries already
+   linked via the build ordering); the DELTA package is now
+   self-contained. `bench/bench_main.cpp` (referenced by the CMake
+   `octavox_bench` target) was also missing from the package — added.
+
+**Final package verification (from the delivered zip, fresh extraction):**
+checksums 93/93 · cmake configure + ALL targets build ·
+octavox_tests **100/100** (19.9 s) · r23_yin_reference **12/12** ·
+r23_control_battery **290/290** · r23_integration_check **5/5** ·
+r15refcap hash record reproduced bit-exactly.
+The archive's own SHA-256 is recorded OUTSIDE itself (the delivery
+dashboard `.sha256` sidecar next to the download) — a zip cannot
+contain its own hash.
