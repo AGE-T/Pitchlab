@@ -192,5 +192,6 @@ CMakeFiles/octavox_tests.dir/tests/test_main.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/signal_ext.h \
  /usr/include/x86_64-linux-gnu/bits/types/idtype_t.h \
  /home/z/my-project/octavox-work/r24/source/include/octavox/dsp.hpp \
+ /home/z/my-project/octavox-work/r24/source/include/octavox/simd.hpp \
  /home/z/my-project/octavox-work/r24/source/include/octavox/stageprof.hpp \
  /home/z/my-project/octavox-work/r24/source/tests/wav_io.hpp

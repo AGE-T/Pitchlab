@@ -148,7 +148,11 @@ Level resolve(Mode m) {
         case Mode::AVX2FMA:
             return fma ? Level::AVX2FMA : Level::Scalar;
         case Mode::Auto:
-            if (fma) return Level::AVX2FMA;
+            // R24 decision: Auto prefers the BIT-EXACT accelerated level --
+            // the measured AVX2 lag kernel is >= the FMA one on every
+            // representative shape (see PITCHLAB_R24_SIMD_BENCHMARK_
+            // RESULTS.md) while FMA additionally deviates from the
+            // reference rounding. AVX2+FMA stays an explicit opt-in.
             if (avx2) return Level::AVX2;
             return Level::Scalar;
     }

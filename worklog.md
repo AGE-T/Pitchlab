@@ -485,3 +485,62 @@ sidecar-read SHA-256; mobile sticky-header overflow fixed (488 px →
 131 px at 390 px width); R21 card copy bug fixed; lint clean; browser
 verified (downloads byte-identical over HTTP, TOC anchors, copy button,
 responsive 390/1920, no console errors).
+
+---
+
+## ROUND 24 DELIVERY (2026-11-06) — SIMD Capability Layer (YIN kernels) and the Measured Decision Record
+
+**Core:** octavox-native 16.3.0 · **Original binary: never executed.**
+**Session note:** the previous session started R24 (G0/G1 + two SIMD
+files) and ran out of context mid-task; this session diagnosed the
+left-behind state (unwired layer, MISSING simd_fma.cpp despite being
+declared, no CMake/engine/test/doc integration) and completed the round.
+
+- The SIMD capability layer (simd.hpp + dispatch/AVX2/FMA units, per-TU
+  ISA flags, -ffp-contract=off on the ISA units): CPUID detection
+  (AVX2/FMA independently), Config::simd (default Scalar = bit-exact vs
+  the R12-R23 record; Auto -> the bit-exact AVX2 level, the MEASURED
+  decision), RT-safe kernel resolution at prepare() time only. The
+  lag-axis AVX2 kernel is bit-identical to the scalar reference by
+  construction (hard exact-equality gate); AVX2+FMA fuses the per-term
+  rounding in the vector lanes with the reference-rounded scalar tail
+  (bounded-deviation gate; measured max 4.4e-16 relative).
+- Engine integration across all three detector modes (estimate +
+  estimateHybrid coarse/fine/parabolic paths); prepare() validation with
+  LOUD rejection of un-honourable forced modes; in-place re-prepare
+  re-resolves; VST3 surface untouched (38 ids, blob v2 frozen).
+- In-round defects caught by our own gates and fixed: (1) Hybrid
+  fine-stage off-by-one in the parabolic-neighbourhood kernel call
+  (y2 = d(best) instead of d(best+1) -> constant +1-lag bias, 880 Hz
+  tracked as 864.86 Hz; 3 suite cases failed; fixed by spanning 3 taus);
+  (2) runtime batch count kept the vector accumulators on the stack
+  (2.1-3.1x -> templated -> 5.0-6.3x); (3) the ntau<16 pure-scalar branch
+  (0.45x FMA; routed through the batch path); (4) the VST3 core library
+  compiled dsp.cpp alone -> pitch_control + SIMD sources added.
+- R23 DELIVERY GAP CLOSED (OBS): the R23 evidence tree's VST3 bundle
+  predates the R23 engine deltas (no lastCmndfMin / PitchControlLayer
+  symbols; the R23 12/12 module gate ran the pre-delta wrapper). R24
+  rebuilt the module from the current core and re-ran the chain green.
+- Measurements (best-of-5, reference vCPU): kernel 4.8-6.3x (full/dec
+  domains), 2.8-3.1x (hybrid fine); stage det_estimate 3.9-4.0x (dec),
+  5.9-6.0x (full); FullRate 96k stereo 8v wall 1144 -> 368 ms/s
+  (~114% -> ~37% CPU; the R19 "offline only" mode becomes a usable
+  bit-exact reference); engine 13-case: mono_1v 2.8x, 8v 1.7x; voice_loop
+  + interp_reads (55%+24% at 8v) remain the R25 SIMD target. The
+  reassociating sample-axis variant (faster only on small shapes) is
+  benchmark-only; FMA measured >= AVX2 nowhere here -> Auto prefers the
+  bit-exact level; the decisions + raw JSONs are in
+  PITCHLAB_R24_SIMD_BENCHMARK_RESULTS.md.
+- Validation: suite 100 -> 110 (new r24 group: bit-exactness hard gates,
+  engine bit-identity at AVX2 across 10 configs incl. tracking-gate
+  paths, FMA engine closeness -- measured bit-identical outputs on the
+  whole matrix, prepare validation, default neutrality, re-prepare level
+  switching, alloc-free accelerated processing); 110/110 Release AND
+  ASan/UBSan zero reports; 4/4 legacy + 4/4 default hash pins bit-exact;
+  VST3 wrapper 21/21 + module integration 12/12 (FRESH bundle) +
+  validator 47/47; R23 instruments 290/290 + 5/5. Evidence:
+  octavox-work/r24/evidence/analysis_round24/logs/ (g0..g6).
+- Environment: 6th sandbox reset at round start (cmake + llvm-mingw lost;
+  cmake 4.4.4 reinstalled via pip; the Windows cross toolchain was NOT
+  re-acquired this round -- the MinGW CMake paths are authored but
+  unexecuted; recorded in the findings §5).

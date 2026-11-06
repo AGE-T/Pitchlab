@@ -170,4 +170,5 @@ CMakeFiles/octavox_bench.dir/bench/bench_main.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
  /usr/include/linux/close_range.h \
  /home/z/my-project/octavox-work/r24/source/include/octavox/dsp.hpp \
+ /home/z/my-project/octavox-work/r24/source/include/octavox/simd.hpp \
  /home/z/my-project/octavox-work/r24/source/include/octavox/stageprof.hpp

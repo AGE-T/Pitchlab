@@ -930,6 +930,78 @@ src/pitch_control.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_pitch_control.dir/build.make CMakeFiles/octavox_pitch_control.dir/src/pitch_control.cpp.s
 .PHONY : src/pitch_control.cpp.s
 
+src/simd_avx2.o: src/simd_avx2.cpp.o
+.PHONY : src/simd_avx2.o
+
+# target to build an object file
+src/simd_avx2.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dsp.dir/build.make CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o
+.PHONY : src/simd_avx2.cpp.o
+
+src/simd_avx2.i: src/simd_avx2.cpp.i
+.PHONY : src/simd_avx2.i
+
+# target to preprocess a source file
+src/simd_avx2.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dsp.dir/build.make CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.i
+.PHONY : src/simd_avx2.cpp.i
+
+src/simd_avx2.s: src/simd_avx2.cpp.s
+.PHONY : src/simd_avx2.s
+
+# target to generate assembly for a file
+src/simd_avx2.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dsp.dir/build.make CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.s
+.PHONY : src/simd_avx2.cpp.s
+
+src/simd_dispatch.o: src/simd_dispatch.cpp.o
+.PHONY : src/simd_dispatch.o
+
+# target to build an object file
+src/simd_dispatch.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dsp.dir/build.make CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o
+.PHONY : src/simd_dispatch.cpp.o
+
+src/simd_dispatch.i: src/simd_dispatch.cpp.i
+.PHONY : src/simd_dispatch.i
+
+# target to preprocess a source file
+src/simd_dispatch.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dsp.dir/build.make CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.i
+.PHONY : src/simd_dispatch.cpp.i
+
+src/simd_dispatch.s: src/simd_dispatch.cpp.s
+.PHONY : src/simd_dispatch.s
+
+# target to generate assembly for a file
+src/simd_dispatch.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dsp.dir/build.make CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.s
+.PHONY : src/simd_dispatch.cpp.s
+
+src/simd_fma.o: src/simd_fma.cpp.o
+.PHONY : src/simd_fma.o
+
+# target to build an object file
+src/simd_fma.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dsp.dir/build.make CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o
+.PHONY : src/simd_fma.cpp.o
+
+src/simd_fma.i: src/simd_fma.cpp.i
+.PHONY : src/simd_fma.i
+
+# target to preprocess a source file
+src/simd_fma.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dsp.dir/build.make CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.i
+.PHONY : src/simd_fma.cpp.i
+
+src/simd_fma.s: src/simd_fma.cpp.s
+.PHONY : src/simd_fma.s
+
+# target to generate assembly for a file
+src/simd_fma.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octavox_dsp.dir/build.make CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.s
+.PHONY : src/simd_fma.cpp.s
+
 tests/alloc_counter.o: tests/alloc_counter.cpp.o
 .PHONY : tests/alloc_counter.o
 
@@ -1116,6 +1188,15 @@ help:
 	@echo "... src/pitch_control.o"
 	@echo "... src/pitch_control.i"
 	@echo "... src/pitch_control.s"
+	@echo "... src/simd_avx2.o"
+	@echo "... src/simd_avx2.i"
+	@echo "... src/simd_avx2.s"
+	@echo "... src/simd_dispatch.o"
+	@echo "... src/simd_dispatch.i"
+	@echo "... src/simd_dispatch.s"
+	@echo "... src/simd_fma.o"
+	@echo "... src/simd_fma.i"
+	@echo "... src/simd_fma.s"
 	@echo "... tests/alloc_counter.o"
 	@echo "... tests/alloc_counter.i"
 	@echo "... tests/alloc_counter.s"

@@ -320,9 +320,23 @@ public:
     // R21: f0_min (Hz) = the detector's lower validity gate / lag-domain
     // floor. Default 60.0 reproduces the R12-R20 fixed law bit-exactly
     // (int(rate/60.0) and the 60.0<=f0 gate are the same arithmetic).
-    void configure(int sr, DetectorMode mode, double f0_min) {
+    void configure(int sr, DetectorMode mode, double f0_min,
+                   simd::Mode simd_mode) {
         mode_ = mode;
         sr_ = sr;
+        // R24: resolve the kernel table ONCE here, at prepare() time --
+        // never inside process(). The estimate paths below then perform
+        // only an indirect call through the stored function pointers (no
+        // CPUID, no table resolution, no allocation in the audio callback;
+        // see include/octavox/simd.hpp's RT-safety contract). At
+        // Mode::Scalar the table's kernels are the scalar reference
+        // implementations, whose op sequence is IDENTICAL to the historical
+        // inline loops they replace (sub, mul, sequential add in ascending
+        // j) -- the engine output at the default configuration is therefore
+        // BIT-EXACT against every recorded reference hash (gated by the
+        // r15/r18/r19/r20 records and the full suite every round).
+        kern_ = simd::kernels(simd::resolve(simd_mode));
+        simd_level_ = kern_.level;
         f0_min_ = (f0_min >= 20.0 && f0_min <= 200.0) ? f0_min : 60.0;
         if (mode == DetectorMode::Decimated || mode == DetectorMode::Hybrid) {
             decim_ = decimationFor(sr);
@@ -349,12 +363,21 @@ public:
                 if (m_raw_ < 32) m_raw_ = 0;  // degenerate (never at the
                                               // accepted rates; guards only)
                 buf_raw_.assign(win_raw_, 0.0);
+                // R24: the fine stage's kernel scratch. The clamped
+                // neighborhood [i0, i1] spans at most 2W+1 = 2*decim_+5 lags
+                // (W = decim_ + 2); the +3 margin is documented slack.
+                // fine_nb_ holds the parabolic-refinement neighbourhood
+                // (t0, best, t2) -- three consecutive lags, one kernel call.
+                fine_d_.assign(2 * decim_ + 8, 0.0);
+                fine_nb_.assign(3, 0.0);
             } else {
                 win_raw_ = 0;
                 tau_min_raw_ = 2;
                 tau_max_raw_ = 2;
                 m_raw_ = 0;
                 buf_raw_.clear();
+                fine_d_.clear();
+                fine_nb_.clear();
             }
         } else {
             decim_ = 1;
@@ -369,6 +392,8 @@ public:
             tau_max_raw_ = 2;
             m_raw_ = 0;
             buf_raw_.clear();
+            fine_d_.clear();
+            fine_nb_.clear();
         }
         buf_.assign(win_, 0.0);
         d_.assign(std::max(0, tau_max_ - tau_lo_), 0.0);
@@ -453,8 +478,10 @@ public:
         OCTAVOX_PROF(petim, stageprof::kDetEstimate);
         if (mode_ == DetectorMode::Hybrid) return estimateHybrid();
         const std::vector<double>& x = buf_;
-        double peak = 0.0;
-        for (int i = 0; i < win_; ++i) peak = std::max(peak, std::abs(x[i]));
+        // R24: the window peak via the resolved kernel table (the scalar
+        // kernel is op-for-op the historical inline loop; max |x| is exact
+        // and order-free at every level).
+        double peak = kern_.peak(x.data(), win_);
         if (peak < 1e-6) {
             last_f0_ = 0.0;
             return 0.0;
@@ -481,15 +508,14 @@ public:
         // 48 kHz, D=2). The search itself still covers only
         // [tau_min_, tau_max_] in both modes.
         const int ntau = tau_max_ - tau_lo_;
-        for (int i = 0; i < ntau; ++i) {
-            const int tau = tau_lo_ + i;
-            double s = 0.0;
-            for (int j = 0; j < m; ++j) {
-                const double a = x[seg0 + j] - x[seg0 + tau + j];
-                s += a * a;
-            }
-            d_[i] = s;
-        }
+        // R24: the difference function via the resolved kernel. The Scalar
+        // kernel executes the EXACT op sequence of the inline loop it
+        // replaces (sub, mul, sequential add in ascending j, per tau in
+        // ascending i) -- bit-identical by construction; the AVX2 lag-axis
+        // kernel preserves the same order per tau in the lanes (bit-ident
+        // by construction, hard-gated by the R24 battery); AVX2+FMA fuses
+        // the per-term rounding only (order preserved, bounded deviation).
+        kern_.diff(x.data(), seg0, tau_lo_, ntau, m, d_.data());
         // cumulative mean normalisation
         double run = 0.0;
         for (int i = 0; i < ntau; ++i) {
@@ -551,6 +577,9 @@ public:
     int controlRate() const { return sr_dec_; }
     /// R21: the configured lower validity gate (Hz).
     double f0Min() const { return f0_min_; }
+    /// R24: the SIMD level resolved at the LAST configure() (diagnostics;
+    /// Level::Scalar whenever the mode resolved to the scalar kernels).
+    simd::Level simdLevel() const { return simd_level_; }
 
 private:
     // R20-P2 (Hybrid): the coarse-to-fine estimate. The COARSE stage below
@@ -564,8 +593,8 @@ private:
     double estimateHybrid() {
         // ---- stage 1: coarse (the decimated estimator) --------------------
         const std::vector<double>& x = buf_;
-        double peak = 0.0;
-        for (int i = 0; i < win_; ++i) peak = std::max(peak, std::abs(x[i]));
+        // R24: peak via the resolved kernel (see estimate()).
+        double peak = kern_.peak(x.data(), win_);
         if (peak < 1e-6 || tau_max_ <= tau_min_ || m_raw_ <= 0) {
             last_f0_ = 0.0;
             return 0.0;
@@ -577,15 +606,10 @@ private:
             return 0.0;
         }
         const int ntau = tau_max_ - tau_lo_;
-        for (int i = 0; i < ntau; ++i) {
-            const int tau = tau_lo_ + i;
-            double s = 0.0;
-            for (int j = 0; j < m; ++j) {
-                const double a = x[seg0 + j] - x[seg0 + tau + j];
-                s += a * a;
-            }
-            d_[i] = s;
-        }
+        // R24: the coarse difference function via the resolved kernel (the
+        // same call as estimate()'s -- identical arithmetic at Scalar/AVX2,
+        // fused per-term rounding at AVX2+FMA).
+        kern_.diff(x.data(), seg0, tau_lo_, ntau, m, d_.data());
         double run = 0.0;
         for (int i = 0; i < ntau; ++i) {
             run += d_[i];
@@ -652,17 +676,20 @@ private:
         }
         const int seg0r = win_raw_ / 2;
         const std::vector<double>& xr = buf_raw_;
+        // R24: the fine-stage neighborhood difference values via ONE kernel
+        // call (lag-axis kernel over [i0, i1]); the argmin scan below keeps
+        // the historical tie law (first strictly-smaller value wins, i.e.
+        // the LOWEST lag on ties). At Scalar/AVX2 every value is bit-ident-
+        // ical to the inline loop it replaces; at AVX2+FMA the per-term
+        // rounding is fused (order preserved).
+        const int ntau_f = i1 - i0 + 1;
+        kern_.diff(xr.data(), seg0r, i0, ntau_f, m_raw_, fine_d_.data());
         int best = i0;
-        double bestD = 0.0;
-        for (int tau = i0; tau <= i1; ++tau) {
-            double s = 0.0;
-            for (int j = 0; j < m_raw_; ++j) {
-                const double a = xr[seg0r + j] - xr[seg0r + tau + j];
-                s += a * a;
-            }
-            if (tau == i0 || s < bestD) {
-                bestD = s;
-                best = tau;
+        double bestD = fine_d_[0];
+        for (int i = 1; i < ntau_f; ++i) {
+            if (fine_d_[i] < bestD) {
+                bestD = fine_d_[i];
+                best = i0 + i;
             }
         }
         double tau_host = static_cast<double>(best);
@@ -680,13 +707,20 @@ private:
             // minimum).
             const int t0 = best - 1, t2 = best + 1;
             if (t0 >= 1 && t2 < win_raw_ - 1) {
-                double y0 = 0.0, y2 = 0.0;
-                for (int j = 0; j < m_raw_; ++j) {
-                    const double a0 = xr[seg0r + j] - xr[seg0r + t0 + j];
-                    y0 += a0 * a0;
-                    const double a2 = xr[seg0r + j] - xr[seg0r + t2 + j];
-                    y2 += a2 * a2;
-                }
+                // R24: the three parabolic-neighbourhood lags (t0, best,
+                // t2) in ONE kernel call (tau0 = t0, ntau = 3:
+                // fine_nb_[0] = d(t0), fine_nb_[1] = d(best),
+                // fine_nb_[2] = d(t2)). The accumulators are independent in
+                // the reference too (the historical loop interleaved them,
+                // which cannot mix roundings) -- the values are bit-ident-
+                // ical at Scalar/AVX2. NOTE: the neighbours are TWO lags
+                // apart (t0 and t2), so the call must span THREE taus;
+                // fine_nb_[1] redundantly recomputes bestD and is unused
+                // (kept for the single-call layout; verified equal by the
+                // R24 battery).
+                kern_.diff(xr.data(), seg0r, t0, 3, m_raw_, fine_nb_.data());
+                const double y0 = fine_nb_[0];
+                const double y2 = fine_nb_[2];
                 const double den = y0 - 2.0 * bestD + y2;
                 if (std::abs(den) > 1e-15) {
                     double corr = 0.5 * (y0 - y2) / den;
@@ -761,6 +795,15 @@ private:
     int tau_min_ = 2, tau_max_ = 800;
     int tau_lo_ = 2;       // R19-a: computation floor (== tau_min_ when FullRate)
     std::vector<double> buf_, d_, cmnd_;
+    // R24: the resolved SIMD kernel table (function pointers set ONCE at
+    // configure() = prepare() time; every kernel is a pure function over
+    // caller-owned buffers -- no allocation, no locks, no CPUID, see
+    // include/octavox/simd.hpp) and the resolved level (diagnostics).
+    simd::Kernels kern_{};
+    simd::Level simd_level_ = simd::Level::Scalar;
+    // R24: the Hybrid fine stage's kernel scratch (neighborhood difference
+    // values + the two parabolic neighbours; sized in configure()).
+    std::vector<double> fine_d_, fine_nb_;
     // R20-P2 (Hybrid): the fine-stage full-rate window + its lag law
     int win_raw_ = 0;
     int tau_min_raw_ = 2, tau_max_raw_ = 2;
@@ -1355,6 +1398,26 @@ bool AlignedDelayLine::prepare(const Config& cfg) {
             dm != static_cast<int>(DetectorMode::Hybrid))
             return fail();
     }
+    // R24: the SIMD mode. Enum validity first; then the RT-safety
+    // contract's LOUD-FAILURE rule: an explicitly FORCED level (AVX2 /
+    // AVX2FMA) that this processor or build cannot honour REJECTS the
+    // configuration (prepare() returns false -- the engine never silently
+    // runs a level the host did not ask for). Auto degrades silently by
+    // design (it ASKS for "best available"); Scalar is always available.
+    {
+        const int sm = static_cast<int>(cfg.simd);
+        if (sm != static_cast<int>(simd::Mode::Scalar) &&
+            sm != static_cast<int>(simd::Mode::AVX2) &&
+            sm != static_cast<int>(simd::Mode::AVX2FMA) &&
+            sm != static_cast<int>(simd::Mode::Auto))
+            return fail();
+        if (cfg.simd == simd::Mode::AVX2 &&
+            simd::resolve(cfg.simd) != simd::Level::AVX2)
+            return fail();
+        if (cfg.simd == simd::Mode::AVX2FMA &&
+            simd::resolve(cfg.simd) != simd::Level::AVX2FMA)
+            return fail();
+    }
 
     // -- R13-c in-place re-prepare: matching buffer-determining fields reuse
     // the existing allocations (zero allocations, zero locks, identical
@@ -1393,7 +1456,7 @@ bool AlignedDelayLine::prepare(const Config& cfg) {
             m.vs[i].active = (i < cfg.voices);
         m.proc_hi = cfg.voices;
         m.det.configure(static_cast<int>(cfg.sample_rate),
-                        cfg.detector_mode, cfg.f0_min);  // same sizes: no realloc
+                        cfg.detector_mode, cfg.f0_min, cfg.simd);  // R24: kernel table re-resolved at prepare() time; same sizes -> no realloc
         // R23: (re)configure the control layer for this engine config
         {
             PitchControlConfig pc;
@@ -1430,7 +1493,7 @@ bool AlignedDelayLine::prepare(const Config& cfg) {
         impl_->det_pending.assign(cfg.detection_interval, 0.0f);
         impl_->det_n = 0;
         impl_->det.configure(static_cast<int>(cfg.sample_rate),
-                              cfg.detector_mode, cfg.f0_min);
+                             cfg.detector_mode, cfg.f0_min, cfg.simd);
         // R23: configure the control layer on the fresh-prepare path too
         {
             PitchControlConfig pc;
@@ -1958,6 +2021,10 @@ double AlignedDelayLine::lastEstimateHz() const {
     return impl_ ? impl_->last_f0 : 0.0;
 }
 
+simd::Level AlignedDelayLine::simdLevel() const {
+    return (impl_ && ready_) ? impl_->det.simdLevel() : simd::Level::Scalar;
+}
+
 // -- R22-P1: Minimum Pitch signal-path diagnostics --------------------------
 double AlignedDelayLine::spacingGateHz() const {
     if (!impl_) return std::max(Config{}.fmin, Config{}.f0_min);
@@ -1976,6 +2043,6 @@ int AlignedDelayLine::spacingHistoryCount() const {
     return impl_ ? impl_->f0_hist_n : 0;
 }
 
-const char* versionString() { return "octavox-native 16.2.0"; }
+const char* versionString() { return "octavox-native 16.3.0"; }
 
 }  // namespace octavox

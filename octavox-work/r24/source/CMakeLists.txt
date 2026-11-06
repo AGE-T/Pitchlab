@@ -49,10 +49,36 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-add_library(octavox_dsp STATIC src/dsp.cpp)
+add_library(octavox_dsp STATIC src/dsp.cpp src/simd_dispatch.cpp)
 target_include_directories(octavox_dsp PUBLIC include src)
 if(OCTAVOX_STAGE_TIMERS)
     target_compile_definitions(octavox_dsp PUBLIC OCTAVOX_STAGE_TIMERS=1)
+endif()
+
+# ---------------------------------------------------------------------------
+# R24 (PitchLab SIMD round): the ISA-extended kernel units. They link INTO
+# the baseline library but are compiled with their own ISA flags:
+#   src/simd_avx2.cpp  -mavx2        -ffp-contract=off  (no FMA anywhere)
+#   src/simd_fma.cpp   -mavx2 -mfma  -ffp-contract=off  (explicit fused ops)
+# The library still loads and runs on EVERY x86-64 processor: the dispatch
+# table (src/simd_dispatch.cpp, baseline ISA) only hands these entry points
+# to code after CPUID clears the feature. On non-x86 targets the units are
+# absent from the build and every non-Scalar mode is rejected at prepare()
+# (simd::isaUnitsCompiled() == false). MSVC: /arch:AVX2 is the closest
+# switch (it enables AVX2+FMA together); the kernels are explicit-intrinsic
+# code and MSVC's default /fp:precise does not contract scalar expressions.
+# ---------------------------------------------------------------------------
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i.86|x86)$")
+    target_sources(octavox_dsp PRIVATE src/simd_avx2.cpp src/simd_fma.cpp)
+    if(MSVC)
+        set_source_files_properties(src/simd_avx2.cpp src/simd_fma.cpp
+            PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+    else()
+        set_source_files_properties(src/simd_avx2.cpp PROPERTIES
+            COMPILE_OPTIONS "-mavx2;-ffp-contract=off")
+        set_source_files_properties(src/simd_fma.cpp PROPERTIES
+            COMPILE_OPTIONS "-mavx2;-mfma;-ffp-contract=off")
+    endif()
 endif()
 
 if(ENABLE_SANITIZERS)

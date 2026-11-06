@@ -205,6 +205,18 @@ static std::string envJsonFragment() {
     return j;
 }
 
+// R24: the engine-wide SIMD selection for the case/matrix/stage modes
+// (default scalar = the bit-exact shipped configuration).
+static simd::Mode g_simd = simd::Mode::Scalar;
+
+static bool parseSimdMode(const std::string& s, simd::Mode& out) {
+    if (s == "scalar") { out = simd::Mode::Scalar; return true; }
+    if (s == "avx2") { out = simd::Mode::AVX2; return true; }
+    if (s == "avx2+fma" || s == "avx2fma") { out = simd::Mode::AVX2FMA; return true; }
+    if (s == "auto") { out = simd::Mode::Auto; return true; }
+    return false;
+}
+
 void runCase(const std::string& name, int voices, int channels, int block,
              int detection_interval, int audio_seconds, int repeats,
              std::vector<BenchRow>& rows, int sample_rate = 48000,
@@ -234,6 +246,7 @@ void runCase(const std::string& name, int voices, int channels, int block,
     cfg.ratio = std::pow(2.0, 400.0 / 1200.0);  // +4 st (non-trivial path)
     cfg.voices = voices;
     cfg.detection_interval = detection_interval;
+    cfg.simd = g_simd;  // R24
 
     MultichannelShifter m;
     if (!m.prepare(cfg, channels)) {
@@ -355,13 +368,23 @@ static void usageExit(const std::string& msg) {
     std::fprintf(stderr, "%s\n", msg.c_str());
     std::fprintf(stderr,
                  "usage: octavox_bench [--json <path>] [--case <name>] "
-                 "[--cases a,b,c] [--list]\n");
+                 "[--cases a,b,c] [--list]\n"
+                 "                  [--matrix] [--stages] [--kernels]\n"
+                 "                  [--simd scalar|avx2|avx2+fma|auto]\n"
+                 "       --simd selects the engine's SIMD level for every"
+                 " run mode (default scalar = the bit-exact shipped\n"
+                 "       configuration); --kernels is the R24 kernel-level"
+                 " microbenchmark (both vectorisation axes at both ISA\n"
+                 "       levels + the peak kernels; ignores --simd, compares"
+                 " all implementations)\n");
     std::fprintf(stderr, "valid cases (default = all %d):\n", kBenchCaseCount);
     for (int i = 0; i < kBenchCaseCount; ++i)
         std::fprintf(stderr, "  %s\n", kBenchCases[i].name);
     std::exit(2);
 }
 
+// (g_simd + parseSimdMode are defined above runCase -- they are shared by
+// every run mode.)
 
 // ===========================================================================
 // R19: the full real-time matrix + per-block deadline diagnostics + stage
@@ -423,6 +446,7 @@ void runMatrixCase(const char* detName, DetectorMode detMode, int sr,
     cfg.ratio = std::pow(2.0, 400.0 / 1200.0);  // +4 st (non-trivial path)
     cfg.voices = voices;
     cfg.detector_mode = detMode;
+    cfg.simd = g_simd;  // R24
 
     MultichannelShifter m;
     if (!m.prepare(cfg, channels)) {
@@ -540,6 +564,7 @@ void runStageCase(const char* detName, DetectorMode detMode, int sr,
     cfg.ratio = std::pow(2.0, 400.0 / 1200.0);
     cfg.voices = voices;
     cfg.detector_mode = detMode;
+    cfg.simd = g_simd;  // R24
     MultichannelShifter m;
     if (!m.prepare(cfg, channels)) return;
     // warm-up (tables, caches)
@@ -678,11 +703,180 @@ static void writeMatrixJson(const std::string& path,
     }
 }
 
+// ===========================================================================
+// R24: the kernel-level microbenchmark. Measures the YIN difference-function
+// kernels (the two vectorisation axes at both ISA levels) and the peak
+// kernels over the detector's REPRESENTATIVE shapes:
+//   full_48k / full_96k   the FullRate lag domains (win 2048 / 4000)
+//   dec_48k               the decimated domain (D=2, win 1024, sr_dec 24k)
+//   hyb_fine_48k/96k      the Hybrid fine-stage neighborhoods (2W+1)
+//   parabolic_nb          the 3-lag parabolic-neighbourhood call
+// Each implementation runs an adaptive pass count (~3e8 terms); the report
+// is ns per 1e6 terms + the speedup vs the scalar reference. The engine's
+// production choice per level is the LAG-AXIS kernel (bit-exact at AVX2,
+// bounded at AVX2+FMA -- see include/octavox/simd.hpp); the sample-axis
+// rows exist for the axis comparison the R24 brief requires.
+// ===========================================================================
+struct KernelRow {
+    std::string shape, impl;
+    double ns_per_mterm;
+    double speedup;
+    long long terms;
+    long passes;
+};
+
+static int runKernelBench(const std::string& jsonPath) {
+    struct KShape { const char* name; int seg0, tau0, ntau, m; };
+    static const KShape shapes[] = {
+        {"full_48k", 1024, 40, 798, 224},
+        {"full_96k", 2000, 80, 1520, 400},
+        {"dec_48k", 512, 2, 398, 112},
+        {"hyb_fine_48k", 1024, 396, 9, 224},
+        {"hyb_fine_96k", 2000, 1594, 13, 400},
+        {"parabolic_nb", 1024, 396, 3, 224},
+    };
+    const simd::Capabilities caps = simd::detect();
+    const simd::Kernels ks = simd::kernels(simd::Level::Scalar);
+    const simd::Kernels ka = simd::kernels(simd::resolve(simd::Mode::AVX2));
+    const simd::Kernels kf = simd::kernels(simd::resolve(simd::Mode::AVX2FMA));
+    const bool haveAvx2 = simd::resolve(simd::Mode::AVX2) == simd::Level::AVX2;
+    const bool haveFma =
+        simd::resolve(simd::Mode::AVX2FMA) == simd::Level::AVX2FMA;
+
+    struct Impl { const char* name; simd::DiffFn fn; bool ok; };
+    const Impl impls[] = {
+        {"scalar", ks.diff, true},
+        {"avx2_lag", ka.diff_lag, haveAvx2},
+        {"avx2_sample", ka.diff_sample, haveAvx2},
+        {"avx2fma_lag", kf.diff_lag, haveFma},
+        {"avx2_sample_fma", kf.diff_sample, haveFma},
+    };
+
+    std::printf("== R24 kernel microbenchmark (difference function; the"
+                " production choice per level is the LAG axis) ==\n");
+    std::printf("cpu: avx2=%d fma=%d\n", caps.avx2 ? 1 : 0, caps.fma ? 1 : 0);
+    std::printf("%-14s %-16s %14s %9s %12s\n", "SHAPE", "IMPL",
+                "ns/1e6-terms", "speedup", "total-terms");
+    std::printf("%s\n", std::string(72, '-').c_str());
+
+    std::vector<KernelRow> rows;
+    for (const KShape& s : shapes) {
+        // deterministic buffer (same LCG law as the engine battery)
+        const int n = s.seg0 + s.tau0 + s.ntau - 1 + s.m + 8;
+        std::vector<double> x(n), d(s.ntau);
+        Lcg rng(20261109ULL);
+        for (int i = 0; i < n; ++i) x[i] = 2.0 * rng.next() - 1.0;
+        double scalarNs = 0.0;
+        for (const Impl& im : impls) {
+            if (!im.ok) {
+                std::printf("%-14s %-16s %14s %9s %12s\n", s.name, im.name,
+                            "(unavailable)", "-", "-");
+                continue;
+            }
+            const long long termsPerPass =
+                static_cast<long long>(s.ntau) * s.m;
+            long passes = static_cast<long>(
+                300000000LL / (termsPerPass > 0 ? termsPerPass : 1));
+            if (passes < 5) passes = 5;
+            // warm-up + best-of-5 adaptive measurement (the shared
+            // 2-core sandbox is noisy; best-of-5 over ~3e8 terms each)
+            double best = 1e300;
+            for (int rep = 0; rep < 5; ++rep) {
+                const double t0 = nowSec();
+                for (long p = 0; p < passes; ++p)
+                    im.fn(x.data(), s.seg0, s.tau0, s.ntau, s.m, d.data());
+                const double wall = (nowSec() - t0) * 1e9;
+                const double nsPerM =
+                    wall / (static_cast<double>(passes) * termsPerPass / 1e6);
+                if (nsPerM < best) best = nsPerM;
+            }
+            if (im.fn == ks.diff) scalarNs = best;
+            KernelRow r{s.name, im.name, best, 0.0,
+                        static_cast<long long>(passes) * 5 * termsPerPass,
+                        passes};
+            rows.push_back(r);
+        }
+        // fill speedups (scalar row first by table order)
+        for (auto& r : rows)
+            if (r.shape == s.name && r.speedup == 0.0 && scalarNs > 0.0)
+                r.speedup = scalarNs / r.ns_per_mterm;
+        for (const auto& r : rows)
+            if (r.shape == s.name)
+                std::printf("%-14s %-16s %14.2f %9.2fx %12lld\n", r.shape.c_str(),
+                            r.impl.c_str(), r.ns_per_mterm, r.speedup, r.terms);
+        std::printf("%s\n", std::string(72, '-').c_str());
+    }
+    // the peak kernels (exact at every level; measured for completeness)
+    {
+        const int n = 4096;
+        std::vector<double> x(n);
+        Lcg rng(20261110ULL);
+        for (int i = 0; i < n; ++i) x[i] = 2.0 * rng.next() - 1.0;
+        struct PImpl { const char* name; simd::PeakFn fn; bool ok; };
+        const PImpl pimpls[] = {
+            {"peak_scalar", ks.peak, true},
+            {"peak_avx2", ka.peak, haveAvx2},
+            {"peak_avx2fma", kf.peak, haveFma},
+        };
+        const long passes = 200000;
+        for (const PImpl& pi : pimpls) {
+            if (!pi.ok) continue;
+            double best = 1e300;
+            for (int rep = 0; rep < 3; ++rep) {
+                const double t0 = nowSec();
+                double sink = 0.0;
+                for (long p = 0; p < passes; ++p) sink += pi.fn(x.data(), n);
+                (void)sink;
+                const double nsPerM = (nowSec() - t0) * 1e9 /
+                                      (static_cast<double>(passes) * n / 1e6);
+                if (nsPerM < best) best = nsPerM;
+            }
+            KernelRow r{"peak_4096", pi.name, best, 0.0,
+                        static_cast<long long>(passes) * 3 * n, passes};
+            rows.push_back(r);
+            std::printf("%-14s %-16s %14.2f %9s %12lld\n", r.shape.c_str(),
+                        r.impl.c_str(), r.ns_per_mterm, "-", r.terms);
+        }
+    }
+
+    // JSON record
+    std::string j = "{\n  \"bench\": \"octavox_native_kernels\",\n  \"version\": \"";
+    j += versionString();
+    j += "\",\n  \"environment\": {" + envJsonFragment() + "},\n";
+    j += "  \"cpu\": {\"avx2\": " + std::string(caps.avx2 ? "true" : "false") +
+         ", \"fma\": " + std::string(caps.fma ? "true" : "false") + "},\n";
+    j += "  \"note\": \"R24 kernel-level microbenchmark; ns per 1e6 difference"
+         " terms, best of 3 adaptive passes; the lag-axis kernels are the"
+         " production choices\",\n  \"rows\": [\n";
+    for (size_t i = 0; i < rows.size(); ++i) {
+        char buf[384];
+        std::snprintf(buf, sizeof(buf),
+                      "    {\"shape\": \"%s\", \"impl\": \"%s\", "
+                      "\"ns_per_mterm\": %.4f, \"speedup\": %.4f, "
+                      "\"terms\": %lld, \"passes\": %ld}",
+                      jsonEscape(rows[i].shape).c_str(),
+                      jsonEscape(rows[i].impl).c_str(), rows[i].ns_per_mterm,
+                      rows[i].speedup, rows[i].terms, rows[i].passes);
+        j += buf;
+        if (i + 1 < rows.size()) j += ",";
+        j += "\n";
+    }
+    j += "  ]\n}\n";
+    FILE* f = std::fopen(jsonPath.c_str(), "wb");
+    if (f) {
+        std::fwrite(j.data(), 1, j.size(), f);
+        std::fclose(f);
+        std::printf("json written: %s\n", jsonPath.c_str());
+    }
+    std::printf("%s\n", versionString());
+    return 0;
+}
+
 int main(int argc, char** argv) {
     std::string jsonPath;
     std::vector<std::string> wanted;
     bool list = false;
-    bool matrix = false, stages = false;
+    bool matrix = false, stages = false, kernels = false;
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a == "--json" && i + 1 < argc) {
@@ -691,6 +885,12 @@ int main(int argc, char** argv) {
             matrix = true;
         } else if (a == "--stages") {
             stages = true;
+        } else if (a == "--kernels") {
+            kernels = true;
+        } else if (a == "--simd" && i + 1 < argc) {
+            if (!parseSimdMode(argv[++i], g_simd))
+                usageExit("error: unknown simd mode '" + std::string(argv[i]) +
+                          "' (scalar|avx2|avx2+fma|auto)");
         } else if (a == "--case" && i + 1 < argc) {
             wanted.push_back(argv[++i]);
         } else if (a == "--cases" && i + 1 < argc) {
@@ -728,6 +928,12 @@ int main(int argc, char** argv) {
         for (int i = 0; i < kBenchCaseCount; ++i)
             std::printf("%s\n", kBenchCases[i].name);
         return 0;
+    }
+
+    // R24: the kernel-level microbenchmark (independent of --simd: compares
+    // every available implementation side by side).
+    if (kernels) {
+        return runKernelBench(jsonPath.empty() ? "bench_kernels.json" : jsonPath);
     }
 
     if (matrix || stages) {

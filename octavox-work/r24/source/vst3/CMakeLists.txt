@@ -113,9 +113,35 @@ endif()
 # ---------------------------------------------------------------------------
 # The DSP core (compiled from the parent tree; the core sources are FROZEN
 # and untouched by the wrapper -- one static lib shared by module + tests).
+# R23 delta applied here (was missed in the R23 package): pitch_control.cpp
+# joins the core -- dsp.cpp has referenced PitchControlLayer since the R23
+# tracking_gate integration (the native build fixed this via
+# target_link_libraries(octavox_dsp PUBLIC octavox_pitch_control); the VST3
+# core compiles the sources directly, so the file is listed here).
+# R24: the SIMD capability layer joins too (dsp.cpp calls
+# simd::kernels/resolve/detect since the R24 integration). Same per-TU ISA
+# layout as the native CMakeLists: the dispatch TU at baseline ISA, the
+# AVX2 / AVX2+FMA units with their own flags (the module still loads and
+# runs on every x86-64 processor).
 # ---------------------------------------------------------------------------
-add_library(octavox_core_vst3 STATIC ../src/dsp.cpp)
+add_library(octavox_core_vst3 STATIC
+    ../src/dsp.cpp
+    ../src/pitch_control.cpp
+    ../src/simd_dispatch.cpp
+)
 target_include_directories(octavox_core_vst3 PUBLIC ../include ../src)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i.86|x86)$")
+    target_sources(octavox_core_vst3 PRIVATE ../src/simd_avx2.cpp ../src/simd_fma.cpp)
+    if(MSVC)
+        set_source_files_properties(../src/simd_avx2.cpp ../src/simd_fma.cpp
+            PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+    else()
+        set_source_files_properties(../src/simd_avx2.cpp PROPERTIES
+            COMPILE_OPTIONS "-mavx2;-ffp-contract=off")
+        set_source_files_properties(../src/simd_fma.cpp PROPERTIES
+            COMPILE_OPTIONS "-mavx2;-mfma;-ffp-contract=off")
+    endif()
+endif()
 # The core is linked into a SHARED VST3 module: it needs PIC (its
 # thread-local VoiceStats scratch emits TPOFF32 relocations otherwise).
 set_target_properties(octavox_core_vst3 PROPERTIES POSITION_INDEPENDENT_CODE ON)

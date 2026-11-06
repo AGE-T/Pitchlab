@@ -312,6 +312,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "octavox/simd.hpp"
+
 namespace octavox {
 
 /// Interpolation for the fractional delay reads.
@@ -444,6 +446,22 @@ struct Config {
     /// parameter; NOT serialized in the VST3 state blob -- a restored
     /// session keeps the default, exactly like f0_min).
     bool tracking_gate = false;
+    /// R24 (SIMD round): the SIMD acceleration level for the YIN kernels
+    /// (difference function + window peak; see include/octavox/simd.hpp for
+    /// the full numerical-semantics and RT-safety contract). Default
+    /// Scalar = the engine output is BIT-EXACT against every recorded
+    /// reference hash of the R12--R23 record (the accelerated levels are
+    /// OPT-IN). AVX2 resolves to the lag-axis kernel, which is bit-identical
+    /// to the scalar reference by construction (gated by a hard exact-
+    /// equality battery); AVX2+FMA additionally fuses the per-term rounding
+    /// (order preserved; gated as a bounded deviation). An explicitly
+    /// FORCED level (AVX2 / AVX2FMA) that the processor or build cannot
+    /// honour is REJECTED by prepare() (loud failure; only Auto degrades
+    /// silently). Engine-internal configuration: NOT a host parameter and
+    /// NOT serialized in the VST3 state blob (a restored session keeps the
+    /// default -- exactly like f0_min / tracking_gate; the state blob stays
+    /// the frozen v2 layout).
+    simd::Mode simd = simd::Mode::Scalar;
     double engagement_seconds = 0.010;///< unity enter/exit morph time
     double gain_ramp_seconds = 0.015; ///< per-voice gain/mute ramp (linear
                                        ///< in amplitude; validated >= 0)
@@ -561,6 +579,11 @@ public:
     const VoiceStats& voiceStats(int v) const;
     /// Last detector estimate (Hz; 0 = none). Diagnostics only.
     double lastEstimateHz() const;
+    /// R24: the SIMD level resolved by the LAST successful prepare()
+    /// (diagnostics only; Level::Scalar whenever the configured mode
+    /// resolved to the scalar kernels -- the default configuration).
+    /// Returns Scalar when the engine is not prepared.
+    simd::Level simdLevel() const;
 
     // -- R22-P1: Minimum Pitch signal-path diagnostics ----------------------
     // The 8-level chain (detector lag domain -> estimate validity ->

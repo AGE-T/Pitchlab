@@ -155,5 +155,6 @@ CMakeFiles/octavox_cli.dir/cli/octavox_cli.cpp.o: \
  /usr/include/c++/14/bits/stl_bvector.h \
  /usr/include/c++/14/bits/vector.tcc \
  /home/z/my-project/octavox-work/r24/source/include/octavox/dsp.hpp \
+ /home/z/my-project/octavox-work/r24/source/include/octavox/simd.hpp \
  /home/z/my-project/octavox-work/r24/source/include/octavox/stageprof.hpp \
  /home/z/my-project/octavox-work/r24/source/tests/wav_io.hpp

@@ -25,6 +25,7 @@ CMakeFiles/octavox_r23_detector_compare.dir/cli/r23_detector_compare.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
+ /home/z/my-project/octavox-work/r24/source/include/octavox/simd.hpp \
  /home/z/my-project/octavox-work/r24/source/include/octavox/stageprof.hpp \
  /home/z/my-project/octavox-work/r24/source/cli/r23_yin_core.h \
  /usr/include/c++/14/algorithm /usr/include/c++/14/bits/stl_algobase.h \

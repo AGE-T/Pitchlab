@@ -8,3 +8,7 @@ CXX_INCLUDES = -I/home/z/my-project/octavox-work/r24/source/include -I/home/z/my
 
 CXX_FLAGS = -O3 -DNDEBUG -std=c++17 -Wall -Wextra
 
+# Custom options: CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o_OPTIONS = -mavx2;-ffp-contract=off
+
+# Custom options: CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o_OPTIONS = -mavx2;-mfma;-ffp-contract=off
+

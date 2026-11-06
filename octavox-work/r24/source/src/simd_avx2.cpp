@@ -43,38 +43,46 @@ namespace simd {
 
 namespace {
 
-// One batch = 4 consecutive taus in the lanes. Processes ntau taus with
-// `nbatches` batches per j pass (nbatches in [1,4]); every lane accumulates
-// its own tau's terms in ascending j -- bit-exact vs the scalar reference
-// for mul+add rounding. The last ntau % 4 taus fall back to the scalar
-// reference loop (identical semantics).
+// One batch = 4 consecutive taus in the lanes. NB (the batch count per j
+// pass) is a TEMPLATE parameter so the b-loops below unroll at compile time
+// and the accumulators live in ymm registers (the R24 measurement build
+// with a runtime batch count kept acc[] on the stack -- vfmadd/vadd
+// operands at 0x8(%rsp) -- costing ~40% of the kernel's throughput; the
+// template restored it). NB in {1, 4}: every accumulator still sums its
+// own taus' terms in ascending j order -- order preservation is per
+// (tau, accumulator), and the horizontal combination never mixes partial
+// sums of the same tau: BIT-IDENTICAL to the scalar reference for
+// mul+add rounding (hard-gated by the R24 battery).
+// The last ntau % 4 taus fall back to the scalar reference loop
+// (identical semantics).
+template <int NB>
 void diffLagAxisBatchesAVX2(const double* x, int seg0, int tau0, int ntau,
-                            int m, double* d, int nbatches) {
+                            int m, double* d) {
     const double* xb = x + seg0;
     int i = 0;
-    for (; i + 4 * nbatches <= ntau; i += 4 * nbatches) {
-        const double* sub[4];
-        __m256d acc[4];
-        for (int b = 0; b < nbatches; ++b) {
+    for (; i + 4 * NB <= ntau; i += 4 * NB) {
+        const double* sub[NB];
+        __m256d acc[NB];
+        for (int b = 0; b < NB; ++b) {
             sub[b] = xb + tau0 + i + 4 * b;
             acc[b] = _mm256_setzero_pd();
         }
         for (int j = 0; j < m; ++j) {
             const __m256d a = _mm256_broadcast_sd(xb + j);
-            for (int b = 0; b < nbatches; ++b) {
+            for (int b = 0; b < NB; ++b) {
                 const __m256d bv = _mm256_loadu_pd(sub[b] + j);
                 const __m256d diff = _mm256_sub_pd(a, bv);
                 const __m256d sq = _mm256_mul_pd(diff, diff);
                 acc[b] = _mm256_add_pd(acc[b], sq);
             }
         }
-        for (int b = 0; b < nbatches; ++b) {
+        for (int b = 0; b < NB; ++b) {
             _mm256_storeu_pd(d + i + 4 * b, acc[b]);
         }
     }
-    // remaining full batches of 4 with fewer parallel accumulators
-    if (nbatches > 1 && i + 4 <= ntau) {
-        diffLagAxisBatchesAVX2(x, seg0, tau0 + i, ntau - i, m, d + i, 1);
+    // remaining full batches of 4 with a single accumulator
+    if (NB > 1 && i + 4 <= ntau) {
+        diffLagAxisBatchesAVX2<1>(x, seg0, tau0 + i, ntau - i, m, d + i);
         return;
     }
     // scalar reference tail (ntau % 4 taus): identical order and roundings
@@ -93,25 +101,17 @@ void diffLagAxisBatchesAVX2(const double* x, int seg0, int tau0, int ntau,
 
 void diffLagAxisAVX2(const double* x, int seg0, int tau0, int ntau, int m,
                      double* d) {
-    // Adaptive batch count: small lag counts (the Hybrid fine stage runs
-    // ~9-21 lags) use one batch; the full lag domain uses four.
+    // Adaptive batch count as a COMPILE-TIME choice (see the template note
+    // above): large lag domains (the full/decimated search ranges) use four
+    // batches = 16 taus per j pass; small domains (the Hybrid fine stage
+    // runs ~9-21 lags; the parabolic neighbourhood 3) use one batch = 4
+    // taus per pass, which still vectorises all but the last ntau % 4 taus
+    // (the R24 first cut routed ntau < 16 to a pure scalar loop and
+    // measured only ~1.1x there; the batch route restored the speedup).
     if (ntau >= 64)
-        diffLagAxisBatchesAVX2(x, seg0, tau0, ntau, m, d, 4);
-    else if (ntau >= 16)
-        diffLagAxisBatchesAVX2(x, seg0, tau0, ntau, m, d, 1);
-    else {
-        // very small domain: the scalar reference loop (no vector overhead)
-        const double* xb = x + seg0;
-        for (int i = 0; i < ntau; ++i) {
-            const double* sb = xb + tau0 + i;
-            double s = 0.0;
-            for (int j = 0; j < m; ++j) {
-                const double a = xb[j] - sb[j];
-                s += a * a;
-            }
-            d[i] = s;
-        }
-    }
+        diffLagAxisBatchesAVX2<4>(x, seg0, tau0, ntau, m, d);
+    else
+        diffLagAxisBatchesAVX2<1>(x, seg0, tau0, ntau, m, d);
 }
 
 // Sample-axis variant (REASSOCIATING -- benchmark comparison only; not the

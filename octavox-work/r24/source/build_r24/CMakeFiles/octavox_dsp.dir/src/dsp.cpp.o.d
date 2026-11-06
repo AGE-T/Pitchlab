@@ -25,6 +25,7 @@ CMakeFiles/octavox_dsp.dir/src/dsp.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
+ /home/z/my-project/octavox-work/r24/source/include/octavox/simd.hpp \
  /home/z/my-project/octavox-work/r24/source/include/octavox/stageprof.hpp \
  /home/z/my-project/octavox-work/r24/source/include/octavox/pitch_control.hpp \
  /usr/include/c++/14/algorithm /usr/include/c++/14/bits/stl_algobase.h \

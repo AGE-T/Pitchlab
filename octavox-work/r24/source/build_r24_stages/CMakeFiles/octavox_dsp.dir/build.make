@@ -86,17 +86,65 @@ CMakeFiles/octavox_dsp.dir/src/dsp.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/octavox_dsp.dir/src/dsp.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/z/my-project/octavox-work/r24/source/src/dsp.cpp -o CMakeFiles/octavox_dsp.dir/src/dsp.cpp.s
 
+CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o: CMakeFiles/octavox_dsp.dir/flags.make
+CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o: /home/z/my-project/octavox-work/r24/source/src/simd_dispatch.cpp
+CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o: CMakeFiles/octavox_dsp.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/z/my-project/octavox-work/r24/source/build_r24_stages/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o -MF CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o.d -o CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o -c /home/z/my-project/octavox-work/r24/source/src/simd_dispatch.cpp
+
+CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/z/my-project/octavox-work/r24/source/src/simd_dispatch.cpp > CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.i
+
+CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/z/my-project/octavox-work/r24/source/src/simd_dispatch.cpp -o CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.s
+
+CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o: CMakeFiles/octavox_dsp.dir/flags.make
+CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o: /home/z/my-project/octavox-work/r24/source/src/simd_avx2.cpp
+CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o: CMakeFiles/octavox_dsp.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/z/my-project/octavox-work/r24/source/build_r24_stages/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -mavx2 -ffp-contract=off -MD -MT CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o -MF CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o.d -o CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o -c /home/z/my-project/octavox-work/r24/source/src/simd_avx2.cpp
+
+CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -mavx2 -ffp-contract=off -E /home/z/my-project/octavox-work/r24/source/src/simd_avx2.cpp > CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.i
+
+CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -mavx2 -ffp-contract=off -S /home/z/my-project/octavox-work/r24/source/src/simd_avx2.cpp -o CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.s
+
+CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o: CMakeFiles/octavox_dsp.dir/flags.make
+CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o: /home/z/my-project/octavox-work/r24/source/src/simd_fma.cpp
+CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o: CMakeFiles/octavox_dsp.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/z/my-project/octavox-work/r24/source/build_r24_stages/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -mavx2 -mfma -ffp-contract=off -MD -MT CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o -MF CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o.d -o CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o -c /home/z/my-project/octavox-work/r24/source/src/simd_fma.cpp
+
+CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -mavx2 -mfma -ffp-contract=off -E /home/z/my-project/octavox-work/r24/source/src/simd_fma.cpp > CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.i
+
+CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -mavx2 -mfma -ffp-contract=off -S /home/z/my-project/octavox-work/r24/source/src/simd_fma.cpp -o CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.s
+
 # Object files for target octavox_dsp
 octavox_dsp_OBJECTS = \
-"CMakeFiles/octavox_dsp.dir/src/dsp.cpp.o"
+"CMakeFiles/octavox_dsp.dir/src/dsp.cpp.o" \
+"CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o" \
+"CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o" \
+"CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o"
 
 # External object files for target octavox_dsp
 octavox_dsp_EXTERNAL_OBJECTS =
 
 liboctavox_dsp.a: CMakeFiles/octavox_dsp.dir/src/dsp.cpp.o
+liboctavox_dsp.a: CMakeFiles/octavox_dsp.dir/src/simd_dispatch.cpp.o
+liboctavox_dsp.a: CMakeFiles/octavox_dsp.dir/src/simd_avx2.cpp.o
+liboctavox_dsp.a: CMakeFiles/octavox_dsp.dir/src/simd_fma.cpp.o
 liboctavox_dsp.a: CMakeFiles/octavox_dsp.dir/build.make
 liboctavox_dsp.a: CMakeFiles/octavox_dsp.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/z/my-project/octavox-work/r24/source/build_r24_stages/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library liboctavox_dsp.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/z/my-project/octavox-work/r24/source/build_r24_stages/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX static library liboctavox_dsp.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/octavox_dsp.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/octavox_dsp.dir/link.txt --verbose=$(VERBOSE)
 

@@ -42,11 +42,19 @@
 //                       => BIT-IDENTICAL to the reference by construction
 //                          (each lane reproduces the exact reference op
 //                          sequence for its tau; verified empirically).
-//   lag-axis  AVX2+FMA  sequential j (per tau) fused (1 rounding) => the
-//                       ONLY deviation is per-term fma rounding; order
-//                       preserved.
+//   lag-axis  AVX2+FMA  sequential j (per tau) fused (1 rounding) in the
+//                       VECTOR LANES; the <= ntau % 4 scalar-tail taus
+//                       keep the reference's mul+add (2 roundings) -- the
+//                       tail is then bit-exact vs Scalar AND faster than
+//                       a serial std::fma chain (the R24 measurement: the
+//                       fused tail loop is vfmadd231sd-latency-bound and
+//                       ran at 0.45x the SLP'd reference loop).
 //   sample-axis AVX2    4-lane reassociated    mul+add (2 roundings)
 //   sample-axis AVX2+FMA 4-lane reassociated   fused (1 rounding)
+//
+// The AVX2+FMA level's deviation from the reference therefore applies to
+// the vector-processed taus only (fused per-term rounding, order
+// preserved); every scalar-tail tau is bit-exact vs the Scalar level.
 //
 // The horizontal reduction of the sample-axis kernels is
 //   d = ((P0 + P2) + (P1 + P3)) + s_tail
@@ -65,12 +73,13 @@ namespace simd {
 /// bit-exact against every recorded reference hash (the R12--R23 record).
 /// The accelerated levels are OPT-IN and are validated by the R24 numerical
 /// battery before use; the historical reference implementation is preserved
-/// verbatim as the Scalar level.
+/// verbatim as the Scalar level. Auto resolves to the bit-exact AVX2 level
+/// when available (the R24 measured decision -- see resolve()).
 enum class Mode : int {
     Scalar = 0,   ///< baseline implementation (bit-exact historical reference)
     AVX2 = 1,     ///< AVX2 kernels (lag-axis: bit-exact by construction)
-    AVX2FMA = 2,  ///< AVX2 + FMA kernels (fused per-term rounding)
-    Auto = 3      ///< best available: AVX2+FMA > AVX2 > Scalar
+    AVX2FMA = 2,  ///< AVX2 + FMA kernels (fused per-term rounding; opt-in)
+    Auto = 3      ///< bit-exact AVX2 when available, else Scalar (R24)
 };
 
 /// Resolved implementation level (never Auto). Returned by resolve().
@@ -107,11 +116,21 @@ const char* levelName(Level l);
 ///   Scalar  -> Scalar
 ///   AVX2    -> AVX2 if (units && caps.avx2)            else Scalar
 ///   AVX2FMA -> AVX2FMA if (units && caps.avx2 && caps.fma) else Scalar
-///   Auto    -> AVX2FMA / AVX2 / Scalar (best available)
+///   Auto    -> AVX2 if available, else Scalar
 /// prepare() uses the RESOLVED level for the engine and REJECTS the
 /// configuration when an explicitly forced mode (AVX2 / AVX2FMA) cannot be
 /// honoured (loud failure, the house validation rule); only Auto degrades
 /// silently.
+///
+/// R24 DECISION (Auto prefers the BIT-EXACT level): the kernel measurements
+/// (PITCHLAB_R24_SIMD_BENCHMARK_RESULTS.md) show the AVX2 lag-axis kernel
+/// >= the AVX2+FMA kernel on EVERY representative shape on the reference
+/// machine -- the FMA level's halved dependent-op count only pays off in
+/// the throughput-bound 16-tau batch regime where both already run at
+/// ~5-6x, and it LOSES in the latency-bound single-batch regime (the
+/// Hybrid fine stage) -- while AVX2+FMA additionally carries the fused
+/// per-term rounding deviation. Auto therefore selects the bit-exact
+/// accelerated level; AVX2+FMA remains an explicit opt-in.
 Level resolve(Mode m);
 
 // ---------------------------------------------------------------------------

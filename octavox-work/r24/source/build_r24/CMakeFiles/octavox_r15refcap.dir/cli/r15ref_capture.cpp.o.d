@@ -133,4 +133,5 @@ CMakeFiles/octavox_r15refcap.dir/cli/r15ref_capture.cpp.o: \
  /usr/include/c++/14/bits/uses_allocator.h \
  /usr/include/c++/14/bits/uses_allocator_args.h /usr/include/c++/14/tuple \
  /home/z/my-project/octavox-work/r24/source/include/octavox/dsp.hpp \
+ /home/z/my-project/octavox-work/r24/source/include/octavox/simd.hpp \
  /home/z/my-project/octavox-work/r24/source/include/octavox/stageprof.hpp
