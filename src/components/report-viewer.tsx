@@ -67,11 +67,11 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 23 · YIN kutatás, validáció és artefaktmentes integráció" },
-  { label: "Kanonikus YIN", value: "referencia 12/12 · FFT-ekvivalencia 3.7e-9 · 5 forrás felülvizsgálva" },
-  { label: "Vezérlőréteg", value: "Pitch Control Layer · 290/290 · Strategy A · bit-exakt default" },
-  { label: "Artefaktok", value: "NaN-propagáció reprodukálva és JAVÍTVA · kattogás-mechanizmus megmérve" },
-  { label: "Kapuk", value: "100/100 core · 12/12 VST3-modul · 93 fájl archívum" },
+  { label: "Kör", value: "Round 24 · SIMD képességréteg (YIN kernelek) + mért döntési rekord" },
+  { label: "Bit-exakt gyorsítás", value: "AVX2 lag-tengelyes kernel 4.8–6.3× · motor-bit-azonosság mindhárom detektor-módban" },
+  { label: "FullRate @96k", value: "det_estimate 5.9–6.0× · 8 hang sztereó falidő 1144 → 368 ms/s" },
+  { label: "Kapuk", value: "110/110 core (Release + ASan/UBSan) · hash-pinek bit-exakt · VST3 21/21 + 12/12 + 47/47 friss bundle-ön" },
+  { label: "R23-rés", value: "az R23 modul-szintű kapu elő-delta bundle-ön futott — lezárva, újraépítve, zöld" },
 ];
 
 export function ReportViewer({
@@ -122,17 +122,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 23. kör
+                Octavox Research — 24. kör
               </h1>
               <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm sm:line-clamp-none">
-                YIN alapkutatás: kanonikus referencia-implementáció független vektorokkal, öt nyílt forrás implementáció felülvizsgálata, 15 jel × 4 mintavételi frekvencia × 7 variáns detektor-összehasonlítás, független Pitch Control Layer (290/290), az R22 mérési harnes javítása és a négy felhasználói tünet gyökérok-vizsgálata · Eventide Octavox RE statikus reverzibilis projekt
+                SIMD képességréteg a YIN kernelekhez: per-TU ISA-egységek (AVX2 / AVX2+FMA, -ffp-contract=off), RT-biztos kernel-diszpécs prepare-időben, Config::simd (alapértelmezés Scalar = bit-exakt az R12–R23 rekorddal), a lag-tengelyes AVX2 kernel koncepció szerint bit-azonos a skalár referenciával (kemény exact-equality kapu) · 10 új r24 teszteset (100→110, Release + ASan) · a megszakadt előző session állapotának diagnosztikája és helyreállítása (hiányzó simd_fma.cpp, CMake/motor/teszt bekötés) · Eventide Octavox RE statikus reverzibilis projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 23 · KÉSZ
+              ROUND 24 · KÉSZ
             </Badge>
           </div>
           <div
@@ -165,7 +165,7 @@ export function ReportViewer({
                       aria-hidden="true"
                     />
                     <h2 className="text-base font-semibold tracking-tight">
-                      {di === 0 ? "Eredménycsomag — letöltés" : di === 1 ? "R22-baseline archívum — letöltés" : "Helyreállított R21-alapvonal — letöltés"}
+                      {di === 0 ? "R23 eredménycsomag — letöltés (az utolsó archivált kör)" : di === 1 ? "R22-baseline archívum — letöltés" : "Helyreállított R21-alapvonal — letöltés"}
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
