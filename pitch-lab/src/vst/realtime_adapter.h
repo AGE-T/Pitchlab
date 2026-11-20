@@ -180,6 +180,10 @@ struct StatusSnapshot {
   // audio thread never formats strings.
   uint64_t engineCpuNanos = 0;  // steady-clock ns inside engine->process()
                                 // (feedJob + finishJob), since adoption
+  uint64_t callbackCpuNanos = 0; // steady-clock ns across the ENTIRE
+                                 // RealtimeAdapter::process() callback
+                                 // (curves + lanes + engine + mix + meters),
+                                 // since adoption (F7 fix)
   int64_t rtFrames = 0;         // input frames processed since the current
                                 // chain's adoption (the measurement window)
 };

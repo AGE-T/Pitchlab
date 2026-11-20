@@ -91,6 +91,8 @@ struct RtClassification {
   int64_t windowFrames = 0;
   uint64_t faults = 0;
   bool faultEscalated = false;
+  double callbackRtf = 0.0;
+  uint64_t dryFallbackFrames = 0;
 };
 
 // ---------------------------------------------------------------------------

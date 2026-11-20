@@ -972,6 +972,7 @@ class TimePitchEngine final : public PitchEngine {
         break;  // unreachable (the compaction floor keeps the window)
       }
       tracker_.observeFrame(inBuf_[0].data() + static_cast<std::size_t>(rel), s);
+      generateMarksUpTo();
     }
   }
 

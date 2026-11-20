@@ -81,47 +81,83 @@ constexpr double kPi = 3.14159265358979323846;
   return v < lo ? lo : (v > hi ? hi : v);
 }
 
-/// A per-channel sliding-window lane (the v0.1 engines' own pattern:
-/// pre-allocated, front-compaction via memmove, no allocation after setup).
+/// A per-channel sliding-window lane: pre-allocated, O(1) front-drop via
+/// `offset` advance, amortized front-compaction only when the dead prefix
+/// exhausts the allocated slack (`capacity` logical frames + slack in a 2x
+/// physical buffer), no allocation after setup. This eliminates the
+/// per-sub-block multi-megabyte memmove on the audio callback.
 struct LaneWindow {
   std::vector<double> ch[2];
   int64_t start = 0;
   int64_t count = 0;
+  int64_t offset = 0;       // physical index of `start` inside `ch[c]`
+  int64_t logicalCap = 0;   // exposed logical capacity
   int channels = 1;
 
-  void allocate(int channelCount, int64_t capacity) {
+  void allocate(int channelCount, int64_t capacity, int64_t slack = 0) {
     channels = channelCount;
+    logicalCap = capacity;
+    // Physical backing includes `slack` extra frames so front drops advance
+    // `offset` in O(1) without per-block memmove; compaction runs at most
+    // once every `slack` frames.
+    const std::size_t physCap =
+        static_cast<std::size_t>(std::max<int64_t>(capacity + std::max<int64_t>(slack, 0), 128));
     for (int c = 0; c < channels; ++c) {
-      ch[c].assign(static_cast<std::size_t>(capacity), 0.0);
+      ch[c].assign(physCap, 0.0);
     }
     start = 0;
     count = 0;
+    offset = 0;
   }
 
   void reset(int64_t startIdx) {
     start = startIdx;
     count = 0;
+    offset = 0;
+  }
+
+  void compact() {
+    if (offset <= 0) return;
+    if (count > 0) {
+      const std::size_t keep = static_cast<std::size_t>(count);
+      for (int c = 0; c < channels; ++c) {
+        std::memmove(ch[c].data(), ch[c].data() + static_cast<std::size_t>(offset),
+                     keep * sizeof(double));
+      }
+    }
+    offset = 0;
   }
 
   void dropBefore(int64_t absIdx) {
     if (absIdx <= start) return;
     const int64_t drop = std::min(absIdx - start, count);
     if (drop <= 0) return;
-    const std::size_t keep = static_cast<std::size_t>(count - drop);
-    if (keep > 0) {
-      for (int c = 0; c < channels; ++c) {
-        std::memmove(ch[c].data(), ch[c].data() + static_cast<std::size_t>(drop),
-                     keep * sizeof(double));
-      }
-    }
     start += drop;
-    count = static_cast<int64_t>(keep);
+    count -= drop;
+    if (count == 0) {
+      offset = 0;
+      return;
+    }
+    offset += drop;
+    // Compact only when the remaining physical tail falls below the logical
+    // free space that callers expect to append into.
+    const int64_t physCap = static_cast<int64_t>(ch[0].size());
+    const int64_t logicalFree = logicalCap - count;
+    if (physCap - (offset + count) < logicalFree) {
+      compact();
+    }
   }
 
-  [[nodiscard]] int64_t capacity() const { return static_cast<int64_t>(ch[0].size()); }
-  [[nodiscard]] int64_t freeSpace() const { return capacity() - count; }
+  [[nodiscard]] double* writePtr(int channel) {
+    return ch[channel].data() + static_cast<std::size_t>(offset + count);
+  }
+  [[nodiscard]] const double* readPtr(int channel, int64_t absIdx) const {
+    return ch[channel].data() + static_cast<std::size_t>(offset + (absIdx - start));
+  }
+  [[nodiscard]] int64_t capacity() const { return logicalCap; }
+  [[nodiscard]] int64_t freeSpace() const { return logicalCap - count; }
   [[nodiscard]] double at(int channel, int64_t absIdx) const {
-    return ch[channel][static_cast<std::size_t>(absIdx - start)];
+    return ch[channel][static_cast<std::size_t>(offset + (absIdx - start))];
   }
 };
 
@@ -941,6 +977,7 @@ struct RealtimeAdapter::Impl {
   // the active chain — the current configuration, never a blend) and at
   // the hard/resume resets (a fresh chain re-measures from zero).
   uint64_t engineCpuNanos = 0;
+  uint64_t callbackCpuNanos = 0;
   int64_t rtFrames = 0;
   // Preparation-side (prep thread; never block audio):
   std::atomic<uint64_t> preparationFailures{0};
@@ -1070,9 +1107,7 @@ struct RealtimeAdapter::Impl {
     if (rawEnd > from) {
       const std::size_t n = static_cast<std::size_t>(rawEnd - from);
       for (int c = 0; c < chain.channels; ++c) {
-        std::memcpy(hist.ch[static_cast<std::size_t>(c)].data() + static_cast<std::size_t>(hist.count),
-                    job.lane.ch[static_cast<std::size_t>(c)].data() +
-                        static_cast<std::size_t>(from - job.lane.start),
+        std::memcpy(hist.writePtr(c), job.lane.readPtr(c, from),
                     n * sizeof(double));
       }
       hist.count += rawEnd - from;
@@ -1107,8 +1142,7 @@ struct RealtimeAdapter::Impl {
         if (succValid && q >= succ->lane.start && q < succ->lane.start + succ->lane.count) {
           v = fadeOut * mine + fadeIn * succ->lane.at(c, q);
         }
-        hist.ch[static_cast<std::size_t>(c)]
-             [static_cast<std::size_t>(hist.count)] = v;
+        *hist.writePtr(c) = v;
       }
       ++hist.count;
     }
@@ -1176,7 +1210,7 @@ struct RealtimeAdapter::Impl {
 
     // Task 31: the retained wet history (the Chain::history note) — same
     // capacity formula as the job lanes (prep-thread allocation).
-    chain->history.allocate(channels, chain->laneCapacity);
+    chain->history.allocate(channels, chain->laneCapacity, 16384);
 
     // Prepare job 0 (the chain's first job) so adoption can start feeding
     // immediately. Its engine is prepared on THIS thread (allocation is
@@ -1303,6 +1337,9 @@ struct RealtimeAdapter::Impl {
       // snapshot value (UI/preset/state) and the audio thread's LIVE depth
       // (automation — the timeline's block-end carry), whichever is larger.
       double liveDepth = snap.lfoDepthSt;
+      const bool paramOrEpochRebuild =
+          epoch != builtRequestEpoch || !(snap.chainSignature() == builtSig) ||
+          builtFs != fs || builtChannels != channels;
       if (!settled) {
         build = false;  // the parameter set is still being written
       } else if (!paramsPublished.load(std::memory_order_acquire)) {
@@ -1310,84 +1347,84 @@ struct RealtimeAdapter::Impl {
                         // default-centred chain (the race above)
       } else if (act == nullptr && pend == nullptr) {
         build = true;
+      } else if (paramOrEpochRebuild &&
+                 (pend == nullptr ||
+                  streamPosMirror.load(std::memory_order_acquire) == 0)) {
+        // the parameter/reset/format class: the envelope centres at the
+        // SNAPSHOT's ratio — the deterministic parameter state. When no
+        // audio has run yet (streamPosMirror == 0) and a pending chain
+        // already exists from an earlier pre-audio parameter write, we
+        // MUST supersede it so waitForFirstChain() on the main thread
+        // sees the new builtSigPub_ immediately instead of timing out
+        // after 2000 ms (Extra-2 / F-01 fix).
+        build = true;
       } else if (pend == nullptr) {
-        if (epoch != builtRequestEpoch || !(snap.chainSignature() == builtSig) ||
-            builtFs != fs || builtChannels != channels) {
-          // the parameter/reset/format class: the envelope centres at the
-          // SNAPSHOT's ratio — the deterministic parameter state. (Task 35,
-          // the exit-handoff amendment: the previous poll-moment
-          // exitLiveRatio override here was the OTHER load-lag path — the
-          // audio-thread exit events now carry any in-flight automation
-          // drift as explicit, versioned re-centres.)
-          build = true;
-        } else {
-          // --- Task 35 (RC-1 re-derivation): the EPOCH-VERSIONED EXIT
-          // CONSUMPTION. The audio thread detects the persistent envelope
-          // exits and publishes (epoch, ratio) pairs; this thread consumes
-          // them IN ORDER (oldest unconsumed first — the SPSC ring preserves
-          // order and content), one re-centre build per consumed event,
-          // centred at the event's EXIT-MOMENT ratio. The consumed event
-          // sequence is order-deterministic: the re-centre geometry no
-          // longer depends on this thread's poll timing (the Task-34 RC-1
-          // determinism gap). A consumed event whose ratio the CURRENT
-          // envelope already covers (e.g. the pitch moved back, or a
-          // parameter build re-centred in between) is marked consumed
-          // WITHOUT a build — stale-event churn is structurally excluded.
-          const uint64_t head = exitHead.load(std::memory_order_acquire);
-          const uint64_t tail = exitTail.load(std::memory_order_relaxed);
-          if (head > tail) {
-            const ExitEventSlot& slot = exitRing[tail % kExitRingSlots];
-            const uint64_t evEpoch = slot.epoch.load(std::memory_order_acquire);
-            const double evRatio =
-                std::bit_cast<double>(slot.ratioBits.load(std::memory_order_acquire));
-            // the epoch sanity check also guards the (benign, bounded)
-            // mid-drain consume race documented at the resume reset
-            if (evEpoch == tail + 1 && evRatio > 0.0 && std::isfinite(evRatio)) {
-              double r = evRatio;
-              {
-                // the capability clamp — identical to the audio-side clamp
-                // (idempotent; kept for defence in depth)
-                const EngineRegistry& regExit = engineRegistry();
-                const int exitIdx = act->engineIndex;
-                if (exitIdx >= 0 && exitIdx < static_cast<int>(regExit.size())) {
-                  const auto& cap =
-                      regExit.at(static_cast<std::size_t>(exitIdx)).capabilities;
-                  r = clampd(r, cap.minRatio, cap.maxRatio);
-                }
+        // --- Task 35 (RC-1 re-derivation): the EPOCH-VERSIONED EXIT
+        // CONSUMPTION. The audio thread detects the persistent envelope
+        // exits and publishes (epoch, ratio) pairs; this thread consumes
+        // them IN ORDER (oldest unconsumed first — the SPSC ring preserves
+        // order and content), one re-centre build per consumed event,
+        // centred at the event's EXIT-MOMENT ratio. The consumed event
+        // sequence is order-deterministic: the re-centre geometry no
+        // longer depends on this thread's poll timing (the Task-34 RC-1
+        // determinism gap). A consumed event whose ratio the CURRENT
+        // envelope already covers (e.g. the pitch moved back, or a
+        // parameter build re-centred in between) is marked consumed
+        // WITHOUT a build — stale-event churn is structurally excluded.
+        const uint64_t head = exitHead.load(std::memory_order_acquire);
+        const uint64_t tail = exitTail.load(std::memory_order_relaxed);
+        if (head > tail) {
+          const ExitEventSlot& slot = exitRing[tail % kExitRingSlots];
+          const uint64_t evEpoch = slot.epoch.load(std::memory_order_acquire);
+          const double evRatio =
+              std::bit_cast<double>(slot.ratioBits.load(std::memory_order_acquire));
+          // the epoch sanity check also guards the (benign, bounded)
+          // mid-drain consume race documented at the resume reset
+          if (evEpoch == tail + 1 && evRatio > 0.0 && std::isfinite(evRatio)) {
+            double r = evRatio;
+            {
+              // the capability clamp — identical to the audio-side clamp
+              // (idempotent; kept for defence in depth)
+              const EngineRegistry& regExit = engineRegistry();
+              const int exitIdx = act->engineIndex;
+              if (exitIdx >= 0 && exitIdx < static_cast<int>(regExit.size())) {
+                const auto& cap =
+                    regExit.at(static_cast<std::size_t>(exitIdx)).capabilities;
+                r = clampd(r, cap.minRatio, cap.maxRatio);
               }
-              if (r < act->envMin || r > act->envMax) {
-                build = true;
-                liveRatio = r;
-              }
-              // consume (advance the watermark) whether or not a build
-              // follows — exactly-once semantics per event
-              exitTail.store(tail + 1, std::memory_order_release);
-            } else {
-              // a torn/unexpected slot (only possible in the documented
-              // mid-drain race) — skip it to preserve progress
-              exitTail.store(tail + 1, std::memory_order_release);
             }
-          }
-          // Task 30 — the ENVELOPE-CAPABILITY exit: the live LFO depth grew
-          // beyond the chain's margin. The curve's legal excursion around
-          // the pitch (±depth) would exceed the prepared envelope, so ONE
-          // rebuild re-sizes the envelope (+ the splice geometry). This is
-          // the depth's ONLY lifecycle trigger: a depth SHRINK keeps the
-          // wider envelope (harmless coverage), and depth movement WITHIN
-          // the margin never rebuilds — the pre-Task-30 design rebuilt on
-          // every clamped BLOCK instead (the measured churn root). The
-          // max(snapshot, live) coverage term is monotone-safe under load
-          // lag by construction (a wider envelope never churns) — this
-          // check stays on the preparation side by design (the Task-35
-          // amendment records the reasoning).
-          {
-            double d = snap.lfoDepthSt;
-            const double exitDepth = exitLiveDepth.load(std::memory_order_acquire);
-            if (exitDepth >= 0.0) d = std::max(d, exitDepth);
-            if (d > act->envMarginSt) {
+            if (r < act->envMin || r > act->envMax) {
               build = true;
-              liveDepth = d;
+              liveRatio = r;
             }
+            // consume (advance the watermark) whether or not a build
+            // follows — exactly-once semantics per event
+            exitTail.store(tail + 1, std::memory_order_release);
+          } else {
+            // a torn/unexpected slot (only possible in the documented
+            // mid-drain race) — skip it to preserve progress
+            exitTail.store(tail + 1, std::memory_order_release);
+          }
+        }
+        // Task 30 — the ENVELOPE-CAPABILITY exit: the live LFO depth grew
+        // beyond the chain's margin. The curve's legal excursion around
+        // the pitch (±depth) would exceed the prepared envelope, so ONE
+        // rebuild re-sizes the envelope (+ the splice geometry). This is
+        // the depth's ONLY lifecycle trigger: a depth SHRINK keeps the
+        // wider envelope (harmless coverage), and depth movement WITHIN
+        // the margin never rebuilds — the pre-Task-30 design rebuilt on
+        // every clamped BLOCK instead (the measured churn root). The
+        // max(snapshot, live) coverage term is monotone-safe under load
+        // lag by construction (a wider envelope never churns) — this
+        // check stays on the preparation side by design (the Task-35
+        // amendment records the reasoning).
+        {
+          double d = snap.lfoDepthSt;
+          const double exitDepth = exitLiveDepth.load(std::memory_order_acquire);
+          if (exitDepth >= 0.0) d = std::max(d, exitDepth);
+          if (d > act->envMarginSt) {
+            build = true;
+            liveDepth = d;
           }
         }
       }
@@ -1403,7 +1440,8 @@ struct RealtimeAdapter::Impl {
         // before or after the reset request is a race — the determinism
         // guarantee requires the outcome to be race-independent).
         Chain* liveCheck = active.load(std::memory_order_acquire);
-        if (liveCheck != nullptr && pend == nullptr &&
+        if (liveCheck == nullptr) liveCheck = pend;
+        if (liveCheck != nullptr &&
             streamPosMirror.load(std::memory_order_acquire) == 0) {
           bool identical = (snap.chainSignature() == liveCheck->sig) &&
                            builtFs == fs && builtChannels == channels;
@@ -1424,7 +1462,9 @@ struct RealtimeAdapter::Impl {
             }
           }
           if (identical) {
-            builtRequestEpoch = epoch;  // the request is fulfilled by the live chain
+            builtRequestEpoch = epoch;  // the request is fulfilled by the live/pending chain
+            builtSig = snap.chainSignature();
+            builtSigPub_.store(builtSig);
             build = false;
           }
         }
@@ -1443,7 +1483,11 @@ struct RealtimeAdapter::Impl {
           // engine index) — counted preparation failure, never silent.
           preparationFailures.fetch_add(1, std::memory_order_relaxed);
         } else {
-          pending.store(fresh, std::memory_order_release);
+          // Atomically swap into pending and delete any unadopted predecessor
+          // that was still waiting in pending (never touched by the audio
+          // thread if we won the exchange).
+          Chain* oldPend = pending.exchange(fresh, std::memory_order_acq_rel);
+          delete oldPend;
           builtRequestEpoch = epoch;
           builtSig = snap.chainSignature();
           builtSigPub_.store(builtSig);
@@ -1558,6 +1602,7 @@ struct RealtimeAdapter::Impl {
     // chain's configuration is what the next classification describes (a
     // switch away from an expensive chain must not inherit its history).
     engineCpuNanos = 0;
+    callbackCpuNanos = 0;
     rtFrames = 0;
     // the emission latency is monotonic (Λ_eff — never starves the retiring
     // chain when the new chain is cheaper; see the Impl field note)
@@ -1604,7 +1649,7 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   const int64_t prepLead = 2 * static_cast<int64_t>(im.maxBlock) + kPrepLeadExtra;
   im.dryRetention = std::max(worstLatency, prepLead);
   const int64_t dryCap = im.dryRetention + 2 * static_cast<int64_t>(im.maxBlock) + 64;
-  im.dry.allocate(im.channels, dryCap);
+  im.dry.allocate(im.channels, dryCap, 32768);
 
   im.curveScratch.assign(static_cast<std::size_t>(im.maxBlock), 1.0);
 
@@ -1637,6 +1682,8 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.faults = 0;
   im.clampEvents = 0;
   im.automationDropped = 0;
+  im.dryFallbackFrames = 0;
+  im.jobsCompleted = 0;
   // Task 29: categorized diagnostics reset with the activation
   im.engineProcessFaults = 0;
   im.engineExceptions = 0;
@@ -1650,6 +1697,7 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   // Task 32: the measurement accumulators (fresh activation — the first
   // chain's window starts empty; see the Impl field note)
   im.engineCpuNanos = 0;
+  im.callbackCpuNanos = 0;
   im.rtFrames = 0;
   im.preparationFailures.store(0, std::memory_order_relaxed);
   im.jobsPreparedTotal.store(0, std::memory_order_relaxed);
@@ -1800,6 +1848,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   Impl& im = *impl_;
   const int ch = im.channels;
   if (frames <= 0) return;
+  const auto cbT0 = std::chrono::steady_clock::now();
   ++im.processCalls;  // Task 29: process-call cadence (diagnostics)
 
   if (!im.activated) {
@@ -1885,6 +1934,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
     // Task 32: the fresh chain after a resume re-measures from zero (the
     // pre-suspend window described the retired chain)
     im.engineCpuNanos = 0;
+    im.callbackCpuNanos = 0;
     im.rtFrames = 0;
   }
 
@@ -1929,7 +1979,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       const int64_t free = im.dry.freeSpace();
       const int64_t append = std::min<int64_t>(subN, free);
       for (int c = 0; c < ch; ++c) {
-        std::memcpy(im.dry.ch[c].data() + im.dry.count,
+        std::memcpy(im.dry.writePtr(c),
                     in[c] + subStart, sizeof(double) * static_cast<std::size_t>(append));
       }
       im.dry.count += append;
@@ -2469,7 +2519,12 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   st.seamRecoveries = im.seamRecoveries;  // Task 31: the retention at work
   // Task 32: the realtime-capability measurement (numeric only; the UI-side
   // classifier — vst/realtime_status.h — derives the level from these)
+  im.callbackCpuNanos += static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::steady_clock::now() - cbT0)
+          .count());
   st.engineCpuNanos = im.engineCpuNanos;
+  st.callbackCpuNanos = im.callbackCpuNanos;
   st.rtFrames = im.rtFrames;
   // Task 34: the wet-continuity telemetry
   st.dryFallbackFrames = im.dryFallbackFrames;
@@ -2563,7 +2618,7 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
       const int64_t off = pos - t;
       for (int c = 0; c < ch; ++c) inPtr[c] = in[c] + off;
     } else if (pos >= im.dry.start && pos < im.dry.start + im.dry.count) {
-      for (int c = 0; c < ch; ++c) inPtr[c] = im.dry.ch[c].data() + (pos - im.dry.start);
+      for (int c = 0; c < ch; ++c) inPtr[c] = im.dry.readPtr(c, pos);
     } else {
       im.faults++;  // prep stall beyond the dry retention: abandon the job
       im.dryHistoryMisses++;  // Task 29: categorized (dry-history miss)
@@ -2594,7 +2649,7 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
     inView.frameCount = chunk;
     AudioBlockOut outView;
     double* outPtr[2] = {nullptr, nullptr};
-    for (int c = 0; c < ch; ++c) outPtr[c] = job.lane.ch[c].data() + job.lane.count;
+    for (int c = 0; c < ch; ++c) outPtr[c] = job.lane.writePtr(c);
     outView.channels = outPtr;
     outView.channelCount = ch;
     outView.frameCapacity = outCap;
@@ -2658,7 +2713,7 @@ void RealtimeAdapter::finishJob(Job& job, int64_t historyFloor) {
   const int64_t free = job.lane.freeSpace();
   if (free <= 0) return;
   double* outPtr[2] = {nullptr, nullptr};
-  for (int c = 0; c < ch; ++c) outPtr[c] = job.lane.ch[c].data() + job.lane.count;
+  for (int c = 0; c < ch; ++c) outPtr[c] = job.lane.writePtr(c);
   AudioBlockOut outView;
   outView.channels = outPtr;
   outView.channelCount = ch;

@@ -1,6 +1,6 @@
-# Pitch Lab — CI workflow (implementation-freeze state)
+# Pitch Lab — CI workflow (v0.1 core + 6-engine suite + VST3 product layer)
 #
-# WHAT THIS RUNS (honest scope): the T-INF1 infrastructure suite — configure,
+# WHAT THIS RUNS (honest scope): the core & DSP contract suite — configure,
 # build and test the C++20 project on the canonical pinned environment
 # (implementation specification §13.3, build/CI specification §12.2) — PLUS
 # (v0.1 closed, product phase complete) the `vst3-product` job: the REAL
@@ -21,7 +21,7 @@
 #     20260920.314.1 ships GCC 13.3.0, run 36237006396 — build spec §1/§6)
 #   - CMake 3.31.6, checksum-pinned official tarball (sha256-verified)
 #   - Ninja >= 1.11, CTest with --output-on-failure + JUnit XML
-#   - zero third-party dependencies at freeze; no cache; no matrix
+#   - zero external dependencies outside vendored doctest/pocketfft/vst3sdk
 #   - Windows delivery lane: windows-2022, pinned (never windows-latest)
 #
 # Evidence artefacts uploaded on every run (including failures):
@@ -42,7 +42,7 @@ permissions:
 
 jobs:
   t-inf1-infrastructure:
-    name: T-INF1 infrastructure (freeze state — NOT DSP)
+    name: T-INF1 core & DSP suite (6 production engines + harness)
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout (pinned by commit SHA)

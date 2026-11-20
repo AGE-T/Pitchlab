@@ -79,7 +79,9 @@ void u32(std::vector<unsigned char>& b, uint32_t v) {
   b.push_back(static_cast<unsigned char>((v >> 24) & 0xFF));
 }
 void tag(std::vector<unsigned char>& b, const char* t) {
-  b.insert(b.end(), t, t + 4);
+  for (int i = 0; i < 4; ++i) {
+    b.push_back(static_cast<unsigned char>(t[i]));
+  }
 }
 
 // Minimal valid float-WAV body builder (fmt tag 3, 16-byte fmt).

@@ -747,22 +747,27 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
                   ss.liveJobs, ss.preparingJobs, (unsigned long long)ss.chainsAdopted,
                   (unsigned long long)ss.reprepares, (unsigned long long)ss.clampEvents);
     statusLine3_->set(buf, ui_::Palette::textFaint());
-    std::snprintf(buf, sizeof(buf), "faults %llu · auto-drop %llu",
-                  (unsigned long long)ss.faults, (unsigned long long)ss.automationDropped);
-    statusLine4_->set(buf, ss.faults > 0 ? ui_::Palette::rose() : ui_::Palette::textFaint());
+    std::snprintf(buf, sizeof(buf), "faults %llu · dry-fb %llu · auto-drop %llu",
+                  (unsigned long long)ss.faults, (unsigned long long)ss.dryFallbackFrames,
+                  (unsigned long long)ss.automationDropped);
+    statusLine4_->set(buf, (ss.faults > 0 || ss.dryFallbackFrames > 0)
+                               ? ui_::Palette::rose()
+                               : ui_::Palette::textFaint());
     // Task 29: the CATEGORIZED breakdown (identifies the root class of a
     // stutter: engine defect / lane retention / scheduling / preparation).
     // Displayed when any category is nonzero — always visible when needed,
     // quiet when healthy.
     const uint64_t cats = ss.engineProcessFaults + ss.engineExceptions +
                           ss.deliveryUnderruns + ss.dryHistoryMisses + ss.jobStalls +
-                          ss.chainAdoptionFailures + ss.preparationFailures;
+                          ss.chainAdoptionFailures + ss.preparationFailures +
+                          ss.dryFallbackFrames;
     if (cats > 0) {
       std::snprintf(buf, sizeof(buf),
-                    "  underrun %llu · dry-miss %llu · proc %llu · exc %llu · "
+                    "  underrun %llu · dry-miss %llu · dry-fb %llu · proc %llu · exc %llu · "
                     "stall %llu · adopt %llu · prep-fail %llu",
                     (unsigned long long)ss.deliveryUnderruns,
                     (unsigned long long)ss.dryHistoryMisses,
+                    (unsigned long long)ss.dryFallbackFrames,
                     (unsigned long long)ss.engineProcessFaults,
                     (unsigned long long)ss.engineExceptions,
                     (unsigned long long)ss.jobStalls,

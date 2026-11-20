@@ -238,6 +238,25 @@ TEST_CASE("T-RT1: fault evidence escalates exactly one level (never two)") {
     CHECK(c.level == RtLevel::NotSustainable);
     CHECK(c.faultEscalated == true);
   }
+  // F2/F7 regression: dryFallbackFrames > 0 (even with st.faults == 0)
+  // escalates one level and sets faultEscalated == true
+  {
+    StatusSnapshot st = measuredSnapshot(kFs, frames, static_cast<int64_t>(0.30e9));
+    st.dryFallbackFrames = 128;
+    const RtClassification c = classifyRealtimeStatus(st);
+    CHECK(c.level == RtLevel::Limited);
+    CHECK(c.faultEscalated == true);
+    CHECK(c.dryFallbackFrames == 128);
+  }
+  // F7 regression: callbackCpuNanos exceeding engineCpuNanos drives measuredRtf
+  {
+    StatusSnapshot st = measuredSnapshot(kFs, frames, static_cast<int64_t>(0.25e9));
+    st.callbackCpuNanos = static_cast<uint64_t>(0.85e9);
+    const RtClassification c = classifyRealtimeStatus(st);
+    CHECK(c.level == RtLevel::Limited);
+    CHECK(c.measuredRtf == doctest::Approx(0.85).epsilon(1e-9));
+    CHECK(c.callbackRtf == doctest::Approx(0.85).epsilon(1e-9));
+  }
 }
 
 TEST_CASE("T-RT1: the benchmark prior is scoped to its measured evidence") {

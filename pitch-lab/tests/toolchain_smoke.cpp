@@ -16,7 +16,9 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#if __has_include(<format>)
 #include <format>
+#endif
 #include <ranges>
 #include <vector>
 
@@ -51,7 +53,9 @@ void testCxx20Language() {
 }
 
 void testCxx20Library() {
+#if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L
   CHECK(std::format("{}-{}-{}", 1, "two", 3.0) == "1-two-3");
+#endif
   CHECK(std::popcount(0x0Fu) == 4);
   CHECK(std::has_single_bit(64u));
   const auto now = std::chrono::system_clock::now();

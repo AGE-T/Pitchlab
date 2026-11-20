@@ -72,6 +72,7 @@ constexpr BenchmarkPrior kBenchmarkPriors[]{
 RtClassification classifyRealtimeStatus(const StatusSnapshot& st) {
   RtClassification c;
   c.faults = st.faults;
+  c.dryFallbackFrames = st.dryFallbackFrames;
   c.windowFrames = st.rtFrames;
 
   // No active chain (never activated, building, or hard-reset): nothing
@@ -91,7 +92,9 @@ RtClassification classifyRealtimeStatus(const StatusSnapshot& st) {
     const double timelineSec = static_cast<double>(st.rtFrames) / st.sampleRate;
     if (timelineSec > 0.0) {
       c.basis = RtBasis::Measured;
-      c.measuredRtf = (static_cast<double>(st.engineCpuNanos) / 1e9) / timelineSec;
+      const uint64_t totalCpuNanos = std::max(st.engineCpuNanos, st.callbackCpuNanos);
+      c.measuredRtf = (static_cast<double>(totalCpuNanos) / 1e9) / timelineSec;
+      c.callbackRtf = (static_cast<double>(st.callbackCpuNanos) / 1e9) / timelineSec;
       if (c.measuredRtf > kRtfSustainableMax) {
         c.level = RtLevel::NotSustainable;
       } else if (c.measuredRtf > kRtfOkMax) {
@@ -99,14 +102,14 @@ RtClassification classifyRealtimeStatus(const StatusSnapshot& st) {
       } else {
         c.level = RtLevel::Ok;
       }
-      // Fault escalation: the aggregate audio-path fault counter (engine
-      // process faults + exceptions + delivery underruns + dry-history
-      // misses — its historical composition) is EVIDENCE about delivery
-      // sustainability, independent of the CPU ratio. A path that
-      // measured fine but actually failed to deliver wet at least once
-      // this activation is at least LIMITED; a path near the boundary
-      // that also faulted is NOT sustainable. One level, never two.
-      if (st.faults > 0) {
+      // Fault + dry-fallback escalation: the aggregate audio-path fault
+      // counter (engine process faults + exceptions + delivery underruns +
+      // dry-history misses) AND covered-range dryFallbackFrames (F2 fix) are
+      // EVIDENCE about delivery sustainability, independent of the CPU ratio.
+      // A path that measured fine but actually failed to deliver wet at least
+      // once this activation is at least LIMITED; a path near the boundary
+      // that also faulted/missed is NOT sustainable. One level, never two.
+      if (st.faults > 0 || st.dryFallbackFrames > 0) {
         if (c.level == RtLevel::Ok) {
           c.level = RtLevel::Limited;
         } else if (c.level == RtLevel::Limited) {
@@ -207,7 +210,7 @@ void formatRealtimeDetailLine(const RtClassification& c, char* buf, std::size_t 
     } else if (c.faultEscalated) {
       std::snprintf(buf, bufSize, "DELIVERY FAULTS RECORDED THIS ACTIVATION — PATH DEGRADED");
     } else {
-      std::snprintf(buf, bufSize, "NEAR MEASURED REALTIME CAPACITY — HEADROOM BELOW 25%");
+      std::snprintf(buf, bufSize, "NEAR MEASURED REALTIME CAPACITY — HEADROOM BELOW 25%%");
     }
     return;
   }

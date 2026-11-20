@@ -44,61 +44,65 @@ include_directories(${ROOT} ${SDK_ROOT})
 
 add_subdirectory(${SDK_ROOT} vstsdk)
 
-# VSTGUI for plug-in views (standalone OFF — see above)
-set(VSTGUI_DISABLE_UNITTESTS 1)
-set(VSTGUI_STANDALONE_EXAMPLES OFF)
-set(VSTGUI_STANDALONE OFF)
-set(VSTGUI_TOOLS OFF)
-add_subdirectory(${SDK_ROOT}/vstgui4/vstgui vstgui.build)
+option(PITCHLAB_BUILD_VSTGUI "Build VSTGUI editor support into PitchLab_vst3" ON)
 
-# vstgui_support: the plug-in-side VSTGUI bindings (the SDK macro's
-# definition, minus the standalone-enabling)
-add_library(vstgui_support STATIC
-  ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3editor.cpp
-  ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3editor.h
-  ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3groupcontroller.cpp
-  ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3groupcontroller.h
-  ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3padcontroller.cpp
-  ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3padcontroller.h
-  ${SDK_ROOT}/public.sdk/source/vst/vstguieditor.cpp
-  ${SDK_ROOT}/public.sdk/source/vst/vstguieditor.h
-)
-target_link_libraries(vstgui_support PUBLIC base vstgui vstgui_uidescription)
-target_include_directories(vstgui_support PUBLIC ${SDK_ROOT}/vstgui4)
-target_compile_definitions(vstgui_support PUBLIC $<$<CONFIG:Debug>:VSTGUI_LIVE_EDITING>)
-smtg_target_setup_vstgui_deprecated_methods(vstgui_support)
-smtg_target_setup_universal_binary(vstgui_support)
-smtg_target_setup_universal_binary(vstgui)
-smtg_target_setup_universal_binary(vstgui_uidescription)
+if(PITCHLAB_BUILD_VSTGUI)
+  # VSTGUI for plug-in views (standalone OFF — see above)
+  set(VSTGUI_DISABLE_UNITTESTS 1)
+  set(VSTGUI_STANDALONE_EXAMPLES OFF)
+  set(VSTGUI_STANDALONE OFF)
+  set(VSTGUI_TOOLS OFF)
+  add_subdirectory(${SDK_ROOT}/vstgui4/vstgui vstgui.build)
 
-# The vstgui target only propagates X11/freetype/glib/cairo/pango/fontconfig
-# include dirs (upstream assumes system xcb dev headers). When the xcb util
-# stack lives in a user prefix (scripts/setup-xcb-vstgui-deps.sh), add its
-# include dirs explicitly (harmless duplicates on normal systems).
-if(LINUX)
-  find_package(PkgConfig REQUIRED)
-  execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=includedir xcb-util
-                  OUTPUT_VARIABLE PLXCB_PREFIX_INCL OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=includedir xkbcommon
-                  OUTPUT_VARIABLE PLXKBCOMMON_INCL OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=libdir xcb-util
-                  OUTPUT_VARIABLE PLXCB_PREFIX_LIB OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=libdir xkbcommon
-                  OUTPUT_VARIABLE PLXKBCOMMON_LIB OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(PLXCB_PREFIX_INCL)
-    message(STATUS "[PitchLab VST3] xcb-util prefix: ${PLXCB_PREFIX_INCL}")
-    target_include_directories(vstgui PRIVATE ${PLXCB_PREFIX_INCL})
-    target_include_directories(vstgui_uidescription PRIVATE ${PLXCB_PREFIX_INCL})
-    target_include_directories(vstgui_support PRIVATE ${PLXCB_PREFIX_INCL})
-    # link dirs must be PUBLIC so targets linking vstgui find the user-prefix
-    # static xcb/xkbcommon libs (upstream assumes system locations)
-    target_link_directories(vstgui PUBLIC ${PLXCB_PREFIX_LIB} ${PLXKBCOMMON_LIB})
-  endif()
-  if(PLXKBCOMMON_INCL AND NOT PLXKBCOMMON_INCL STREQUAL "/usr/include")
-    message(STATUS "[PitchLab VST3] xkbcommon prefix: ${PLXKBCOMMON_INCL}")
-    target_include_directories(vstgui PRIVATE ${PLXKBCOMMON_INCL})
-    target_include_directories(vstgui_uidescription PRIVATE ${PLXKBCOMMON_INCL})
-    target_include_directories(vstgui_support PRIVATE ${PLXKBCOMMON_INCL})
+  # vstgui_support: the plug-in-side VSTGUI bindings (the SDK macro's
+  # definition, minus the standalone-enabling)
+  add_library(vstgui_support STATIC
+    ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3editor.cpp
+    ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3editor.h
+    ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3groupcontroller.cpp
+    ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3groupcontroller.h
+    ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3padcontroller.cpp
+    ${SDK_ROOT}/vstgui4/vstgui/plugin-bindings/vst3padcontroller.h
+    ${SDK_ROOT}/public.sdk/source/vst/vstguieditor.cpp
+    ${SDK_ROOT}/public.sdk/source/vst/vstguieditor.h
+  )
+  target_link_libraries(vstgui_support PUBLIC base vstgui vstgui_uidescription)
+  target_include_directories(vstgui_support PUBLIC ${SDK_ROOT}/vstgui4)
+  target_compile_definitions(vstgui_support PUBLIC $<$<CONFIG:Debug>:VSTGUI_LIVE_EDITING>)
+  smtg_target_setup_vstgui_deprecated_methods(vstgui_support)
+  smtg_target_setup_universal_binary(vstgui_support)
+  smtg_target_setup_universal_binary(vstgui)
+  smtg_target_setup_universal_binary(vstgui_uidescription)
+
+  # The vstgui target only propagates X11/freetype/glib/cairo/pango/fontconfig
+  # include dirs (upstream assumes system xcb dev headers). When the xcb util
+  # stack lives in a user prefix (scripts/setup-xcb-vstgui-deps.sh), add its
+  # include dirs explicitly (harmless duplicates on normal systems).
+  if(LINUX)
+    find_package(PkgConfig REQUIRED)
+    execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=includedir xcb-util
+                    OUTPUT_VARIABLE PLXCB_PREFIX_INCL OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=includedir xkbcommon
+                    OUTPUT_VARIABLE PLXKBCOMMON_INCL OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=libdir xcb-util
+                    OUTPUT_VARIABLE PLXCB_PREFIX_LIB OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=libdir xkbcommon
+                    OUTPUT_VARIABLE PLXKBCOMMON_LIB OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(PLXCB_PREFIX_INCL)
+      message(STATUS "[PitchLab VST3] xcb-util prefix: ${PLXCB_PREFIX_INCL}")
+      target_include_directories(vstgui PRIVATE ${PLXCB_PREFIX_INCL})
+      target_include_directories(vstgui_uidescription PRIVATE ${PLXCB_PREFIX_INCL})
+      target_include_directories(vstgui_support PRIVATE ${PLXCB_PREFIX_INCL})
+      # link dirs must be PUBLIC so targets linking vstgui find the user-prefix
+      # static xcb/xkbcommon libs (upstream assumes system locations)
+      target_link_directories(vstgui PUBLIC ${PLXCB_PREFIX_LIB} ${PLXKBCOMMON_LIB})
+    endif()
+    if(PLXKBCOMMON_INCL AND NOT PLXKBCOMMON_INCL STREQUAL "/usr/include")
+      message(STATUS "[PitchLab VST3] xkbcommon prefix: ${PLXKBCOMMON_INCL}")
+      target_include_directories(vstgui PRIVATE ${PLXKBCOMMON_INCL})
+      target_include_directories(vstgui_uidescription PRIVATE ${PLXKBCOMMON_INCL})
+      target_include_directories(vstgui_support PRIVATE ${PLXKBCOMMON_INCL})
+    endif()
   endif()
 endif()
 
@@ -143,11 +147,16 @@ target_link_libraries(PitchLab_vst3
     sdk_common
     base
     pluginterfaces
-    vstgui
-    vstgui_uidescription
-    vstgui_support
     Threads::Threads
 )
+if(PITCHLAB_BUILD_VSTGUI)
+  target_link_libraries(PitchLab_vst3
+    PRIVATE
+      vstgui
+      vstgui_uidescription
+      vstgui_support
+  )
+endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # Product-layer warning/FP policy: the v0.1 determinism rule (-ffp-contract=off,
@@ -163,7 +172,9 @@ endif()
 # the ONE editor source: with this definition it builds the full editor;
 # the test / host-simulation targets compile the same file WITHOUT it and
 # get the honest headless nullptr stub (no windowing in the test harness).
-target_compile_definitions(PitchLab_vst3 PRIVATE PITCHLAB_WITH_VSTGUI)
+if(PITCHLAB_BUILD_VSTGUI)
+  target_compile_definitions(PitchLab_vst3 PRIVATE PITCHLAB_WITH_VSTGUI)
+endif()
 
 
 # ---------------------------------------------------------------------------

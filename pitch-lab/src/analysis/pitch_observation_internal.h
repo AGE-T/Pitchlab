@@ -192,18 +192,26 @@ struct ObservationScratch {
 
   /// Idempotent: sizes the vectors for one (n, tauMax) geometry and creates
   /// the 2n-point plan trio ONCE. Call from prepare(); the realtime path
-  /// never resizes.
-  void ensureGeometry(int64_t n, int64_t tauMax) {
+  /// never resizes. Also pre-reserves `obs.candidates` to the strict upper
+  /// bound `tauMax + 2` so `frameObservation()` performs zero heap
+  /// allocations on the audio thread (F1 realtime-safety fix).
+  void ensureGeometry(int64_t n, int64_t tauMax, FrameObservation* obs = nullptr) {
     const std::size_t P = static_cast<std::size_t>(2 * n);
+    const std::size_t maxTroughs = static_cast<std::size_t>(tauMax + 2);
     s2.assign(static_cast<std::size_t>(n + 1), 0.0);
     fa.assign(P, 0.0);
     fb.assign(P, 0.0);
     prod.assign(P, 0.0);
     d.assign(static_cast<std::size_t>(tauMax + 1), 0.0);
     dp.assign(static_cast<std::size_t>(tauMax + 1), 1.0);
-    troughs.reserve(static_cast<std::size_t>(tauMax + 2));
-    p0.assign(static_cast<std::size_t>(kMaxJumpBins) * 8 + 64, 0.0);
-    w.assign(static_cast<std::size_t>(kMaxJumpBins) * 8 + 64, 0.0);
+    troughs.reserve(maxTroughs);
+    p0.assign(maxTroughs, 0.0);
+    p0.reserve(maxTroughs);
+    w.assign(maxTroughs, 0.0);
+    w.reserve(maxTroughs);
+    if (obs != nullptr) {
+      obs->candidates.reserve(maxTroughs);
+    }
     if (planSize != P) {
       planA = std::make_unique<pocketfft_r<double>>(P);
       planB = std::make_unique<pocketfft_r<double>>(P);

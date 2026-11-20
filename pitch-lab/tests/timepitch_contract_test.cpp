@@ -475,25 +475,35 @@ void* operator new[](std::size_t n) { return operator new(n); }
 void operator delete[](void* p) noexcept { std::free(p); }
 void operator delete[](void* p, std::size_t) noexcept { std::free(p); }
 
-TEST_CASE("T-A1: process()/finish() never allocate (timepitch Fixed)") {
-  const int64_t N = 8192;
-  const auto input = sineFrames(440.0, 48000, N);
+TEST_CASE("T-A1: process()/finish()/reset() never allocate (timepitch all modes: Fixed, Adaptive, Pitch-Synced, Pitch+Formant)") {
+  const int64_t N = 24000;
+  const auto input = sineFrames(220.0, 48000, N);
   const std::vector<double> ratio15(N, 1.5);
   const std::vector<double> ratio10(N, 1.0);
-  for (const std::vector<double>* ratio : {&ratio15, &ratio10}) {
-    CAPTURE(ratio->at(0));
-    auto engine = makeTimePitchEngine();
-    EngineConfiguration cfg;
-    cfg.seed = 0;
-    g_auditAllocs = 0;
-    const DriveReport dr = driveEngine(
-        *engine, cfg, {input}, 48000, *ratio, 4096, 65536,
-        /*beforeCall=*/[] { g_auditActive = true; },
-        /*afterCall=*/[] { g_auditActive = false; });
-    CHECK(dr.producedTotal > 0);
-    CHECK(g_auditAllocs == 0);  // §5 rule 1 — the audit assertion
-    std::printf("T-A1: ratio %.2f — allocations during process()/finish(): %d\n",
-                ratio->at(0), g_auditAllocs);
+  for (const char* mode : {"fixed", "adaptive", "pitch_synced", "pitch_formant"}) {
+    CAPTURE(mode);
+    for (const std::vector<double>* ratio : {&ratio15, &ratio10}) {
+      CAPTURE(ratio->at(0));
+      auto engine = makeTimePitchEngine();
+      EngineConfiguration cfg;
+      cfg.seed = 0;
+      cfg.parameters = {{"mode", ParameterValue{std::string{mode}}},
+                        {"formant_ratio", ParameterValue{1.25}}};
+      g_auditAllocs = 0;
+      const DriveReport dr = driveEngine(
+          *engine, cfg, {input}, 48000, *ratio, 4096, 131072,
+          /*beforeCall=*/[] { g_auditActive = true; },
+          /*afterCall=*/[] { g_auditActive = false; });
+      CHECK(dr.producedTotal > 0);
+      CHECK(g_auditAllocs == 0);  // §5 rule 1 — the audit assertion
+      // Also audit reset() + a second job pass (the adapter's job-recycling path):
+      g_auditActive = true;
+      engine->reset();
+      g_auditActive = false;
+      CHECK(g_auditAllocs == 0);
+      std::printf("T-A1: mode %-13s ratio %.2f — allocations during process()/finish()/reset(): %d\n",
+                  mode, ratio->at(0), g_auditAllocs);
+    }
   }
 }
 

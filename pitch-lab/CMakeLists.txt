@@ -6,17 +6,17 @@ project(PitchLab
   LANGUAGES CXX)
 
 # ---------------------------------------------------------------------------
-# Pitch Lab v0.1 build (implementation-freeze state).
+# Pitch Lab build (v0.1 offline harness + 6 production DSP engines + VST3 product layer).
 #
-# This CMake project builds the Pitch Lab C++20 DSP research system
+# This CMake project builds the Pitch Lab C++20 DSP research and product system
 # (architecture: research/pitch-lab-architecture-design.md v1.1;
-#  implementation specification: research/pitch-lab-v0.1-implementation-specification.md).
+#  v0.1 specification: research/pitch-lab-v0.1-implementation-specification.md;
+#  VST3 product specification: research/pitch-lab-vst3-product-phase-specification.md).
 #
-# FREEZE STATE: only infrastructure targets exist (version, engine registry
-# mechanism, CLI stub, smoke tests). No DSP engine is implemented and none is
-# faked: the production engine registry is deliberately empty (spec §14) and
-# a test asserts exactly that. The test suite will grow as real engines are
-# implemented; CTest discovers tests, so the CI workflow never changes.
+# Production engines registered in pitchlab_core:
+#   0: native.varispeed       3: native.pv.phaselocked
+#   1: native.vardelay        4: native.granular
+#   2: native.pv.classic      5: native.timepitch (OLA/WSOLA/TD-PSOLA/FD-PSOLA)
 #
 # Canonical environment: research/pitch-lab-build-and-ci-environment.md
 # (ubuntu-24.04, GCC 13.3, CMake 3.31.6, Ninja, C++20).
@@ -71,6 +71,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
   target_compile_options(pitchlab_core PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off)
   if(PITCHLAB_WERROR)
     target_compile_options(pitchlab_core PRIVATE -Werror)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "13.0")
+      # GCC 12 -O3 false-positive STL warnings (GCC PR 105329 / PR 100366, fixed in GCC 13)
+      target_compile_options(pitchlab_core PRIVATE -Wno-error=restrict -Wno-error=stringop-overflow)
+    endif()
   endif()
 endif()
 
@@ -114,6 +118,9 @@ function(pitchlab_add_doctest name)
     target_compile_options(${name} PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off)
     if(PITCHLAB_WERROR)
       target_compile_options(${name} PRIVATE -Werror)
+      if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "13.0")
+        target_compile_options(${name} PRIVATE -Wno-error=restrict -Wno-error=stringop-overflow)
+      endif()
     endif()
   endif()
   add_test(NAME ${name} COMMAND ${name})

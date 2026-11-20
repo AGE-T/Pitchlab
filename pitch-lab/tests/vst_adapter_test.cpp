@@ -1408,3 +1408,48 @@ TEST_CASE("Task 32: the snapshot path (UI slider) OFF/ON mid-stream — frame-al
   CHECK(st.rtFrames == total);               // the measurement window spans it
   adapter.deactivate();
 }
+
+TEST_CASE("F-01 regression: rapid pre-audio setParameterSnapshot calls supersede unadopted pending chain without 2s timeout") {
+  initEngineRegistryOnce();
+  RealtimeAdapter adapter;
+  adapter.activate(kFs, 2, 1024);
+
+  // Wait briefly so prepLoop builds the initial default chain into `pending`
+  // while streamPosMirror == 0 (no process() called yet).
+  ParamSnapshot snap1;
+  snap1.engineIndex = 1;  // vardelay
+  snap1.pitchSt = 0.0;
+  adapter.setParameterSnapshot(snap1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(30));
+
+  // Now change engine & parameters BEFORE the first process() call:
+  // previously, prepLoop skipped building because `pending != nullptr`,
+  // causing waitForFirstChain() on the next process() to stall for the full
+  // 2000 ms timeout and adopt the stale chain.
+  ParamSnapshot snap2;
+  snap2.engineIndex = 5;  // native.timepitch
+  snap2.tpMode = 2;       // pitch_synced
+  snap2.pitchSt = 4.0;
+  adapter.setParameterSnapshot(snap2);
+
+  const auto sig = makeSine(1024, 220.0);
+  std::vector<double> outL(1024, 0.0), outR(1024, 0.0);
+  const double* in[2] = {sig.data(), sig.data()};
+  double* out[2] = {outL.data(), outR.data()};
+  BlockAutomation none;
+
+  const auto t0 = std::chrono::steady_clock::now();
+  adapter.process(in, out, 1024, none);
+  const auto elapsedMs =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0)
+          .count();
+
+  const StatusSnapshot st = adapter.status();
+  CHECK(elapsedMs < 500);  // must NOT hit the 2000 ms waitForFirstChain timeout
+  CHECK(st.chainReady);
+  CHECK(st.engineIndex == 5);
+  CHECK(st.chainAdoptionFailures == 0);
+  CHECK(st.faults == 0);
+  adapter.deactivate();
+}
+

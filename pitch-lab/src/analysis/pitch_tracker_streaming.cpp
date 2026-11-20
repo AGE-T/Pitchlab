@@ -58,8 +58,10 @@ void StreamingPitchTracker::prepare() {
 
   prior_ = detail::thresholdPrior();
 
-  // The observation scratch + the plan trio (created ONCE — item 16).
-  scratch_.ensureGeometry(n_, tauMax_);
+  // The observation scratch + the plan trio + obs_.candidates capacity
+  // (created ONCE — item 16; F1 realtime-safety fix: zero allocations on the
+  // audio thread during observeFrame / frameObservation).
+  scratch_.ensureGeometry(n_, tauMax_, &obs_);
 
   const std::size_t S = static_cast<std::size_t>(2 * k_);
   obsVoiced_.assign(static_cast<std::size_t>(k_), 0.0);

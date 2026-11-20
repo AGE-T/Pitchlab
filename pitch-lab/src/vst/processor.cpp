@@ -145,17 +145,23 @@ tresult PLUGIN_API PitchLabProcessor::terminate() {
 // ---------------------------------------------------------------------------
 
 namespace {
-const char kStateMagic[4] = {'P', 'L', 'V', '1'};
-}
+const char kStateMagicV1[4] = {'P', 'L', 'V', '1'};
+const char kStateMagicV2[4] = {'P', 'L', 'V', '2'};
+constexpr int32_t kMaxStateParams = 256;
+}  // namespace
 
 tresult PLUGIN_API PitchLabProcessor::getState(IBStream* state) {
   if (state == nullptr) return kInvalidArgument;
   int32 written = 0;
-  if (state->write(const_cast<char*>(kStateMagic), 4, &written) != kResultOk) {
+  if (state->write(const_cast<char*>(kStateMagicV2), 4, &written) != kResultOk ||
+      written != 4) {
     return kResultFalse;
   }
   const int32_t count = static_cast<int32_t>(parameterCount());
-  state->write(const_cast<int32_t*>(&count), sizeof(count), &written);
+  if (state->write(const_cast<int32_t*>(&count), sizeof(count), &written) != kResultOk ||
+      written != static_cast<int32>(sizeof(count))) {
+    return kResultFalse;
+  }
   for (int32_t i = 0; i < count; ++i) {
     const ParamMeta& meta = parameterTable()[static_cast<uint32_t>(i)];
     double norm = 0.0;
@@ -164,8 +170,14 @@ tresult PLUGIN_API PitchLabProcessor::getState(IBStream* state) {
     } else {
       norm = normalise(meta.tag, meta.defaultPlain);
     }
-    state->write(const_cast<uint32_t*>(&meta.tag), sizeof(meta.tag), &written);
-    state->write(&norm, sizeof(norm), &written);
+    if (state->write(const_cast<uint32_t*>(&meta.tag), sizeof(meta.tag), &written) != kResultOk ||
+        written != static_cast<int32>(sizeof(meta.tag))) {
+      return kResultFalse;
+    }
+    if (state->write(&norm, sizeof(norm), &written) != kResultOk ||
+        written != static_cast<int32>(sizeof(norm))) {
+      return kResultFalse;
+    }
   }
   return kResultOk;
 }
@@ -174,18 +186,45 @@ tresult PLUGIN_API PitchLabProcessor::setState(IBStream* state) {
   if (state == nullptr) return kInvalidArgument;
   int32 read = 0;
   char magic[4] = {0};
-  if (state->read(magic, 4, &read) != kResultOk || std::memcmp(magic, kStateMagic, 4) != 0) {
+  if (state->read(magic, 4, &read) != kResultOk || read != 4) {
+    return kResultFalse;
+  }
+  const bool isV1 = (std::memcmp(magic, kStateMagicV1, 4) == 0);
+  const bool isV2 = (std::memcmp(magic, kStateMagicV2, 4) == 0);
+  if (!isV1 && !isV2) {
     return kResultFalse;
   }
   int32_t count = 0;
-  if (state->read(&count, sizeof(count), &read) != kResultOk) return kResultFalse;
+  if (state->read(&count, sizeof(count), &read) != kResultOk ||
+      read != static_cast<int32>(sizeof(count)) || count < 0 || count > kMaxStateParams) {
+    return kResultFalse;
+  }
   for (int32_t i = 0; i < count; ++i) {
     uint32_t tag = 0;
     double norm = 0.0;
-    if (state->read(&tag, sizeof(tag), &read) != kResultOk) return kResultFalse;
-    if (state->read(&norm, sizeof(norm), &read) != kResultOk) return kResultFalse;
+    if (state->read(&tag, sizeof(tag), &read) != kResultOk ||
+        read != static_cast<int32>(sizeof(tag))) {
+      return kResultFalse;
+    }
+    if (state->read(&norm, sizeof(norm), &read) != kResultOk ||
+        read != static_cast<int32>(sizeof(norm))) {
+      return kResultFalse;
+    }
+    if (!std::isfinite(norm)) return kResultFalse;
     if (norm < 0.0) norm = 0.0;
     if (norm > 1.0) norm = 1.0;
+    if (isV1) {
+      // Legacy PLV1 state migration:
+      // - kPitch was normalised over [-12.0, +12.0] (24 st span) instead of [-48.0, +48.0]
+      // - kEngine was normalised over 5 engines (0..4, stepCount = 4) instead of 6 (0..5)
+      if (tag == param::kPitch) {
+        const double plainV1 = -12.0 + norm * 24.0;
+        norm = normalise(param::kPitch, plainV1);
+      } else if (tag == param::kEngine) {
+        const double plainV1 = std::floor(norm * 4.0 + 0.5);
+        norm = normalise(param::kEngine, plainV1);
+      }
+    }
     if (Parameter* p = parameters.getParameter(tag)) {
       p->setNormalized(norm);
     }
@@ -197,7 +236,7 @@ tresult PLUGIN_API PitchLabProcessor::setState(IBStream* state) {
   // IMMEDIATELY (hosts read getLatencySamples() right after a state
   // restore, before any processing), and the change must be reported
   // through the VST3 notification (P1.5).
-  updateAndNotifyLatency();
+  updateAndNotifyLatency(true);
   return kResultOk;
 }
 
@@ -247,6 +286,7 @@ tresult PLUGIN_API PitchLabProcessor::setActive(TBool state) {
     // the following setProcessing(true) does not fire a SPURIOUS resume
     // reset into the just-built chain (the Task 24 P1.4 lifecycle fix)
     processingSuspended_.store(false, std::memory_order_release);
+    latencyNotifyPending_.store(false, std::memory_order_release);
     adapter_.activate(fs, channels, maxBlock);
     publishSnapshot();
     adapter_.requestHardReset();
@@ -303,29 +343,36 @@ tresult PLUGIN_API PitchLabProcessor::setParamNormalized(ParamID tag, ParamValue
   // the host when it did (P1.5, Task 24: restartComponent (kLatencyChanged)
   // is the VST3 mechanism; the spec's §4.1 item 5 "hosts are notified;
   // changes are a normal VST3 event" mandates it)
-  updateAndNotifyLatency();
+  updateAndNotifyLatency(false);
   return kResultOk;
 }
 
-void PitchLabProcessor::updateAndNotifyLatency() {
+bool PitchLabProcessor::pollAndNotifyLatency() {
+  if (latencyNotifyPending_.exchange(false, std::memory_order_acq_rel)) {
+    if (IComponentHandler* handler = getComponentHandler()) {
+      handler->restartComponent(kLatencyChanged);
+    }
+    return true;
+  }
+  return false;
+}
+
+void PitchLabProcessor::updateAndNotifyLatency(bool afterHardReset) {
   // MAIN THREAD ONLY. Audio-thread Λ_eff changes are tracked continuously
-  // in processTyped (an atomic store hosts that poll can read); the host
+  // in processTyped (an atomic store hosts that poll can read, plus
+  // latencyNotifyPending_ for main-thread notification); the host
   // NOTIFICATION can only happen from the main thread (the VST3 threading
-  // contract: never call into the host from the audio thread). Λ_eff can
-  // only grow beyond the reported value through a chain whose snapshot was
-  // main-thread-published, so these main-thread entry points cover every
-  // latency change; the residual corner (an in-flight chain built from an
-  // older snapshot adopting after a parameter change) is corrected at the
-  // next main-thread touch and documented in the product docs.
-  const uint32_t oldLat = reportedLatency_.load(std::memory_order_relaxed);
+  // contract: never call into the host from the audio thread).
+  const uint32_t oldLat = reportedLatency_.load(std::memory_order_acquire);
   const StatusSnapshot st = adapter_.status();
   const double fs = processSetup.sampleRate > 0.0 ? processSetup.sampleRate : 48000.0;
   const uint32_t lat =
-      st.chainReady
+      (!afterHardReset && st.chainReady)
           ? static_cast<uint32_t>(st.latencyFrames)
           : static_cast<uint32_t>(expectedLatencyFrames(buildSnapshot(), fs));
-  reportedLatency_.store(lat, std::memory_order_relaxed);
-  if (lat != oldLat) {
+  reportedLatency_.store(lat, std::memory_order_release);
+  const bool pending = latencyNotifyPending_.exchange(false, std::memory_order_acq_rel);
+  if (lat != oldLat || pending) {
     if (IComponentHandler* handler = getComponentHandler()) {
       handler->restartComponent(kLatencyChanged);
     }
@@ -360,15 +407,22 @@ namespace {
 void zeroOutput(Steinberg::Vst::ProcessData& data) {
   if (data.numOutputs < 1 || data.outputs == nullptr) return;
   const int32_t n = data.numSamples;
+  if (n <= 0) return;
   const int32_t ch = data.outputs[0].numChannels;
   if (data.symbolicSampleSize == Steinberg::Vst::kSample32 && data.outputs[0].channelBuffers32) {
     for (int32_t c = 0; c < ch; ++c) {
-      std::memset(data.outputs[0].channelBuffers32[c], 0, sizeof(float) * static_cast<std::size_t>(n));
+      if (data.outputs[0].channelBuffers32[c] != nullptr) {
+        std::memset(data.outputs[0].channelBuffers32[c], 0,
+                    sizeof(float) * static_cast<std::size_t>(n));
+      }
     }
   } else if (data.symbolicSampleSize == Steinberg::Vst::kSample64 &&
              data.outputs[0].channelBuffers64) {
     for (int32_t c = 0; c < ch; ++c) {
-      std::memset(data.outputs[0].channelBuffers64[c], 0, sizeof(double) * static_cast<std::size_t>(n));
+      if (data.outputs[0].channelBuffers64[c] != nullptr) {
+        std::memset(data.outputs[0].channelBuffers64[c], 0,
+                    sizeof(double) * static_cast<std::size_t>(n));
+      }
     }
   }
 }
@@ -392,14 +446,36 @@ tresult PLUGIN_API PitchLabProcessor::process(ProcessData& data) {
   if (data.symbolicSampleSize != kSample32 && data.symbolicSampleSize != kSample64) {
     return kResultFalse;  // unsupported sample size: honest refusal
   }
-  const bool nullIn = data.symbolicSampleSize == kSample32
-                          ? data.inputs[0].channelBuffers32 == nullptr
-                          : data.inputs[0].channelBuffers64 == nullptr;
-  const bool nullOut = data.symbolicSampleSize == kSample32
-                           ? data.outputs[0].channelBuffers32 == nullptr
-                           : data.outputs[0].channelBuffers64 == nullptr;
+  bool nullIn = data.symbolicSampleSize == kSample32
+                    ? data.inputs[0].channelBuffers32 == nullptr
+                    : data.inputs[0].channelBuffers64 == nullptr;
+  bool nullOut = data.symbolicSampleSize == kSample32
+                     ? data.outputs[0].channelBuffers32 == nullptr
+                     : data.outputs[0].channelBuffers64 == nullptr;
+  if (!nullIn) {
+    for (int32_t c = 0; c < data.inputs[0].numChannels; ++c) {
+      const void* ptr = data.symbolicSampleSize == kSample32
+                            ? static_cast<const void*>(data.inputs[0].channelBuffers32[c])
+                            : static_cast<const void*>(data.inputs[0].channelBuffers64[c]);
+      if (ptr == nullptr) {
+        nullIn = true;
+        break;
+      }
+    }
+  }
+  if (!nullOut) {
+    for (int32_t c = 0; c < data.outputs[0].numChannels; ++c) {
+      const void* ptr = data.symbolicSampleSize == kSample32
+                            ? static_cast<const void*>(data.outputs[0].channelBuffers32[c])
+                            : static_cast<const void*>(data.outputs[0].channelBuffers64[c]);
+      if (ptr == nullptr) {
+        nullOut = true;
+        break;
+      }
+    }
+  }
   if (data.inputs[0].numChannels < 1 || nullIn || nullOut) {
-    if (haveOut && !nullOut) {
+    if (haveOut) {
       zeroOutput(data);
     }
     return kResultOk;
@@ -539,6 +615,7 @@ void PitchLabProcessor::collectBlockAutomation(ProcessData& data, int32_t blockF
 void PitchLabProcessor::sliceAutomation(const BlockAutomation& block, int32_t chunkBase,
                                         int32_t chunkFrames, BlockAutomation& out) {
   out = BlockAutomation{};
+  uint32_t sliceDropped = 0;
   // THE SLICE RULE (the P0.4 coordinate fix): every event with
   // frameOffset >= chunkBase is copied with its chunk-local offset
   // (frameOffset - chunkBase) — INCLUDING events beyond the chunk's end:
@@ -582,18 +659,25 @@ void PitchLabProcessor::sliceAutomation(const BlockAutomation& block, int32_t ch
     int firstCopied = -1;
     for (int i = 0; i < count; ++i) {
       const int32_t local = src[i].frameOffset - chunkBase;
-      if (local >= 0 && dstCount < BlockAutomation::kMaxPoints) {
+      if (local >= 0) {
         if (firstCopied < 0) firstCopied = i;
-        dst[dstCount++] = {local, src[i].value};
+        appendPoint(dst, dstCount, sliceDropped, {local, src[i].value});
       }
     }
     // boundary-start anchor at local 0 — only when the first copied point
     // is NOT already at local 0 and a segment was active at the boundary
-    if (haveStart && firstCopied >= 0 && src[firstCopied].frameOffset - chunkBase > 0 &&
-        dstCount < BlockAutomation::kMaxPoints) {
-      for (int i = dstCount; i > 0; --i) dst[i] = dst[i - 1];
-      dst[0] = {0, startVal};
-      ++dstCount;
+    if (haveStart && firstCopied >= 0 && src[firstCopied].frameOffset - chunkBase > 0) {
+      if (dstCount < BlockAutomation::kMaxPoints) {
+        for (int i = dstCount; i > 0; --i) dst[i] = dst[i - 1];
+        dst[0] = {0, startVal};
+        ++dstCount;
+      } else {
+        // preserve the final point at dst[kMaxPoints - 1] (the block-end anchor)
+        // while inserting the boundary-start anchor at dst[0]
+        for (int i = BlockAutomation::kMaxPoints - 2; i > 0; --i) dst[i] = dst[i - 1];
+        dst[0] = {0, startVal};
+        ++sliceDropped;
+      }
     }
   };
   (void)chunkFrames;  // the slice is target-inclusive: points beyond the
@@ -605,8 +689,9 @@ void PitchLabProcessor::sliceAutomation(const BlockAutomation& block, int32_t ch
   slice(block.lfoRate, block.lfoRateCount, out.lfoRate, out.lfoRateCount, false);
   slice(block.lfoDepth, block.lfoDepthCount, out.lfoDepth, out.lfoDepthCount, false);
   slice(block.bypass, block.bypassCount, out.bypass, out.bypassCount, true);
-  // the drop counter is accounted once per BLOCK (the first chunk carries it)
-  out.droppedPoints = chunkBase == 0 ? block.droppedPoints : 0;
+  // the block drop counter is accounted once per BLOCK (the first chunk
+  // carries it), plus any boundary-anchor eviction inside this chunk
+  out.droppedPoints = (chunkBase == 0 ? block.droppedPoints : 0) + sliceDropped;
 }
 
 template <typename SampleType>
@@ -661,11 +746,16 @@ tresult PLUGIN_API PitchLabProcessor::processTyped(ProcessData& data) {
     base += chunk;
   }
 
-  // track the live latency (audio thread; atomic store only)
+  // track the live latency (audio thread; atomic store + pending flag for
+  // main-thread IComponentHandler::restartComponent(kLatencyChanged))
   const StatusSnapshot st = adapter_.status();
-  reportedLatency_.store(
-      st.chainReady ? static_cast<uint32_t>(st.latencyFrames) : reportedLatency_.load(),
-      std::memory_order_relaxed);
+  if (st.chainReady) {
+    const uint32_t newLat = static_cast<uint32_t>(st.latencyFrames);
+    const uint32_t prevLat = reportedLatency_.exchange(newLat, std::memory_order_acq_rel);
+    if (newLat != prevLat) {
+      latencyNotifyPending_.store(true, std::memory_order_release);
+    }
+  }
   return kResultOk;
 }
 

@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <thread>
 #include <vector>
 
@@ -1282,3 +1283,153 @@ TEST_CASE("Task 32: LFO rate host automation to 0 Hz mid-block is frame-exact (t
   CHECK(off2[1] == off[1]);
   CHECK(off2[3] == off[3]);
 }
+
+// ---------------------------------------------------------------------------
+// Forensic audit regressions (F4, F5/F-04, Extra-4/F-05)
+// ---------------------------------------------------------------------------
+
+TEST_CASE("F5/F-04 regression: legacy PLV1 state migrates kEngine (0..4) and kPitch (-12..+12) to PLV2 domains") {
+  for (int legacyEngine = 0; legacyEngine <= 4; ++legacyEngine) {
+    const double legacyPitchSt = -7.5 + static_cast<double>(legacyEngine) * 3.25;  // inside [-12, +12]
+    MemStream v1;
+    int32 written = 0;
+    const char magic[4] = {'P', 'L', 'V', '1'};
+    v1.write(const_cast<char*>(magic), 4, &written);
+    const int32_t count = 2;
+    v1.write(const_cast<int32_t*>(&count), sizeof(count), &written);
+    // Legacy kEngine: 5 engines (0..4) -> norm = legacyEngine / 4.0
+    const uint32_t engTag = param::kEngine;
+    const double engNormV1 = static_cast<double>(legacyEngine) / 4.0;
+    v1.write(const_cast<uint32_t*>(&engTag), sizeof(engTag), &written);
+    v1.write(const_cast<double*>(&engNormV1), sizeof(engNormV1), &written);
+    // Legacy kPitch: [-12, +12] -> norm = (legacyPitchSt + 12.0) / 24.0
+    const uint32_t pitchTag = param::kPitch;
+    const double pitchNormV1 = (legacyPitchSt + 12.0) / 24.0;
+    v1.write(const_cast<uint32_t*>(&pitchTag), sizeof(pitchTag), &written);
+    v1.write(const_cast<double*>(&pitchNormV1), sizeof(pitchNormV1), &written);
+
+    Host h;
+    h.setup(48000.0, 1024);
+    v1.pos = 0;
+    CHECK(h.plug->setState(&v1) == kResultOk);
+    const ParamSnapshot got = h.snapshot();
+    CHECK(got.engineIndex == legacyEngine);
+    CHECK(std::fabs(got.pitchSt - legacyPitchSt) < 1e-9);
+    h.shutdown();
+  }
+}
+
+TEST_CASE("F-04 regression: malformed, truncated, or NaN state streams are rejected cleanly") {
+  Host h;
+  h.setup(48000.0, 1024);
+  h.setParam(param::kPitch, 3.0);
+
+  // 1. Truncated stream (only magic + count=2, but no payload)
+  {
+    MemStream trunc;
+    int32 written = 0;
+    const char magic[4] = {'P', 'L', 'V', '2'};
+    trunc.write(const_cast<char*>(magic), 4, &written);
+    const int32_t count = 2;
+    trunc.write(const_cast<int32_t*>(&count), sizeof(count), &written);
+    trunc.pos = 0;
+    CHECK(h.plug->setState(&trunc) == kResultFalse);
+  }
+  // 2. Out-of-bounds count (negative or > 256)
+  {
+    MemStream badCount;
+    int32 written = 0;
+    const char magic[4] = {'P', 'L', 'V', '2'};
+    badCount.write(const_cast<char*>(magic), 4, &written);
+    const int32_t count = 10000;
+    badCount.write(const_cast<int32_t*>(&count), sizeof(count), &written);
+    badCount.pos = 0;
+    CHECK(h.plug->setState(&badCount) == kResultFalse);
+  }
+  // 3. NaN parameter value
+  {
+    MemStream nanStream;
+    int32 written = 0;
+    const char magic[4] = {'P', 'L', 'V', '2'};
+    nanStream.write(const_cast<char*>(magic), 4, &written);
+    const int32_t count = 1;
+    nanStream.write(const_cast<int32_t*>(&count), sizeof(count), &written);
+    const uint32_t tag = param::kPitch;
+    const double nanVal = std::numeric_limits<double>::quiet_NaN();
+    nanStream.write(const_cast<uint32_t*>(&tag), sizeof(tag), &written);
+    nanStream.write(const_cast<double*>(&nanVal), sizeof(nanVal), &written);
+    nanStream.pos = 0;
+    CHECK(h.plug->setState(&nanStream) == kResultFalse);
+  }
+  h.shutdown();
+}
+
+TEST_CASE("F-05 regression: per-channel nullptr in channelBuffers is handled safely without crash") {
+  Host h;
+  h.setup(48000.0, 512);
+  std::vector<double> inL(256, 0.25), outL(256, 1.0);
+  const double* inArr[2] = {inL.data(), nullptr};
+  double* outArr[2] = {outL.data(), nullptr};
+  AudioBusBuffers inB{}, outB{};
+  inB.numChannels = 2;
+  inB.channelBuffers64 = const_cast<double**>(inArr);
+  outB.numChannels = 2;
+  outB.channelBuffers64 = outArr;
+  ProcessData data;
+  data.symbolicSampleSize = kSample64;
+  data.numSamples = 256;
+  data.numInputs = 1;
+  data.numOutputs = 1;
+  data.inputs = &inB;
+  data.outputs = &outB;
+  CHECK(h.plug->process(data) == kResultOk);
+  // non-null output channel is safely zeroed
+  CHECK(outL[0] == 0.0);
+  CHECK(outL[255] == 0.0);
+  h.shutdown();
+}
+
+TEST_CASE("F4 regression: audio-thread latency growth triggers kLatencyChanged on main-thread status poll") {
+  const double fs = 48000.0;
+  Host h;
+  MockHandler handler;
+  h.plug->setComponentHandler(&handler);
+  h.setParam(param::kEngine, 4.0);   // native.granular
+  h.setParam(param::kPitch, 0.0);    // 0 st -> envMax = 2^(1/12) -> latency 5467
+  h.setParam(param::kGrGrain, 0.10);
+  h.setup(fs, 512);
+
+  const auto sig = makeSine(512, 220.0, fs);
+  // First blocks at 0 st: initial chain adopts with latency 5467
+  (void)h.process(sig);
+  const uint32 latInitial = h.plug->getLatencySamples();
+  CHECK(latInitial == 5467u);
+  handler.restarts.store(0);
+  handler.reasons.store(0);
+
+  // Drive a pure audio-thread automation jump to +12 st (no main-thread setParam!).
+  // In granular splice mode, +12 st raises envMax to 2^(13/12) (~2.12), so the
+  // re-centred chain's splice latency grows to 15638 (> 5467), increasing audio-thread latencyEff!
+  for (int b = 0; b < 40; ++b) {
+    HostChanges changes;
+    if (b == 0) {
+      int32 idx = 0;
+      IParamValueQueue* q = changes.addParameterData(param::kPitch, idx);
+      q->addPoint(0, normalise(param::kPitch, 12.0), idx);
+    }
+    (void)h.process(sig, &changes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  CHECK(h.plug->getLatencySamples() > latInitial);
+  // Now poll status on the main thread (as the editor 30 Hz timer does):
+  void* obj = nullptr;
+  REQUIRE(h.plug->queryInterface(IPitchLabStatus::iid, &obj) == kResultOk);
+  auto* stIface = static_cast<IPitchLabStatus*>(obj);
+  const StatusSnapshot ss = stIface->getStatus();
+  stIface->release();
+  CHECK(ss.latencyFrames > static_cast<int64_t>(latInitial));
+  CHECK(handler.restarts.load() >= 1);
+  CHECK((handler.reasons.load() & kLatencyChanged) != 0u);
+  h.shutdown();
+}
+
