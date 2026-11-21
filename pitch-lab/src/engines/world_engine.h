@@ -15,7 +15,9 @@
 //     input latency = worldLatencyFrames(fs) = chunk + crossfade + right
 //     context + worker headroom (~0.175 s).
 //   * The WORLD analysis allocates and is not realtime-safe, so the chunk
-//     work runs on an engine-owned WORKER THREAD. process() only copies
+//     work runs on an engine-owned WORKER POOL (up to 4 threads; chunks are
+//     computed concurrently and committed strictly in order; stereo shares
+//     one F0 analysis on the mid signal). process() only copies
 //     samples into/out of preallocated rings and publishes progress through
 //     atomics; it waits for the worker ONLY if a chunk whose output is due
 //     is not finished yet (the headroom chunk makes this the exception).
@@ -36,7 +38,7 @@ namespace pitchlab {
 
 /// The engine's declared input latency at `sampleRate` (frames) — also the
 /// realtime adapter's chain-geometry latency term.
-[[nodiscard]] int64_t worldLatencyFrames(double sampleRate);
+[[nodiscard]] int64_t worldLatencyFrames(double sampleRate, bool harvest = false);
 
 /// The chunk length (frames) — the realtime adapter's job seam length.
 [[nodiscard]] int64_t worldChunkFrames(double sampleRate);

@@ -308,6 +308,7 @@ set_tests_properties(rc2b_octave_null_probe PROPERTIES LABELS "probe")  # audit 
 # contract + function suite (length, F0 accuracy, determinism, reset,
 # block/capacity independence, configuration validation).
 pitchlab_add_doctest(external_engines_test tests/external_engines_test.cpp)
+target_link_libraries(external_engines_test PRIVATE pitchlab_world)  # the WORLD stage profile
 target_compile_definitions(rc2b_octave_null_probe PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 

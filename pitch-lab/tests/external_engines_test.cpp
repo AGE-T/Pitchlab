@@ -16,6 +16,7 @@
 #include <doctest/doctest.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -381,4 +382,67 @@ TEST_CASE("native.signalsmith: pitch accuracy in cents (upstream issues #31/#32 
   }
   MESSAGE("worst |error| = " << worst << " c");
   CHECK(worst < 1.0);  // upstream HEAD: up to +42 c (55 Hz, -100 c); patched: ~0
+}
+
+TEST_CASE("native.world: offline throughput (realtime factor, stereo 48 kHz)") {
+  const double fs = 48000.0;
+  const std::size_t n = static_cast<std::size_t>(fs * 6.0);
+  std::vector<std::vector<double>> in(2, harmonicStack(150.0, fs, n, 8));
+  for (std::size_t i = 0; i < n; ++i) in[1][i] *= 0.9;
+  std::vector<double> curve(n, std::exp2(-10.0 / 12.0));
+  PitchCurveView cv{curve.data(), static_cast<FrameCount>(n), fs};
+  for (const char* method : {"dio", "harvest"}) {
+    EngineConfiguration cfg;
+    cfg.parameters = {{"f0_method", ParameterValue{std::string(method)}}};
+    auto e = make("native.world", cfg);
+    const auto t0 = std::chrono::steady_clock::now();
+    const RenderResult r = render(*e, in, cv, fs, 256, 256);
+    const double sec = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    const double rtf = sec / (static_cast<double>(n) / fs);
+    MESSAGE("native.world " << method << " stereo: realtime factor " << rtf);
+    CHECK(r.out[0].size() == n);
+    CHECK(rtf < 1.0);  // must run faster than realtime on the build machine
+  }
+}
+
+#include "world/cheaptrick.h"
+#include "world/d4c.h"
+#include "world/dio.h"
+#include "world/harvest.h"
+#include "world/stonemask.h"
+#include "world/synthesis.h"
+
+TEST_CASE("PROFILE world stages on one chunk region" * doctest::skip()) {  // run with -nr / -ns
+  const int fs = 48000;
+  const int len = static_cast<int>(0.18 * fs);
+  std::vector<double> x = harmonicStack(150.0, fs, static_cast<std::size_t>(len), 8);
+  const int f0Len = GetSamplesForDIO(fs, len, 5.0);
+  std::vector<double> tpos(f0Len + 2), f0(f0Len + 2), f0r(f0Len + 2);
+  CheapTrickOption ct;
+  InitializeCheapTrickOption(fs, &ct);
+  ct.f0_floor = 71.0;
+  ct.fft_size = GetFFTSizeForCheapTrick(fs, &ct);
+  const int bins = ct.fft_size / 2 + 1;
+  std::vector<double> spd(static_cast<std::size_t>(f0Len) * bins), apd(spd.size());
+  std::vector<double*> sp(f0Len), ap(f0Len);
+  for (int i = 0; i < f0Len; ++i) { sp[i] = spd.data() + i * bins; ap[i] = apd.data() + i * bins; }
+  std::vector<double> y(len);
+  auto ms = [](auto t0) { return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count(); };
+  auto t = std::chrono::steady_clock::now();
+  HarvestOption ho; InitializeHarvestOption(&ho); ho.frame_period = 5.0; ho.f0_floor = 71; ho.f0_ceil = 800;
+  Harvest(x.data(), len, fs, &ho, tpos.data(), f0.data());
+  const double tH = ms(t); t = std::chrono::steady_clock::now();
+  DioOption dop; InitializeDioOption(&dop); dop.frame_period = 5.0; dop.f0_floor = 71; dop.f0_ceil = 800; dop.speed = 1;
+  Dio(x.data(), len, fs, &dop, tpos.data(), f0r.data());
+  StoneMask(x.data(), len, fs, tpos.data(), f0r.data(), f0Len, f0.data());
+  const double tD = ms(t); t = std::chrono::steady_clock::now();
+  CheapTrick(x.data(), len, fs, tpos.data(), f0.data(), f0Len, &ct, sp.data());
+  const double tC = ms(t); t = std::chrono::steady_clock::now();
+  D4COption d4; InitializeD4COption(&d4);
+  D4C(x.data(), len, fs, tpos.data(), f0.data(), f0Len, ct.fft_size, &d4, ap.data());
+  const double t4 = ms(t); t = std::chrono::steady_clock::now();
+  Synthesis(f0.data(), f0Len, sp.data(), ap.data(), ct.fft_size, 5.0, fs, len, y.data());
+  const double tS = ms(t);
+  MESSAGE("fft=" << ct.fft_size << " frames=" << f0Len << " | harvest " << tH << " ms, dio+stonemask " << tD
+          << " ms, cheaptrick " << tC << " ms, d4c " << t4 << " ms, synthesis " << tS << " ms");
 }

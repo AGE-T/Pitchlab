@@ -488,7 +488,7 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
     // for its worker on the audio thread) is never needed: finishJob()
     // returns early once wetWritten == wetLen.
     const int64_t engineLat = (id == "native.world")
-                                  ? worldLatencyFrames(fs)
+                                  ? worldLatencyFrames(fs, snap.woF0Method == 1)
                                   : signalsmithLatencyBoundFrames(fs, snap.ssPreset);
     g.wetLen = kSegmentSeconds * static_cast<int64_t>(fs);
     g.jobInputLen = g.wetLen + engineLat;
@@ -596,7 +596,7 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
                    maxFft + maxHop + kKernelMargin + kLatencySafety,       // pv engines
                    timepitchWorst,                                         // timepitch Fixed/Adaptive
                    timepitchSyncedWorst,                                   // timepitch Pitch-Synced splice
-                   worldLatencyFrames(fs) + kKernelMargin + kLatencySafety,  // native.world
+                   worldLatencyFrames(fs, true) + kKernelMargin + kLatencySafety,  // native.world (Harvest worst)
                    std::max(signalsmithLatencyBoundFrames(fs, 0),           // native.signalsmith
                             signalsmithLatencyBoundFrames(fs, 1)) +
                        kKernelMargin + kLatencySafety});                                 // timepitch Pitch-Synced splice

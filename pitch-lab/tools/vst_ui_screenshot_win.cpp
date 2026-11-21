@@ -8,7 +8,7 @@
 // Win32 message loop (the editor's idle timer), then captures the window
 // with PrintWindow and writes a 24-bit BMP.
 //
-// Usage: vst_ui_screenshot_win <PitchLab.vst3> <out.bmp> [engine] [pitchSt] [lfoDepthSt]
+// Usage: vst_ui_screenshot_win <PitchLab.vst3> <out.bmp> [engine] [pitchSt] [lfoDepthSt] [worldF0] [worldF0]
 
 #include <windows.h>
 
@@ -112,6 +112,7 @@ int main(int argc, char** argv) {
   const int engine = argc > 3 ? std::atoi(argv[3]) : 1;
   const double pitch = argc > 4 ? std::atof(argv[4]) : 5.0;
   const double lfoDepth = argc > 5 ? std::atof(argv[5]) : 0.0;
+  const int worldF0 = argc > 6 ? std::atoi(argv[6]) : 0;  // native.world: 0 dio / 1 harvest
 
   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
@@ -156,6 +157,7 @@ int main(int argc, char** argv) {
   snap.engineIndex = engine;
   snap.pitchSt = pitch;
   snap.lfoDepthSt = lfoDepth;
+  snap.woF0Method = worldF0;
   const ParamMeta* table = parameterTable();
   for (uint32_t i = 0; i < parameterCount(); ++i) {
     edit->setParamNormalized(table[i].tag, normalise(table[i].tag, plainValue(snap, table[i].tag)));

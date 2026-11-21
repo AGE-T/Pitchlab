@@ -1464,4 +1464,3 @@ TEST_CASE("F-01 regression: rapid pre-audio setParameterSnapshot calls supersede
   CHECK(st.faults == 0);
   adapter.deactivate();
 }
-
