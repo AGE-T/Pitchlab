@@ -1,5 +1,7 @@
 #include "core/curve.h"
 
+#include <charconv>
+#include <system_error>
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -401,11 +403,17 @@ struct CsvPoint {
   }
   std::size_t consumed = 0;
   double value = 0.0;
-  try {
-    value = std::stod(t, &consumed);
-  } catch (const std::exception&) {
-    throw ConfigError(file, field,
-                      "line " + std::to_string(line) + ": invalid number '" + t + "'");
+  {
+    // audit fix: locale-independent (std::from_chars), non-throwing
+    const char* first = t.data();
+    const char* last = t.data() + t.size();
+    if (first != last && *first == '+') ++first;
+    const auto r = std::from_chars(first, last, value, std::chars_format::general);
+    if (r.ec != std::errc() || r.ptr == first) {
+      throw ConfigError(file, field,
+                        "line " + std::to_string(line) + ": invalid number '" + t + "'");
+    }
+    consumed = static_cast<std::size_t>(r.ptr - t.data());
   }
   if (consumed != t.size()) {
     throw ConfigError(file, field,

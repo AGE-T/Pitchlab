@@ -164,6 +164,24 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       frame->forget();
       frame = nullptr;
     }
+    resetViewState();
+  }
+
+  // VST3 allows removed() -> attached() on the SAME IPlugView. removeAll()
+  // above freed every view, so every cached view pointer / container entry
+  // is dangling from here on: drop them all so a re-open rebuilds from a
+  // clean slate (audit finding: use-after-free on editor re-open).
+  void resetViewState() {
+    engineSliders_.clear();
+    engineValues_.clear();
+    engineTitles_.clear();
+    engineParamTags_.clear();
+    sliderByTag_.clear();
+    varispeedNote_ = nullptr;
+    lastEngineIndex_ = -1;
+    enginePanelGuardTag_ = 0;
+    enginePanelGuardValue_ = -1.0;
+    enginePanel_ = nullptr;
   }
 
   // ---- idle polling (meters/status; NEVER the audio path) ------------------
@@ -225,6 +243,9 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   // ---- UI construction --------------------------------------------------------
   void buildUi() {
     CViewContainer* root = frame;
+    // 2026-11 restyle: the decorative night-gradient backdrop goes FIRST
+    // (every panel draws on top of it; it never takes the mouse)
+    root->addView(new ui_::Backdrop(CRect(0, 0, kEditorWidth, kEditorHeight)));
     buildHeader(root);
     buildEngineSelector(root);
     buildPitchPanel(root);
@@ -239,8 +260,8 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     auto* panel = new ui_::PanelView(r);
     root->addView(panel);
 
-    auto* logo = new ui_::MicroLabel(CRect(10, 8, 90, 24), "PITCH LAB",
-                                     ui_::Palette::accent(), 0);
+    auto* logo = new ui_::MicroLabel(CRect(10, 3, 170, 25), "PITCH LAB",
+                                     ui_::Palette::text(), 2);
     panel->addView(logo);
 
     engineName_ = new ui_::MicroLabel(CRect(10, 24, 320, 38), "native.vardelay",
@@ -263,7 +284,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
 
   void buildEngineSelector(CViewContainer* root) {
     auto* label = new ui_::MicroLabel(CRect(12, 54, 160, 68), "ENGINE",
-                                      ui_::Palette::textFaint(), 0);
+                                      ui_::Palette::accent(), 3);
     root->addView(label);
 
     const CRect r(12, 70, 160, 70 + 5 * 34.0);
@@ -292,7 +313,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     root->addView(panel);
 
     auto* label = new ui_::MicroLabel(CRect(12, 10, 200, 24), "PITCH",
-                                      ui_::Palette::textFaint(), 0);
+                                      ui_::Palette::accent(), 3);
     panel->addView(label);
 
     pitchValue_ = new ui_::ValueLabel(CRect(150, 8, 276, 30), "+0.00 st",
@@ -340,7 +361,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     root->addView(enginePanel_);
 
     panelTitle_ = new ui_::MicroLabel(CRect(12, 10, 190, 24), "VARDELAY",
-                                      ui_::Palette::textDim(), 0);
+                                      ui_::Palette::accent(), 3);
     enginePanel_->addView(panelTitle_);
 
     // sliders for the CURRENT engine's parameters only (created lazily)
@@ -353,7 +374,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     root->addView(panel);
 
     auto* label = new ui_::MicroLabel(CRect(12, 10, 200, 24), "OUTPUT",
-                                      ui_::Palette::textFaint(), 0);
+                                      ui_::Palette::accent(), 3);
     panel->addView(label);
 
     mixSlider_ = addSlider(panel, param::kMix, CRect(12, 36, 130, 56), true);
@@ -375,18 +396,18 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   }
 
   void buildMetersAndStatus(CViewContainer* root) {
-    const CRect r(12, 296, 208, 396);
+    const CRect r(12, 296, 208, 452);
     auto* panel = new ui_::PanelView(r);
     root->addView(panel);
 
     auto* inLabel = new ui_::MicroLabel(CRect(12, 8, 100, 22), "METERS · IN",
-                                        ui_::Palette::textFaint(), 0);
+                                        ui_::Palette::accent(), 3);
     panel->addView(inLabel);
     inMeters_ = new ui_::PLMeters(CRect(12, 28, 184, 54));
     panel->addView(inMeters_);
 
     auto* outLabel = new ui_::MicroLabel(CRect(12, 62, 100, 76), "METERS · OUT",
-                                         ui_::Palette::textFaint(), 0);
+                                         ui_::Palette::accent(), 3);
     panel->addView(outLabel);
     outMeters_ = new ui_::PLMeters(CRect(12, 82, 184, 108));
     panel->addView(outMeters_);
@@ -402,7 +423,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     root->addView(statusPanel);
 
     auto* stLabel = new ui_::MicroLabel(CRect(12, 8, 300, 22), "RUNTIME STATUS (LIVE VALUES ONLY)",
-                                        ui_::Palette::textFaint(), 0);
+                                        ui_::Palette::accent(), 3);
     statusPanel->addView(stLabel);
 
     // Task 32: THE REALTIME-CAPABILITY STATUS LINE — the classification of
@@ -544,7 +565,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
         static_cast<int>(std::lround(denormalise(param::kEngine, ec->getParamNormalized(param::kEngine))));
     const char* engineId = engineIdForIndex(engineIndex);
     if (engineId != nullptr) {
-      panelTitle_->set(shortEngineName(engineId).c_str(), ui_::Palette::textDim());
+      panelTitle_->set(shortEngineName(engineId).c_str(), ui_::Palette::accent());
     }
 
     // enumerate the engine's declared parameters (registry-driven; empty

@@ -233,8 +233,11 @@ WavData readWav(const std::filesystem::path& path) {
                       " (only IEEE float 3 and extensible 0xFFFE are accepted)");
       }
 
-      if (channelsU16 < 1) {
-        throw bad(path, "fmt.channels", "channel count must be >= 1");
+      if (channelsU16 < 1 || channelsU16 > 8) {
+        // audit fix: the writer's 1..8 cap is now enforced on read too (a
+        // huge claimed channel count wrapped the 16-bit frame size to 0 ->
+        // integer division by zero on the data-size check)
+        throw bad(path, "fmt.channels", "channel count must be >= 1 and <= 8");
       }
       if (sampleRate < 1) {
         throw bad(path, "fmt.sampleRate", "sample rate must be >= 1 Hz");
@@ -244,7 +247,7 @@ WavData readWav(const std::filesystem::path& path) {
                   "unsupported sample container " + std::to_string(bits) +
                       " bits (IEEE float 32 or 64 only)");
       }
-      const uint16_t frameSize = static_cast<uint16_t>(channelsU16 * (bits / 8));
+      const uint32_t frameSize = static_cast<uint32_t>(channelsU16) * (bits / 8u);
       if (blockAlign != frameSize) {
         throw bad(path, "fmt.blockAlign",
                   "inconsistent blockAlign: " + std::to_string(blockAlign) +
@@ -284,6 +287,9 @@ WavData readWav(const std::filesystem::path& path) {
   }
 
   const uint16_t frameSize = blockAlign;
+  if (frameSize == 0) {
+    throw bad(path, "fmt.blockAlign", "blockAlign must be > 0");
+  }
   if (dataSize % frameSize != 0) {
     throw bad(path, "data.size",
               "data chunk size " + std::to_string(dataSize) +
@@ -343,7 +349,7 @@ void writeWav(const std::filesystem::path& path, const double* const* channels,
   if (sampleRate < 1) {
     throw ConfigError(path.string(), "sampleRate", "sample rate must be >= 1 Hz");
   }
-  const uint16_t bitsCheck = (format == WavSampleFormat::Float64) ? 16 : 32;
+  const uint16_t bitsCheck = (format == WavSampleFormat::Float64) ? 64 : 32;  // audit fix (was 16)
   const uint16_t frameSizeCheck = static_cast<uint16_t>(channelCount * (bitsCheck / 8));
   if (sampleRate > 0xFFFFFFFFULL / frameSizeCheck) {
     throw ConfigError(path.string(), "sampleRate",
@@ -353,7 +359,7 @@ void writeWav(const std::filesystem::path& path, const double* const* channels,
     throw ConfigError(path.string(), "channels", "channel buffer array is null");
   }
   for (ChannelCount c = 0; c < channelCount; ++c) {
-    if (channels[c] == nullptr && frameCount > 0) {
+    if (frameCount > 0 && channels[c] == nullptr) {  // audit fix: no deref of a null array when empty
       throw ConfigError(path.string(), "channels",
                         "channel " + std::to_string(c) + " buffer is null");
     }

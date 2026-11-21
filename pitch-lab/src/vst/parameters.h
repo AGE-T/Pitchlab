@@ -84,6 +84,15 @@ enum Tags : uint32_t {
   kTpShape = 25,         // timepitch: 0 hann / 1 hamming / 2 bartlett / 3 rect
   kTpTolerance = 26,     // timepitch: 0 .. 8192 frames (Adaptive)
   kTpFormant = 27,       // timepitch: 0.25 .. 4.0 (Pitch+Formant; reserved)
+  // --- native.world (2026-11: WORLD v1.0.1 vocoder) -------------------------
+  kWoF0Method = 40,      // world: 0 dio / 1 harvest
+  kWoFormant = 41,       // world: 0.5 .. 2.0 formant ratio
+  kWoF0Floor = 42,       // world: 40 .. 200 Hz
+  kWoF0Ceil = 43,        // world: 200 .. 1200 Hz
+  // --- native.signalsmith (2026-11: Signalsmith Stretch 1.4.0) -------------
+  kSsPreset = 44,        // signalsmith: 0 default / 1 cheaper
+  kSsPreserve = 45,      // signalsmith: keep formants (bool)
+  kSsFormant = 46,       // signalsmith: 0.25 .. 4.0 formant ratio
   // --- mix / output --------------------------------------------------------
   kMix = 30,         // 0 dry .. 1 wet
   kBypass = 31,      // VST3 bypass (Bypass parameter)
@@ -219,6 +228,15 @@ struct ParamSnapshot {
   int tpShape = 0;             // choice index: 0 = hann
   int64_t tpTolerance = 768;   // Adaptive (WSOLA) search tolerance (frames)
   double tpFormantRatio = 1.0;  // Pitch+Formant envelope ratio (the final row)
+  // native.world (2026-11)
+  int woF0Method = 0;          // choice index: 0 = dio
+  double woFormantRatio = 1.0;
+  double woF0FloorHz = 71.0;
+  double woF0CeilHz = 800.0;
+  // native.signalsmith (2026-11)
+  int ssPreset = 0;            // choice index: 0 = default
+  bool ssPreserveFormants = false;
+  double ssFormantRatio = 1.0;
   // mix / output
   double mix = 1.0;
   bool bypass = false;
@@ -260,6 +278,14 @@ struct ParamSnapshot {
     int64_t tpTolerance;
     // Checkpoint 4: the Pitch + Formant envelope ratio (the final surface row).
     double tpFormantRatio;
+    // 2026-11: native.world / native.signalsmith configuration
+    int woF0Method;
+    double woFormantRatio;
+    double woF0FloorHz;
+    double woF0CeilHz;
+    int ssPreset;
+    bool ssPreserveFormants;
+    double ssFormantRatio;
 
     bool operator==(const ChainSignature& o) const = default;
   };
@@ -274,7 +300,10 @@ struct ParamSnapshot {
                           pvpHop,               tpMode,
                           tpWindowFrames,       tpOverlap,
                           tpShape,              tpTolerance,
-                          tpFormantRatio};
+                          tpFormantRatio,       woF0Method,
+                          woFormantRatio,       woF0FloorHz,
+                          woF0CeilHz,           ssPreset,
+                          ssPreserveFormants,   ssFormantRatio};
   }
 };
 

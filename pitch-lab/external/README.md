@@ -31,6 +31,9 @@ Vendored so far:
 | doctest | 2026-09-26 (cycle 1) | 2.4.12 | **MIT** (see `doctest/ORIGIN.toml` — the previously recorded "BSL-1.0" was an empirical documentation error, corrected at vendoring-time re-verification) | unit/contract test framework |
 | pocketfft | 2026-09-26 (cycle 4, §17 step 4) | cpp-branch commit `c90e55b3d529f8efa40ed01a20de22405f45fc65` (2026-06-30) | **BSD-3-Clause** (verified against BOTH the LICENSE file and the header's own licence block — see `pocketfft/ORIGIN.toml`) | FFT for the phase-vocoder engines (DSP runtime — the documented "lab binary" exception) + future STFT analysis helpers |
 | vst3sdk | 2026-10-01 (product phase) | 3.7.14 (tag `v3.7.14_build_55`, commit `43b4e366`; VSTGUI commit `b1e82355`) | **Steinberg VST3 dual licence — used under the PROPRIETARY VST3 licence path, NOT GPLv3** (see `vst3sdk/ORIGIN.toml`); VSTGUI inside the tree is BSD-3-Clause | the official Steinberg VST3 SDK + VSTGUI for the VST3 product layer (plug-in, editor, validator); never linked into the v0.1 DSP core |
+| world | 2026-11-21 | v1.0.1 (tag `v1.0.1`, commit `d625e760`) | **modified BSD (3-clause)** (see `world/ORIGIN.toml`) | `native.world` engine — WORLD vocoder analysis (DIO/Harvest, StoneMask, CheapTrick, D4C) + Synthesis; built as the separate `pitchlab_world` static library without the project `-Werror` policy |
+| signalsmith-stretch | 2026-11-21 | 1.4.0 (tag `1.4.0`, commit `a670068d`) | **MIT** (see `signalsmith-stretch/ORIGIN.toml`) | `native.signalsmith` engine — header-only spectral pitch shifter |
+| signalsmith-linear | 2026-11-21 | 0.6.4 (tag `0.6.4`, commit `de55e6a5`) | **MIT** (see `signalsmith-linear/ORIGIN.toml`) | FFT/STFT dependency of signalsmith-stretch (the version its CMake FetchContent pins; vendored instead of fetched — no network at configure time) |
 
 Still planned (build & CI environment specification §7): nothing further in v0.1.
 

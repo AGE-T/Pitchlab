@@ -16,17 +16,19 @@ using namespace pitchlab::vst;
 TEST_CASE("registry binding: engine identity comes from the v0.1 registry") {
   initEngineRegistryOnce();
   // Task 33: the 6th production engine (selector index 5).
-  CHECK(engineCount() == 6);
+  CHECK(engineCount() == 8);
   CHECK(std::strcmp(engineIdForIndex(0), "native.varispeed") == 0);
   CHECK(std::strcmp(engineIdForIndex(1), "native.vardelay") == 0);
   CHECK(std::strcmp(engineIdForIndex(2), "native.pv.classic") == 0);
   CHECK(std::strcmp(engineIdForIndex(3), "native.pv.phaselocked") == 0);
   CHECK(std::strcmp(engineIdForIndex(4), "native.granular") == 0);
   CHECK(std::strcmp(engineIdForIndex(5), "native.timepitch") == 0);
-  CHECK(engineIdForIndex(6) == nullptr);
+  CHECK(std::strcmp(engineIdForIndex(6), "native.world") == 0);
+  CHECK(std::strcmp(engineIdForIndex(7), "native.signalsmith") == 0);
+  CHECK(engineIdForIndex(8) == nullptr);
   CHECK(engineIdForIndex(-1) == nullptr);
   // the display names exist for the selector/UI
-  for (int i = 0; i < 6; ++i) {
+  for (int i = 0; i < 8; ++i) {
     CHECK(engineNameForIndex(i) != nullptr);
     CHECK(std::strlen(engineNameForIndex(i)) > 0);
   }
@@ -37,7 +39,7 @@ TEST_CASE("table integrity: every meta is well-formed and unique") {
   const uint32_t n = parameterCount();
   // Task 33: 19 v0.1 rows + 6 native.timepitch rows (Fixed+Adaptive+
   // tolerance+formant; the amendment's FINAL surface) = 25
-  CHECK(n == 25);
+  CHECK(n == 32);  // 2026-11: +7 external-engine rows
   std::vector<uint32_t> tags;
   for (uint32_t i = 0; i < n; ++i) {
     const ParamMeta& m = table[i];

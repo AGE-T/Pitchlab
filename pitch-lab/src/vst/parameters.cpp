@@ -33,7 +33,9 @@ constexpr std::array<ParamMeta, 7> kSharedTable{{
     // → 0..5 — the 6th production engine native.timepitch (selector index 5,
     // display "Time Pitch"). The registry iteration order is the identity;
     // the default stays native.vardelay (index 1) — no state-compat change.
-    {param::kEngine, "engine", "Engine", "ENGINE", "", 0, 5, 1, 5,
+    // 2026-11: 0..7 — native.world (6) and native.signalsmith (7) appended
+    // (state PLV3; PLV2 engine values are re-mapped on load).
+    {param::kEngine, "engine", "Engine", "ENGINE", "", 0, 7, 1, 7,
      "Engine", "%d", ParamRole::SharedRealtime, /*automatable=*/false},
     // Task-33 continuation (Phase 5): the pitch control widens -12..+12 ->
     // -48..+48 — the broadest range the SHARED control surface needs (the
@@ -110,6 +112,14 @@ constexpr EngineParamBinding kEngineParamBindings[]{
     {"native.timepitch", "tolerance_frames", param::kTpTolerance, "tp_tolerance"},
     // Checkpoint 4: the FINAL surface row (the amendment's 25th row).
     {"native.timepitch", "formant_ratio", param::kTpFormant, "tp_formant"},
+    // 2026-11: the external DSP integrations
+    {"native.world", "f0_method", param::kWoF0Method, "wo_f0_method"},
+    {"native.world", "formant_ratio", param::kWoFormant, "wo_formant"},
+    {"native.world", "f0_floor_hz", param::kWoF0Floor, "wo_f0_floor"},
+    {"native.world", "f0_ceil_hz", param::kWoF0Ceil, "wo_f0_ceil"},
+    {"native.signalsmith", "preset", param::kSsPreset, "ss_preset"},
+    {"native.signalsmith", "preserve_formants", param::kSsPreserve, "ss_preserve"},
+    {"native.signalsmith", "formant_ratio", param::kSsFormant, "ss_formant"},
 };
 
 [[nodiscard]] const EngineParamBinding* findBinding(const char* engineId,
@@ -363,6 +373,7 @@ double normalise(uint32_t tag, double plain) {
 double denormalise(uint32_t tag, double norm) {
   for (const auto& m : modelTable()) {
     if (m.tag != tag) continue;
+    if (!std::isfinite(norm)) norm = 0.0;  // audit fix: NaN/Inf from a host never reaches the engine
     if (norm < 0.0) norm = 0.0;
     if (norm > 1.0) norm = 1.0;
     double v = norm;
@@ -400,6 +411,13 @@ void applyNormalised(ParamSnapshot& snap, uint32_t tag, double norm) {
     case param::kTpShape: snap.tpShape = clampInt(p, 0, 3); break;
     case param::kTpTolerance: snap.tpTolerance = static_cast<int64_t>(std::llround(p)); break;
     case param::kTpFormant: snap.tpFormantRatio = p; break;
+    case param::kWoF0Method: snap.woF0Method = clampInt(p, 0, 1); break;
+    case param::kWoFormant: snap.woFormantRatio = p; break;
+    case param::kWoF0Floor: snap.woF0FloorHz = p; break;
+    case param::kWoF0Ceil: snap.woF0CeilHz = p; break;
+    case param::kSsPreset: snap.ssPreset = clampInt(p, 0, 1); break;
+    case param::kSsPreserve: snap.ssPreserveFormants = (p >= 0.5); break;
+    case param::kSsFormant: snap.ssFormantRatio = p; break;
     case param::kMix: snap.mix = p; break;
     case param::kBypass: snap.bypass = (p >= 0.5); break;
     case param::kOutputLevel: snap.outputDb = p; break;
@@ -478,6 +496,13 @@ double plainValue(const ParamSnapshot& snap, uint32_t tag) {
     case param::kTpShape: return static_cast<double>(snap.tpShape);
     case param::kTpTolerance: return static_cast<double>(snap.tpTolerance);
     case param::kTpFormant: return snap.tpFormantRatio;
+    case param::kWoF0Method: return static_cast<double>(snap.woF0Method);
+    case param::kWoFormant: return snap.woFormantRatio;
+    case param::kWoF0Floor: return snap.woF0FloorHz;
+    case param::kWoF0Ceil: return snap.woF0CeilHz;
+    case param::kSsPreset: return static_cast<double>(snap.ssPreset);
+    case param::kSsPreserve: return snap.ssPreserveFormants ? 1.0 : 0.0;
+    case param::kSsFormant: return snap.ssFormantRatio;
     case param::kMix: return snap.mix;
     case param::kBypass: return snap.bypass ? 1.0 : 0.0;
     case param::kOutputLevel: return snap.outputDb;
@@ -536,6 +561,7 @@ void formatParamValue(uint32_t tag, double plain, char* buf, std::size_t bufSize
   // toggle parameters (no declared choices): the semantic on/off form
   switch (tag) {
     case param::kVsAllowAliasing:
+    case param::kSsPreserve:
     case param::kBypass:
       std::snprintf(buf, bufSize, "%s", plain >= 0.5 ? "on" : "off");
       return;
@@ -585,6 +611,7 @@ bool parseParamPlain(uint32_t tag, const char* text, double& plainOut) {
   // toggle parameters: on/off/true/false/1/0
   switch (tag) {
     case param::kVsAllowAliasing:
+    case param::kSsPreserve:
     case param::kBypass:
       if (equalsInsensitive(text, "on") || equalsInsensitive(text, "1") ||
           equalsInsensitive(text, "true")) {

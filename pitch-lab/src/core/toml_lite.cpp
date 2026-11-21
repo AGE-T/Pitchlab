@@ -1,6 +1,10 @@
 #include "core/toml_lite.h"
 
 #include <cctype>
+#include <charconv>
+#include <cstdint>
+#include <limits>
+#include <system_error>
 #include <cmath>
 #include <fstream>
 #include <set>
@@ -287,17 +291,35 @@ class Parser {
     const std::string token = src_.substr(start, pos_ - start);
 
     TomlValue v;
+    // Audit fix: locale-independent, non-throwing number conversion
+    // (std::from_chars) — the previous std::stod/stoll/stoull were
+    // LC_NUMERIC-dependent (a host DAW locale with a decimal comma read
+    // "1.5" as 1.0) and their std::out_of_range escaped as a non-ConfigError.
     if (isHex) {
+      const char* first = token.data() + 2;  // past "0x"
+      const char* last = token.data() + token.size();
+      uint64_t u = 0;
+      const auto r = std::from_chars(first, last, u, 16);
+      if (r.ec != std::errc() || r.ptr != last ||
+          u > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+        throw parseError(file_, startLine, "hex integer out of int64 range '" + token + "'");
+      }
       v.kind = TomlValue::Kind::Integer;
-      v.integer = static_cast<int64_t>(std::stoull(token, nullptr, 16));
+      v.integer = static_cast<int64_t>(u);
       return v;
     }
+    // from_chars rejects a leading '+': strip it (the sign was validated above)
+    const char* first = token.data();
+    const char* last = token.data() + token.size();
+    if (first != last && *first == '+') ++first;
     if (isFloat) {
-      v.kind = TomlValue::Kind::Double;
-      v.real = std::stod(token);
-      if (!std::isfinite(v.real)) {
+      double d = 0.0;
+      const auto r = std::from_chars(first, last, d, std::chars_format::general);
+      if (r.ec != std::errc() || r.ptr != last || !std::isfinite(d)) {
         throw parseError(file_, startLine, "float literal out of range '" + token + "'");
       }
+      v.kind = TomlValue::Kind::Double;
+      v.real = d;
       return v;
     }
     // Integer: TOML leading-zero rule (sign then "0" or non-zero-leading).
@@ -306,16 +328,27 @@ class Parser {
     if (digits.size() > 1 && digits[0] == '0') {
       throw parseError(file_, startLine, "integer with leading zero '" + token + "'");
     }
-    v.kind = TomlValue::Kind::Integer;
-    try {
-      v.integer = std::stoll(token);
-    } catch (const std::out_of_range&) {
+    int64_t iv = 0;
+    const auto r = std::from_chars(first, last, iv, 10);
+    if (r.ec != std::errc() || r.ptr != last) {
       throw parseError(file_, startLine, "integer out of int64 range '" + token + "'");
     }
+    v.kind = TomlValue::Kind::Integer;
+    v.integer = iv;
     return v;
   }
 
   TomlValue parseArray() {
+    // Audit fix: bounded nesting (a "[[[[..." input used to recurse until the
+    // stack overflowed).
+    if (++arrayDepth_ > kMaxArrayDepth) {
+      throw parseError(file_, line_, "array nesting deeper than " +
+                                         std::to_string(kMaxArrayDepth));
+    }
+    struct DepthGuard {
+      int& d;
+      ~DepthGuard() { --d; }
+    } depthGuard{arrayDepth_};
     advance();  // '['
     TomlValue v;
     v.kind = TomlValue::Kind::Array;
@@ -392,6 +425,8 @@ class Parser {
   std::string file_;
   std::size_t pos_ = 0;
   int line_ = 1;
+  int arrayDepth_ = 0;
+  static constexpr int kMaxArrayDepth = 64;
   std::set<std::string> singleTables_;  // [table] headers already opened once
 };
 

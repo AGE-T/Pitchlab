@@ -1364,6 +1364,51 @@ TEST_CASE("F-04 regression: malformed, truncated, or NaN state streams are rejec
   h.shutdown();
 }
 
+TEST_CASE("audit regression: PLV2 kEngine (6 engines, 0..5) migrates to the 8-engine domain") {
+  for (int v2Engine = 0; v2Engine <= 5; ++v2Engine) {
+    MemStream v2;
+    int32 written = 0;
+    const char magic[4] = {'P', 'L', 'V', '2'};
+    v2.write(const_cast<char*>(magic), 4, &written);
+    const int32_t count = 1;
+    v2.write(const_cast<int32_t*>(&count), sizeof(count), &written);
+    const uint32_t engTag = param::kEngine;
+    const double engNormV2 = static_cast<double>(v2Engine) / 5.0;
+    v2.write(const_cast<uint32_t*>(&engTag), sizeof(engTag), &written);
+    v2.write(const_cast<double*>(&engNormV2), sizeof(engNormV2), &written);
+    Host h;
+    h.setup(48000.0, 1024);
+    v2.pos = 0;
+    CHECK(h.plug->setState(&v2) == kResultOk);
+    CHECK(h.snapshot().engineIndex == v2Engine);
+    h.shutdown();
+  }
+}
+
+TEST_CASE("audit regression: a truncated state is rejected WITHOUT being half-applied") {
+  Host h;
+  h.setup(48000.0, 1024);
+  h.setParam(param::kPitch, 3.0);
+  h.setParam(param::kMix, 0.5);
+  // count = 2, but only the FIRST entry (pitch = -7 st) is present
+  MemStream trunc;
+  int32 written = 0;
+  const char magic[4] = {'P', 'L', 'V', '3'};
+  trunc.write(const_cast<char*>(magic), 4, &written);
+  const int32_t count = 2;
+  trunc.write(const_cast<int32_t*>(&count), sizeof(count), &written);
+  const uint32_t tag = param::kPitch;
+  const double norm = normalise(param::kPitch, -7.0);
+  trunc.write(const_cast<uint32_t*>(&tag), sizeof(tag), &written);
+  trunc.write(const_cast<double*>(&norm), sizeof(norm), &written);
+  trunc.pos = 0;
+  CHECK(h.plug->setState(&trunc) == kResultFalse);
+  const ParamSnapshot got = h.snapshot();
+  CHECK(std::fabs(got.pitchSt - 3.0) < 1e-9);  // unchanged (no partial apply)
+  CHECK(std::fabs(got.mix - 0.5) < 1e-9);
+  h.shutdown();
+}
+
 TEST_CASE("F-05 regression: per-channel nullptr in channelBuffers is handled safely without crash") {
   Host h;
   h.setup(48000.0, 512);

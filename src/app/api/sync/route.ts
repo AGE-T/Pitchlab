@@ -71,7 +71,39 @@ export async function GET() {
   })
 }
 
-export async function POST() {
+// Audit fix: this endpoint runs `git add -A && git commit && git push` with
+// the GitHub token from .env. It used to be callable by ANYONE (no auth, no
+// CSRF protection): any web page could trigger a commit + push of the whole
+// working tree. It is now (1) disabled unless SYNC_ENABLED=1 is set in the
+// server environment and (2) restricted to same-origin browser requests.
+function syncAllowed(request: Request): { ok: boolean; reason?: string } {
+  if (process.env.SYNC_ENABLED !== '1') {
+    return { ok: false, reason: 'A szinkron le van tiltva (SYNC_ENABLED=1 szükséges a szerver környezetében).' }
+  }
+  const fetchSite = request.headers.get('sec-fetch-site')
+  if (fetchSite !== null && fetchSite !== 'same-origin') {
+    return { ok: false, reason: 'Csak azonos originről hívható.' }
+  }
+  const origin = request.headers.get('origin')
+  const host = request.headers.get('host')
+  if (!origin || !host) {
+    return { ok: false, reason: 'Hiányzó Origin/Host fejléc.' }
+  }
+  try {
+    if (new URL(origin).host !== host) {
+      return { ok: false, reason: 'Idegen originről érkező kérés.' }
+    }
+  } catch {
+    return { ok: false, reason: 'Érvénytelen Origin fejléc.' }
+  }
+  return { ok: true }
+}
+
+export async function POST(request: Request) {
+  const allowed = syncAllowed(request)
+  if (!allowed.ok) {
+    return NextResponse.json({ ok: false, output: allowed.reason }, { status: 403 })
+  }
   const { token, repo } = readEnv()
   if (!token || !repo || !fs.existsSync(SYNC_SCRIPT)) {
     return NextResponse.json(

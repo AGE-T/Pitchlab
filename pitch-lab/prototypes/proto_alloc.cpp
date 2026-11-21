@@ -6,6 +6,9 @@
 
 #include <atomic>
 #include <cstdlib>
+#if defined(_MSC_VER)
+#include <malloc.h>
+#endif
 #include <new>
 
 namespace pitchlab::proto {
@@ -52,14 +55,28 @@ void* operator new(std::size_t size, std::align_val_t align) {
   countAlloc(size);
   if (size == 0) size = 1;
   const std::size_t a = static_cast<std::size_t>(align);
+#if defined(_MSC_VER)
+  // MSVC has no std::aligned_alloc (the CRT cannot free it with free()):
+  // the documented _aligned_malloc/_aligned_free pair.
+  void* p = _aligned_malloc((size + a - 1) / a * a, a < sizeof(void*) ? sizeof(void*) : a);
+#else
   void* p = std::aligned_alloc(a < sizeof(void*) ? sizeof(void*) : a,
                                (size + a - 1) / a * a);
+#endif
   if (!p) throw std::bad_alloc();
   return p;
 }
 
+#if defined(_MSC_VER)
+void operator delete(void* p, std::align_val_t) noexcept { _aligned_free(p); }
+
+void operator delete(void* p, std::size_t, std::align_val_t) noexcept {
+  _aligned_free(p);
+}
+#else
 void operator delete(void* p, std::align_val_t) noexcept { std::free(p); }
 
 void operator delete(void* p, std::size_t, std::align_val_t) noexcept {
   std::free(p);
 }
+#endif

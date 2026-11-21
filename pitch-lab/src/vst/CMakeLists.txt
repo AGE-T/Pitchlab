@@ -189,7 +189,11 @@ function(pitchlab_add_vst_test name)
     pitchlab_core pitchlab_doctest sdk sdk_common base pluginterfaces
     Threads::Threads)
   target_compile_features(${name} PRIVATE cxx_std_20)
-  target_compile_options(${name} PRIVATE -ffp-contract=off)
+  # audit fix: GCC/Clang-only flag (MSVC does not contract FP by default
+  # under /fp:precise); unguarded it blocked the Windows test build.
+  if(NOT MSVC)
+    target_compile_options(${name} PRIVATE -ffp-contract=off)
+  endif()
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${name} PRIVATE -Wall -Wextra -Wpedantic)
   endif()
@@ -278,7 +282,11 @@ add_executable(vst_host_sim ${CMAKE_SOURCE_DIR}/tools/vst_host_sim.cpp
 target_link_libraries(vst_host_sim PRIVATE pitchlab_core sdk sdk_common base
   pluginterfaces Threads::Threads)
 target_compile_features(vst_host_sim PRIVATE cxx_std_20)
-target_compile_options(vst_host_sim PRIVATE -ffp-contract=off)
+# audit fix: GCC/Clang-only flag (MSVC does not contract FP by default
+# under /fp:precise); unguarded it blocked the Windows test build.
+if(NOT MSVC)
+  target_compile_options(vst_host_sim PRIVATE -ffp-contract=off)
+endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_options(vst_host_sim PRIVATE -Wall -Wextra -Wpedantic)
 endif()
@@ -302,12 +310,33 @@ if(LINUX AND PITCHLAB_BUILD_VST3)
   target_include_directories(vst_ui_screenshot PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../)
   target_compile_features(vst_ui_screenshot PRIVATE cxx_std_20)
-  target_compile_options(vst_ui_screenshot PRIVATE -ffp-contract=off)
+  # audit fix: GCC/Clang-only flag (MSVC does not contract FP by default
+  # under /fp:precise); unguarded it blocked the Windows test build.
+  if(NOT MSVC)
+    target_compile_options(vst_ui_screenshot PRIVATE -ffp-contract=off)
+  endif()
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(vst_ui_screenshot PRIVATE -Wall -Wextra -Wpedantic)
   endif()
   set_source_files_properties(${SDK_ROOT}/public.sdk/source/vst/hosting/module_linux.cpp
     PROPERTIES COMPILE_OPTIONS "-w")
+endif()
+
+# 2026-11: the Windows UI screenshot host (the Win32 sibling of the Linux
+# tool above): loads the BUILT bundle the DAW way, opens the real editor on
+# an HWND, pumps the message loop, PrintWindow -> BMP.
+if(WIN32 AND PITCHLAB_BUILD_VST3)
+  add_executable(vst_ui_screenshot_win ${CMAKE_SOURCE_DIR}/tools/vst_ui_screenshot_win.cpp
+    ${CMAKE_SOURCE_DIR}/src/vst/parameters.cpp
+    ${SDK_ROOT}/public.sdk/source/vst/hosting/module_win32.cpp)
+  target_link_libraries(vst_ui_screenshot_win PRIVATE
+    pitchlab_core sdk sdk_common sdk_hosting base pluginterfaces user32 gdi32)
+  target_include_directories(vst_ui_screenshot_win PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../)
+  target_compile_features(vst_ui_screenshot_win PRIVATE cxx_std_20)
+  add_dependencies(vst_ui_screenshot_win PitchLab_vst3)
+  # the SDK's Win32 loader predates C++20 char8_t (u8path strings)
+  set_source_files_properties(${SDK_ROOT}/public.sdk/source/vst/hosting/module_win32.cpp
+    PROPERTIES COMPILE_OPTIONS "/Zc:char8_t-")
 endif()
 
 # Task-35 TASK C (the master recovery pack): the TimePitch continuity
@@ -329,3 +358,15 @@ target_compile_definitions(timepitch_differential_harness PRIVATE
 pitchlab_add_vst_suite(rc3_rect_crackle_probe)
 target_compile_definitions(rc3_rect_crackle_probe PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+# Audit fix: the research PROBES are measurement reports (most of their
+# TEST_CASEs carry no assertions). They are labelled so CI / developers can
+# separate the behaviour-gating suites from the measurement runs:
+#   ctest -LE probe   -> gating suites only
+#   ctest -L  probe   -> the measurement probes
+foreach(_probe timepitch_host_probe timepitch_continuity_probe
+               timepitch_differential_harness rc3_rect_crackle_probe)
+  if(TEST ${_probe})
+    set_tests_properties(${_probe} PROPERTIES LABELS "probe")
+  endif()
+endforeach()

@@ -1,0 +1,32 @@
+--- a/signalsmith-stretch.h
++++ b/signalsmith-stretch.h
+@@ -698,6 +698,9 @@
+ 			int c = int(step);
+ 			Band *bins = bandsForChannel(c);
+ 			auto *predictions = predictionsForChannel(c);
++			// The turn the `rot` pass applied between adjacent bins (the same expression as its `rotStep`)
++			const Sample binTurn = (bandToFreq(1) - bandToFreq(0))*stft.defaultInterval()*Sample(2*M_PI);
++			const Complex binTurnBack = std::polar(Sample(1), -binTurn);
+ 			for (int b = 0; b < bands; ++b) {
+ 				auto mapPoint = outputMap[b];
+ 				int lowIndex = static_cast<int>(std::floor(mapPoint.inputBin));
+@@ -710,7 +713,18 @@
+ 				prediction.input = getFractional<&Band::input>(c, lowIndex, fracIndex);
+ 
+ 				auto &outputBin = bins[b];
+-				Complex prevInput = getFractional<&Band::prevInput>(c, lowIndex, fracIndex);
++				Complex prevInput;
++				if (fracIndex == 0) {
++					prevInput = getFractional<&Band::prevInput>(c, lowIndex, fracIndex);
++				} else {
++					// Each stored prevInput has been turned by its own bin's centre advance (the `rot` pass), so
++					// adjacent bins are in different frames. Bring the upper neighbour into the lower one's frame,
++					// interpolate like `prediction.input`, then turn the result to the fractional position:
++					// equivalent to rot(inputBin) * lerp(un-rotated prevInput)
++					Complex low = getBand<&Band::prevInput>(c, lowIndex);
++					Complex high = _impl::mul(getBand<&Band::prevInput>(c, lowIndex + 1), binTurnBack);
++					prevInput = _impl::mul(low + (high - low)*fracIndex, std::polar(Sample(1), binTurn*fracIndex));
++				}
+ 				Complex freqTwist = _impl::mul<true>(prediction.input, prevInput);
+ 				Complex phase = _impl::mul(outputBin.output, freqTwist);
+ 				outputBin.output = phase/(std::max(prevEnergy, prediction.energy) + noiseFloor);

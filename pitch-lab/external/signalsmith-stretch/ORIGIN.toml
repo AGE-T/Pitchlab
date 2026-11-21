@@ -1,0 +1,27 @@
+# Vendored dependency provenance (architecture §J; external/README.md rules).
+
+[[origin]]
+name = "signalsmith-stretch"
+version = "1.4.0 (tag 1.4.0, commit a670068d9aeb64913331d5cc29337b19a457a7df)"
+upstream = "https://github.com/Signalsmith-Audio/signalsmith-stretch"
+homepage = "https://signalsmith-audio.co.uk/code/stretch/"
+retrieved = "2026-11-21"
+files = ["signalsmith-stretch.h", "include/signalsmith-stretch/signalsmith-stretch.h", "LICENSE.txt", "README.md"]
+excluded_paths = ["cmd/", "web/", "CMakeLists.txt (FetchContent of signalsmith-linear replaced by the vendored copy)"]
+licence = "MIT, Copyright (c) 2022 Geraint Luff / Signalsmith Audio Ltd. — LICENSE.txt verbatim. Permissive — allowed."
+dependency = "signalsmith-linear 0.6.4 (vendored alongside: external/signalsmith-linear)"
+purpose = "native.signalsmith engine: Signalsmith Stretch spectral pitch/time processing (header-only)."
+consumer = "pitch-lab/src/engines/signalsmith_engine.cpp"
+patches = [
+  # Upstream issue fixes, applied LOCALLY (not yet merged upstream as of
+  # 2026-11-21; the diffs are verbatim from the issue reports, kept in
+  # patches/ and re-applicable with `git apply --directory=pitch-lab/external/signalsmith-stretch`).
+  # Measured in this tree (tests/external_engines_test.cpp "pitch accuracy in cents"):
+  # unpatched worst error +42.1 c (55 Hz, -100 c), +9.7 c (220 Hz, +100 c), +16.0 c (-24 st).
+  { file = "patches/0001-issue31-fractional-prevInput-rotation.diff", issue = "https://github.com/Signalsmith-Audio/signalsmith-stretch/issues/31", what = "prevInput interpolated across bins after the rot pass -> partials land sharp" },
+  { file = "patches/0002-issue32-phase-peak-position-and-flat-lobe-map.diff", issue = "https://github.com/Signalsmith-Audio/signalsmith-stretch/issues/32", what = "biased peak position + main-lobe offset map -> large shifts off pitch" },
+]
+not_applied = [
+  { issue = "#33/#35", reason = "reanalysePrev +-1 sample tolerance: only at in:out rates within 2/H of 1:1; native.signalsmith always runs process(n, n) (exact 1:1), measured unaffected upstream at 1:1" },
+  { issue = "#34", reason = "formant envelope fix engages only with setFormantBase(f0 > 0); native.signalsmith uses automatic base detection" },
+]

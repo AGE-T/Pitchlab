@@ -78,9 +78,9 @@ class VardelayEngine final : public PitchEngine {
     excursionSeconds_ = kDefaultExcursionSeconds;
     if (const ParameterValue* v = cfg.find("excursion_seconds")) {
       if (const auto* d = std::get_if<double>(v)) {
-        if (!std::isfinite(*d) || *d <= 0.0) {
+        if (!std::isfinite(*d) || *d <= 0.0 || *d > 60.0) {
           throw ConfigError("", "excursion_seconds",
-                            "excursion_seconds must be finite and > 0 (§6.2.1 item 1)");
+                            "excursion_seconds must be finite and in (0, 60] s (§6.2.1 item 1; audit: upper bound)");
         }
         excursionSeconds_ = *d;
       } else {
@@ -90,9 +90,9 @@ class VardelayEngine final : public PitchEngine {
     crossfadeFrames_ = kDefaultCrossfadeFrames;
     if (const ParameterValue* v = cfg.find("crossfade_frames")) {
       if (const auto* i = std::get_if<int64_t>(v)) {
-        if (*i < 0) {
+        if (*i < 0 || *i > (int64_t{1} << 20)) {
           throw ConfigError("", "crossfade_frames",
-                            "crossfade_frames must be >= 0 (§6.2.1 item 1)");
+                            "crossfade_frames must be in [0, 2^20] (§6.2.1 item 1; audit: upper bound)");
         }
         crossfadeFrames_ = *i;
       } else {

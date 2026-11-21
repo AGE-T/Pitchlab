@@ -17,12 +17,30 @@ project(PitchLab
 #   0: native.varispeed       3: native.pv.phaselocked
 #   1: native.vardelay        4: native.granular
 #   2: native.pv.classic      5: native.timepitch (OLA/WSOLA/TD-PSOLA/FD-PSOLA)
+#   6: native.world (WORLD vocoder)   7: native.signalsmith (Signalsmith Stretch)
 #
 # Canonical environment: research/pitch-lab-build-and-ci-environment.md
 # (ubuntu-24.04, GCC 13.3, CMake 3.31.6, Ninja, C++20).
 # ---------------------------------------------------------------------------
 
 option(PITCHLAB_WERROR "Treat compiler warnings as errors for Pitch Lab code" ON)
+
+# Audit fix: sanitizer builds (CI runs Debug + ASan/UBSan and a TSan lane).
+#   -DPITCHLAB_SANITIZE=address   -> AddressSanitizer + UndefinedBehaviorSanitizer
+#   -DPITCHLAB_SANITIZE=thread    -> ThreadSanitizer
+set(PITCHLAB_SANITIZE "" CACHE STRING "Sanitizer build: '', 'address' or 'thread' (GCC/Clang)")
+if(PITCHLAB_SANITIZE AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+  if(PITCHLAB_SANITIZE STREQUAL "address")
+    set(_pl_san -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
+  elseif(PITCHLAB_SANITIZE STREQUAL "thread")
+    set(_pl_san -fsanitize=thread -fno-omit-frame-pointer)
+  else()
+    message(FATAL_ERROR "PITCHLAB_SANITIZE must be '', 'address' or 'thread'")
+  endif()
+  add_compile_options(${_pl_san})
+  add_link_options(${_pl_san})
+endif()
+
 
 add_library(pitchlab_core
   src/core/version.cpp
@@ -40,6 +58,8 @@ add_library(pitchlab_core
   src/engines/pv_classic_engine.cpp
   src/engines/pv_phaselocked_engine.cpp
   src/engines/timepitch_engine.cpp
+  src/engines/signalsmith_engine.cpp
+  src/engines/world_engine.cpp
   src/harness/json_writer.cpp
   src/harness/json_reader.cpp
   src/harness/experiment_compiler.cpp
@@ -65,6 +85,44 @@ target_compile_features(pitchlab_core PUBLIC cxx_std_20)
 # VST product layer too (the adapter's chainGeometry Λ_tr branch).
 target_link_libraries(pitchlab_core PUBLIC pitchlab_pocketfft)
 
+# ---------------------------------------------------------------------------
+# External DSP integrations (2026-11): WORLD v1.0.1 (modified BSD) and
+# Signalsmith Stretch 1.4.0 + signalsmith-linear 0.6.4 (MIT) — vendored
+# verbatim under external/ (see each ORIGIN.toml). Third-party code is built
+# WITHOUT the project's -Werror policy and included as SYSTEM headers.
+# ---------------------------------------------------------------------------
+find_package(Threads REQUIRED)
+add_library(pitchlab_world STATIC
+  external/world/src/cheaptrick.cpp
+  external/world/src/codec.cpp
+  external/world/src/common.cpp
+  external/world/src/d4c.cpp
+  external/world/src/dio.cpp
+  external/world/src/fft.cpp
+  external/world/src/harvest.cpp
+  external/world/src/matlabfunctions.cpp
+  external/world/src/stonemask.cpp
+  external/world/src/synthesis.cpp
+  external/world/src/synthesisrealtime.cpp
+)
+target_include_directories(pitchlab_world SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/world/src)
+target_compile_features(pitchlab_world PRIVATE cxx_std_20)
+set_target_properties(pitchlab_world PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(MSVC)
+  target_compile_options(pitchlab_world PRIVATE /W0)
+  target_compile_definitions(pitchlab_world PRIVATE _CRT_SECURE_NO_WARNINGS)
+else()
+  target_compile_options(pitchlab_world PRIVATE -w -ffp-contract=off)
+endif()
+
+add_library(pitchlab_signalsmith INTERFACE)
+target_include_directories(pitchlab_signalsmith SYSTEM INTERFACE
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/signalsmith-stretch/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/signalsmith-linear/include)
+
+target_link_libraries(pitchlab_core PRIVATE pitchlab_world pitchlab_signalsmith)
+target_link_libraries(pitchlab_core PUBLIC Threads::Threads)
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # -ffp-contract=off: FP determinism (implementation spec §7.5 — no FMA
   # contraction; same-binary bit-exact reproducibility is the guarantee).
@@ -77,12 +135,22 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
     endif()
   endif()
 endif()
+if(MSVC)
+  # audit fix: explicit MSVC policy for the core (the Windows lane compiled it
+  # with generator defaults only). /fp:precise is MSVC's default and never
+  # contracts to FMA — the MSVC equivalent of -ffp-contract=off.
+  target_compile_options(pitchlab_core PRIVATE /W3 /fp:precise)
+endif()
 
 # CLI (freeze state: --version / engines introspection only)
 add_executable(pitchlab src/cli/main.cpp)
 target_link_libraries(pitchlab PRIVATE pitchlab_core)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_compile_options(pitchlab PRIVATE -Wall -Wextra -Wpedantic)
+  # audit fix: the CLI gets the same warning/FP policy as the core library
+  target_compile_options(pitchlab PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off)
+  if(PITCHLAB_WERROR)
+    target_compile_options(pitchlab PRIVATE -Werror)
+  endif()
 endif()
 
 # ---------------------------------------------------------------------------
@@ -234,6 +302,12 @@ pitchlab_add_doctest(pitch_tracker_parity_test tests/pitch_tracker_parity_test.c
 # validated behaviour; the null magnitudes / neighbourhood shape / candidate
 # verdicts stay MEASURED REPORTS for the owner decision.
 pitchlab_add_doctest(rc2b_octave_null_probe tests/rc2b_octave_null_probe.cpp)
+set_tests_properties(rc2b_octave_null_probe PROPERTIES LABELS "probe")  # audit fix (see src/vst)
+
+# 2026-11: the external DSP integrations (native.world, native.signalsmith) —
+# contract + function suite (length, F0 accuracy, determinism, reset,
+# block/capacity independence, configuration validation).
+pitchlab_add_doctest(external_engines_test tests/external_engines_test.cpp)
 target_compile_definitions(rc2b_octave_null_probe PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 

@@ -9,11 +9,15 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <utility>
+#include <vector>
 #include <string>
 #include <thread>
 
 #include "core/engine_registry.h"
 #include "core/errors.h"
+#include "engines/signalsmith_engine.h"
+#include "engines/world_engine.h"
 
 namespace pitchlab::vst {
 
@@ -475,6 +479,22 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
       g.seamX = n;
       g.latency = n + 2 * kResamplerK + 256;
     }
+  } else if (id == "native.world" || id == "native.signalsmith") {
+    // 2026-11 external integrations: WET-GRID, duration-preserving,
+    // time-aligned engines (the pv pattern). The job input is EXTENDED by
+    // the engine's own latency L beyond the wet window, so every wet frame
+    // a job owes is producible from process() with REAL input — the
+    // engine's finish() flush (which for native.world would have to wait
+    // for its worker on the audio thread) is never needed: finishJob()
+    // returns early once wetWritten == wetLen.
+    const int64_t engineLat = (id == "native.world")
+                                  ? worldLatencyFrames(fs)
+                                  : signalsmithLatencyBoundFrames(fs, snap.ssPreset);
+    g.wetLen = kSegmentSeconds * static_cast<int64_t>(fs);
+    g.jobInputLen = g.wetLen + engineLat;
+    g.seamX = (id == "native.world") ? worldChunkFrames(fs)
+                                     : std::min<int64_t>(engineLat, g.wetLen / 4);
+    g.latency = engineLat + kKernelMargin + kLatencySafety;
   } else {  // native.varispeed — windowed splice (§4.2)
     // Phase 5 (the same correction class as the granular branch): the
     // worst read-rate = the chain's own envMax; the whole-mode constant
@@ -575,7 +595,11 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
                    maxCrossfade + kKernelMargin + kLatencySafety,          // vardelay
                    maxFft + maxHop + kKernelMargin + kLatencySafety,       // pv engines
                    timepitchWorst,                                         // timepitch Fixed/Adaptive
-                   timepitchSyncedWorst});                                 // timepitch Pitch-Synced splice
+                   timepitchSyncedWorst,                                   // timepitch Pitch-Synced splice
+                   worldLatencyFrames(fs) + kKernelMargin + kLatencySafety,  // native.world
+                   std::max(signalsmithLatencyBoundFrames(fs, 0),           // native.signalsmith
+                            signalsmithLatencyBoundFrames(fs, 1)) +
+                       kKernelMargin + kLatencySafety});                                 // timepitch Pitch-Synced splice
 }
 
 /// Envelope (§4.1 item 2, the Task 30 policy — derived, not intuited):
@@ -650,6 +674,15 @@ struct RealtimeAdapter::Job {
   std::vector<double> curve;
   PitchCurveView curveView{};
   ProcessContext ctx{};
+
+  // The engine holds pointers into `curve`/`curveView` for its whole job
+  // (and an engine may own a worker thread that reads them — native.world).
+  // Members are destroyed in REVERSE declaration order, which would free the
+  // curve BEFORE the engine: destroy the engine first, explicitly.
+  ~Job() { engine.reset(); }
+  Job() = default;
+  Job(const Job&) = delete;
+  Job& operator=(const Job&) = delete;
 
   // index is ATOMIC (Task 24 concurrency fix): the audio thread may read it
   // from a stale slot pointer while the preparation thread re-stamps a
@@ -796,7 +829,12 @@ struct RealtimeAdapter::Chain final : RetireStack::Node {
     if (r >= wetLen) return false;
 
     Job* job = slots[k % kJobSlots].load(std::memory_order_acquire);
-    if (job == nullptr || job->index.load(std::memory_order_relaxed) != k ||
+    // Audit fix: a DEAD job may be recycled (lane.reset()/stamp()) by the
+    // preparation thread concurrently — never read its non-atomic lane
+    // fields. `dead` is only ever SET by the audio thread (this thread), so
+    // a job observed live here cannot be recycled until this thread kills it.
+    if (job == nullptr || job->dead.load(std::memory_order_acquire) ||
+        job->index.load(std::memory_order_relaxed) != k ||
         q < job->lane.start || q >= job->lane.start + job->lane.count) {
       return false;  // lane compacted past q, not yet produced, or wrong job
     }
@@ -805,7 +843,8 @@ struct RealtimeAdapter::Chain final : RetireStack::Node {
       return true;
     }
     Job* prev = slots[(k - 1) % kJobSlots].load(std::memory_order_acquire);
-    if (prev == nullptr || prev->index.load(std::memory_order_relaxed) != k - 1 ||
+    if (prev == nullptr || prev->dead.load(std::memory_order_acquire) ||
+        prev->index.load(std::memory_order_relaxed) != k - 1 ||
         q < prev->lane.start || q >= prev->lane.start + prev->lane.count) {
       return false;  // previous lane missing (should never happen; fault)
     }
@@ -923,6 +962,13 @@ struct RealtimeAdapter::Impl {
   std::vector<double> curveScratch;
   double lfoPhase = 0.0;
   double lastPitchSt = 0.0, lastMix = 1.0, lastLevelDb = 0.0;
+  // Audit fix: de-zippering of the NON-automated Mix / Output Level (UI or
+  // preset moves used to jump instantly -> clicks). One-pole, ~10 ms; NaN =
+  // "not seeded" (seeded to the target on first use / after a hard reset so
+  // a steady value is reproduced exactly).
+  double mixSmooth = std::numeric_limits<double>::quiet_NaN();
+  double gainSmooth = std::numeric_limits<double>::quiet_NaN();
+  double smoothAlpha = 1.0;
   // pitch base resolution state (process()): the no-automation base is the
   // parameter's CURRENT value; a ramp's end is held while the parameter
   // value stays unchanged (VST3 semantics: automation writes queue points,
@@ -1023,6 +1069,30 @@ struct RealtimeAdapter::Impl {
 
   RealtimeAdapter* self = nullptr;
 
+  // Audit fix (pending-chain lifetime): the audio thread may hold a raw
+  // `pending` pointer for the duration of one process() block while the
+  // preparation thread swaps a fresher chain in. The swapped-out chain is
+  // deleted immediately only if NO block is in flight (seq_cst Dekker
+  // pairing: audio stores audioInBlock=true then loads `pending`; prep
+  // exchanges `pending` then loads audioInBlock — at least one side sees
+  // the other). Otherwise it is deferred until the block sequence advances.
+  std::atomic<bool> audioInBlock{false};
+  std::atomic<uint64_t> audioBlockSeq{0};
+  std::vector<std::pair<Chain*, uint64_t>> deferredPending;  // prep thread only
+
+  void freeDeferredPending(bool all) {
+    const uint64_t seq = audioBlockSeq.load(std::memory_order_seq_cst);
+    auto it = deferredPending.begin();
+    while (it != deferredPending.end()) {
+      if (all || seq > it->second) {
+        delete it->first;
+        it = deferredPending.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+
   ~Impl() { stopPrepThread(); }
 
   // ---- prep thread ---------------------------------------------------------
@@ -1036,6 +1106,7 @@ struct RealtimeAdapter::Impl {
     prepRunning.store(false, std::memory_order_release);
     if (prepThread.joinable()) prepThread.join();
     freeRetired();
+    freeDeferredPending(/*all=*/true);
     // drop any remaining chains (audio is stopped)
     Chain* p = pending.exchange(nullptr, std::memory_order_acquire);
     delete p;
@@ -1202,7 +1273,12 @@ struct RealtimeAdapter::Impl {
       job->ctx.maxBlockFrames = maxBlock;
       job->ctx.totalInputFrames = chain->jobInputLen;
       job->ctx.curve = &job->curveView;
-      job->lane.allocate(channels, chain->laneCapacity);
+      // Audit fix: a FULL-capacity slack (2x physical backing). With zero
+      // slack every dropBefore() compacted (a multi-MB memmove per audio
+      // sub-block once the job aged past dryRetention); with slack ==
+      // capacity a compaction runs at most once per `capacity` dropped
+      // frames (amortised <= 1 copied frame per produced frame).
+      job->lane.allocate(channels, chain->laneCapacity, chain->laneCapacity);
       job->index.store(-1, std::memory_order_relaxed);
       job->spanStart = -1;
       chain->ownedJobs.push_back(std::move(job));
@@ -1210,7 +1286,7 @@ struct RealtimeAdapter::Impl {
 
     // Task 31: the retained wet history (the Chain::history note) — same
     // capacity formula as the job lanes (prep-thread allocation).
-    chain->history.allocate(channels, chain->laneCapacity, 16384);
+    chain->history.allocate(channels, chain->laneCapacity, chain->laneCapacity);
 
     // Prepare job 0 (the chain's first job) so adoption can start feeding
     // immediately. Its engine is prepared on THIS thread (allocation is
@@ -1310,6 +1386,7 @@ struct RealtimeAdapter::Impl {
   void prepLoop() {
     while (prepRunning.load(std::memory_order_acquire)) {
       freeRetired();
+      freeDeferredPending(/*all=*/false);
 
       const ParamSnapshot snap = params.load();
       const uint64_t epoch = requestEpoch.load(std::memory_order_acquire);
@@ -1486,8 +1563,15 @@ struct RealtimeAdapter::Impl {
           // Atomically swap into pending and delete any unadopted predecessor
           // that was still waiting in pending (never touched by the audio
           // thread if we won the exchange).
-          Chain* oldPend = pending.exchange(fresh, std::memory_order_acq_rel);
-          delete oldPend;
+          Chain* oldPend = pending.exchange(fresh, std::memory_order_seq_cst);
+          if (oldPend != nullptr) {
+            const uint64_t seqNow = audioBlockSeq.load(std::memory_order_seq_cst);
+            if (audioInBlock.load(std::memory_order_seq_cst)) {
+              deferredPending.emplace_back(oldPend, seqNow);  // a block may hold it
+            } else {
+              delete oldPend;
+            }
+          }
           builtRequestEpoch = epoch;
           builtSig = snap.chainSignature();
           builtSigPub_.store(builtSig);
@@ -1556,8 +1640,13 @@ struct RealtimeAdapter::Impl {
              builtSigPub_.load() == sig;
     };
     if (chainMatches()) return;
+    // Audit fix: a failing build (invalid transient configuration) used to
+    // block the calling (UI/main) thread for the FULL 2000 ms on every
+    // parameter change; a counted preparation failure ends the wait.
+    const uint64_t failuresAtEntry = preparationFailures.load(std::memory_order_acquire);
     for (int waited = 0; waited < kFirstChainWaitMs; ++waited) {
       if (chainMatches()) return;
+      if (preparationFailures.load(std::memory_order_acquire) != failuresAtEntry) return;
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     // pathological timeout: the audio path runs the latency-compensated dry
@@ -1639,6 +1728,9 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.meterClipDecayPerSample =
       std::pow(kMeterClipDecayPer1024, 1.0 / 1024.0);
   im.meterRmsAlpha = 1.0 - std::exp(-1.0 / kMeterRmsWindowFrames);
+  im.smoothAlpha = 1.0 - std::exp(-1.0 / (0.010 * im.fs));
+  im.mixSmooth = std::numeric_limits<double>::quiet_NaN();
+  im.gainSmooth = std::numeric_limits<double>::quiet_NaN();
 
   // The dry lane is read at the EFFECTIVE emission latency (Λ_eff), which
   // can grow to the parameter-range worst when chains switch mid-stream;
@@ -1649,7 +1741,7 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   const int64_t prepLead = 2 * static_cast<int64_t>(im.maxBlock) + kPrepLeadExtra;
   im.dryRetention = std::max(worstLatency, prepLead);
   const int64_t dryCap = im.dryRetention + 2 * static_cast<int64_t>(im.maxBlock) + 64;
-  im.dry.allocate(im.channels, dryCap, 32768);
+  im.dry.allocate(im.channels, dryCap, dryCap);  // audit fix: full slack (see job lanes)
 
   im.curveScratch.assign(static_cast<std::size_t>(im.maxBlock), 1.0);
 
@@ -1857,6 +1949,15 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
     }
     return;
   }
+  // in-flight marker for the pending-chain lifetime protocol (see Impl)
+  struct BlockGuard {
+    Impl& im;
+    explicit BlockGuard(Impl& i) : im(i) { im.audioInBlock.store(true, std::memory_order_seq_cst); }
+    ~BlockGuard() {
+      im.audioBlockSeq.fetch_add(1, std::memory_order_seq_cst);
+      im.audioInBlock.store(false, std::memory_order_seq_cst);
+    }
+  } blockGuard(im);
 
   // ---- effective musical state for this block -------------------------------
   const ParamSnapshot snap = im.params.load();
@@ -1926,6 +2027,8 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
     im.lastSnapPitchSt = snap.pitchSt;
     im.lastMix = snap.mix;
     im.lastLevelDb = snap.outputDb;
+    im.mixSmooth = std::numeric_limits<double>::quiet_NaN();
+    im.gainSmooth = std::numeric_limits<double>::quiet_NaN();
     im.lastBypass = snap.bypass;
     im.lastSnapBypass = snap.bypass;
     im.everHadBypassAutomation = false;
@@ -2139,14 +2242,23 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
 
       double mixv = timelineAt(automation.mix, automation.mixCount, subStart + i, blockFrames,
                                mixCarry);
-      if (automation.mixCount == 0) mixv = snap.mix;
+      if (automation.mixCount == 0) {
+        if (std::isnan(im.mixSmooth)) im.mixSmooth = snap.mix;
+        im.mixSmooth += (snap.mix - im.mixSmooth) * im.smoothAlpha;
+        mixv = im.mixSmooth;
+      } else {
+        im.mixSmooth = mixv;  // automation is already ramped: track it
+      }
       double gain;
       if (automation.levelCount > 0) {
         const double levelDb = timelineAt(automation.level, automation.levelCount,
                                           subStart + i, blockFrames, levelCarry);
         gain = std::exp2(levelDb / 6.020599913279624);
+        im.gainSmooth = gain;
       } else {
-        gain = gainBase;
+        if (std::isnan(im.gainSmooth)) im.gainSmooth = gainBase;
+        im.gainSmooth += (gainBase - im.gainSmooth) * im.smoothAlpha;
+        gain = im.gainSmooth;
       }
       // bypass fade — FRAME-CORRECT (P1.2): the step target is resolved at
       // THIS sample's frame (the event's position, not the block start);
@@ -2667,7 +2779,7 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
     try {
       rep = job.engine->process(inView, static_cast<int>(chunk), outView,
                                 static_cast<int>(outCap), job.curveView, job.consumed);
-    } catch (const std::exception&) {
+    } catch (...) {
       // engine fault: NO I/O on the audio thread (§4.3) — the fault counter
       // + the dry fallback + the chain rebuild are the entire handling
       threw = true;
@@ -2730,7 +2842,7 @@ void RealtimeAdapter::finishJob(Job& job, int64_t historyFloor) {
       job.wetWritten += append;
       job.lane.count += append;
     }
-  } catch (const std::exception&) {
+  } catch (...) {
     im.faults++;
     im.engineExceptions++;  // Task 29: categorized (engine finish() exception)
   }

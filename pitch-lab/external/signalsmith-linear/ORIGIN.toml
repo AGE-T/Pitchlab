@@ -1,0 +1,13 @@
+# Vendored dependency provenance (architecture §J; external/README.md rules).
+
+[[origin]]
+name = "signalsmith-linear"
+version = "0.6.4 (tag 0.6.4, commit de55e6a50ffcf6f8f43f649692d94691c7025151)"
+upstream = "https://github.com/Signalsmith-Audio/linear"
+retrieved = "2026-11-21"
+files = ["fft.h", "stft.h", "linear.h", "approx.h", "include/signalsmith-linear/*.h", "LICENSE.txt", "README.md"]
+excluded_paths = ["platform/ (optional Accelerate/IPP/PFFFT/CMSIS backends — not enabled)", "tests/", "CMakeLists.txt"]
+licence = "MIT, Copyright (c) 2025 Signalsmith Audio — LICENSE.txt verbatim. Permissive — allowed."
+purpose = "FFT/STFT dependency of signalsmith-stretch 1.4.0 (the version pinned by its CMakeLists FetchContent)."
+consumer = "external/signalsmith-stretch (header-only)"
+patches = "none (verbatim)"

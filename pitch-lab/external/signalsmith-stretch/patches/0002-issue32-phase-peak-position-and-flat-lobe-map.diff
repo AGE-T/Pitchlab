@@ -1,0 +1,74 @@
+--- a/signalsmith-stretch.h
++++ b/signalsmith-stretch.h
+@@ -858,6 +858,13 @@
+ 	// Identifies spectral peaks using energy across all channels
+ 	void findPeaks() {
+ 		peaks.resize(0);
++		// After the `rot` pass, input*conj(prevInput) at bin k has phase theta*(peak - k) for a steady partial
++		// (theta = the `rot` pass's per-bin turn), which gives the partial's position more exactly than the
++		// energy centroid below (biased towards bin centres). Only on a new spectrum: otherwise `prevInput` is
++		// the previous `.input`, not rotated, and the phase difference carries no position.
++		const bool phasePeaks = blockProcess.newSpectrum;
++		const Sample peakTheta = (bandToFreq(1) - bandToFreq(0))*Sample(stft.defaultInterval())*Sample(2*M_PI);
++		const Complex peakTurnUp = std::polar(Sample(1), peakTheta), peakTurnDown = std::conj(peakTurnUp);
+ 		
+ 		int start = 0;
+ 		while (start < bands) {
+@@ -870,6 +877,30 @@
+ 					++end;
+ 				}
+ 				Sample avgBand = bandSum/energySum;
++				if (phasePeaks) {
++					int maxB = start;
++					for (int b = start + 1; b < end; ++b) {
++						if (energy[size_t(b)] > energy[size_t(maxB)]) maxB = b;
++					}
++					// Summed over channels: each term's phase is a hop advance, independent of the channel's own phase
++					Complex z = 0;
++					Sample zSum = 0;
++					for (int c = 0; c < channels; ++c) {
++						Band *channelBins = bandsForChannel(c);
++						for (int k = std::max(0, maxB - 1); k <= std::min(bands - 1, maxB + 1); ++k) {
++							Complex zk = _impl::mul<true>(channelBins[k].input, channelBins[k].prevInput);
++							zSum += std::abs(zk);
++							if (k < maxB) zk = _impl::mul(zk, peakTurnDown);
++							if (k > maxB) zk = _impl::mul(zk, peakTurnUp);
++							z += zk;
++						}
++					}
++					if (std::abs(z) > Sample(0.5)*zSum && zSum > noiseFloor) { // coherent (a steady partial), else keep the centroid
++						Sample phaseBand = Sample(maxB) + std::arg(z)/peakTheta;
++						// stay inside this region's bins (+-0.5), so neighbouring peaks stay more than one bin apart
++						if (phaseBand > Sample(start) - Sample(0.5) && phaseBand < Sample(end) - Sample(0.5)) avgBand = phaseBand;
++					}
++				}
+ 				Sample avgFreq = bandToFreq(avgBand);
+ 				peaks.emplace_back(Peak{avgBand, freqToBand(mapFreq(avgFreq))});
+ 
+@@ -891,16 +922,24 @@
+ 			outputMap[b] = {b + bottomOffset, 1};
+ 		}
+ 		// Interpolate between points
++		// Every output bin in a peak's main lobe should share that peak's offset, otherwise the lobe's bins advance
++		// at different rates and pull the partial off pitch (the smoothstep's curvature next to a peak is set by the
++		// NEXT peak). So hold each peak's offset flat for roughly the main-lobe half-width either side of it
++		// (smoothingBins/2 = 0.5*N/interval bins) and smoothstep only in between. The flat part is capped at a
++		// quarter of the gap between the two peaks, measured on both the output and the input side.
++		const Sample peakFlatBins = Sample(0.5)*Sample(stft.fftSamples())/Sample(stft.defaultInterval());
+ 		for (size_t p = 1; p < peaks.size(); ++p) {
+ 			const Peak &prev = peaks[p - 1], &next = peaks[p];
+-			Sample rangeScale = 1/(next.output - prev.output);
++			Sample flat = std::min(peakFlatBins, std::min(next.output - prev.output, next.input - prev.input)*Sample(0.25));
++			Sample rangeStart = prev.output + flat;
++			Sample rangeScale = 1/(next.output - prev.output - 2*flat);
+ 			Sample outOffset = prev.input - prev.output;
+ 			Sample outScale = next.input - next.output - prev.input + prev.output;
+ 			Sample gradScale = outScale*rangeScale;
+ 			int startBin = std::max(0, static_cast<int>(std::ceil(prev.output)));
+ 			int endBin = std::min(bands, static_cast<int>(std::ceil(next.output)));
+ 			for (int b = startBin; b < endBin; ++b) {
+-				Sample r = (b - prev.output)*rangeScale;
++				Sample r = std::min(std::max((Sample(b) - rangeStart)*rangeScale, Sample(0)), Sample(1));
+ 				Sample h = r*r*(3 - 2*r);
+ 				Sample outB = b + outOffset + h*outScale;
+ 				

@@ -29,7 +29,7 @@
 // deterministic iteration order everywhere).
 //
 // Determinism: parsing is a pure function of the input text; no locale use
-// (number parsing is hand-rolled, NOT strtod-with-locale), no time, no
+// (number conversion uses std::from_chars — locale-independent), no time, no
 // randomness. Same input => same value tree, always.
 
 #include <cstdint>

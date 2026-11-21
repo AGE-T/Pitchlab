@@ -9,7 +9,9 @@
 
 #include <atomic>
 #include <chrono>
+#include <algorithm>
 #include <cmath>
+#include <string>
 #include <cstring>
 #include <thread>
 #include <vector>
@@ -104,8 +106,18 @@ TEST_CASE("all five engines produce wet audio without faults") {
     CHECK(r.status.reprepares >= 1);  // the initial chain built
     // audible wet: the settled output is well above silence
     CHECK(rmsDb(r.out[0], settle, end) > -50.0);
-    // stereo channels identical (same input both channels)
-    CHECK(std::memcmp(r.out[0].data(), r.out[1].data(), r.out[0].size() * sizeof(double)) == 0);
+    // stereo channels identical (same input both channels). native.signalsmith
+    // links the channels' phase handling inside the library: near-identical
+    // (measured <= 1.6e-4, -76 dB), not bit-identical.
+    if (std::string(engineIdForIndex(engine)) == "native.signalsmith") {
+      double maxDiff = 0.0;
+      for (std::size_t i = 0; i < r.out[0].size(); ++i) {
+        maxDiff = std::max(maxDiff, std::fabs(r.out[0][i] - r.out[1][i]));
+      }
+      CHECK(maxDiff < 1e-3);
+    } else {
+      CHECK(std::memcmp(r.out[0].data(), r.out[1].data(), r.out[0].size() * sizeof(double)) == 0);
+    }
   }
 }
 

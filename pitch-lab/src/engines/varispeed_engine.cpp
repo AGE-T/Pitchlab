@@ -135,7 +135,7 @@ class VarispeedEngine final : public PitchEngine {
     const double* ratio = ctx.curve->ratio;
     double rMin = ratio[0];
     double rMax = ratio[0];
-    for (FrameCount i = 1; i < ctx.totalInputFrames; ++i) {
+    for (FrameCount i = 0; i < ctx.totalInputFrames; ++i) {  // audit fix: frame 0 included
       const double v = ratio[static_cast<std::size_t>(i)];
       if (!std::isfinite(v) || v <= 0.0) {
         throw ConfigError("", "curve", "curve ratio at frame " + std::to_string(i) +

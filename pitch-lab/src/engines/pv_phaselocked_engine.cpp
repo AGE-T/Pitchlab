@@ -131,9 +131,9 @@ class PvPhaseLockedEngine final : public PitchEngine {
     fftSize_ = kDefaultFftSize;
     if (const ParameterValue* v = cfg.find("fft_size")) {
       if (const auto* i = std::get_if<int64_t>(v)) {
-        if (*i < 32 || (*i & (*i - 1)) != 0) {
+        if (*i < 32 || *i > (int64_t{1} << 20) || (*i & (*i - 1)) != 0) {
           throw ConfigError("", "fft_size",
-                            "fft_size must be a power of two >= 32 (§6.4.1 item 1)");
+                            "fft_size must be a power of two in [32, 2^20] (§6.4.1 item 1; audit: upper bound)");
         }
         fftSize_ = *i;
       } else {

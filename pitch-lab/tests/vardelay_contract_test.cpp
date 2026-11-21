@@ -331,6 +331,19 @@ TEST_CASE_FIXTURE(Fixture, "T-E6: byte-identical repeated rendering") {
     std::string::size_type p;
     while ((p = m1.find(needle1)) != std::string::npos) m1.replace(p, needle1.size(), "<ROOT>");
     while ((p = m2.find(needle2)) != std::string::npos) m2.replace(p, needle2.size(), "<ROOT>");
+    // Windows: the manifest records the NATIVE path, JSON-escaped
+    // ("C:\Users\..."), which generic_string() ('/') never matches.
+    auto jsonEscaped = [](std::string v) {
+      std::string o;
+      for (char ch : v) {
+        if (ch == '\\') o += "\\\\"; else o += ch;
+      }
+      return o;
+    };
+    const std::string nat1 = jsonEscaped(tr.root.string());
+    const std::string nat2 = jsonEscaped(tr2.root.string());
+    while ((p = m1.find(nat1)) != std::string::npos) m1.replace(p, nat1.size(), "<ROOT>");
+    while ((p = m2.find(nat2)) != std::string::npos) m2.replace(p, nat2.size(), "<ROOT>");
     CHECK(m1 == m2);
     std::printf("T-E6: WAV sha256 identical across roots; manifest identical after path "
                 "normalisation\n");

@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <vector>
 
 #include "pluginterfaces/base/funknown.h"
 #include "pluginterfaces/base/ibstream.h"
@@ -132,13 +133,21 @@ tresult PLUGIN_API PitchLabProcessor::initialize(FUnknown* context) {
 
   initialized_ = true;
   publishSnapshot();
+  // main thread: the editor-independent latency-notification poll
+  latencyTimer_ = Steinberg::owned(Steinberg::Timer::create(this, kLatencyPollMs));
   return kResultOk;
 }
 
 tresult PLUGIN_API PitchLabProcessor::terminate() {
+  if (latencyTimer_) {
+    latencyTimer_->stop();
+    latencyTimer_ = nullptr;
+  }
   adapter_.deactivate();
   return SingleComponentEffect::terminate();
 }
+
+void PitchLabProcessor::onTimer(Steinberg::Timer* /*timer*/) { pollAndNotifyLatency(); }
 
 // ---------------------------------------------------------------------------
 // State (full parameter set, versioned)
@@ -147,13 +156,17 @@ tresult PLUGIN_API PitchLabProcessor::terminate() {
 namespace {
 const char kStateMagicV1[4] = {'P', 'L', 'V', '1'};
 const char kStateMagicV2[4] = {'P', 'L', 'V', '2'};
+// PLV3 (2026-11): same layout as V2; written since the engine list grew to
+// 8 entries (native.world, native.signalsmith) — V2 kEngine values are
+// re-mapped from the 6-engine normalisation on load.
+const char kStateMagicV3[4] = {'P', 'L', 'V', '3'};
 constexpr int32_t kMaxStateParams = 256;
 }  // namespace
 
 tresult PLUGIN_API PitchLabProcessor::getState(IBStream* state) {
   if (state == nullptr) return kInvalidArgument;
   int32 written = 0;
-  if (state->write(const_cast<char*>(kStateMagicV2), 4, &written) != kResultOk ||
+  if (state->write(const_cast<char*>(kStateMagicV3), 4, &written) != kResultOk ||
       written != 4) {
     return kResultFalse;
   }
@@ -191,7 +204,8 @@ tresult PLUGIN_API PitchLabProcessor::setState(IBStream* state) {
   }
   const bool isV1 = (std::memcmp(magic, kStateMagicV1, 4) == 0);
   const bool isV2 = (std::memcmp(magic, kStateMagicV2, 4) == 0);
-  if (!isV1 && !isV2) {
+  const bool isV3 = (std::memcmp(magic, kStateMagicV3, 4) == 0);
+  if (!isV1 && !isV2 && !isV3) {
     return kResultFalse;
   }
   int32_t count = 0;
@@ -199,6 +213,16 @@ tresult PLUGIN_API PitchLabProcessor::setState(IBStream* state) {
       read != static_cast<int32>(sizeof(count)) || count < 0 || count > kMaxStateParams) {
     return kResultFalse;
   }
+  // Audit fix: parse the WHOLE state into a temporary first and commit only
+  // when it is complete and valid — a truncated/malformed stream used to be
+  // half-applied (controller showed partial values, audio kept the old
+  // snapshot).
+  struct Entry {
+    uint32_t tag;
+    double norm;
+  };
+  std::vector<Entry> entries;
+  entries.reserve(static_cast<std::size_t>(count));
   for (int32_t i = 0; i < count; ++i) {
     uint32_t tag = 0;
     double norm = 0.0;
@@ -216,7 +240,7 @@ tresult PLUGIN_API PitchLabProcessor::setState(IBStream* state) {
     if (isV1) {
       // Legacy PLV1 state migration:
       // - kPitch was normalised over [-12.0, +12.0] (24 st span) instead of [-48.0, +48.0]
-      // - kEngine was normalised over 5 engines (0..4, stepCount = 4) instead of 6 (0..5)
+      // - kEngine was normalised over 5 engines (0..4, stepCount = 4)
       if (tag == param::kPitch) {
         const double plainV1 = -12.0 + norm * 24.0;
         norm = normalise(param::kPitch, plainV1);
@@ -224,9 +248,17 @@ tresult PLUGIN_API PitchLabProcessor::setState(IBStream* state) {
         const double plainV1 = std::floor(norm * 4.0 + 0.5);
         norm = normalise(param::kEngine, plainV1);
       }
+    } else if (isV2 && tag == param::kEngine) {
+      // PLV2: kEngine was normalised over 6 engines (0..5, stepCount = 5);
+      // the engine indices themselves are unchanged (new engines append).
+      const double plainV2 = std::floor(norm * 5.0 + 0.5);
+      norm = normalise(param::kEngine, plainV2);
     }
-    if (Parameter* p = parameters.getParameter(tag)) {
-      p->setNormalized(norm);
+    entries.push_back({tag, norm});
+  }
+  for (const Entry& e : entries) {
+    if (Parameter* p = parameters.getParameter(e.tag)) {
+      p->setNormalized(e.norm);
     }
   }
   publishSnapshot();
@@ -568,6 +600,7 @@ void PitchLabProcessor::collectBlockAutomation(ProcessData& data, int32_t blockF
       int32 sampleOffset = 0;
       ParamValue value = 0.0;
       if (queue->getPoint(pt, sampleOffset, value) != kResultOk) continue;
+      if (!std::isfinite(value)) continue;  // audit fix: drop NaN/Inf host points
       // defensive clamp into the block (a legal host sends [0, numSamples-1])
       if (sampleOffset < 0) sampleOffset = 0;
       if (blockFrames > 0 && sampleOffset >= blockFrames) sampleOffset = blockFrames - 1;

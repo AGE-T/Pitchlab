@@ -286,6 +286,12 @@ int main(int argc, char** argv) {
       {"vardelay_percussive_p7", 1, 7.0, 0.0, 0.0, 1.0},
       {"granular_percussive_p7", 4, 7.0, 0.0, 0.0, 1.0},
       {"varispeed_percussive_p7", 0, 7.0, 0.0, 0.0, 1.0},
+      // 2026-11: the external DSP integrations (indices 6, 7)
+      {"world_harmstack_p5", 6, 5.0, 0.0, 0.0, 1.0},
+      {"world_vibratosaw_m5_lfo", 6, -5.0, 5.0, 0.5, 1.0},
+      {"signalsmith_harmstack_p5", 7, 5.0, 0.0, 0.0, 1.0},
+      {"signalsmith_vibratosaw_m5_lfo", 7, -5.0, 5.0, 0.5, 1.0},
+      {"signalsmith_percussive_p7", 7, 7.0, 0.0, 0.0, 1.0},
   };
 
   int failures = 0;

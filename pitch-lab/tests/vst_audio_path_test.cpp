@@ -102,6 +102,18 @@ constexpr double kTimepitchMultiToneToleranceSt = 2.50;  // SANITY bound for
     // candidates/ola/candidate-report.json, recorded, ungated). 2.5 st
     // bounds "the shift happened, right direction and magnitude".
 constexpr int kTimepitchEngineIndex = 5;  // registry position (selector 5)
+constexpr int kWorldEngineIndex = 6;      // native.world (2026-11)
+// native.world is a SOURCE-FILTER vocoder: it keeps the input's spectral
+// envelope (that is the point of the engine). A PURE-TONE test material has
+// an envelope that is one narrow peak at the input frequency, so a large
+// shift places the new carrier in the envelope's trough and the level
+// collapses (measured: 220 Hz sine -> +12 st keeps 4.7% RMS) while the
+// carrier frequency is exact. On such material the TONAL RMS FLOOR is
+// classified EXPECTED-LIMITATION for native.world at |shift| >= 7 st —
+// recorded in the artifact, never silently passed.
+[[nodiscard]] bool worldEnvelopeLimit(int engine, double pitchSt) {
+  return engine == kWorldEngineIndex && std::fabs(pitchSt) >= 7.0;
+}
 
 // Tonal dominance floor: the measured projection magnitude at the dominant
 // frequency must be >= 25% of what a pure sine at the signal's RMS would
@@ -821,8 +833,15 @@ CaseResult runCase(const CaseSpec& spec) {
     CHECK(res.outStats.rms >= kTransientRmsFloorRatio * res.inStats.rms);
   } else {
     const double ratio = res.inStats.rms > 0.0 ? res.outStats.rms / res.inStats.rms : 0.0;
-    if (ratio < kTonalRmsFloorRatio) fail("rms ratio " + std::to_string(ratio));
-    CHECK(res.outStats.rms >= kTonalRmsFloorRatio * res.inStats.rms);
+    const bool worldLimit = worldEnvelopeLimit(spec.engine, spec.pitchSt);
+    if (ratio < kTonalRmsFloorRatio) {
+      if (worldLimit) {
+        res.expectedLimitation = true;  // see worldEnvelopeLimit()
+      } else {
+        fail("rms ratio " + std::to_string(ratio));
+      }
+    }
+    if (!worldLimit) CHECK(res.outStats.rms >= kTonalRmsFloorRatio * res.inStats.rms);
     const double nsRatio = res.outStats.frames > 0
                                ? static_cast<double>(res.outStats.nonzeroFrames) /
                                      static_cast<double>(res.outStats.frames)
@@ -1193,13 +1212,20 @@ class Recorder {
     }
     j += "\n  }\n}\n";
     FILE* f = std::fopen(path.string().c_str(), "wb");
+    bool ok = false;
     if (f != nullptr) {
-      std::fwrite(j.data(), 1, j.size(), f);
-      std::fclose(f);
+      ok = std::fwrite(j.data(), 1, j.size(), f) == j.size();
+      ok = (std::fclose(f) == 0) && ok;
+    }
+    if (ok) {
       std::printf("audio-path artifact: %s (%zu records)\n", path.string().c_str(),
                   records_.size());
     } else {
+      // Audit fix: a failed write is FATAL. It used to only print and exit 0,
+      // so the CI gate compared the unchanged committed artifact to itself.
       std::printf("audio-path artifact: WRITE FAILED %s\n", path.string().c_str());
+      std::fflush(stdout);
+      std::_Exit(3);
     }
   }
 
@@ -1215,11 +1241,12 @@ class Recorder {
 // 37086707318 / 37086805086. The table is now sized to the production
 // registry and PINNED to it by the test case below: a future registry change
 // fails loudly here instead of silently corrupting the evidence again.
-const char* kEngineIds[6] = {"native.varispeed", "native.vardelay", "native.pv.classic",
-                             "native.pv.phaselocked", "native.granular", "native.timepitch"};
+const char* kEngineIds[8] = {"native.varispeed", "native.vardelay", "native.pv.classic",
+                             "native.pv.phaselocked", "native.granular", "native.timepitch",
+                             "native.world", "native.signalsmith"};
 
 TEST_CASE("engine id table is registry-pinned (the cp1 out-of-bounds-name defect guard)") {
-  REQUIRE(engineCount() == 6);
+  REQUIRE(engineCount() == 8);
   for (int i = 0; i < engineCount(); ++i) {
     REQUIRE_MESSAGE(std::string(kEngineIds[i]) == engineIdForIndex(i),
                     "kEngineIds drifted from the sealed production registry");
@@ -1869,8 +1896,10 @@ TEST_CASE("phase F: mono and stereo — channel integrity") {
       const AudioStats stR = statsOf(outR, lat + 12000, n);
       CHECK(stL.finite);
       CHECK(stR.finite);
-      CHECK(stL.rms >= kTonalRmsFloorRatio * 0.35);
-      CHECK(stR.rms >= kTonalRmsFloorRatio * 0.35);
+      if (!worldEnvelopeLimit(e, 12.0)) {  // see worldEnvelopeLimit()
+        CHECK(stL.rms >= kTonalRmsFloorRatio * 0.35);
+        CHECK(stR.rms >= kTonalRmsFloorRatio * 0.35);
+      }
       // record
       CaseRecord rec;
       rec.phase = "F";

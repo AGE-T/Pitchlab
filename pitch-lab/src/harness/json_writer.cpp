@@ -1,5 +1,6 @@
 #include "harness/json_writer.h"
 
+#include <charconv>
 #include <cmath>
 #include <cstdio>
 
@@ -33,9 +34,12 @@ void appendEscapedString(std::string& out, const std::string& s) {
 void appendDouble(std::string& out, double d) {
   // %.17g: round-trip exact for double; deterministic output (no locale use
   // — snprintf with a literal format and no thousands separators).
+  // audit fix: std::to_chars with general/17 is specified to produce the
+  // SAME characters as printf("%.17g") in the "C" locale — byte-identical to
+  // the previous output, but immune to a host process's LC_NUMERIC.
   char buf[64];
-  std::snprintf(buf, sizeof(buf), "%.17g", d);
-  out += buf;
+  const auto r = std::to_chars(buf, buf + sizeof(buf), d, std::chars_format::general, 17);
+  out.append(buf, r.ptr);
 }
 
 void serializeInto(std::string& out, const Value& v, int indent) {

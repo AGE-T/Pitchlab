@@ -95,13 +95,15 @@ int main() {
     pitchlab::EngineRegistry registry;
     pitchlab::registerProductionEngines(registry);
     registry.seal();
-    CHECK(registry.size() == 6);  // the five v0.1 engines + native.timepitch
+    CHECK(registry.size() == 8);  // the five v0.1 engines + native.timepitch + world + signalsmith
     CHECK(std::string(registry.at(0).info.id) == "native.varispeed");       // §14 order
     CHECK(std::string(registry.at(1).info.id) == "native.vardelay");
     CHECK(std::string(registry.at(2).info.id) == "native.pv.classic");
     CHECK(std::string(registry.at(3).info.id) == "native.pv.phaselocked");
     CHECK(std::string(registry.at(4).info.id) == "native.granular");
     CHECK(std::string(registry.at(5).info.id) == "native.timepitch");       // task 33, index 5
+    CHECK(std::string(registry.at(6).info.id) == "native.world");           // 2026-11, index 6
+    CHECK(std::string(registry.at(7).info.id) == "native.signalsmith");     // 2026-11, index 7
     const pitchlab::EngineDescriptor* d = registry.findById("native.varispeed");
     CHECK(d != nullptr);
     CHECK(d->factory != nullptr);

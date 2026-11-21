@@ -186,6 +186,16 @@ class TimePitchEngine final : public PitchEngine {
     maxBlock_ = ctx.maxBlockFrames;
     nIn_ = ctx.totalInputFrames;
     curve_ = *ctx.curve;
+    // Audit fix: every other engine rejects a non-finite / non-positive
+    // ratio at prepare(); timepitch silently substituted 0.5 for <= 0 and
+    // let NaN through (an infinite analysis advance -> UB on the cast).
+    for (FrameCount i = 0; i < curve_.frames; ++i) {
+      const double r = curve_.ratio[static_cast<std::size_t>(i)];
+      if (!std::isfinite(r) || r <= 0.0) {
+        throw ConfigError("", "curve", "curve ratio at frame " + std::to_string(i) +
+                                           " is non-finite or non-positive (§4.4.1)");
+      }
+    }
     hs_ = windowFrames_ / overlap_;
     window_ = makeWindow(windowFrames_, shape_);
 

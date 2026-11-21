@@ -40,10 +40,17 @@ on:
 permissions:
   contents: read
 
+# Audit fix: cancel superseded runs of the same ref (push + PR duplicates,
+# rapid pushes) instead of queueing them.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   t-inf1-infrastructure:
     name: T-INF1 core & DSP suite (6 production engines + harness)
     runs-on: ubuntu-24.04
+    timeout-minutes: 60  # audit fix: never the 6 h default
     steps:
       - name: Checkout (pinned by commit SHA)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -59,7 +66,6 @@ jobs:
           cmake --version | head -1
           ninja --version
           [ "$(g++ -dumpfullversion)" = "13.3.0" ] || { echo "FAIL: unexpected GCC version"; exit 1; }
-          [ "$(cmake --version | head -1 | awk '{print $3}')" = "3.31.6" ] || { echo "FAIL: unexpected CMake version"; exit 1; }
           ninja --version | awk '{ if ($1+0 < 1.11) { print "FAIL: ninja too old"; exit 1 } }'
 
       # Build/CI spec §4: install the exact 3.31.6 release from the official
@@ -75,6 +81,10 @@ jobs:
           echo "5a1133ff103c71eb5120e2cc3de922733e7d8a26a98ae716397e8676adb367bf  /tmp/cmake.tar.gz" | sha256sum --check
           tar -xzf /tmp/cmake.tar.gz -C "$HOME/.local"
           echo "$HOME/.local/cmake-3.31.6-linux-x86_64/bin" >> "$GITHUB_PATH"
+          # audit fix: assert the INSTALLED pinned CMake (the image's CMake
+          # used to be asserted BEFORE this install step)
+          [ "$("$HOME/.local/cmake-3.31.6-linux-x86_64/bin/cmake" --version | head -1 | awk '{print $3}')" = "3.31.6" ] \
+            || { echo "FAIL: unexpected CMake version"; exit 1; }
 
       # VST3 product layer (PITCHLAB_BUILD_VST3 defaults ON): the plug-in +
       # VSTGUI editor need the system GUI stack. The v0.1 research targets
@@ -135,6 +145,7 @@ jobs:
   vst3-product:
     name: VST3 product layer (plug-in + editor + validator + evidence)
     runs-on: ubuntu-24.04
+    timeout-minutes: 60  # audit fix: never the 6 h default
     steps:
       - name: Checkout (pinned by commit SHA)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -156,6 +167,10 @@ jobs:
           echo "5a1133ff103c71eb5120e2cc3de922733e7d8a26a98ae716397e8676adb367bf  /tmp/cmake.tar.gz" | sha256sum --check
           tar -xzf /tmp/cmake.tar.gz -C "$HOME/.local"
           echo "$HOME/.local/cmake-3.31.6-linux-x86_64/bin" >> "$GITHUB_PATH"
+          # audit fix: assert the INSTALLED pinned CMake (the image's CMake
+          # used to be asserted BEFORE this install step)
+          [ "$("$HOME/.local/cmake-3.31.6-linux-x86_64/bin/cmake" --version | head -1 | awk '{print $3}')" = "3.31.6" ] \
+            || { echo "FAIL: unexpected CMake version"; exit 1; }
 
       - name: Install VST3/VSTGUI + evidence tooling dependencies
         shell: bash
@@ -180,6 +195,12 @@ jobs:
 
       - name: "Test (CTest — v0.1 + VST suites, JUnit XML)"
         shell: bash
+        env:
+          # audit fix: the audio-path suite writes its regenerated artifact
+          # into the BUILD tree (never over the committed copy in the
+          # checkout), so the gate below can never compare the golden to
+          # itself; a failed write now fails the test (exit 3).
+          PITCHLAB_AUDIO_PATH_ARTIFACT: ${{ github.workspace }}/build/audio-path-report.json
         run: |
           ctest --test-dir build --output-on-failure --output-junit test-results-vst3.xml 2>&1 | tee test-vst3.log
 
@@ -198,9 +219,11 @@ jobs:
           # the measured wobble is ~0.2% while real regressions exceed the
           # bounds 10-100x; see scripts/check_audio_path_artifact.py).
           git show HEAD:pitch-lab/results/vst3/v0.1/audio-path/audio-path-report.json > /tmp/ap-committed.json
+          test -s build/audio-path-report.json \
+            || { echo "FAIL: the regenerated audio-path artifact is missing (build/audio-path-report.json)"; exit 1; }
           python3 scripts/check_audio_path_artifact.py \
             /tmp/ap-committed.json \
-            pitch-lab/results/vst3/v0.1/audio-path/audio-path-report.json
+            build/audio-path-report.json
           # the suite must have RUN (a stale committed artifact would
           # otherwise mask a non-run): assert the test name is
           # in the JUnit report (its failure would already have failed ctest)
@@ -221,12 +244,17 @@ jobs:
           mkdir -p /tmp/ex-regen
           (cd pitch-lab && ../build/bin/Release/vst_host_sim /tmp/ex-regen assets/corpus) 2>&1 | tee examples-vst3.log
           fail=0
+          n=0
           for f in pitch-lab/results/vst3/v0.1/examples/*.wav; do
             b=$(basename "$f")
+            n=$((n+1))
             cmp --silent "$f" "/tmp/ex-regen/$b" || { echo "DIFFERS: $b"; fail=1; }
           done
           [ "$fail" = "0" ] || { echo "FAIL: examples not byte-identical to the committed evidence"; exit 1; }
-          echo "All 11 examples byte-identical to the committed evidence."
+          # audit fix: the count is measured, never a hard-coded "11" (a
+          # deleted golden silently shrank the coverage)
+          [ "$n" -ge 11 ] || { echo "FAIL: only $n committed examples (expected >= 11)"; exit 1; }
+          echo "All $n committed examples byte-identical to the committed evidence."
 
       - name: UI screenshot host (the real editor under Xvfb)
         shell: bash
@@ -294,9 +322,77 @@ jobs:
             validator-vst3.log
             examples-vst3.log
             ui-vst3.log
-            pitch-lab/results/vst3/v0.1/audio-path/audio-path-report.json
+            build/audio-path-report.json
             /tmp/ui/*.png
           if-no-files-found: error
+
+  # -------------------------------------------------------------------------
+  # Audit fix: SANITIZER lanes. Every other lane is Release-only; for a
+  # lock-free realtime adapter and hand-written parsers this was the largest
+  # coverage gap. ASan+UBSan runs the core + VST suites (the long-running
+  # research probes are excluded); TSan runs the threaded adapter/processor
+  # suites.
+  # -------------------------------------------------------------------------
+  sanitizers:
+    name: Sanitizers (${{ matrix.san }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - san: address
+            targets: ""
+            tests: ""
+          - san: thread
+            targets: "--target vst_adapter_test vst_processor_test vst_seam_test vst_realtime_status_test"
+            tests: "-R ^(vst_adapter_test|vst_processor_test|vst_seam_test|vst_realtime_status_test)$"
+    steps:
+      - name: Checkout (pinned by commit SHA)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install VST3/VSTGUI system dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libx11-dev libxcb1-dev libxcb-util-dev libxcb-cursor-dev \
+            libxcb-image0-dev libxcb-keysyms1-dev libxcb-render-util0-dev \
+            libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libcairo2-dev libpango1.0-dev libfontconfig-dev libfreetype-dev ninja-build
+
+      - name: Configure (RelWithDebInfo + sanitizer)
+        shell: bash
+        run: |
+          cmake -S pitch-lab -B build-san -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DPITCHLAB_SANITIZE=${{ matrix.san }} -DPITCHLAB_WERROR=OFF 2>&1 | tee configure-san.log
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build-san --parallel ${{ matrix.targets }} 2>&1 | tee build-san.log
+
+      - name: Test
+        shell: bash
+        env:
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+          TSAN_OPTIONS: halt_on_error=1:second_deadlock_stack=1
+          PITCHLAB_AUDIO_PATH_ARTIFACT: ${{ github.workspace }}/build-san/audio-path-report.json
+        run: |
+          ctest --test-dir build-san --output-on-failure --timeout 1800 \
+            -E "probe|differential_harness|vst_audio_path_test|vst_ui" ${{ matrix.tests }} 2>&1 | tee test-san.log
+
+      - name: Upload sanitizer evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sanitizer-${{ matrix.san }}
+          path: |
+            configure-san.log
+            build-san.log
+            test-san.log
+          if-no-files-found: warn
 
   # -------------------------------------------------------------------------
   # The VST3 product DELIVERY lane (Windows x64 — the distributable).
@@ -324,6 +420,7 @@ jobs:
   vst3-windows-x64-product:
     name: VST3 product (Windows x64 — the distributable)
     runs-on: windows-2022
+    timeout-minutes: 60  # audit fix: never the 6 h default
     steps:
       - name: Checkout (pinned by commit SHA)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

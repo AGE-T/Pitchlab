@@ -1,6 +1,10 @@
 :81 {
+	# Audit fix: the port-forwarding query used to proxy ANY client to ANY
+	# localhost port (an open proxy into the host). Restricted to clients on
+	# loopback / private networks.
 	@transform_port_query {
 		query XTransformPort=*
+		remote_ip private_ranges
 	}
 
 	handle @transform_port_query {

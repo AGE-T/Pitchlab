@@ -6,9 +6,11 @@
 #include "engines/granular_engine.h"
 #include "engines/pv_classic_engine.h"
 #include "engines/pv_phaselocked_engine.h"
+#include "engines/signalsmith_engine.h"
 #include "engines/timepitch_engine.h"
 #include "engines/vardelay_engine.h"
 #include "engines/varispeed_engine.h"
+#include "engines/world_engine.h"
 
 namespace pitchlab {
 
@@ -61,6 +63,8 @@ const EngineDescriptor* EngineRegistry::findById(std::string_view id) const {
 //   5. "native.granular"        Prototype, creative-leaning, Preserving, per-grain hop (§6.5/§6.5.1)
 //   6. "native.timepitch"       Prototype, Task28 unification (§6.6/§6.6.1), mode-scoped
 //                              Preserving/RateFollowing, per-mode control rate
+//   7. "native.world"           ExternalIntegration, WORLD v1.0.1 vocoder (chunked, worker thread)
+//   8. "native.signalsmith"     ExternalIntegration, Signalsmith Stretch 1.4.0 (spectral)
 //
 // Registry content == implemented engines, always — asserted by the
 // engine_registry_smoke test (T-E19: exactly these six, constructible
@@ -75,6 +79,10 @@ void registerProductionEngines(EngineRegistry& registry) {
   registry.registerEngine(pvPhaseLockedEngineDescriptor());
   registry.registerEngine(granularEngineDescriptor());
   registry.registerEngine(timePitchEngineDescriptor());
+  // 2026-11: the external DSP integrations (vendored, see external/*/ORIGIN.toml).
+  // APPENDED (indices 6, 7) — the existing selector indices never move.
+  registry.registerEngine(worldEngineDescriptor());
+  registry.registerEngine(signalsmithEngineDescriptor());
 }
 
 }  // namespace pitchlab

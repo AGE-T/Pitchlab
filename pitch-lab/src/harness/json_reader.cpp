@@ -1,5 +1,7 @@
 #include "harness/json_reader.h"
 
+#include <charconv>
+#include <system_error>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -227,10 +229,12 @@ class Parser {
         return Value(static_cast<int64_t>(v));
       }
     }
-    errno = 0;
-    char* end = nullptr;
-    const double d = std::strtod(token.c_str(), &end);
-    if (errno != 0 || end == nullptr || *end != '\0') {
+    // audit fix: locale-independent (std::from_chars)
+    double d = 0.0;
+    const char* first = token.data();
+    const char* last = token.data() + token.size();
+    const auto r = std::from_chars(first, last, d, std::chars_format::general);
+    if (r.ec != std::errc() || r.ptr != last) {
       fail("bad number '" + token + "'");
     }
     return Value(d);

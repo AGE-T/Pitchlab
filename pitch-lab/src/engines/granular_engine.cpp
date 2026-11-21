@@ -73,9 +73,9 @@ class GranularEngine final : public PitchEngine {
     grainSeconds_ = kDefaultGrainSeconds;
     if (const ParameterValue* v = cfg.find("grain_seconds")) {
       if (const auto* d = std::get_if<double>(v)) {
-        if (!std::isfinite(*d) || *d <= 0.0) {
+        if (!std::isfinite(*d) || *d <= 0.0 || *d > 10.0) {
           throw ConfigError("", "grain_seconds",
-                            "grain_seconds must be finite and > 0 (§6.5.1 item 1)");
+                            "grain_seconds must be finite and in (0, 10] s (§6.5.1 item 1; audit: upper bound)");
         }
         grainSeconds_ = *d;
       } else {
@@ -85,6 +85,10 @@ class GranularEngine final : public PitchEngine {
     overlap_ = kDefaultOverlap;
     if (const ParameterValue* v = cfg.find("overlap")) {
       if (const auto* i = std::get_if<int64_t>(v)) {
+        if (*i > 65536) {
+          throw ConfigError("", "overlap",
+                            "overlap must be <= 65536 (audit: upper bound)");
+        }
         if (*i < 4) {
           throw ConfigError("", "overlap",
                             "overlap must be >= 4 (§6.5 sheet: G < 4·Hg is invalid; §6.5.1 item 1)");
@@ -109,8 +113,8 @@ class GranularEngine final : public PitchEngine {
     jitterFrames_ = 0;
     if (const ParameterValue* v = cfg.find("jitter_frames")) {
       if (const auto* i = std::get_if<int64_t>(v)) {
-        if (*i < 0) {
-          throw ConfigError("", "jitter_frames", "jitter_frames must be >= 0 (§6.5.1 item 1)");
+        if (*i < 0 || *i > (int64_t{1} << 24)) {
+          throw ConfigError("", "jitter_frames", "jitter_frames must be in [0, 2^24] (§6.5.1 item 1; audit: upper bound)");
         }
         jitterFrames_ = *i;
       } else {
@@ -146,7 +150,7 @@ class GranularEngine final : public PitchEngine {
     // independently reusable: verify while scanning r_max (§6.5.1 item 9).
     const double* ratio = ctx.curve->ratio;
     double rMax = ratio[0];
-    for (FrameCount i = 1; i < ctx.totalInputFrames; ++i) {
+    for (FrameCount i = 0; i < ctx.totalInputFrames; ++i) {  // audit fix: frame 0 included
       const double v = ratio[static_cast<std::size_t>(i)];
       if (!std::isfinite(v) || v <= 0.0) {
         throw ConfigError("", "curve", "curve ratio at frame " + std::to_string(i) +
