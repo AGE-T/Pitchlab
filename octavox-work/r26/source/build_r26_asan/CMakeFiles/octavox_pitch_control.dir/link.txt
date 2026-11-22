@@ -1,0 +1,2 @@
+/usr/bin/ar qc liboctavox_pitch_control.a CMakeFiles/octavox_pitch_control.dir/src/pitch_control.cpp.o
+/usr/bin/ranlib liboctavox_pitch_control.a

@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -fsanitize=address,undefined -Wl,--dependency-file=CMakeFiles/octavox_r20_detcompare.dir/link.d CMakeFiles/octavox_r20_detcompare.dir/cli/r20_detcompare.cpp.o -o octavox_r20_detcompare  liboctavox_dsp.a liboctavox_pitch_control.a

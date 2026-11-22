@@ -2,12 +2,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { ReportViewer } from "../components/report-viewer";
 
-// R25 (current): the complete internal DSP chain of the ORIGINAL Octavox
-// VST3 — static RE map (in Hungarian) — leads the viewer, prefaced by the
-// R25 executive summary (R25_OSSZEFOGLALO.md). They are followed by the
-// R24-W Windows delivery findings, the R24 SIMD benchmark decision record,
-// and the archived R23 YIN research document. The R25 DSP-chain research
-// package is the primary DELIVERY card below; R24-W stays second.
+// R26 (current): the batched interpolated-read kernel round (SIMD
+// read4 + the cross-voice pooled batched voice path, bit-exact, 115/115
+// Release+ASan) leads the viewer, followed by the R25 executive summary
+// and the full original-DSP-chain map, the R24-W Windows delivery
+// findings, the R24 SIMD benchmark decision record, and the archived
+// R23 YIN research document. The R25 DSP-chain research package remains
+// the primary DELIVERY card below (R26's source+evidence package is the
+// second card); R24-W stays third.
+const ROUND26_FINDINGS =
+  "/home/z/my-project/octavox-work/r26/PITCHLAB_R26_FINDINGS.md";
 const ROUND25_SUMMARY =
   "/home/z/my-project/octavox-work/r25/R25_OSSZEFOGLALO.md";
 const ROUND25_CHAIN =
@@ -30,6 +34,12 @@ const DELIVERIES: {
   note: string;
   chips: string;
 }[] = [
+  {
+    name: "PitchLab_R26_SIMD_ReadKernel_Package.zip",
+    title: "R26 LESZÁLLÍTÁS — a batchelt interpolált olvasási kör (bit-exakt SIMD read-kernel + pooled voice-út)",
+    note: "A 26. kör: a voice_loop/interp_reads kézbesítés (a 8-hangos AVX2-profil megmaradó 64%+27%-a). Ami a csomagban van: a mért döntési rekord (PITCHLAB_R26_FINDINGS.md — a lane-per-read AVX2 kernel bizonyítása, a cross-voice request pool architektúra, a kapuk és a mért eredmények), a teljes forrás-delta (simd.hpp, simd_dispatch.cpp, simd_avx2.cpp, dsp.cpp, tests, a új interp_tables.hpp, a read4_timing probe, CMakeLists), és a benchmark-bizonyítékfák (g1–g7: stage-mátrixok szkalár/AVX2 v1+v2, a 13-ases bench-mátrix ×3 futtatás, ASan). Eredmények őszintén: 115/115 Release + ASan (5 új R26-kapu: kernel bitexact memcmp, churn-bet-identity bájtonként, FMA churn-closeness, long-run + re-prepare handover, 0 allokáció); a kernel ~2,2× olvasásonként (közvetlen timing, 4 interpolációs mód); a termelési 8-hangos fal +1–2% — Amdahl: a fal most a soros voice-állapotgép (a stage-NET műszer az olvasás-aritmetika összeomlását mutatja; az R27-jelölt rögzítve). A hang-út minden SIMD-szinten bit-exakt az Scalar referenciához (READS NEVER FUSE — az FMA-szint az AVX2 read-kernelét használja újra).",
+    chips: "115/115 · kernel 2,2× · bit-exakt",
+  },
   {
     name: "PitchLab_R25_DSP_Chain_Research_Package.zip",
     title: "R25 LESZÁLLÍTÁS — az eredeti Octavox VST3 teljes belső DSP-lánc-térképe + összefoglaló",
@@ -86,6 +96,10 @@ function readFirstExisting(paths: string[]): string | null {
 }
 
 function readMarkdown(): string {
+  const r26Findings = readFirstExisting([
+    ROUND26_FINDINGS,
+    path.join(process.cwd(), "PITCHLAB_R26_FINDINGS.md"),
+  ]);
   const r25Summary = readFirstExisting([
     ROUND25_SUMMARY,
     path.join(process.cwd(), "R25_OSSZEFOGLALO.md"),
@@ -104,7 +118,14 @@ function readMarkdown(): string {
   ]);
   const r23 = readFirstExisting([ROUND23_PATH, ROUND23_ALT, LOCAL_FALLBACK]);
   const parts: string[] = [];
-  if (r25Summary) parts.push(r25Summary.trim()); // leads the page — keeps its H1
+  if (r26Findings) parts.push(r26Findings.trim()); // leads the page — keeps its H1
+  if (r25Summary)
+    parts.push(
+      "\n\n---\n\n" +
+        r25Summary
+          .replace(/^# /m, "## ") // demote (r26 findings own the H1)
+          .trim(),
+    );
   if (r25Chain)
     parts.push(
       "\n\n---\n\n" +

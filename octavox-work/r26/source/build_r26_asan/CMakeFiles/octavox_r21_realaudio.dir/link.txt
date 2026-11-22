@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -fsanitize=address,undefined -Wl,--dependency-file=CMakeFiles/octavox_r21_realaudio.dir/link.d CMakeFiles/octavox_r21_realaudio.dir/cli/r21_realaudio.cpp.o CMakeFiles/octavox_r21_realaudio.dir/tests/wav_io.cpp.o -o octavox_r21_realaudio  liboctavox_dsp.a liboctavox_pitch_control.a

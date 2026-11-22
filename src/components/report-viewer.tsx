@@ -79,7 +79,7 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 25 · az EREDETI Octavox VST3 belső DSP-láncának teljes feltárása (statikus RE)" },
+  { label: "Kör", value: "Round 26 · bit-exakt batchelt olvasás-SIMD (read-kernel + pooled voice-út) + az eredeti DSP-lánc teljes térképe" },
   { label: "Lánc", value: "VST3 burkolat → profilok (mimo/miso/siso) → 395-modulos graph → dtonicii9: tracker (12 kHz FIR) + diatonikus harmonia-térkép + 8 hangos változó-rátájú olvasó → keverés → kimenet" },
   { label: "R25-ben lezárva", value: "tracker FIR-együtthatók (3 SR-osztály, bit-exakt felezőlánc) · stereomixer3 PAN-törvény: lineáris konstans-összegű L=0.5(1−p)g, R=0.5(1+p)g" },
   { label: "Kézbesítés", value: "R24-W: két Windows x64 VST3 plugin (Balanced + FullRate) · 110/110 Release+ASan · validátor 47/47 · MSVC-blocked sandboxban (zig cross)" },
@@ -141,7 +141,7 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                PitchLab Research — 25. kör (az eredeti DSP-lánc feltárása)
+                PitchLab Research — 26. kör (bit-exakt SIMD olvasás-kernel + az eredeti DSP-lánc)
               </h1>
               <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm">
                 Az eredeti Eventide Octavox VST3 (Ox.vst3) belső DSP-láncának teljes, evidencia-alapú térképe: a JuceVST3Component→VoxAudioProcessor burkolattól a dtonicii9 motor 8 hangos magjáig (periodicitás-tracker ~12 kHz-en, diatonikus harmonia-térképezés 5 temperamentummal, kvartikus ráta-törvény, 256×6-os statikus kernel), a keverésig és kimenetig — minden cím- és konstanshivatkozással, OBS/DER/UNK besorolással · R25-ben lezárva a tracker FIR-együtthatói és a stereomixer3 pan-törvénye (lineáris konstans-összegű) · az eredetit sosem futtattuk, minden állítás statikus · Eventide Octavox RE statikus reverzibilis projekt
@@ -392,7 +392,7 @@ export function ReportViewer({
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            PitchLab RE — 25. kör: az eredeti Octavox VST3 belső DSP-láncának
+            PitchLab RE — 26. kör: bit-exakt SIMD read-kernel, majd az eredeti Octavox VST3 belső DSP-láncának
             teljes statikus térképe · a cél binárist sosem futtattuk, minden
             állítás OBS/DER evidencia · forrásfájl:{" "}
             <code className="font-mono">OCTAVOX_ORIGINAL_DSP_CHAIN.md</code> ·

@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/z/my-project/octavox-work/r26/source/build_r26_stages/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
