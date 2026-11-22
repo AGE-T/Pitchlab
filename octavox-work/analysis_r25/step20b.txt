@@ -1,0 +1,52 @@
+===== sr value get region 0x1800d84bc =====
+0x1800d84bc: lea       rcx, [rsp + 0x70]
+0x1800d84c1: cmp       qword ptr [rbp - 0x78], 0x10
+0x1800d84c6: cmovae    rcx, qword ptr [rsp + 0x70]
+0x1800d84cc: mov       r8d, 0xa
+0x1800d84d2: lea       rdx, [rsp + 0x48]
+0x1800d84d7: call      0x18017d338  ; -> 0x18017d338
+0x1800d84dc: mov       ebx, eax
+0x1800d84de: cmp       qword ptr [rbp - 0x80], 0
+0x1800d84e3: jbe       0x1800d8f19
+0x1800d84e9: mov       rax, qword ptr [rsp + 0x48]
+0x1800d84ee: cmp       byte ptr [rax], 0
+0x1800d84f1: jne       0x1800d8f19
+0x1800d84f7: mov       rdx, qword ptr [rbp - 0x78]
+0x1800d84fb: cmp       rdx, 0x10
+0x1800d84ff: jb        0x1800d8533
+0x1800d8501: inc       rdx
+0x1800d8504: mov       rcx, qword ptr [rsp + 0x70]
+0x1800d8509: mov       rax, rcx
+0x1800d850c: cmp       rdx, 0x1000
+0x1800d8513: jb        0x1800d852e
+0x1800d8515: add       rdx, 0x27
+0x1800d8519: mov       rcx, qword ptr [rcx - 8]
+0x1800d851d: sub       rax, rcx
+0x1800d8520: add       rax, -8
+0x1800d8524: cmp       rax, 0x1f
+0x1800d8528: ja        0x1800d8f76
+0x1800d852e: call      0x18015e100  ; -> 0x18015e100
+0x1800d8533: mov       dword ptr [r15 + 0xc], ebx
+0x1800d8537: mov       rdx, qword ptr [rsp + 0x68]
+0x1800d853c: cmp       rdx, 0x10
+0x1800d8540: jb        0x1800d8575
+0x1800d8542: inc       rdx
+0x1800d8545: mov       rcx, qword ptr [rsp + 0x50]
+0x1800d854a: mov       rax, rcx
+0x1800d854d: cmp       rdx, 0x1000
+0x1800d8554: jb        0x1800d856f
+0x1800d8556: add       rdx, 0x27
+0x1800d855a: mov       rcx, qword ptr [rcx - 8]
+0x1800d855e: sub       rax, rcx
+0x1800d8561: add       rax, -8
+0x1800d8565: cmp       rax, 0x1f
+0x1800d8569: ja        0x1800d8f7c
+0x1800d856f: call      0x18015e100  ; -> 0x18015e100
+0x1800d8574: nop       
+0x1800d8575: mov       rdx, qword ptr [rbp - 0x58]
+0x1800d8579: cmp       rdx, 0x10
+0x1800d857d: jb        0x1800d85b0
+0x1800d857f: inc       rdx
+0x1800d8582: mov       rcx, qword ptr [rbp - 0x70]
+0x1800d8586: mov       rax, rcx
+0x1800d858b: cli       

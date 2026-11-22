@@ -1,0 +1,16 @@
+=== R24-v2 MODULE-LEVEL SIMD DISPATCH EVIDENCE (delivered binaries) ===
+2026-11-08T22:22:08Z
+CPU: Intel(R) Xeon(R) Processor; avx2=avx2; fma=fma
+fma
+
+Rule-level (gated by simd_detect_resolve_rules, suite run b2): resolve(Auto)=AVX2 (resolved_auto=1, cpu_avx2=1)
+Default-level (gated by simd_default_auto_neutrality): default engine resolves Level::AVX2 (resolved_level=1) and is bit-identical to explicit-Scalar.
+
+PitchLab_Lagrange6_Balanced.so: AVX2 256-bit register instructions in .text = 115 (incl. vperm* = 0) -> the -mavx2 kernel unit IS linked into the delivered module
+PitchLab_Lagrange6Q.so: AVX2 256-bit register instructions in .text = 115 (incl. vperm* = 0) -> the -mavx2 kernel unit IS linked into the delivered module
+PitchLab_ObsKernel6_Balanced.so: AVX2 256-bit register instructions in .text = 115 (incl. vperm* = 0) -> the -mavx2 kernel unit IS linked into the delivered module
+
+Chain: the delivered modules embed the identical dispatch TU (simd_dispatch.cpp, baseline ISA) whose
+CPUID gate (__builtin_cpu_supports("avx2")) is proven active by the suite on this machine; the AVX2
+entry points are reachable ONLY through that gate (non-AVX2 hosts execute the scalar kernels).
+Module output identity is level-independent by construction (Auto->AVX2 bit-exact; 8/8 hash gates).

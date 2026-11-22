@@ -1,0 +1,53 @@
+===== FUN_1800d8380 continued (name lookups) 0x1800d8ae2 =====
+0x1800d8ae2: mov       r9, qword ptr [r15 + 0x30]
+0x1800d8ae6: mov       rdx, qword ptr [r15 + 0x28]
+0x1800d8aea: mov       rcx, r9
+0x1800d8aed: sub       rcx, rdx
+0x1800d8af0: sar       rcx, 4
+0x1800d8af4: imul      rcx, rdi
+0x1800d8af8: cmp       r8, rcx
+0x1800d8afb: jae       0x1800d8b0a
+0x1800d8afd: lea       rax, [r8 + r8*2]
+0x1800d8b01: shl       rax, 4
+0x1800d8b05: add       rax, rdx
+0x1800d8b08: jmp       0x1800d8b39
+0x1800d8b0a: jbe       0x1800d8b3d
+0x1800d8b0c: mov       rax, qword ptr [r15 + 0x38]
+0x1800d8b10: sub       rax, rdx
+0x1800d8b13: sar       rax, 4
+0x1800d8b17: imul      rax, rdi
+0x1800d8b1b: cmp       r8, rax
+0x1800d8b1e: jbe       0x1800d8b2e
+0x1800d8b20: mov       rdx, r8
+0x1800d8b23: lea       rcx, [r15 + 0x28]
+0x1800d8b27: call      0x18013fcd0  ; -> 0x18013fcd0
+0x1800d8b2c: jmp       0x1800d8b3d
+0x1800d8b2e: sub       r8, rcx
+0x1800d8b31: mov       rdx, r9
+0x1800d8b34: call      0x18013f320  ; -> 0x18013f320
+0x1800d8b39: mov       qword ptr [r15 + 0x30], rax
+0x1800d8b3d: mov       rdx, qword ptr [rsp + 0x68]
+0x1800d8b42: cmp       rdx, 0x10
+0x1800d8b46: jb        0x1800d8b7a
+0x1800d8b48: inc       rdx
+0x1800d8b4b: mov       rcx, qword ptr [rsp + 0x50]
+0x1800d8b50: mov       rax, rcx
+0x1800d8b53: cmp       rdx, 0x1000
+0x1800d8b5a: jb        0x1800d8b75
+0x1800d8b5c: add       rdx, 0x27
+0x1800d8b60: mov       rcx, qword ptr [rcx - 8]
+0x1800d8b64: sub       rax, rcx
+0x1800d8b67: add       rax, -8
+0x1800d8b6b: cmp       rax, 0x1f
+0x1800d8b6f: ja        0x1800d8fa6
+0x1800d8b75: call      0x18015e100  ; -> 0x18015e100
+0x1800d8b7a: mov       r13d, ebx
+0x1800d8b7d: mov       rcx, qword ptr [r15 + 0x28]
+0x1800d8b81: mov       rax, qword ptr [r15 + 0x30]
+0x1800d8b85: sub       rax, rcx
+0x1800d8b88: sar       rax, 4
+0x1800d8b8c: imul      rax, rdi
+0x1800d8b90: test      rax, rax
+0x1800d8b93: je        0x1800d8d71
+0x1800d8b99: mov       rdx, rbx
+0x1800d8b9c: lea       rax, [r15 + 0x70]

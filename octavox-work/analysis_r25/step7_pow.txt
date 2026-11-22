@@ -1,0 +1,25 @@
+--- callers of pow 0x180351f50: 40
+    func 0x1800c76c0 x1
+    func 0x1800c9122 x1
+    func 0x1800d0f20 x1
+    func 0x1800d8380 x1
+    func 0x1800e13fd x2
+    func 0x1800e1460 x2
+    func 0x1800e1520 x2
+    func 0x1800e5160 x2
+    func 0x1800e5999 x17
+    func 0x1800e7960 x1
+    func 0x1800ed1c0 x1
+    func 0x1800ef966 x1
+    func 0x1800efb93 x1
+    func 0x180136ffc x1
+    func 0x180228ae7 x1
+    func 0x18028eb10 x2
+    func 0x18030b110 x1
+    func 0x18030b1c0 x1
+    func 0x180329f30 x1
+--- callers of logf 0x180352dc0: 6
+    func 0x1800666e0 x2
+    func 0x1800c76c0 x1
+    func 0x1800de7c6 x1
+    func 0x1800e1520 x2

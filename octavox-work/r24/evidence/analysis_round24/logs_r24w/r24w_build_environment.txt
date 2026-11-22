@@ -1,0 +1,111 @@
+R24-WINDOWS BUILD ENVIRONMENT RECORD
+====================================
+Date (UTC): 2026-11-09
+Recorded for: PitchLab_R24_Windows_VST3_Research_Package
+
+SOURCE BASELINE
+  git HEAD at build time : a76b26c (R24-W corrective delta on top of the
+                            R24 baseline ac6612ca4c2ee6ee8941f80eefde8796686a07d7)
+  R24 baseline           : ac6612c  (present and verified in this repository)
+  corrective commit      : edcddd5 (NOT present in this repository -- it was
+                            created in a different environment; the
+                            equivalent delta was re-applied here, narrowly,
+                            as commit a76b26c: Config::simd default
+                            Scalar->Auto + test expectations + comments)
+  working tree           : content-clean vs HEAD (mode bits only)
+
+HOST (build machine)
+  OS                     : Debian 13.4 (trixie), x86-64 Linux sandbox
+  CPU                    : Intel Xeon (virtualized); AVX2+FMA+OSXSAVE
+                            present (explicit CPUID/XCR0 verified:
+                            osxsave=1, xcr0=0x602e7, YMM state saved)
+  compilers (host)       : g++ (Debian 14.2.0-19)
+  build tools            : cmake 4.4.4 (pip), ninja 1.13.2, GNU binutils
+                            2.44 (objdump with pei-x86-64 support)
+
+WINDOWS CROSS TOOLCHAIN (the recorded R21/R22 deviation, unchanged method)
+  toolchain              : Zig 0.13.0 (clang/LLVM 18 frontend, lld,
+                            mingw-w64 headers, STATIC libc++), downloaded
+                            from ziglang.org (zig-linux-x86_64-0.13.0)
+  target                 : x86_64-windows-gnu (PE32+ / COFF x86-64,
+                            Microsoft x64 ABI, ucrt)
+  wrapper scripts        : win-zig/zig-cc.sh, zig-cxx.sh
+                            (zig cc|c++ -target x86_64-windows-gnu)
+  toolchain cmake        : win-zig/zig-win-toolchain.cmake
+                            (CMAKE_SYSTEM_NAME=Windows, MINGW=1,
+                            host ar/ranlib)
+  honesty note           : Visual Studio 2022 / MSVC / the Windows SDK are
+                            NOT AVAILABLE in this Linux sandbox (no wine /
+                            no PE execution). Native MSVC compilation is
+                            BLOCKED here. The zig cross-build produces
+                            genuine PE32+ x64 DLLs with the MS x64 ABI
+                            importing only Windows system DLLs -- the same
+                            recorded toolchain deviation that produced the
+                            accepted R21/R22 Windows x64 deliveries.
+                            Native MSVC rebuild instructions are provided
+                            (build_configuration/README_WINDOWS_BUILD.md)
+                            and all sources are MSVC-ready (per-TU
+                            /arch:AVX2 wiring, intrin.h detection path).
+
+VST3 SDK
+  version                : v3.7.12_build_20 (pinned)
+  main                   : steinbergmedia/vst3sdk @ cc2adc90382dded9e347caf74e4532f1458715db
+  base                   : f0998e7b8424b32ba275cf4218aa56beef29821c
+  cmake                  : 2022b265cdbcd90b37294d3fb397f9766dbe4c06
+  pluginterfaces         : 151ecde4d6ee1c457dcce848342b162461944fe6
+  public.sdk             : 3fce096d6ee575479753f1aab23033d2e2ffdc6e
+  location               : octavox-work/vst3sdk (NOT redistributed inside
+                            this package; see the pinned-SHA acquisition
+                            script source/tools/get_vst3_sdk.sh)
+
+COMPILER FLAGS (Windows module builds, Release)
+  core baseline TUs      : -O3 -DNDEBUG -std=c++17        (dsp.cpp,
+                            pitch_control.cpp, simd_dispatch.cpp)
+  ISA unit               : -O3 -DNDEBUG -std=c++17 -mavx2 -ffp-contract=off
+                            (simd_avx2.cpp -- NO -mfma)
+  ISA unit               : -O3 -DNDEBUG -std=c++17 -mavx2 -mfma -ffp-contract=off
+                            (simd_fma.cpp)
+  module link            : -shared -Wl,--major-image-version,0,
+                            --minor-image-version,0  + system libs
+                            (kernel32 user32 gdi32 winspool shell32 ole32
+                            oleaut32 uuid comdlg32 advapi32)
+  NO global -mavx2/-mfma//arch:AVX2 anywhere (per-TU source properties
+                            only; evidence: ninja -t commands output in
+                            r24w_simd_machinecode_verification.txt)
+
+BUILD DIRECTORIES (separate, clean; no Linux cache reuse)
+  Balanced (Lagrange6 + Decimated):
+    Linux twin  : octavox-work/r24/build_vst3_r24w_bal
+    Windows     : octavox-work/r24/build_win_r24w_bal
+  FullRate (Lagrange6 + FullRate):
+    Linux twin  : octavox-work/r24/build_vst3_r24w_full
+    Windows     : octavox-work/r24/build_win_r24w_full
+  variant defines: OCTAVOX_VST3_INTERP_LAGRANGE6=1 +
+                   OCTAVOX_VST3_DET_DECIMATED=1 | OCTAVOX_VST3_DET_FULLRATE=1
+
+CROSS-BUILD BRIDGES (host-side, documented deviations)
+  moduleinfotool         : the SDK post-build step invokes the PE
+                           moduleinfotool on the Linux host (not
+                           executable). The win-zig/moduleinfotool-host.sh
+                           wrapper is planted at <build>/bin/moduleinfotool.exe
+                           and copies the moduleinfo.json generated by the
+                           IDENTICAL-variant Linux twin build (factory
+                           metadata is a compile-time property of the same
+                           sources + defines).
+  attrib                 : Windows `attrib +s` (Explorer decoration only)
+                           is shimmed as a no-op on the host
+                           (win-zig/host-shims/attrib).
+  validator run          : SMTG_RUN_VST_VALIDATOR=OFF for the cross-builds
+                           (the validator binary is a PE exe; the identical
+                           sources/defines were validator-verified on the
+                           Linux twins -- evidence/vst3_validation/).
+
+DELIVERY BUNDLE NAMING
+  build names            : PitchLab_Lagrange6_Balanced.vst3,
+                           PitchLab_Lagrange6_FullRate.vst3
+  delivery names         : PitchLab_Harmonizer_Balanced.vst3,
+                           PitchLab_Harmonizer_FullRate.vst3
+                           (per the delivery tree spec; the bundle dir, the
+                           inner binary and the moduleinfo "Name" were
+                           renamed consistently; the class IDs, display
+                           names and all other metadata are UNCHANGED)

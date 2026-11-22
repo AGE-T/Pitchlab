@@ -1,0 +1,28 @@
+0x180137720: mov      qword ptr [rsp + 0x10], rbx
+0x180137725: mov      qword ptr [rsp + 0x18], rsi
+0x18013772a: mov      qword ptr [rsp + 8], rcx
+0x18013772f: push     rdi
+0x180137730: sub      rsp, 0x30
+0x180137734: mov      rbx, r8
+0x180137737: mov      rdi, rdx
+0x18013773a: mov      rsi, rcx
+0x18013773d: add      rdx, 0x260
+0x180137744: xor      eax, eax
+0x180137746: test     rdi, rdi
+0x180137749: cmove    rdx, rax
+0x18013774d: call     0x1800d8230  ; -> 0x1800d8230
+0x180137752: nop      
+0x180137753: lea      rcx, [rsi + 0xf0]
+0x18013775a: mov      rax, qword ptr [rsp + 0x60]
+0x18013775f: mov      qword ptr [rsp + 0x20], rax
+0x180137764: mov      r8, rbx
+0x180137767: mov      rdx, rdi
+0x18013776a: call     0x1800d7400  ; -> 0x1800d7400
+0x18013776f: nop      
+0x180137770: mov      rax, rsi
+0x180137773: mov      rbx, qword ptr [rsp + 0x48]
+0x180137778: mov      rsi, qword ptr [rsp + 0x50]
+0x18013777d: add      rsp, 0x30
+0x180137781: pop      rdi
+0x180137782: ret      
+

@@ -1,0 +1,80 @@
+bytes at 0x1803b92e8: b'P\x8e;\x80\x01\x00\x00\x00\x94\xf19\x80\x01\x00\x00\x00\t\x00\x00\x00\x00\x00\x00\x00p\x8e;\x80\x01\x00\x00\x00'
+str: b'P\x8e;\x80\x01'
+--- 0x18032b520 head:
+   0x18032b520: push rbx
+   0x18032b522: push rsi
+   0x18032b523: push rdi
+   0x18032b524: sub rsp, 0x60
+   0x18032b528: movaps xmmword ptr [rsp + 0x50], xmm6
+   0x18032b52d: mov rax, qword ptr [rip + 0x179b0c]
+   0x18032b534: xor rax, rsp
+   0x18032b537: mov qword ptr [rsp + 0x48], rax
+   0x18032b53c: mov rsi, r8
+   0x18032b53f: mov rdi, rcx
+   0x18032b542: xor ebx, ebx
+   0x18032b544: mov dword ptr [rsp + 0x20], ebx
+--- 0x18032b420 head:
+   0x18032b420: push rbx
+   0x18032b422: push rsi
+   0x18032b423: push rdi
+   0x18032b424: sub rsp, 0x60
+   0x18032b428: movaps xmmword ptr [rsp + 0x50], xmm6
+   0x18032b42d: mov rax, qword ptr [rip + 0x179c0c]
+   0x18032b434: xor rax, rsp
+   0x18032b437: mov qword ptr [rsp + 0x48], rax
+   0x18032b43c: mov rsi, r8
+   0x18032b43f: mov rdi, rcx
+   0x18032b442: xor ebx, ebx
+   0x18032b444: mov dword ptr [rsp + 0x20], ebx
+--- 0x18032b320 head:
+   0x18032b320: push rbx
+   0x18032b322: push rsi
+   0x18032b323: push rdi
+   0x18032b324: sub rsp, 0x60
+   0x18032b328: movaps xmmword ptr [rsp + 0x50], xmm6
+   0x18032b32d: mov rax, qword ptr [rip + 0x179d0c]
+   0x18032b334: xor rax, rsp
+   0x18032b337: mov qword ptr [rsp + 0x48], rax
+   0x18032b33c: mov rsi, r8
+   0x18032b33f: mov rdi, rcx
+   0x18032b342: xor ebx, ebx
+   0x18032b344: mov dword ptr [rsp + 0x20], ebx
+--- 0x18032b230 head:
+   0x18032b230: push rbx
+   0x18032b232: push rsi
+   0x18032b233: push rdi
+   0x18032b234: sub rsp, 0x60
+   0x18032b238: movaps xmmword ptr [rsp + 0x50], xmm6
+   0x18032b23d: mov rax, qword ptr [rip + 0x179dfc]
+   0x18032b244: xor rax, rsp
+   0x18032b247: mov qword ptr [rsp + 0x48], rax
+   0x18032b24c: mov rsi, r8
+   0x18032b24f: mov rdi, rcx
+   0x18032b252: xor ebx, ebx
+   0x18032b254: mov dword ptr [rsp + 0x20], ebx
+--- 0x18032b620 head:
+   0x18032b620: mov qword ptr [rsp + 0x20], rbx
+   0x18032b625: push rbp
+   0x18032b626: push rsi
+   0x18032b627: push rdi
+   0x18032b628: sub rsp, 0x50
+   0x18032b62c: mov rax, qword ptr [rip + 0x179a0d]
+   0x18032b633: xor rax, rsp
+   0x18032b636: mov qword ptr [rsp + 0x48], rax
+   0x18032b63b: mov rbp, r8
+   0x18032b63e: mov rsi, rcx
+   0x18032b641: xor ebx, ebx
+   0x18032b643: mov dword ptr [rsp + 0x20], ebx
+--- 0x180017b40 head:
+   0x180017b40: mov qword ptr [rsp + 0x10], rbx
+   0x180017b45: mov qword ptr [rsp + 0x18], rbp
+   0x180017b4a: push rsi
+   0x180017b4b: push rdi
+   0x180017b4c: push r15
+   0x180017b4e: sub rsp, 0x20
+   0x180017b52: mov rbp, qword ptr [rcx + 0x18]
+   0x180017b56: mov rsi, r8
+   0x180017b59: mov r15, rdx
+   0x180017b5c: mov rbx, rcx
+   0x180017b5f: cmp r8, rbp
+   0x180017b62: ja 0x180017b85

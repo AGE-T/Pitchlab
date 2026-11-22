@@ -1,0 +1,18 @@
+=== PITCHLAB R24-v2 BUILD ENVIRONMENT RECORD ===
+2026-11-08T22:23:47Z
+OS: Debian GNU/Linux 13 (trixie)
+kernel: 5.10.134-013.15.kangaroo.al8.x86_64
+arch: x86_64
+CPU: Intel(R) Xeon(R) Processor (2 vCPUs)
+CPU features (relevant): avx2=yes, fma=yes
+g++: g++ (Debian 14.2.0-19) 14.2.0
+gcc: gcc (Debian 14.2.0-19) 14.2.0
+build-host glibc: ldd (Debian GLIBC 2.41-12+deb13u4) 2.41
+cmake: cmake version 4.4.4 (pip cmake 4.4.4, reinstalled this session)
+make: GNU Make 4.4.1
+VST3 SDK: v3.7.12_build_20 at octavox-work/vst3sdk (pinned SHAs; acquisition script source/native/tools/get_vst3_sdk.sh)
+SDK git: cc2adc90382dded9e347caf74e4532f1458715db
+
+Build type: Release (native: -O3 -DNDEBUG -std=c++17; SDK: its own Release flags)
+ISA wiring: simd_avx2.cpp -> -mavx2 -ffp-contract=off; simd_fma.cpp -> -mavx2 -mfma -ffp-contract=off; ALL other TUs baseline x86-64 (SSE2). No global -mavx2/-mfma anywhere.
+Sanitizer leg: Debug + ASan/UBSan (ENABLE_SANITIZERS=ON).

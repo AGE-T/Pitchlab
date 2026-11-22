@@ -1,0 +1,37 @@
+===== FUN_1800d8380 tail2 resync 0x1800d8de0 =====
+0x1800d8de0: inc       rdx
+0x1800d8de3: mov       rcx, qword ptr [rsp + 0x50]
+0x1800d8de8: mov       rax, rcx
+0x1800d8deb: cmp       rdx, 0x1000
+0x1800d8df2: jb        0x1800d8e0d
+0x1800d8df4: add       rdx, 0x27
+0x1800d8df8: mov       rcx, qword ptr [rcx - 8]
+0x1800d8dfc: sub       rax, rcx
+0x1800d8dff: add       rax, -8
+0x1800d8e03: cmp       rax, 0x1f
+0x1800d8e07: ja        0x1800d8fac
+0x1800d8e0d: call      0x18015e100  ; -> 0x18015e100
+0x1800d8e12: movss     xmm6, dword ptr [r15 + 0xe8]
+0x1800d8e1b: movss     xmm1, dword ptr [rip + 0x339091]  ; ->0x180411eb4 f32=0.001
+0x1800d8e23: mulss     xmm6, xmm1
+0x1800d8e27: cvtps2pd  xmm0, xmm6
+0x1800d8e2a: comisd    xmm0, xmmword ptr [rip + 0x3392ae]  ; ->0x1804120e0 f32=-5.18969e+11
+0x1800d8e32: jae       0x1800d8e37
+0x1800d8e34: movaps    xmm6, xmm1
+0x1800d8e37: mov       rdi, qword ptr [r15]
+0x1800d8e3a: mov       rax, qword ptr [rdi]
+0x1800d8e3d: mov       rbx, qword ptr [rax + 0x60]
+0x1800d8e41: mov       rcx, rdi
+0x1800d8e44: call      qword ptr [rax + 8]
+0x1800d8e47: mulss     xmm0, xmm6
+0x1800d8e4b: xorps     xmm1, xmm1
+0x1800d8e4e: cvtss2sd  xmm1, xmm0
+0x1800d8e52: movsd     xmm0, qword ptr [rip + 0x3399f6]  ; ->0x180412850 f32=-0.00554007
+0x1800d8e5a: divsd     xmm0, xmm1
+0x1800d8e5e: call      0x180351f50  ; -> 0x180351f50
+0x1800d8e63: subsd     xmm0, qword ptr [rip + 0x3394bd]  ; ->0x180412328 f32=0
+0x1800d8e6b: xorps     xmm3, xmm3
+0x1800d8e6e: cvtsd2ss  xmm3, xmm0
+0x1800d8e72: mov       r8d, 2
+0x1800d8e78: mov       edx, dword ptr [r15 + 8]
+0x1800d8e7c: mov       rcx, rdi

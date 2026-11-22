@@ -1,0 +1,715 @@
+     1→# OCTAVOX_DSP_ARCHITECTURE
+     2→
+     3→**Document 1 of 8 — canonical DSP architecture reconstruction**
+     4→Target: `F:\VST\OV_DIS\Ox.vst3`
+     5→SHA-256 (`7bb260f66bb9c1b21b27f64f29e6fdd2865c34f8a31ad1c0ef21a1db7f32f1f2`)
+     6→Provider: Ghidra 12.1.4 via REA MCP (read-only, ephemeral import). The target was never modified.
+     7→Confidence vocabulary: **OBS** = observed in code/bytes; **DER** = derived from observed structure; **UNK** = not established; **CONFLICT** = two observations disagree.
+     8→
+     9→> Cross-references: `OCTAVOX_TRACKER_DEEP_ANALYSIS.md` (D2), `OCTAVOX_CORE_INTERNALS.md` (D3),
+    10→> `OCTAVOX_TRANSITION_AND_STATE_ANALYSIS.md` (D4), `OCTAVOX_CONTROL_FLOW_MATRIX.md` (D5),
+    11→> `OCTAVOX_RESEARCH_EVIDENCE_MATRIX.md` (D6), `OCTAVOX_OPEN_QUESTIONS.md` (D7),
+    12→> `OCTAVOX_COMPLETE_RECONSTRUCTION_REPORT.md` (D8).
+    13→> Working transcripts: `OX_RESEARCH\analysis\rea3_*.txt`, `dec_dsp_ctor_1800E0360.txt`,
+    14→> `dec2_dsp_prepare_1800E2030.txt`, `dec_dsp_m01_1800E10B0.txt`, `m02.txt`.
+    15→>
+    16→> **Round-4 evidence (2026-10-19).** The module records used for all reachability statements are now
+    17→> the **untruncated** ones. `extract_modules.py` wrote only the first 24 entries of each record
+    18→> (`kernel_modules.txt`), which hid the engine's per-voice inputs (`pcent1..8`, `modamt1..8`,
+    19→> `delayamt1..8`, `userscale1..12`) and produced several wrong "no reader" / "truncated" claims.
+    20→> Authoritative artifacts now: `kernel_modules.json` (full records) →
+    21→> `full_record_analysis.py` → `full_records.txt` (every record, verbatim) and `dead_nets.txt`
+    22→> (nets with no reader, all three profiles); `derive_voice_chains.py` → `voice_chain_map.txt`.
+    23→> Corrections are marked "(round-4 correction)" inline and logged in D6/D7.
+    24→
+    25→---
+    26→
+    27→## 1. Object model (OBS)
+    28→
+    29→### 1.1 Module wrapper → engine
+    30→
+    31→`FUN_180137e20` (module factory) creates the `dtonicii9` module object `param_1`:
+    32→
+    33→```
+    34→FUN_1800e2c00(module, *(descriptor + 0x260))      // module base ctor; sets *module = vftable ptr
+    35→FUN_1800e0360(module + 0x430, descriptor, ...)    // engine (dsp_t) ctor, engine lives INSIDE the module
+    36→return module
+    37→```
+    38→
+    39→* **OBS** — the engine object (`dsp_t`) is embedded at `module+0x430`; the tracker is at
+    40→  `engine+0x4518` (`module+0x4948`). All `engine+0x4xxx`/`0xAxxx` offsets below are engine-relative.
+    41→* **OBS** — engine vtable symbol resolved by Ghidra as `modpp::modules::dtonicii_t::dsp_t::vftable`
+    42→  at VA `0x180409f60`. Slots:
+    43→
+    44→| slot | offset | target | role |
+    45→|---|---|---|---|
+    46→| 0 | +0x00 | `0x1800e7db0` | UNK (engine entry point candidate) |
+    47→| 1 | +0x08 | `0x1800e10b0` | **setparam** (`m01`) |
+    48→| 2 | +0x10 | `0x1800e1520` | **getparam** (`m02`) |
+    49→| 3 | +0x18 | `0x1800c5730` | base-class generic setparam (fall-through of `m01`) |
+    50→| 4 | +0x20 | `0x1800c5770` | base-class generic getparam (fall-through of `m02`) |
+    51→| 5 | +0x28 | `0x1800c5790` | UNK base slot |
+    52→| 6 | +0x30 | `0x1800c57b0` | UNK base slot |
+    53→
+    54→*Evidence: byte dump of `.rdata` at `0x180409f60`; `address_name(0x180409f60)`; `m01` default branch
+    55→calls `*(*param_1+0x18)`, `m02` default branch calls `*(*param_1+0x20)`.*
+    56→
+    57→* **OBS** — the module base ctor `FUN_1800e2c00` registers six **named read-out registers** with the
+    58→  metaclass callback `(*(*descriptor+0x10))(descriptor, ctx, name, dest)`:
+    59→
+    60→| name | string bytes | dest (module-relative) |
+    61→|---|---|---|
+    62→| `pitch` | `70 69 74 63 68` | `+0x00` (see note) |
+    63→| `period` | `70 65 72 69 6f 64` | `+0x318` |
+    64→| `freq` | `66 72 65 71` | `+0x338` |
+    65→| `amp` | `61 6d 70` | `+0x358` |
+    66→| `tonality` | `tonality\0` | `+0x378` |
+    67→| `timbre` | `74 69 6d 62 72 65` | `+0x398` |
+    68→
+    69→> **CONFLICT/UNK (minor)** — `pitch` is registered with destination = the object base (where the
+    70→> vftable is stored). Either the decompiler dropped an offset, or the registration API's 4th
+    71→> argument is not a plain destination pointer for that entry. Flagged; does not affect the DSP chain.
+    72→
+    73→### 1.2 Engine member map (OBS)
+    74→
+    75→All values from `FUN_1800e0360` (ctor) and read sites in `FUN_1800e2030` (prepare), `m01`, `m02`.
+    76→
+    77→| engine offset | type | meaning | evidence |
+    78→|---|---|---|---|
+    79→| `+0x50` | float | `maxdelay` (ms), default 2400 | ctor line 187: ring size = SR*0.001*maxdelay |
+    80→| `+0x54` | int | `nvoices`, default 8 | ctor; prepare loop bound |
+    81→| `+0x60` | ptr | input bus (pointer to current input block pointer) | prepare L48 |
+    82→| `+0x68` | ptr | per-voice **input port** table base (stride `+0x10`) | prepare L114 |
+    83→| `+0x80` | ptr | per-voice **output port** table base (stride `+0x18`) | prepare L130/147 |
+    84→| `+0x98` | float[4096] | **tracker record ring** (mask 0xFFF) | ctor L373; prepare L164 |
+    85→| `+0x4098` | int | phase mask **0x7F8** (256 sub-phases × 6 taps × 4 bytes) | ctor L123 |
+    86→| `+0x409c` | int | per-voice work-ring **stride** = 4096 / 8192 / 16384 floats | ctor L125-134 |
+    87→| `+0x40a0` | ptr | per-voice **work-ring** base (`nvoices × stride` floats, zeroed) | ctor L136-157 |
+    88→| `+0x40b8` | int | work-ring **mask** = stride-1 | ctor L158 |
+    89→| `+0x40c0` | ptr | per-voice work-ring **write pointer** array (int[nv]) | ctor L160 |
+    90→| `+0x40d8..+0x40e8` | float[5] | quartic coefficients mapping a voice signal → rate factor | prepare L121-124 |
+    91→| `+0x40f0` | ptr | **static 256×6-float fractional-delay kernel table in `.rdata` at VA `0x1803B6170`** (NOT Lagrange — designed symmetric lowpass, bin-centre phases, unity DC gain; round-12 correction of the earlier "Lagrange" label), installed by `FUN_1800E18B0` at `0x1800E1FB4/BB`; floor-indexed `floor(frac(pos)·256)` | prepare L140/244; round 12 scan |
+    92→| `+0x40f8` | `std::vector<float>` | **f-normalizer slot**: `page[10] = clamp(modamt,lo,hi)/2400`; private member (not a port), **zero-filled** in ctor | ctor sites `0x1800E0724-79` (round 9); prepare L194 |
+    93→| `+0x4110` | `std::vector<float>` | **crossfade decrement slot**: `page[12+idx]·2^-23` per output sample (idx from the period-scaled record value); init `0x3D7FFFE0` = 0.06249988 | ctor sites `0x1800E07A0-32` (round 9); prepare L198 + round-12 `0x1800E26E0–0x1800E26FC` |
+    94→| `+0x4128` | `std::vector<float>` | **main rate factor slot**: `page[0]·ring[idx+3]` = `(ratio/16)·correction`; private member (not a port), **zero-filled** in ctor | ctor sites `0x1800E0839-C6` (round 9); prepare L188 |
+    95→| `+0x4140` | ptr | int[nv] **integer delay**, init `0x118` (280) | ctor L236; prepare L210/224 |
+    96→| `+0x4158` | ptr | float[nv] **crossfade ramp state**, init 0, settles at −1 | ctor L236-257; prepare L132/225/277 |
+    97→| `+0x4170` | ptr | int[nv] auxiliary index array | ctor L264; prepare L117 |
+    98→| `+0x4188` | ptr | **double[nv] read position** | ctor L266; prepare L300 |
+    99→| `+0x41a0` | ring | **input history ring** (power-of-two ≥ 2^4, size = SR*maxdelay/1000) | ctor L273-274; prepare L49-59 |
+   100→| `+0x41b8` | int | input-ring write index (decrements by 4 per block) | prepare L51/308 |
+   101→| `+0x41c0` | int | input-ring mask | prepare L51 |
+   102→| `+0x41e8` | float[3] | meter struct `{period, e_raw, e_filt}` (port 3) | ctor L278-282; `m02` |
+   103→| `+0x4208` | ptr | float[nv] **voice gain ramp, current** (port 18) | ctor L285-288; prepare L73/82 |
+   104→| `+0x4230` | ptr | float[nv] **voice gain ramp, target** (port 19) | prepare L74 |
+   105→| `+0x4258` | ptr | int[nv] **voice delay D_v** in samples (port 20) | ctor L289-302; prepare L75/83 |
+   106→| `+0x4280` | ptr | float[nv × **0x2c**] **voice parameter page A** (port 21) | ctor L305; prepare L120 |
+   107→| `+0x42a8` | ptr | float[nv × **0x2c**] **voice parameter page B** (port 22) | ctor L308; prepare L127 |
+   108→| `+0x42d0` | ptr | int[nv] **page selector** (1 → use page B) (port 23) | ctor L309-322; prepare L126 |
+   109→| `+0x42f8` | ptr | int[nv] **record read index** (port 24) | prepare L163 |
+   110→| `+0x4320` | float[16] | **candidate table** (port 25) | ctor L326-337 |
+   111→| `+0x4370` | float[72] | **row table**, 12 rows × 6 floats (port 26) | ctor L338-344 |
+   112→| `+0x44a0` | int[12] | **scale/ding mask** (port 27) | ctor L345-354 |
+   113→| `+0x44e0` | float | glide scalar A (port 28) | ctor L355-359; prepare L287 |
+   114→| `+0x44f8` | float | glide scalar B (port 29) | ctor L360-364; prepare L283 |
+   115→| `+0x4510` | int | **pitch-tracking enable** (port 30) | ctor L365-369; prepare L176/180 |
+   116→| `+0x4518` | struct | **tracker** (see D2) | ctor L370-371 |
+   117→| `+0xa4e0` | ptr | → `+0x41e8` meter struct | ctor L372; `m02` |
+   118→| `+0xa4fc` | int | tracker record **write index** delta | ctor L383; prepare L164 |
+   119→| `+0xa520` | float | constant **2048.0** | ctor L375 |
+   120→| `+0xa524` | float | **sample rate** | ctor L376 |
+   121→
+   122→---
+   123→
+   124→## 2. Execution topology (OBS)
+   125→
+   126→The graph is compiled **twice** (two parallel call trees):
+   127→
+   128→| role | worker A | worker B |
+   129→|---|---|---|
+   130→| audio/voice worker (calls prepare `0x1800e2030` and voice filter `0x1800e8b50`) | `FUN_180103a10` | `FUN_18011d5f0` |
+   131→| control/tracker worker (calls pitch worker `0x1800e5160`, rdm slew, c_multiply, c_adder8) | `FUN_1801061a0` | `FUN_18011fd60` |
+   132→| owner that instantiates the module (`FUN_180137e20`) | `FUN_1800f00a0`, `FUN_180109d40` | `FUN_180122e00` |
+   133→
+   134→**OBS** — `procedure_callers` gives exactly these on both sides; the deltas between A and B are not a
+   135→constant byte shift, so this is **not** a duplicated function body but two instantiations of the same
+   136→module class in two graph positions.
+   137→
+   138→**DER (RESOLVED in round 2)** — the function pairs are **per-IO-profile clones of the same graph
+   139→executor**: `FUN_180103a10` / `FUN_18011d5f0` are 475 / 474 lines, `FUN_1801061a0` / `FUN_18011fd60`
+   140→are 307 / 306 lines, and a diff shows only operand-order swaps in a few multiplies plus different
+   141→module **base offsets**. One of them references `param_1 + 0x1E990`, which is `monoSumWetChans` — a
+   142→module that exists **only in the `mimo` profile** (D1 §6.0) — so the trees correspond to the shipped
+   143→kernel profiles (`mimo`, `miso`, `siso`, …), not to left/right channels and not to a monitor branch.
+   144→See D7 Q-1.
+   145→
+   146→### 2.1 Per-block entry sequence (engine prepare, `FUN_1800e2030`)
+   147→
+   148→1. **Input capture** — `p = **(engine+0x60)`; push `p[0..3]` into the input history ring at
+   149→   `(write & mask), (write-1 & mask), (write-2 & mask), (write-3 & mask)`; i.e. the newest sample
+   150→   sits at index `write`, and reading `ring[(write + d) & mask]` yields the sample `d` samples ago.
+   151→   Afterwards `engine+0x41b8 = write - 4` (L49-59, L304-308).
+   152→2. **Tracker call** — `FUN_18013bbc0(engine+0x4518, p+1, 1)`. Tracker input is therefore
+   153→   `p[1]` and (inside) `p[3]` — **2 of every 4 input samples** (L60).
+   154→3. **Per-voice loop**, `v = 0 .. nvoices-1` (L63-302):
+   155→   a. gain ramp: `g = clamp(target[v] - current[v], -1, 0)`, `current[v] = g` (L72-82);
+   156→   b. windowed delay: for `k=0..3` write `work[v][(wp-k)&mask] = -(g * ring[(D_v + k') & irmask])`,
+   157→      update the per-voice write pointer (L83-113);
+   158→   c. rate pipeline: quartic `q(x)` from `+0x40d8..+0x40e8` applied to `x = control_in[v] * page[10]`,
+   159→      multiplied by `page`-derived factor and `64`, giving the read-rate increment `dVar33` (L114-125);
+   160→   d. page select: page A unless `selector[v] == 1` → page B (L126-128);
+   161→   e. **read** at fractional position `pos_v` (double, `+0x4188[v]`) from the per-voice work ring,
+   162→      with 6-tap Lagrange interpolation selected by `((int)(pos*2048) & 0x7F8) >> 3` (L132-278);
+   163→   f. two sub-paths selected by `(int)crossfade_state[v] == -1`:
+   164→      * `!= -1` (L231-278): **crossfade mix** of two taps `D_v` apart, ramp state decremented by the
+   165→        period-correction value, clamped at −1;
+   166→      * `== -1` (L133-229): direct interpolated read, then the **record/period** update:
+   167→        read the 4-float tracker record from ring `+0x98`, map period → page column, apply
+   168→        power-of-two period scaling, update the integer delay `+0x4140[v]` and re-arm the crossfade
+   169→        `+0x4158[v] = 0` (L163-228);
+   170→   g. **ratio glide**: slew `page[0]` toward `page[1]` using `+0x44e0` (up) / `+0x44f8` (down);
+   171→      `page[1] = page[next_index + 2]` (L280-299);
+   172→   h. store `pos_v` as a double (L300).
+   173→4. `engine+0x41b8 -= 4` (ring bookkeeping, L304-308).
+   174→
+   175→---
+   176→
+   177→## 3. Stage-by-stage specification
+   178→
+   179→### S1 — Input bus / block framing
+   180→* **Function/IO**: `FUN_1800e2030` L48-59. In: host audio block (bus `engine+0x60`); out: 4 samples
+   181→  appended to the input history ring.
+   182→* **State**: `engine+0x41a0` ring, `+0x41b8` write index, `+0x41c0` mask.
+   183→* **Conditions**: unconditionally, once per 4-sample sub-block.
+   184→* **Param deps**: none.
+   185→* **Downstream**: S2 (tracker), S4 (voice windowing).
+   186→
+   187→### S2 — Pitch analysis / tracker
+   188→* **Function/IO**: `FUN_18013bbc0(engine+0x4518, p+1, 1)`. In: 4 raw input samples, of which
+   189→  `p[1]` and `p[3]` are used. Out: 4-float records pushed into `engine+0x98` (mask 0xFFF).
+   190→* **State / execution conditions / params**: see D2 in full.
+   191→* **Downstream**: S3 (record read), and `m02` read-out ids 7..0xd.
+   192→
+   193→### S3 — Record read and period/interval mapping
+   194→* **Function/IO**: `FUN_1800e2030` L163-228. In: record ring `+0x98`, per-voice read index
+   195→  `+0x42f8[v]` plus `+0xa4fc`; out: updated per-voice integer delay, crossfade arming, page column
+   196→  selection.
+   197→* **Key arithmetic (OBS)**:
+   198→  * `idx = (record_index[v] + engine[0xa4fc]) & 0xFFF`;
+   199→  * `period = ring[idx] * 2^-11` (× 0.00048828125), then clamped: `period ≥ 48`, or `= 480` if
+   200→    `period < 7.1054e-15`;
+   201→  * `next = ring[(idx+1) & 0xFFF]` (an **integer-valued float** = interval/candidate index);
+   202→    if `engine+0x4510 == 0` (pitch tracking off) `next = 1.0` and `idx2 = 0`;
+   203→  * `rate = page[0] * ring[(idx+3) & 0xFFF]` → written to `float[nv] @ +0x4128` (round 9/12; **round 15 Q-A proved the idx+2 read never exists** — see `evidence/analysis_round15/NOTES.md`);
+   204→  * `col = clamp((period-48)*0.0625, 0, 31)`; `c = page[col + 12]`;
+   205→    `float[nv] @ +0x4110 = c * 2^-23`; `period = 2^(c & 0xF) * period + 0.5`, rounded to int
+   206→    with a floor correction (L199-206);
+   207→  * crossfade/limit test against `page[0xb]` and the work-ring mask (L207-228).
+   208→* **Param deps**: `page` contents (port 21/22), `+0xa4fc`, `+0x4098`.
+   209→
+   210→### S4 — Per-voice gating window
+   211→* **Function/IO**: `FUN_1800e2030` L72-113. In: current & target voice gain arrays, input ring.
+   212→  Out: 4 gated, delayed samples per voice written into the per-voice work ring.
+   213→* **State**: `engine+0x4208[nv]`, `engine+0x40a0`, `engine+0x40c0[nv]`.
+   214→* **Conditions**: always; `g ≤ 0`, `|g| ∈ [0,1]` is the voice gain.
+   215→* **Downstream**: S5.
+   216→
+   217→### S5 — Variable-rate delay read (pitch shifter core)
+   218→* **Function/IO**: `FUN_1800e2030` L114-278. In: per-voice work ring, read position `pos_v`,
+   219→  increment `rate_v`. Out: 4 output samples per voice into the per-voice output port.
+   220→* **Arithmetic (OBS)**:
+   221→  * control input `f = F * slot_40F8[v]` where **F = the mod-port data element [0]** (the port
+   222→    table at `engine+0x68`, 0x10-stride, bound to the record's `mod<N>` entries = the `rdm slew N`
+   223→    walk values ∈ [0,1] with `1.0` attainable (round-10 orbit proof); round 9 corrects the
+   224→    earlier "input_port[v][1]" rendering — the `[1]`-like
+   225→    offset is inside the port *table*, not the data);
+   226→  * literal quartic (prepare L121-125, `fVar1 = x²`):
+   227→    `q = (+0x40e8)·x⁴ + (+0x40e4)·x³ + (+0x40e0)·x² + (+0x40dc)·x + (+0x40d8)`,
+   228→    then `rate_v = (float32)q * rate_slot[v] * 64.0` where `rate_slot = float[nv] @ +0x4128`
+   229→    = `(ratio/16)·correction` — so **`rate_v = 4·q(f)·ratio·correction`** with unity at `f = 0`
+   230→    (round 9; see §8);
+   231→  * read index phase = `((int)(pos_v * 2048.0) & 0x7F8) >> 3` → 0..255 — i.e.
+   232→    **`floor(frac(pos_v)·256)`** (round 12, instruction level at `0x1800E2490–0x1800E24AD`);
+   233→  * interpolator = 6 taps read from `+0x40f0 + 0x18*phase`, applied to 6 consecutive work-ring
+   234→    samples starting at `(wp + (int)pos_v) & mask`.
+   235→    **Round 12 (OBS): `+0x40f0` points to a STATIC 256×6-float table in `.rdata` at VA
+   236→    `0x1803B6170`** (installed by `FUN_1800E18B0` at `0x1800E1FB4/0x1800E1FBB`, together with
+   237→    the five quartic immediates at `0x1800E1F82–0x1800E1FAA`). The kernel is **not 6-point
+   238→    Lagrange** (the old member-map label is corrected): row sums 1.000000–1.000122 (unity DC),
+   239→    effective fractional delay sweeps 0.0020→0.9980 (bin-centre phases `(r+0.5)/256`, DER),
+   240→    mirror-symmetric rows, best-aligned Lagrange L2 mismatch 0.11–0.19 rms — a designed
+   241→    symmetric lowpass kernel (windowed-sinc-like, DER). Bit-exact extraction:
+   242→    `evidence/analysis_round12/r12_obs_kernel_table.h`; analysis: `r12_interp_table.txt`.
+   243→    The settle/crossfade paths both read through this one table.
+   244→  * `pos_v` advances by `rate_v` per output sample, clamped `≥ 0` (`dVar11 = pos - rate; if (<0)
+   245→    dVar11 = pos`), and by **`+4.0` per 4-sample block** (const `4.0` @ `0x1804123E8`, added at
+   246→    `0x1800E224D`) — net block motion `4·(1−rate)`, i.e. **zero at rate exactly 1.0** (round 12).
+   247→* **Conditions**: per voice, always.
+   248→* **Param deps**: `page[10]`, quartic coefficients, `page`-rate slot, `+0x4098`.
+   249→* **Downstream**: S6.
+   250→
+   251→### S6 — Crossfade / delay jump
+   252→* **Function/IO**: `FUN_1800e2030` L231-278 (active) and L207-228 (re-arm). In/out: the same output
+   253→  bus; internal state `+0x4158[v]`, `+0x4140[v]`.
+   254→* **Arithmetic (OBS)**: `mix = (tapA - tapB) * state + tapA`, with `state` decremented each
+   255→  output sample by `slot_4110[v] = page[12+idx]·2^-23` and clamped at −1. `tapA`/`tapB` differ
+   256→  by the record **interval** (tapA at `ringbase − interval`, tapB at `ringbase`, round 12
+   257→  instruction level).
+   258→* **Conditions**: `(int)state == -1` → settled path with record update; otherwise crossfade path.
+   259→  **Round 12 (OBS, instruction level): the settled path computes exactly ONE 6-tap interpolated
+   260→  read per output sample** (loop `0x1800E2490–0x1800E25D5` — one phase row, six consecutive
+   261→  work-ring samples, no second tap, no blend). The crossfade is a one-shot linear fade that
+   262→  SETTLES back to single-tap; the engine's rest state is a single interpolated tap.
+   263→* **Re-arm**: trigger `pos − delay[v] < 8.000000000000007` (double @ `0x180412428`);
+   264→  jump `floor(2^((int)page[12+idx] & 0xF)·v + 0.5)` where
+   265→  `v = clamp(ring[recidx]·2^-11, ≥ 48.0; 480.0 if ≈0)` and
+   266→  `idx = clamp(int((v−48)/16), 0, 31)`; the jump is halved when it would reach
+   267→  `≥ mask − page[11]`; on re-arm `+0x4140[v] = pos ∓ jump`, `+0x4158[v] = 0`
+   268→  (`0x1800E275E–0x1800E2809`). The record read index is
+   269→  `(recidx[v] (+0x42f8) + wdelta (+0xa4fc)) & 0xFFF`; `ring[recidx+3]` is the correction
+   270→  (confirms round 9); `ring[recidx+1]` as int is the interval. **Unity consequence (DER)**:
+   271→  at rate exactly 1.0 `pos` is frozen, the re-arm never fires, and the engine rests in the
+   272→  settled single-tap path — a fixed fractional delay with **no two-tap comb** (see
+   273→  `OCTAVOX_ROUND12_FINDINGS.md` §2.3; runtime audibility UNK).
+   274→
+   275→### S7 — Per-voice modulation filter (`FUN_1800e8b50`)
+   276→* **Function/IO**: In: per-voice ports `+0x58`/`+0x68`/`+0x78` (control sources) and constants;
+   277→  out: four 4-sample control vectors at `**(engine+0xa8/0x90/0xc0/0xd8)`.
+   278→* **Arithmetic (OBS/DER)**: a **Chamberlin-style 2nd-order state-variable filter** with
+   279→  `f = clamp(src1*k + b)`, `q = clamp(src2*k2 + b2)`, states `a` (band) and `b` (low):
+   280→  `low = f*a + b; high = (x - low) - q*a; f1 = high; a' = f*a + high;`
+   281→  outputs `high`, `low`, `notch = high+low`, `band = a'`, each scaled by the voice-level ramp
+   282→  `fVar7 = clamp01(+0x188 + +0x190)` (ramp accumulator written back to `+0x190`).
+   283→* **State**: `+0x194` (b), `+0x198` (a) per voice instance.
+   284→* **Conditions**: called once per 4-sample block per voice by `FUN_180103a10`/`FUN_18011d5f0`.
+   285→* **DER**: acts as the per-voice **glide/smoothing generator** producing the modulation control
+   286→  vectors consumed by S5.
+   287→* **Downstream**: control ports consumed by S5 (and `rdm`/`c_multiply` graph).
+   288→
+   289→### S8 — Output / mixing
+   290→* **Function/IO**: `FUN_1800e2030` L147/L268 write to the per-voice output port
+   291→  (`*(engine+0x80)` table, stride 0x18).
+   292→* **UNK** — the summation of the 8 voice ports into the stereo bus and the wet/dry mix are not in
+   293→  `FUN_1800e2030`; they occur in `FUN_180103a10`/`FUN_18011d5f0` (or the module wrapper) and were not
+   294→  yet decoded (D7 Q-2). No feedback path from a voice output back into `+0x41a0` was observed
+   295→  anywhere in prepare, which is **evidence against** a recirculating comb in this stage (OBS).
+   296→
+   297→---
+   298→
+   299→## 4. Parameter/port surface (summary; full matrix in D5)
+   300→
+   301→Registered engine ports (OBS, from `FUN_1800c57c0` / `FUN_18013d260` / `FUN_18013ba60`):
+   302→
+   303→| id | object | data ptr | count |
+   304→|---|---|---|---|
+   305→| 3 | `sharedarray_t<float,3>` | `+0x41e8` | 3 |
+   306→| 18 | `sharedvector_t<float>` | `+0x4208` | nvoices |
+   307→| 19 | `sharedvector_t<float>` | `+0x4230` | nvoices |
+   308→| 20 | `sharedvector_t<int>` | `+0x4258` | nvoices |
+   309→| 21 | `sharedvector_t<float>` | `+0x4280` | nvoices × 44 |
+   310→| 22 | `sharedvector_t<float>` | `+0x42a8` | nvoices × 44 |
+   311→| 23 | `sharedvector_t<int>` | `+0x42d0` | nvoices |
+   312→| 24 | `sharedvector_t<int>` | `+0x42f8` | nvoices |
+   313→| 25 | `sharedarray_t<float,16>` | `+0x4320` | 16 |
+   314→| 26 | `sharedarray_t<float,72>` | `+0x4370` | 72 |
+   315→| 27 | `sharedarray_t<int,12>` | `+0x44a0` | 12 |
+   316→| 28 | `shared_t<float>` | `+0x44e0` | 1 |
+   317→| 29 | `shared_t<float>` | `+0x44f8` | 1 |
+   318→| 30 | `shared_t<int>` | `+0x4510` | 1 |
+   319→
+   320→`FUN_1800c57c0(owner, id, obj, count)` stores `obj` in `owner`'s slot vector, writes the **running
+   321→element offset** into `*(uint32*)(obj+8)`, and advances the counter by `count` — i.e. the module
+   322→maintains a single address-space arena indexed by port id (OBS).
+   323→
+   324→---
+   325→
+   326→## 5. What is fully explained vs. open
+   327→
+   328→* **Fully explained (OBS/DER)**: input framing and ring; tracker invocation and its two-of-four
+   329→  decimation; per-voice gain ramp; per-voice gated delay into the work ring; variable-rate read with
+   330→  6-tap interpolation and phase masking; rate derivation from page tables and control ports; the
+   331→  crossfade/delay-commit state machine; ratio glide with asymmetric up/down rates; record ring
+   332→  consumption; the complete port registry.
+   333→* **Open**: the reason for two parallel worker trees (D7 Q-1); the exact table fillers for page A/B,
+   334→  the 72-float row table and the 16-float candidate table (D7 Q-3, Q-4); the semantic of the quartic
+   335→  rate map coefficients beyond their use (D7 Q-5).
+   336→
+   337→---
+   338→
+   339→## 6. Complete patch graph (authoritative, supersedes the "engine-only" reading of §1–§5)
+   340→
+   341→### 6.0 Provenance and what this section resolves (OBS)
+   342→
+   343→Source: `OX_RESEARCH\analysis\kernel_modules.txt`, a dump of the **three shipped kernel profiles**
+   344→present verbatim in the binary's data:
+   345→
+   346→| profile | module count | input | output |
+   347→|---|---|---|---|
+   348→| `mimo` | 395 | mono (`inch` = 1) | mono (`ouch` = 1) |
+   349→| `miso` | 394 | mono (`inch` = 1) | stereo (`ouch` = 2) |
+   350→| `siso` | 394 | stereo (`inch` = 2) | stereo (`ouch` = 2) |
+   351→
+   352→**Runtime selection site (OBS, round 5 — closes Q-12).** The profile is chosen *before*
+   353→construction by the kernel factory `FUN_18030C6A0`, keyed on the host channel counts:
+   354→
+   355→| `(inCh, outCh)` | allocation | constructor | profile |
+   356→|---|---|---|---|
+   357→| (1, 1) | `0x20C30` | `FUN_1800F00A0` | `mimo` (395 modules) |
+   358→| (1, 2) | `0x20B10` | `FUN_180109D40` | `miso` (394) |
+   359→| (2, 2) | `0x20B10` | `FUN_180122E00` | `siso` (394) |
+   360→| anything else | — | `NullAlgorithm` | silent object |
+   361→
+   362→`FUN_18030C6A0(parent, config, inCh, outCh)` allocates exactly the class size and tail-calls the
+   363→matching constructor; there is no fourth valid pair. The sizes corroborate the module counts: the
+   364→395-module profile needs `0x120` bytes more, i.e. exactly one extra module slot (`iswitch9`), while
+   365→the two 394-module profiles share `0x20B10`. The per-profile preset defaults of `inch`/`ouch`
+   366→(1/1, 1/2, 2/2) equal the selector key, so the two independent encodings agree. `inch`/`ouch`
+   367→remain host-visible *controls* that steer the mono/stereo fold **inside** the chosen patch
+   368→(D5 §6); they do not select the patch.
+   369→
+   370→Each profile line is `[index] name  add=<class ctor> slot=<graph slot> rec=<record address>` plus the
+   371→record body (`rec:`). The `add=` field is the **module class constructor**, and it is exactly the
+   372→`*(descriptor+0x260)` object that the earlier factory functions pass through:
+   373→
+   374→* `add=0x1800CA340` → `FUN_18013ab90(p1,p2) { FUN_1800ca340(p1, p2+0x260); }` — the **generic
+   375→  continuous-knob class** (all modules whose record is `statement=...; min=...; max=...; default=...`).
+   376→* `add=0x1800D4B70` → `FUN_18013ad00(p1,p2) { FUN_1800d4b70(p1, p2+0x260); }` — the **enumerated-choice
+   377→  class** (`nchoices=...`, `choicesN=...`).
+   378→
+   379→This single fact **closes W8** (the factory wrappers) and gives the class of every module by name.
+   380→The `dtonicii9` engine (§1–§5) is module **[275]** and is *one node* in this graph; everything else is
+   381→the surrounding studio-grade chain that §2 of the mandate asks for.
+   382→
+   383→### 6.1 Top-level chain, input → output (OBS; profile-independent core)
+   384→
+   385→```
+   386→adc in1 ─►[247] left in  (gain=igan)─┬─►[254] iswitch4 ─►[272] iswitch8 ─►[273] softclip ─►[275] dtonicii9 .in
+   387→adc in2 ─►[250] right in (gain=igan)─┤        ▲   ▲                            ▲
+   388→                                     │        │   └──[271] modiirq (anti-alias 2-section IIR, freq=bound1, q=0.7)
+   389→                                     │        └── select = c_subtract1 (= inch-1 ; 0=mono,1=stereo)
+   390→                                     └─►[253] mix (L+R)/2, tc=20
+   391→```
+   392→
+   393→* **Index-less global controls (OBS).** Nine modules are defined *before* the numbered block (slots
+   394→  `0x1F0`…`0x6E0`) and carry **no** JSON index: `igan`, `inch`, `c_subtract1`, `live`,
+   395→  `live mode delay comp`, `c_switch`, `mfbk`, `fbkd`, `c_minmax`. Earlier drafts bracketed some of
+   396→  them with the *slot order* (`[1]`, `[5]`, `[6]`, `[7]`, `[8]`, `[9]`, `[10]`, `[18]`), which
+   397→  collides with real indices (`rdep` = [10], `c_fltr_a36` = [12]); those brackets are retracted and
+   398→  the modules are referred to by name below.
+   399→* **Input gain** `igan` = knob −96…+12 dB, default 0.
+   400→* `inch` = 1|2 (default 1); `c_subtract1` = `inch − 1` → the **stereo flag** used as an
+   401→  `iswitch` select everywhere (`0` = mono path, `1` = stereo path).
+   402→* `[254] iswitch4`: mono → `left in`; stereo → `mix`. So the pitch engine always receives a **mono**
+   403→  analysis/processing signal.
+   404→* `[249] iswitch6` / `[252] iswitch7`: `select = live` (`live` off/on) → `in1 = delay comp 1/2`
+   405→  (Live Mode, 40-sample compensation) else `in2 = left/right in`. `delay comp 1/2` [248]/[251] are
+   406→  `maxdelay=51` variable delays driven by `live mode delay comp` (`value=40`).
+   407→* `[271] modiirq`: 2 sections, `qfactor=0.7`, `type=0` (low-pass), `modfreq = bound1` [268].
+   408→  `bound1` = `clamp(c_fltr_a14, 0, 1)`; `c_fltr_a14` = smoothed `2^( −c_divide2 )`,
+   409→  `c_divide2 = c_minmax2-maximum / 7`, and `c_minmax2` [263] = `max` over the eight `c_multiply N`
+   410→  values, where `c_multiply N` [35,49,…] = `−(int table switch N − 14)` = **the voice's downward
+   411→  shift in semitones, positive = shifted down** (unison ⇒ 0, −2 oct ⇒ +14). So the anti-alias
+   412→  cut-off frequency is derived from the largest down-shift in the patch (DER for the exact mapping;
+   413→  the wiring is OBS).
+   414→* `[262] AntiAliasOnOff` + `[272] iswitch8`: the anti-alias filter is **switched in/out by the
+   415→  `inst` (instrument) table**, not by a user switch: `AntiAliasOnOff` is a 16-entry table selected by
+   416→  `inst` [258] (`0…12`, default 0) with values `0,0,1,1,1,1,1,1,1,0,1,1,0,1,0,0`.
+   417→* `[273] softclip`: `select=1`, `drive=0`, `order=1`.
+   418→* `[275] dtonicii9` engine, record (verbatim, **all 69 entries** — round-4 correction). The earlier
+   419→  "the record stops at `mod7`" caveat was an artifact of *our* extractor, not of the target:
+   420→  `extract_modules.py` wrote `m['record'][:24]` (line 116), so `kernel_modules.txt` shows only the
+   421→  first 24 entries of any record. The untruncated records live in `kernel_modules.json` and are
+   422→  rendered in full by `full_record_analysis.py` → `full_records.txt`. The engine record is:
+   423→
+   424→  ```
+   425→  maxdelay=2400      nvoices=8           steps=12            in=softclip-out
+   426→  scale=scal table-out  key=keys-out     pitchtracking=ptrk-out
+   427→  hysteresis=10      correctrate=1      mincorrect=0        intervalglide=1
+   428→  tuning=0           tune=tune-out      quantization=0      minpitch=minp-out
+   429→  gatelevel=-55      xfadetime=xfad-out
+   430→  mod1..mod8      = rdm slew 1..8-out
+   431→  shift1..shift8  = c_multiply 1..8-out
+   432→  pcent1..pcent8  = sht1..8-out
+   433→  modamt1..modamt8= rdep-out
+   434→  delayamt1..8    = c_adder8..15-out
+   435→  userscale1..12  = 0
+   436→  ```
+   437→
+   438→  The last five groups are the engine's **per-voice inputs** and are ordinary record links
+   439→  (`key=producer-out`), not a special port mechanism. This is what finally resolves the
+   440→  "dangling `sht`/`rdep`" question (Q-13, D7): those entries sit at record positions 36–68,
+   441→  beyond the `[:24]` cut, so the earlier reader scan simply could not see them.
+   442→
+   443→  | voice | `modN` | `shiftN` | `pcentN` | `modamtN` | `delayamtN` |
+   444→  |---|---|---|---|---|---|
+   445→  | 1 | `rdm slew 1` | `c_multiply 1` | `sht1` | `rdep` | `c_adder8` |
+   446→  | 2 | `rdm slew 2` | `c_multiply 2` | `sht2` | `rdep` | `c_adder9` |
+   447→  | … | … | … | … | … | … |
+   448→  | 8 | `rdm slew 8` | `c_multiply 8` | `sht8` | `rdep` | `c_adder15` |
+   449→
+   450→**Per-voice chain (8 identical stages, voice N = modules [275]`-outN` …):**
+   451→
+   452→```
+   453→dtonicii9-outN ─►[modfilterN] (freq=20 Hz, q=1) ─"‑high"─►[eqnN] (1 band, freq=CutFreq, q=0.7,
+   454→      type=2, boostN=c_boundN) ─►[addN] ─►[moddelay N] (maxdelay=2000, declick=1, delayamt=dlyN)
+   455→                                                                  │            ▲
+   456→                                                                  │            └──[multiplyN] = moddelay·c_fltr_aN (fb gain)
+   457→                                                                  └──►[stereomixer3] in N
+   458→```
+   459→
+   460→Concretely, voice 1 uses [276] `modfilter8` → [277] `eqn` → [278] `add` → [279] `moddelay7`
+   461→(`delayamt=dly1-out`) → [270] `multiply4` (`in1=moddelay7-out, in2=c_fltr_a12-out`) → back into
+   462→[278] `add`. **The internal names are offset from the voice index; the wiring is authoritative**
+   463→(`dlyN`, `fbkN` select the voice). The complete structural map, machine-derived from the **full**
+   464→records by `OX_RESEARCH\analysis\derive_voice_chains.py` (output kept as `voice_chain_map.txt`),
+   465→is:
+   466→
+   467→| voice | modfilter | eqn | add | moddelay | fb multiply | fb-gain smoother | mixer in | module `delayamt` | engine `delayamt` | engine `shift` | engine `pcent` |
+   468→|---|---|---|---|---|---|---|---|---|---|---|---|
+   469→| 1 | [276] `modfilter8` | [277] `eqn` | [278] `add` | [279] `moddelay7` | [270] `multiply4` | [269] `c_fltr_a12` | [338] `stereomixer3` in 1 | `dly1` | `c_adder8` | `c_multiply 1` | `sht1` |
+   470→| 2 | [284] `modfilter9` | [285] `eqn1` | [286] `add1` | [287] `moddelay6` | [283] `multiply5` | `c_fltr_a23` | in 2 | `dly2` | `c_adder9` | `c_multiply 2` | `sht2` |
+   471→| 3 | [292] `modfilter10` | [293] `eqn2` | [294] `add2` | [295] `moddelay5` | [291] `multiply6` | `c_fltr_a25` | in 3 | `dly3` | `c_adder10` | `c_multiply 3` | `sht3` |
+   472→| 4 | [300] `modfilter11` | [301] `eqn3` | [302] `add3` | [303] `moddelay4` | [299] `multiply7` | `c_fltr_a27` | in 4 | `dly4` | `c_adder11` | `c_multiply 4` | `sht4` |
+   473→| 5 | [308] `modfilter12` | [309] `eqn4` | [310] `add4` | [311] `moddelay3` | [307] `multiply8` | `c_fltr_a29` | in 5 | `dly5` | `c_adder12` | `c_multiply 5` | `sht5` |
+   474→| 6 | [316] `modfilter13` | [317] `eqn5` | [318] `add5` | [319] `moddelay2` | [315] `multiply9` | `c_fltr_a31` | in 6 | `dly6` | `c_adder13` | `c_multiply 6` | `sht6` |
+   475→| 7 | [324] `modfilter14` | [325] `eqn6` | [326] `add6` | [327] `moddelay1` | [323] `multiply10` | `c_fltr_a33` | in 7 | `dly7` | `c_adder14` | `c_multiply 7` | `sht7` |
+   476→| 8 | [332] `modfilter15` | [333] `eqn7` | [334] `add7` | [335] `moddelay` | [331] `multiply11` | `c_fltr_a35` | in 8 | `dly8` | `c_adder15` | `c_multiply 8` | `sht8` |
+   477→
+   478→  **Two different delay amounts (round-4 correction, OBS).** The per-voice echo module gets the
+   479→  **raw** knob: `moddelay(8−n).delayamt = dlyN-out`. The **engine** gets `c_adderN = dlyN + c_switch`
+   480→  (`c_switch = live ? 40 : 0`). Earlier notes that said "`c_adderN` → `moddelay*.delayamt`" were wrong:
+   481→  `c_adder8..15` are read **only** by `dtonicii9.delayamt1..8`.
+   482→
+   483→* **Per-voice feedback gain** `c_fltr_a12`… = smoothed `10^( fback switch N / 20 )`, where
+   484→  `c_power9..16` [127…141] = `10^( c_divide18..25 )` and `c_divide18..25` = `fback switch N / 20`
+   485→  (i.e. dB → linear, 20·log10 convention). OBS.
+   486→* **`fback switch N`** [27,41,55,…] = `select = mswN` (voice mute): muted → `in1 = −100`
+   487→  (i.e. gain 10^(−5) ≈ 0.00316, effectively the voice's feedback is killed), else `in2 = fbkN`.
+   488→* **`fbkN`** = "fback" knob, −100…0 dB, default −100.
+   489→* **`dlyN`** = "delay" knob, 0…1250 ms, default 0; the per-voice echo uses the raw `dlyN`, while the
+   490→  engine's `delayamtN` uses `c_adderN` [30,44,…] = `dlyN + c_switch`, where `c_switch` (index-less,
+   491→  slot `0x4E8`) = `live ? 40 : 0` ms (Live-Mode delay compensation, added only to the engine's
+   492→  time-offset; see the "Two different delay amounts" note above).
+   493→* **`m switch N`** [25,39,…] = `select = mswN`, `in1 = −100`, `in2 = ognN` — the per-voice **level**
+   494→  gate that feeds the mixer gain.
+   495→* **`ognN`** = "level" −100…0 dB default −3.
+   496→* **`panN`** [28,42,…] = "pan" −1…+1 default 0 → `stereomixer3.panN`.
+   497→* **`shtN`** = "fshift" (see D5 for the asymmetric ranges). Its **live** consumer is the engine
+   498→  input `dtonicii9.pcentN` (record entry 36–43: `pcent1..8 = sht1..8-out`). There is a *second*,
+   499→  sub-branch — `c_abs…` = `|shtN|`, `c_adder…` = `|shtN| + 200`, `c_divide3..10` =
+   500→  `shtN / (|shtN| + 200)`, then `c_fltr_a13/a15/a16/a17/a18/a19/a20/a21` (tc = 0) — but this
+   501→  sub-branch is **dead**: a scan of all **69-entry** records finds that `c_fltr_a15…a21` have **no
+   502→  reader at all**, and `c_fltr_a13` feeds only `add8` [274], which itself has no reader either.
+   503→  **Round-4 correction:** the earlier claim that `sht` reaches the engine "through the port registry"
+   504→  was unnecessary — it is an ordinary record link (`pcentN`), which the truncated scan had simply cut
+   505→  off. So the *normalisation* sub-branch is a genuine authoring artifact; the raw `fshift` control is
+   506→  what the engine consumes. (Q-13, now **CLOSED**, D7.)
+   507→* **EQ boost is independent of `fshift` (OBS):** `c_multiply 8N` [280,288,…] =
+   508→  `c_multiply N × CutMultiplier`, and `c_boundN` = `clamp(c_multiply8N, MaxCut, 0)` (dB, ≤ 0 = cut)
+   509→  feeds `eqnN.boost1`. The driver is the voice's **interval** (`c_multiply N` = 14 − semitones), not
+   510→  `shtN`.
+   511→  `CutFreq` [260], `MaxCut` [259], `CutMultiplier` [261] are **16-entry tables selected by `inst`**;
+   512→  values are quoted verbatim in D3 §14.
+   513→
+   514→**Mixer, global feedback, wet/dry, output (OBS):**
+   515→
+   516→```
+   517→[338] stereomixer3  ninputs=8, tc=25, inN=addN-out, gainN=m switch N-out, panN=panN-out
+   518→   ├─ right ─►[339] feedback1 (in1=stereomixer3-right, in2=subtract1-out, amp1=1, amp2=mfbk)
+   519→   └─ left  ─►[345] feedback  (in1=stereomixer3-left , in2=subtract-out , amp1=1, amp2=mfbk)
+   520→        │
+   521→        ├─►[340]/[346] softclip → [341]/[347] delay_xf (maxdelay=2400, xfadetime=20,
+   522→        │        tapdls1 = c_minmax-maximum) → [342]/[348] "just for the filter" (delay 0)
+   523→        │        → [343]/[349] highcut (freq=5) → [344]/[350] subtract (in − highcut)  ⇐ DC blocker
+   524→        └── the four `feedback*`/`subtract*` nodes form the GLOBAL feedback loop; its return is
+   525→            `subtract(N) − highcut(N)` (a 5 Hz DC blocker), gain = `mfbk`.
+   526→```
+   527→
+   528→* `mfbk` (index-less) = "feedback" **0…100 %**, default 0. `fbkd` (index-less) = "fback dly"
+   529→  0…5000 ms, default 0. `c_minmax` (index-less, slot `0x6E0`) = `minmax(fbkd, 50)`; `delay_xf`
+   530→  reads its **`maximum`** output → the global feedback tap is `max(fback dly, 50)` (unit ms, per the
+   531→  `fbkd` unit; **DER** for the orientation — the node's `maximum` output is the larger of its two
+   532→  inputs, a naming convention we did not verify down to the class body). (Q-11.)
+   533→* **Wet/dry** (`mimo` numbering; `miso`/`siso` are shifted by −1 from here on, see below):
+   534→  `mmix` [207] = "mix" 0…100 %, default 100.
+   535→  `c_subtract2` [351] = `1 − mmix`; `c_fltr_a1` [352] = smoothed `mmix` (wet L, tc 10),
+   536→  `c_fltr_a` [353] = smoothed `1 − mmix` (dry L, tc 10), `c_fltr_a2` [354] = smoothed `mmix`
+   537→  (wet R), `c_fltr_a3` [355] = smoothed `1 − mmix` (dry R).
+   538→  Dry L = `multiply` [356] = `iswitch6 × c_fltr_a`;  dry R = `multiply3` [359] =
+   539→  `iswitch3 × c_fltr_a3`, where `iswitch3` [358] selects `iswitch6`/`iswitch7` by `c_subtract1`
+   540→  (mono ⇒ same dry signal on both channels).
+   541→  Wet source: `iswitch9` [360] (R) and `iswitch11` [362] (L), both `select = c_subtract3`
+   542→  (= `ouch − 1`), `in1 = monoSumWetChans` [357] = `0.707·(feedback + feedback1)`,
+   543→  `in2 = feedback1` (R) / `feedback` (L).
+   544→  `multiply2` [361] = `iswitch9 × c_fltr_a2` (wet R), `multiply1` [363] = `iswitch11 × c_fltr_a1`
+   545→  (wet L). `LWetDryMix` [364] = `multiply + multiply1`, `RWetDryMix` [365] = `multiply3 + multiply2`.
+   546→  **Why `mimo` has one module more:** with `ouch = 1` (mono out) both output channels must carry the
+   547→  mono fold, so `mimo` needs the extra `iswitch9`; `miso`/`siso` have `ouch = 2` and therefore route
+   548→  `multiply2` straight from `feedback1` (`[359]` in those profiles), which is exactly why
+   549→  `monoSumWetChans` moves after `RWetDryMix` there and `iswitch9` disappears (395 vs 394 modules).
+   550→* **Output gain** `ogan` [210] = "Out Gain" −96…+24 dB, default 0 → `left out` [366],
+   551→  `right out` [367].
+   552→* **Bypass** `bypa` [211] = "input: normal|bypass" → `iswitch2` [368] selects `adc in1`/`adc in2` by
+   553→  `c_subtract1`, and `iswitch` [369] / `iswitch1` [370] select `left/right out` (normal) or that raw
+   554→  input pair (bypass). Bypass is therefore a hard output-domain switch, not a wet/dry blend.
+   555→* **Meters/LEDs**: `peak1` [371] / `peak2` [372] on `left/right out` → `LevMetrAtoC(1)` →
+   556→  `LevLintodB(1)` → `lopD` [382] / `ropD` [383] (tag `ganred:`); input peaks `peak4` [256]
+   557→  (`iswitch6`) and `peak5` [373] (`iswitch5`) → `LevLintodB3/4` → `lipD` [376] / `ripD` [377]
+   558→  (same `ganred:` tag); `overload1/3` [384]/[385] on the outputs and `overload/2` [386]/[387] on the
+   559→  inputs (`thresh = −0.1`) → `c_switch7/8` → `lopL/ropL/lipL/ripL` [390-393] (tag `monitor:`);
+   560→  `pitM` [394] / `tonM` [395] display `dtonicii9-pitch` / `dtonicii9-tonality`.
+   561→* **`stereomixer3` record note (round-4 correction):** the earlier statement that the dump prints
+   562→  `pan1…pan6` was an artifact of the `[:24]` extractor cut. The full record lists **`pan1..pan8 =
+   563→  pan1..pan8-out`** (plus `in1..in8`, `gain1..8 = m switch 1..8-out`, `processoff=0`). No field is
+   564→  missing.
+   565→* **Profile index shift (OBS):** in `miso`/`siso` every module index ≥ 357 is one lower than in
+   566→  `mimo` (there is no `iswitch9`): `357 iswitch3, 358 multiply3, 359 multiply2, 360 RWetDryMix,
+   567→  361 monoSumWetChans, 362 iswitch11, 363 multiply1, 364 LWetDryMix, 365 left out, 366 right out,
+   568→  367 iswitch2, 368 iswitch, 369 iswitch1, 370 peak1, 371 peak2`. All indices ≤ 356 are identical
+   569→  in every profile.
+   570→* **Dangling node `add8` [274] (OBS, resolved negative result):** `add8` computes
+   571→  `in1 = c_fltr_a13-out`, `in2 = multiply12-out`, where `c_fltr_a13` = `sht1/(|sht1|+200)` (tc 0) and
+   572→  `multiply12` [244] = `c_fltr_a36 × rdm slew 1` (`c_fltr_a36` = smoothed `rdep/2400`, tc 20). A scan
+   573→  of **all 69-entry records** finds **no module that reads `add8-out`** — and, decisively, it also finds
+   574→  that the `sht` group *does* have a normal reader in `dtonicii9.pcentN` and the `rdep` group in
+   575→  `dtonicii9.modamtN`. **`add8` is therefore a genuine authoring artifact** (a leftover normaliser),
+   576→  *not* evidence of a hidden delivery path. This closes Q-13 (D7).
+   577→
+   578→### 6.2 Random-modulation subsystem (8 parallel chains, OBS)
+   579→
+   580→Structure of chain N (N = 1…8); the dump's names are **rotated**, see the note below:
+   581→
+   582→```
+   583→rdm abs  = |rdm noise|                       (one shared noise source [213])
+   584→rdm sh N = sample&hold(rdm abs) triggered by rdm comp N
+   585→rdm slew N : in = rdm sh N, pslew = nslew = rdm mult ?  → slew-limited random walk
+   586→rdm comp N : in1 = rdm slew N, in2 = rdm sh N            → re-arm comparator for the S&H
+   587→rdm a-c N  : in = rdm slew N                             → the chain's output
+   588→rdm mult ? : 2000 · ( rdm a-c ? / 1.5 + 0.5 )            → slew amount (0…2000 units)
+   589→dtonicii9.mod1…mod8 ← rdm slew 1…8                       (engine input, full record)
+   590→dtonicii9.modamt1…mod8 ← rdep                            (engine input: the *depth*)
+   591→multiply12 [244] = c_fltr_a36 · rdm slew 1               (c_fltr_a36 = smoothed(rdep/2400), tc 20)
+   592→```
+   593→
+   594→* `rdep` [10] = "rnd dpth" `0…200`, default 50; `c_divide26` [11] = `rdep/2400` → `c_fltr_a36` [12]
+   595→  (tc 20).
+   596→* **Name rotation (OBS):** the module names are not aligned with the chains. `rdm mult 2` … `rdm mult 8`
+   597→  take their input from `rdm add 1` … `rdm add 8` respectively, and `rdm mult 1` takes `rdm add 8` —
+   598→  i.e. the amplitude multipliers carry a name one *higher* than the chain they serve, wrapping around.
+   599→  The same rotation appears in the voice chains (§6.1: voice 1 is served by `modfilter8`, `moddelay7`,
+   600→  `multiply4`). The chains themselves are unambiguous when followed by reference; the numbers in the
+   601→  names are not.
+   602→* **`rdep` delivery (round-4 correction, OBS):** `rdep` [10] has two live readers — `c_divide26` (the
+   603→  dead `c_fltr_a36 → multiply12 → add8` normaliser) **and `dtonicii9.modamt1..8`** (record entries
+   604→  44–52). So `rdep` is delivered to the engine as the per-voice **random-modulation depth**, exactly
+   605→  as the record states (`modamt1..8 = rdep-out`); the `c_fltr_a36`/`multiply12` path is the dead
+   606→  artifact. The engine's `modN` inputs are the slew-limited walk itself.
+   607→* The modulation is therefore a slew-limited random walk: the walk value (`rdm slew N`) is the
+   608→  engine's `modN`, and its **depth is `rdep`** (`modamtN`). The old "`mod1…mod7` only / `mod8`
+   609→  truncated" note is retracted — `mod1..mod8` are all present (§6.1).
+   610→
+   611→### 6.3 What this section resolves
+   612→
+   613→| item | status |
+   614→|---|---|
+   615→| W1/W2/W3 (page A/B, 16-float, 72-float, int[12] writers) | **not** the module graph — those shared objects are written inside the engine/its owners; see D6 row R-11 |
+   616→| W4 (writer of port 20 per-voice delay) | OBS: `c_adderN` = `dlyN + c_switch` → `dtonicii9.delayamtN` (record), while the echo module uses the raw `dlyN`. Both are module-graph writers |
+   617→| W5 (ports 18/19 gains, 24 read index) | OBS: 18/19 = per-voice `m switch N`/`ognN` values; 24 = record read index (§3 S3) |
+   618→| W6 (consumer of engine audio output) | OBS: `modfilterN` `in=dtonicii9-outN` — the consumer is the per-voice filter/EQ/delay chain |
+   619→| W8 (`sht`, `rdep`) | **CLOSED (round 4)** — both are ordinary record links: `shtN` → `dtonicii9.pcentN`, `rdep` → `dtonicii9.modamtN`. The sub-branches that appeared to have "no reader" (`c_fltr_a13/a15…a21`, `c_fltr_a36`, `multiply12`, `add8`) are genuine authoring artifacts. The earlier "port-registry delivery" explanation was an artifact of the `[:24]` record truncation; see §6.1, Q-13 |
+   620→| full-record dead-net scan (round 4) | OBS: the only nets with no reader are `add8`, `c_fltr_a15…a21`, `bound`, the top-level outputs `iswitch`/`iswitch1`, and the meter sinks `pitM`/`tonM`/`lipL`…`ropD`. `c_minmax`, `c_minmax2`, `bound1`, `c_fltr_a14`, `delay_xf*`, `modfilter*`, `stereomixer3`, `dtonicii9` are all live |
+   621→| Q-2 (output/wet-dry/stereo) | **closed** by §6.1 |
+   622→| §2 mandate coverage | **complete**: input prep, tracker, voices, variable-rate delay, interpolation, glide, per-voice filter/EQ/delay/feedback, global feedback, aux/DC-block, stereo mix, wet/dry, output gain |
+   623→
+   624→
+   625→---
+   626→
+   627→## 8. Round-9 addendum — the rate map resolved (2025-10-23)
+   628→
+   629→The two rate-map fields are private zero-filled `std::vector<float>` members of the dsp_t
+   630→(which lives at **wrapper+0x430**), constructed in `FUN_1800E0360` and destroyed in
+   631→`FUN_1800E7DF0` (the round-8 "in-place-constructed objects at 0x1800E7EF6/0x1800E7F0E" reading is
+   632→retracted — `FUN_180010E30` is the `vector<float>` **destructor**). Their element values are
+   633→written and read **only** by the prepare, per voice per block:
+   634→
+   635→```
+   636→slot_40F8[v] = page[10] = clamp(modamt_v, lo, hi)·(1/2400)         ; modamt = rdep ("rnd dpth", 0…200)
+   637→slot_4128[v] = page[0] · ring[(idx+3) & 0xFFF]                     ; fallback page[0] when ~0
+   638→               page[0] = ratio·0.0625 = ratio/16                    ; exp(cents·ln2/1200)·0.0625
+   639→               ring[(idx+3)] = the tracker's running correction gain
+   640→
+   641→f    = F · slot_40F8[v]            ; F = the rdm slew N walk value ∈ [0,1] (1.0 attainable;
+   642→                                   ;  arithmetic bound [0,1+2^-23], absorbed by the P rounding
+   643→                                   ;  at the tested depths, ≤ one P-ulp elsewhere — rounds 10–11)
+   644→step = (float32)P(f) · slot_4128[v] · 64.0 = 4·P(f)·ratio·correction
+   645→pitch = |step| · f_in              ; backward read; a step > 1 is upward
+   646→```
+   647→
+   648→* **Unity is exactly `f = 0`** (no random modulation): `4·P(0) = 1`. The round-8 `R = ratio/64`
+   649→  hypothesis and its unity locus are **retracted** (the page scale is `0.0625 = 1/16`, a factor-4
+   650→  error; the `64.0` multiplier and the `1/16` scale cancel to 4, which cancels `P(0) = 1/4`).
+   651→  **The total output ratio is `ratio · correction · 4·P(f)` — three distinct factors** (the
+   652→  configured ratio from the temperament tables, the tracker's running correction `T+0x6070`,
+   653→  and the random modulation); it equals the configured ratio **only when `correction = 1`**
+   654→  (in particular with pitch tracking off, where the correction is hard-set to `1.0`).
+   655→* **`4·P(f) ≈ 2^(2f) = 2^(cents/1200)`**: the quartic is the engine's polynomial cents→ratio
+   656→  curve, with `f = deviation/2400` (units of ±2 octaves). The random modulation therefore
+   657→  applies **`walk·depth` cents** to the voice ratio — to within the quartic's fit error
+   658→  **`|cents − walk·depth| ≤ 0.101 ¢`** over the shipped range (round 11: interior maximum at
+   659→  `f ≈ 0.0561` → `F ≈ 0.673` at depth 200, achieved cents slightly **below** nominal in the
+   660→  bulk — the "upward" character is the modulation *direction* `4·P ≥ 1`, not the error sign);
+   661→  at the maxima **49.939 ¢** (depth 50) / **199.923 ¢** (depth 200). *(Round 10 corrected the
+   662→  earlier example values 50.13/201.68 ¢, which were calculation errors; round 11 corrected the
+   663→  max-error location and the residual-direction wording.)*
+   664→* The graph binding is fully identified: `rdep` → `modamt` entry (wrapper+0x2B0, name "modamt"
+   665→  at `0x180408420`) → page[10]; `rdm slew 1..8`-out → `mod1..8` → the `+0x68` port table (bound
+   666→  in `FUN_1800E18B0`) → F. The noise generator is module **[212] `rdm noise`** (add_fn
+   667→  `0x180139C50`, process `FUN_180139B40`, missing from the round-4 dump): a lagged-Fibonacci
+   668→  additive generator with scale `0x34000001 = 2^-23·(1+2^-23)` — arithmetic output range
+   669→  `[−(1+2^-23), +1.0]`, and over its actual orbit (default config, full period `2^22`) exactly
+   670→  `[−1.0, +1.0]` (round 10).
+   671→* Full evidence: `OCTAVOX_ROUND9_FINDINGS.md` (numeric layer corrected by
+   672→  `OCTAVOX_ROUND10_FINDINGS.md`, audited by `OCTAVOX_ROUND11_FINDINGS.md`); D6 §13 rows R-43–R-59.
+   673→  Runtime behaviour (walk statistics, correction convergence, audible character of the
+   674→  one-sided (upward-from-base) deviation) stays **UNK** — the target was never executed.
+   675→
+   676→---
+   677→
+   678→## 9. Round-12 addendum — interpolator, settled path, crossfade (2025-10-24)
+   679→
+   680→Round 12 re-read the shipped binary directly (read-only capstone; scripts and
+   681→raw outputs in `evidence/analysis_round12/`). The S5/S6 sections above and the
+   682→`+0x40f0`/`+0x4110` member-map rows were rewritten from the instruction-level
+   683→evidence. Summary of what changed and what it means:
+   684→
+   685→1. **`+0x40f0` corrected**: the interpolator table is *static* `.rdata`
+   686→   (`0x1803B6170`, 256×6 floats, installed by `FUN_1800E18B0`), floor-indexed
+   687→   by `floor(frac(pos)·256)`, and is **not Lagrange** — the old "6-tap
+   688→   Lagrange/phase table" label was an unverified guess, now corrected to
+   689→   "static 256×6 fractional-delay kernel (designed symmetric lowpass,
+   690→   bin-centre phases, unity DC gain)". Bit-exact extraction shipped as
+   691→   `r12_obs_kernel_table.h`.
+   692→2. **Settled path = single tap (OBS)**: one 6-tap interpolated read per
+   693→   output sample; the crossfade is a one-shot linear fade (`out = tapA +
+   694→   (tapA − tapB)·state`, `state: 0 → −1`, decrement `page[12+idx]·2^-23` per
+   695→   output sample) that settles back to single-tap.
+   696→3. **Unity has no comb in the target (DER)**: `rate = 1.0` exactly, `pos`
+   697→   frozen (`+4.0`/block vs `−rate·4`), re-arm never fires → fixed fractional
+   698→   delay. This is the static answer to Q-14's premise and the design basis of
+   699→   the round-12 native core's unity engagement (`native/ARCHITECTURE.md`).
+   700→4. **Re-arm mechanics (OBS)**: trigger `pos − delay < 8.000000000000007`;
+   701→   jump `floor(2^(page[12+idx] & 0xF)·v + 0.5)`, `v = clamp(ring[recidx]·2^-11,
+   702→   ≥ 48; 480 if ≈0)`, `idx = clamp(int((v−48)/16), 0, 31)`, halved near the
+   703→   ring limit; tapA offset = one record interval (`ring[recidx+1]`); the
+   704→   record correction at `ring[recidx+3]` confirms round 9. The record
+   705→   first-field scaling stays UNK.
+   706→5. **Full rip-constant map** of the prepare recorded (§2.5 of the round-12
+   707→   findings); the ctor's sample-rate-dependent work-ring strides
+   708→   (0x1000/0x2000/0x4000) noted.
+   709→
+   710→The round-12 **native DSP core** (`native/`, C++17) implements the round-11
+   711→`delayline_aligned` design with the unity engagement fix; it is our own code
+   712→(except the clearly-labelled OBS kernel data mode) and is validated/benchmarked
+   713→in `OCTAVOX_ROUND12_FINDINGS.md` §3–§4. It is not a VST3 plugin and makes no
+   714→runtime claim about the target.
+   715→

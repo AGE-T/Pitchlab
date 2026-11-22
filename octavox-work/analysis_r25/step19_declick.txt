@@ -1,0 +1,32 @@
+===== FUN_1800d8380 declick read 0x1800d8d71 =====
+0x1800d8d71: lea       rax, [r15 + 0x78]
+0x1800d8d75: mov       qword ptr [r15 + 0x50], rax
+0x1800d8d79: mov       dword ptr [r15 + 0x58], ebx
+0x1800d8d7d: xor       edi, edi
+0x1800d8d7f: mov       qword ptr [rsp + 0x50], rdi
+0x1800d8d84: mov       qword ptr [rsp + 0x60], rdi
+0x1800d8d89: mov       qword ptr [rsp + 0x68], 0xf
+0x1800d8d92: mov       byte ptr [rsp + 0x50], dil
+0x1800d8d97: lea       r8d, [rdi + 0xa]
+0x1800d8d9b: lea       rdx, [rip + 0x32f5c6]  ; ->0x180408368
+0x1800d8da2: lea       rcx, [rsp + 0x50]
+0x1800d8da7: call      0x180017b40  ; -> 0x180017b40
+0x1800d8dac: nop       
+0x1800d8dad: mov       qword ptr [rsp + 0x30], rsi
+0x1800d8db2: mov       dword ptr [rsp + 0x28], edi
+0x1800d8db6: lea       rax, [rsp + 0x50]
+0x1800d8dbb: mov       qword ptr [rsp + 0x20], rax
+0x1800d8dc0: mov       r9, r12
+0x1800d8dc3: lea       r8, [rsp + 0x30]
+0x1800d8dc8: mov       rdx, qword ptr [r15]
+0x1800d8dcb: lea       rcx, [r15 + 0x40]
+0x1800d8dcf: call      0x1800c55a0  ; -> 0x1800c55a0
+0x1800d8dd4: nop       
+0x1800d8dd5: mov       rdx, qword ptr [rsp + 0x68]
+0x1800d8dda: cmp       rdx, 0x10
+0x1800d8dde: jb        0x1800d8e12
+0x1800d8de0: inc       rdx
+0x1800d8de3: mov       rcx, qword ptr [rsp + 0x50]
+0x1800d8de8: mov       rax, rcx
+0x1800d8ded: cli       
+0x1800d8dee: add       byte ptr [rax], dl

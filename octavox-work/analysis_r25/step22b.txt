@@ -1,0 +1,24 @@
+===== partA 0x1800d9bb7 =====
+0x1800d9bb7: mov       rcx, qword ptr [rbx + 0x10]
+0x1800d9bbb: mov       rax, qword ptr [rdi + rcx + 0x20]
+0x1800d9bc0: test      rax, rax
+0x1800d9bc3: je        0x1800d9bcb
+0x1800d9bc5: movss     xmm1, dword ptr [rax]
+0x1800d9bc9: jmp       0x1800d9bd1
+0x1800d9bcb: movss     xmm1, dword ptr [rdi + rcx + 0x28]
+0x1800d9bd1: movss     xmm0, dword ptr [rdi + rcx]
+0x1800d9bd6: lea       rdx, [rbp + 0x67]
+0x1800d9bda: comiss    xmm1, xmm0
+0x1800d9bdd: lea       rax, [rbp + 0x6f]
+0x1800d9be1: movss     dword ptr [rbp + 0x67], xmm0
+0x1800d9be6: movss     dword ptr [rbp + 0x6f], xmm1
+0x1800d9beb: cmovbe    rax, rdx
+0x1800d9bef: movss     xmm0, dword ptr [rax]
+0x1800d9bf3: minss     xmm0, dword ptr [rdi + rcx + 4]
+0x1800d9bf9: cvtps2pd  xmm1, xmm0
+0x1800d9bfc: mulsd     xmm1, xmm8
+0x1800d9c01: cvtpd2ps  xmm0, xmm1
+0x1800d9c05: call      0x180352350  ; -> 0x180352350
+0x1800d9c0a: mov       rcx, qword ptr [rbx + 0x28]
+0x1800d9c0e: movaps    xmm4, xmm0
+0x1800d9c11: mov       rdx, qword ptr [rcx + rdi + 0x20]

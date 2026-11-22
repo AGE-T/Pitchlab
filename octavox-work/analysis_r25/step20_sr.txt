@@ -1,0 +1,38 @@
+===== sr string build region 0x1800d8408 =====
+0x1800d8408: call      0x18032b140  ; -> 0x18032b140
+0x1800d840d: mov       ebx, eax
+0x1800d840f: mov       qword ptr [rsp + 0x50], rdi
+0x1800d8414: mov       qword ptr [rsp + 0x68], 0xf
+0x1800d841d: mov       qword ptr [rsp + 0x60], 7
+0x1800d8426: mov       eax, dword ptr [rip + 0x32fecc]  ; ->0x1804082f8 f32=2.9514e+29
+0x1800d842c: mov       dword ptr [rsp + 0x50], eax
+0x1800d8430: movzx     eax, word ptr [rip + 0x32fec5]  ; ->0x1804082fc f32=1.06029e-38
+0x1800d8437: mov       word ptr [rsp + 0x54], ax
+0x1800d843c: movzx     eax, byte ptr [rip + 0x32febb]  ; ->0x1804082fe f32=2.61715e+20
+0x1800d8443: mov       byte ptr [rsp + 0x56], al
+0x1800d8447: mov       byte ptr [rsp + 0x57], dil
+0x1800d844c: mov       qword ptr [rsp + 0x70], rdi
+0x1800d8451: mov       qword ptr [rbp - 0x80], rdi
+0x1800d8455: mov       qword ptr [rbp - 0x78], 0xf
+0x1800d845d: mov       byte ptr [rsp + 0x70], dil
+0x1800d8462: lea       r9, [rsp + 0x70]
+0x1800d8467: xor       r8d, r8d
+0x1800d846a: lea       rdx, [rsp + 0x50]
+0x1800d846f: mov       rcx, r12
+0x1800d8472: call      0x1800c3fb0  ; -> 0x1800c3fb0
+0x1800d8477: test      al, al
+0x1800d8479: jne       0x1800d84bc
+0x1800d847b: mov       rdx, qword ptr [rbp - 0x78]
+0x1800d847f: cmp       rdx, 0x10
+0x1800d8483: jb        0x1800d8533
+0x1800d8489: inc       rdx
+0x1800d848c: mov       rcx, qword ptr [rsp + 0x70]
+0x1800d8491: mov       rax, rcx
+0x1800d8494: cmp       rdx, 0x1000
+0x1800d849b: jb        0x1800d852e
+0x1800d84a1: add       rdx, 0x27
+0x1800d84a5: mov       rcx, qword ptr [rcx - 8]
+0x1800d84a9: sub       rax, rcx
+0x1800d84ac: add       rax, -8
+0x1800d84b0: cmp       rax, 0x1f
+0x1800d84b5: xchg      dword ptr [rbx + 0xa], edx

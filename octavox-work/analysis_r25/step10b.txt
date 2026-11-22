@@ -1,0 +1,30 @@
+0x1800c7963: mov       eax, dword ptr [rbx + 0x88]
+0x1800c7969: inc       eax
+0x1800c796b: lea       eax, [rax + rax*2]
+0x1800c796e: movd      xmm0, eax
+0x1800c7972: cvtdq2ps  xmm0, xmm0
+0x1800c7975: call      0x180352dc0  ; -> 0x180352dc0
+0x1800c797a: cvtss2sd  xmm0, xmm0
+0x1800c797e: mulsd     xmm0, qword ptr [rip + 0x34aa02]  ; ->0x180412388 f32=5.28734e+22 f64=1.4427
+0x1800c7986: cvttsd2si rcx, xmm0
+0x1800c798b: xorps     xmm1, xmm1
+0x1800c798e: movabs    r12, 0x8000000000000000
+0x1800c7998: cmp       rcx, r12
+0x1800c799b: je        0x1800c79c5
+0x1800c799d: xorps     xmm1, xmm1
+0x1800c79a0: cvtsi2sd  xmm1, rcx
+0x1800c79a5: ucomisd   xmm1, xmm0
+0x1800c79a9: je        0x1800c79c5
+0x1800c79ab: unpcklpd  xmm0, xmm0
+0x1800c79af: movmskpd  eax, xmm0
+0x1800c79b4: and       eax, 1
+0x1800c79b7: xor       eax, 1
+0x1800c79ba: add       rcx, rax
+0x1800c79bd: xorps     xmm0, xmm0
+0x1800c79c0: cvtsi2sd  xmm0, rcx
+0x1800c79c5: mulsd     xmm0, qword ptr [rip + 0x34a8f3]  ; ->0x1804122c0 f32=-1.66309e+38 f64=0.693147
+0x1800c79cd: call      0x180351f50  ; -> 0x180351f50
+0x1800c79d2: addsd     xmm0, qword ptr [rip + 0x34a8c6]  ; ->0x1804122a0 f32=0 f64=0.5
+0x1800c79da: xor       eax, eax
+0x1800c79dc: movsd     xmm1, qword ptr [rip + 0x34ad44]  ; ->0x180412728 f32=0 f64=9.22337e+18
+....

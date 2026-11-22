@@ -1,0 +1,17 @@
+0x180352350: sub rsp, 0x38
+0x180352354: cmp dword ptr [rip + 0x179be9], 0
+0x18035235b: jne 0x1803524c0
+0x180352361: movd edx, xmm0
+0x180352365: btr edx, 0x1f
+0x180352369: cmp edx, dword ptr [rip + 0xc2a41]
+0x18035236f: jge 0x180352490
+0x180352375: cvtss2sd xmm0, xmm0
+0x180352379: movapd xmm3, xmmword ptr [rip + 0xc2a5f]
+0x180352381: mulsd xmm3, xmm0
+0x180352385: comisd xmm3, xmmword ptr [rip + 0xc2a33]
+0x18035238d: jae 0x180352450
+0x180352393: comisd xmm3, xmmword ptr [rip + 0xc2a35]
+0x18035239b: jb 0x180352430
+0x1803523a1: cvtpd2dq xmm4, xmm3
+0x1803523a5: lea r10, [rip + 0x35cf4]
+callers of 0x180352350: 3 ['0x180066774', '0x1800667c0', '0x1800d9c05']

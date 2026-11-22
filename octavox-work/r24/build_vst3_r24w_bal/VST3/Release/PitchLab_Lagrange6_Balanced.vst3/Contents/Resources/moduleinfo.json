@@ -1,0 +1,32 @@
+{
+  "Name": "PitchLab_Lagrange6_Balanced",
+  "Version": "1.0.0",
+  "Factory Info": {
+    "Vendor": "PitchLab Project",
+    "URL": "",
+    "E-Mail": "",
+    "Flags": {
+      "Unicode": true,
+      "Classes Discardable": false,
+      "Component Non Discardable": false,
+    },
+  },
+  "Classes": [
+    {
+      "CID": "6F4E62589A3142E18F3C5A971D2B4E60",
+      "Category": "Audio Module Class",
+      "Name": "PitchLab Harmonizer Lagrange6 Balanced",
+      "Vendor": "PitchLab Project",
+      "Version": "1.2.0",
+      "SDKVersion": "VST 3.7.12",
+      "Sub Categories": [
+        "Fx",
+        "Pitch Shift",
+      ],
+      "Class Flags": 0,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+  ],
+}

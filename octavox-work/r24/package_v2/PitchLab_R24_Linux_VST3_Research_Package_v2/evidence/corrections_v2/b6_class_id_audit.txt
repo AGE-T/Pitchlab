@@ -1,0 +1,12 @@
+  PitchLab_Lagrange6Q.vst3: CID=F0E1B5DF3809FA49A4DBE929C38CDF08 name='PitchLab Harmonizer Lagrange6Q' vendor='PitchLab Project' subcats=['Fx', 'Pitch Shift']
+  PitchLab_Lagrange6Q_FullRate.vst3: CID=2F2E7034591E46F30794E1E13DD51B96 name='PitchLab Harmonizer Lagrange6Q FullRate' vendor='PitchLab Project' subcats=['Fx', 'Pitch Shift']
+  PitchLab_Lagrange6Q_Hybrid.vst3: CID=E37DC7BCA7F66D0D726A9477963B2A5D name='PitchLab Harmonizer Lagrange6Q Hybrid' vendor='PitchLab Project' subcats=['Fx', 'Pitch Shift']
+  PitchLab_Lagrange6_Balanced.vst3: CID=6F4E62589A3142E18F3C5A971D2B4E60 name='PitchLab Harmonizer Lagrange6 Balanced' vendor='PitchLab Project' subcats=['Fx', 'Pitch Shift']
+  PitchLab_Lagrange6_FullRate.vst3: CID=C13E1BB55BFB0598F25DDD4A52B0E817 name='PitchLab Harmonizer Lagrange6 FullRate' vendor='PitchLab Project' subcats=['Fx', 'Pitch Shift']
+  PitchLab_Lagrange6_Hybrid.vst3: CID=BD4A5DDF24B12C39DD2B7F74A7A867CB name='PitchLab Harmonizer Lagrange6 Hybrid' vendor='PitchLab Project' subcats=['Fx', 'Pitch Shift']
+  PitchLab_ObsKernel6_Balanced.vst3: CID=E3E7FA706A380D35B05F64B91F1E2689 name='PitchLab Harmonizer ObsKernel6 Balanced' vendor='PitchLab Project' subcats=['Fx', 'Pitch Shift']
+  PitchLab_ObsKernel6_FullRate.vst3: CID=64E9EEBAF112DDEDABBE2CD9242695D3 name='PitchLab Harmonizer ObsKernel6 FullRate' vendor='PitchLab Project' subcats=['Fx', 'Pitch Shift']
+  PitchLab_ObsKernel6_Hybrid.vst3: CID=A9BE5A71D192F1BA5A32D5FA9315FFC0 name='PitchLab Harmonizer ObsKernel6 Hybrid' vendor='PitchLab Project' subcats=['Fx', 'Pitch Shift']
+pairwise-distinct CIDs across 9 bundles: OK
+pinned-matrix agreement (incl. preserved Lagrange6 Balanced lineage FUID 6F4E6258...): OK
+RESULT: PASS

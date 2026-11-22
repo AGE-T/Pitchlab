@@ -1,0 +1,182 @@
+### M-fn2 0x1800cec80: n=411 floats={'movss': 10, 'cvtdq2ps': 4, 'mulss': 14, 'movaps': 10, 'subss': 5, 'movsd': 2, 'movups': 2}
+    const 0x180411e48 f32=1.42108581e-14 f64=5.15555419e-67 x1
+    const 0x180411e58 f32=1.19209304e-07 f64=8.15663217e-56 x1
+    const 0x1804083f8 f32=1.66316043e+22 f64=1.12319296e+219 x1
+    calls=11 crt_math=[]
+    call list: 0x18032b140, 0x1800c3fb0, 0x18017d338, 0x18015e100, 0x18015e100, 0x18015e100, 0x18032b520, 0x18032b420, 0x18032b320, 0x18032b230, 0x1800c4930
+
+### B-fn4 0x1800d0d50: n=415 floats={'movss': 42, 'movaps': 24, 'mulss': 16, 'addss': 12, 'comiss': 8, 'xorps': 5, 'maxss': 4, 'subss': 8, 'movsd': 4, 'cvtsd2ss': 1, 'movups': 4}
+    const 0x180408410 f32=7.00716327e+22 f64=9.0768018e+223 x2
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    calls=20 crt_math=[]
+    call list: 0x18032b230, 0x1800c3fb0, 0x180179220, 0x18015e100, 0x18015e100, 0x18015e100, 0x18032b520, 0x18032b420, 0x18032b320, 0x18032b230, 0x1800c4930, 0x18006b730, 0x18015e100, 0x18032b520, 0x18032b420, 0x18032b320, 0x18032b230, 0x1800c4930, 0x18006b730, 0x18015e100
+
+### C-fn3 0x1800d38b0: n=401 floats={'movaps': 35, 'xorps': 7, 'movss': 19, 'movsd': 2, 'cvtdq2pd': 8, 'movups': 1, 'mulsd': 4, 'cvtsi2sd': 3, 'cvtps2pd': 4, 'subsd': 5, 'addsd': 2, 'maxsd': 2, 'cvtsi2ss': 1, 'subss': 5, 'minsd': 2, 'cvtpd2ps': 2, 'comiss': 1, 'cvtdq2ps': 1, 'mulss': 15, 'addss': 7}
+    const 0x18041213c f32=1 f64=8.69222111e-311 x2
+    const 0x18041280c f32=-1 f64=-0.0312500223 x1
+    const 0x1804121b0 f32=0 f64=0.0625 x1
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    const 0x1804123f8 f32=0 f64=5 x1
+    calls=4 crt_math=[]
+    call list: 0x18015e0e0, 0x18032b140, 0x1800c3fb0, 0x18017d338
+
+### M-fn1 0x1800d7f10: n=428 floats={'movss': 29, 'movaps': 16, 'xorps': 13, 'addss': 1, 'comiss': 5, 'minss': 1, 'cvtps2pd': 12, 'subsd': 4, 'mulsd': 8, 'addsd': 8, 'cvtpd2ps': 4, 'cvtsd2ss': 4, 'maxss': 4, 'mulss': 4, 'movups': 2, 'movsd': 2}
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    const 0x18041213c f32=1 f64=8.69222111e-311 x1
+    const 0x180408410 f32=7.00716327e+22 f64=9.0768018e+223 x1
+    calls=9 crt_math=[]
+    call list: 0x180022400, 0x18015e0e0, 0x18032b140, 0x1800c3fb0, 0x18017d338, 0x18015e100, 0x18015e100, 0x18015e100, 0x18032b230
+
+### M-fn3 0x1800dc430: n=436 floats={'movss': 32, 'cvtps2pd': 18, 'mulsd': 15, 'movsd': 11, 'movaps': 5, 'subsd': 4, 'addsd': 10, 'cvtdq2pd': 6, 'comisd': 2, 'cvtpd2ps': 2, 'mulss': 1, 'movups': 2, 'comiss': 2}
+    const 0x180412260 f32=0 f64=0.25 x1
+    const 0x1804123c8 f32=0 f64=3 x1
+    const 0x180412710 f32=255 f64=1.44115224e+17 x1
+    calls=14 crt_math=[]
+    call list: 0x18015e0e0, 0x18032b140, 0x1800c3fb0, 0x18017d338, 0x18015e100, 0x18015e100, 0x18015e100, 0x18032b520, 0x18032b420, 0x18032b320, 0x18032b230, 0x1800c4930, 0x18006b730, 0x18015e100
+
+### engine-prepare 0x1800e2030: n=370 floats={'movss': 46, 'xorps': 6, 'movaps': 24, 'movsd': 4, 'subss': 2, 'maxss': 1, 'minss': 1, 'addsd': 10, 'mulss': 9, 'cvtps2pd': 21, 'mulsd': 17, 'cvtpd2ps': 2, 'subsd': 1, 'comisd': 1, 'comiss': 4, 'cvtdq2ps': 2, 'addss': 1, 'ucomiss': 1}
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    const 0x180411e44 f32=7.10542736e-15 f64=1.29942889e-113 x1
+    const 0x180412688 f32=48 f64=2.06158464e+11 x1
+    const 0x180412428 f32=5.60519386e-45 f64=8 x1
+    const 0x180411f48 f32=0 f64=7.10542736e-15 x1
+    const 0x180412058 f32=0.5 f64=4.2040432e-05 x1
+    const 0x180412558 f32=0 f64=2048 x1
+    const 0x18041280c f32=-1 f64=-0.0312500223 x1
+    const 0x1804123e8 f32=0 f64=4 x1
+    const 0x180412490 f32=0 f64=64 x1
+    const 0x180411e94 f32=0.00048828125 f64=3.62202236e-29 x1
+    const 0x180412730 f32=480 f64=1.36044756e+20 x1
+    calls=1 crt_math=[]
+    call list: 0x18013bbc0
+
+### C-fn1 0x1800e8b50: n=390 floats={'movss': 60, 'xorps': 1, 'movaps': 38, 'addss': 3, 'comiss': 12, 'minss': 4, 'maxss': 3, 'mulss': 19, 'subss': 1, 'cvtps2pd': 14, 'mulsd': 12, 'addsd': 12, 'subsd': 8, 'cvtpd2ps': 16, 'movsd': 4, 'comisd': 8, 'movups': 2}
+    const 0x18041280c f32=-1 f64=-0.0312500223 x1
+    const 0x18041213c f32=1 f64=8.69222111e-311 x1
+    const 0x1804123b0 f32=2 f64=5.30498948e-315 x1
+    const 0x180412328 f32=0 f64=1 x1
+    const 0x180412838 f32=0 f64=-1 x1
+    const 0x1804085c0 f32=1.13616586e+30 f64=1.43650765e+161 x1
+    calls=11 crt_math=[]
+    call list: 0x18032b520, 0x18032b420, 0x18032b320, 0x18032b230, 0x1800c4930, 0x18006b730, 0x18015e100, 0x18032b520, 0x18032b420, 0x18032b320, 0x18032b230
+
+### C-fn2 0x1800ea650: n=423 floats={'movaps': 14, 'xorps': 2, 'movups': 3, 'movss': 35, 'subss': 1, 'movsd': 8, 'mulsd': 3, 'cvtpd2ps': 3, 'mulss': 9, 'addss': 4, 'cvtdq2ps': 1}
+    const 0x18041213c f32=1 f64=8.69222111e-311 x1
+    const 0x1804123e8 f32=0 f64=4 x1
+    const 0x180411e5c f32=2.38418579e-07 f64=7.42284585e-51 x1
+    calls=17 crt_math=[]
+    call list: 0x18015e63c, 0x180014890, 0x18013dad0, 0x18013b7b0, 0x18013b540, 0x18013ae80, 0x18013dad0, 0x180014890, 0x18005ce50, 0x18013b7b0, 0x18015e100, 0x18015e0e0, 0x180011020, 0x180175410, 0x18032b140, 0x1800c3fb0, 0x18017d338
+
+### B-fn5 0x1800ee420: n=440 floats={'movss': 38, 'movaps': 26, 'andps': 14, 'subss': 11, 'comiss': 6, 'addss': 7, 'mulss': 14, 'minss': 4, 'maxss': 5, 'xorps': 1, 'movups': 4, 'movsd': 2}
+    const 0x18041213c f32=1 f64=8.69222111e-311 x2
+    const 0x180412c60 f32=nan f64=nan x1
+    const 0x180411e44 f32=7.10542736e-15 f64=1.29942889e-113 x1
+    const 0x18041280c f32=-1 f64=-0.0312500223 x1
+    const 0x180412058 f32=0.5 f64=4.2040432e-05 x1
+    const 0x180412c60 f32=nan f64=nan x1
+    const 0x180408628 f32=2.81836971e+20 f64=5.61570787e+223 x1
+    calls=13 crt_math=[]
+    call list: 0x180022400, 0x18015e0e0, 0x18032b140, 0x1800c3fb0, 0x18017d338, 0x18015e100, 0x18015e100, 0x18015e100, 0x18032b520, 0x18032b420, 0x18032b320, 0x18032b230, 0x1800c4930
+
+### M-fn5 0x180136ee0: n=487 floats={'movss': 43, 'subss': 9, 'comiss': 9, 'xorps': 15, 'maxss': 4, 'movaps': 16, 'minss': 3, 'cvtps2pd': 1, 'mulsd': 5, 'cvtss2sd': 4, 'divsd': 1, 'cvtsd2ss': 3, 'mulss': 10, 'addss': 2, 'cvtdq2pd': 1, 'cvtpd2ps': 1, 'movups': 1}
+    const 0x1804120e0 f32=-5.18969491e+11 f64=0.001 x3
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x2
+    const 0x1804123b0 f32=2 f64=5.30498948e-315 x2
+    const 0x180412810 f32=-1.25 f64=1.58838845e-314 x2
+    const 0x180412858 f32=3.37028055e+12 f64=-6.28318531 x1
+    const 0x180412c80 f32=0 f64=-0 x1
+    const 0x18041280c f32=-1 f64=-0.0312500223 x1
+    calls=12 crt_math=['0x180351f50']
+    call list: 0x1800cbf80, 0x180351f50, 0x18032bd00, 0x18015e100, 0x18015e0e0, 0x180175410, 0x1800efe80, 0x1800d2b10, 0x1800efce0, 0x1800dc7a0, 0x1800dbad0, 0x180161700
+
+### M-fn4 0x1801370b0: n=501 floats={'movss': 23, 'movaps': 12, 'mulss': 10, 'xorps': 8, 'subss': 4, 'comiss': 4, 'minss': 2, 'cvtss2sd': 3, 'mulsd': 4, 'cvtsd2ss': 2, 'addss': 2, 'cvtdq2pd': 1, 'cvtpd2ps': 1, 'movups': 1}
+    const 0x1804120e0 f32=-5.18969491e+11 f64=0.001 x3
+    const 0x1804123b0 f32=2 f64=5.30498948e-315 x2
+    const 0x180412810 f32=-1.25 f64=1.58838845e-314 x2
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    calls=15 crt_math=[]
+    call list: 0x18032bd00, 0x18015e100, 0x18015e0e0, 0x180175410, 0x1800efe80, 0x1800d2b10, 0x1800efce0, 0x1800dc7a0, 0x1800dbad0, 0x180161700, 0x1800cf080, 0x1800ce0f0, 0x1800d8380, 0x1800d8230, 0x1800d7400
+
+### B-fn9 0x180137e90: n=481 floats={'movss': 38, 'addss': 4, 'comiss': 12, 'xorps': 4, 'maxss': 4, 'minss': 6}
+    const 0x180411e54 f32=1.1920929e-07 f64=3.18618748e-58 x2
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    calls=9 crt_math=[]
+    call list: 0x1800c9230, 0x1800de610, 0x1800ded00, 0x1800dd240, 0x1800c8550, 0x1800c76c0, 0x1800d6580, 0x1800d63e0, 0x1800ee830
+
+### B-fn8 0x180137f70: n=476 floats={'movss': 31, 'comiss': 9, 'minss': 7}
+    const 0x180411e54 f32=1.1920929e-07 f64=3.18618748e-58 x2
+    calls=10 crt_math=[]
+    call list: 0x1800de610, 0x1800ded00, 0x1800dd240, 0x1800c8550, 0x1800c76c0, 0x1800d6580, 0x1800d63e0, 0x1800ee830, 0x1800ee6e0, 0x1800edd10
+
+### B-fn7 0x180138170: n=502 floats={'movss': 42, 'comiss': 10, 'minss': 9, 'addss': 1}
+    const 0x180411e54 f32=1.1920929e-07 f64=3.18618748e-58 x1
+    const 0x180412058 f32=0.5 f64=4.2040432e-05 x1
+    calls=9 crt_math=[]
+    call list: 0x1800c8550, 0x1800c76c0, 0x1800d6580, 0x1800d63e0, 0x1800ee830, 0x1800ee6e0, 0x1800edd10, 0x1800d0f20, 0x1800d0520
+
+### B-fn6 0x1801383d0: n=507 floats={'movss': 44, 'comiss': 8, 'minss': 8, 'addss': 10, 'movaps': 11, 'subss': 5, 'cvtdq2ps': 1, 'mulss': 15}
+    const 0x180412058 f32=0.5 f64=4.2040432e-05 x2
+    const 0x18041213c f32=1 f64=8.69222111e-311 x1
+    const 0x180411eb4 f32=0.00100000005 f64=7.70943426e-27 x1
+    calls=9 crt_math=[]
+    call list: 0x1800d6580, 0x1800d63e0, 0x1800ee830, 0x1800ee6e0, 0x1800edd10, 0x1800d0f20, 0x1800d0520, 0x1800ed830, 0x1800ed2c0
+
+### B-fn3 0x180138870: n=476 floats={'movss': 33, 'movaps': 18, 'subss': 6, 'cvtdq2ps': 1, 'mulss': 21, 'addss': 10, 'comiss': 6, 'minss': 2, 'cvtps2pd': 1, 'movsd': 1, 'xorps': 5, 'cvtsd2ss': 1, 'maxss': 4}
+    const 0x18041213c f32=1 f64=8.69222111e-311 x1
+    const 0x180411eb4 f32=0.00100000005 f64=7.70943426e-27 x1
+    const 0x180412058 f32=0.5 f64=4.2040432e-05 x1
+    const 0x180411f58 f32=0.0500000007 f64=1.23691269e-12 x1
+    const 0x180412438 f32=0 f64=10 x1
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    const 0x180411f10 f32=0.0078125 f64=1.15249858e-19 x1
+    calls=10 crt_math=[]
+    call list: 0x1800ed830, 0x1800ed2c0, 0x18032bd00, 0x18015e100, 0x18015e0e0, 0x180175410, 0x1800d2c40, 0x1800d2b10, 0x1800d2840, 0x18017eb60
+
+### B-fn2 0x180138b00: n=497 floats={'movss': 18, 'comiss': 5, 'minss': 1, 'mulss': 6, 'cvtps2pd': 1, 'movsd': 1, 'xorps': 5, 'cvtsd2ss': 1, 'subss': 1, 'addss': 1, 'movaps': 4, 'maxss': 4}
+    const 0x180411f58 f32=0.0500000007 f64=1.23691269e-12 x1
+    const 0x180412438 f32=0 f64=10 x1
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    const 0x180411f10 f32=0.0078125 f64=1.15249858e-19 x1
+    calls=19 crt_math=[]
+    call list: 0x18032bd00, 0x18015e100, 0x18015e0e0, 0x180175410, 0x1800d2c40, 0x1800d2b10, 0x1800d2840, 0x18017eb60, 0x18032bd00, 0x18015e100, 0x18015e0e0, 0x180175410, 0x1800da5b0, 0x1800da450, 0x1800da1c0, 0x180022400, 0x18015e100, 0x18015e0e0, 0x180175410
+
+### B-fn1 0x180138e70: n=513 floats={'movss': 32, 'subss': 10, 'mulss': 5, 'addss': 4, 'movaps': 11, 'comiss': 11, 'xorps': 11, 'maxss': 4, 'ucomiss': 1, 'minss': 1}
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    const 0x180411f10 f32=0.0078125 f64=1.15249858e-19 x1
+    const 0x18041213c f32=1 f64=8.69222111e-311 x1
+    calls=16 crt_math=[]
+    call list: 0x18032bd00, 0x18015e100, 0x18015e0e0, 0x180175410, 0x1800da5b0, 0x1800da450, 0x1800da1c0, 0x180022400, 0x18015e100, 0x18015e0e0, 0x180175410, 0x18015e100, 0x180022400, 0x1800c57c0, 0x18015e0e0, 0x180175410
+
+### A-fn3 0x180139480: n=532 floats={'xorps': 9, 'movss': 52, 'movaps': 17, 'addss': 12, 'subss': 12, 'comiss': 22, 'minss': 2, 'ucomiss': 4, 'cvtdq2ps': 1}
+    const 0x18041213c f32=1 f64=8.69222111e-311 x1
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    calls=10 crt_math=[]
+    call list: 0x1800daf20, 0x1800da7d0, 0x1800ca260, 0x1800ca260, 0x1800c9f10, 0x1800c9990, 0x180022400, 0x18015e100, 0x18015e0e0, 0x180175410
+
+### A-fn2 0x180139790: n=520 floats={'movss': 48, 'comiss': 17, 'addss': 8, 'ucomiss': 6, 'movaps': 5, 'cvtdq2ps': 4, 'mulss': 4, 'xorps': 2, 'minss': 2}
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    calls=9 crt_math=[]
+    call list: 0x1800c9f10, 0x1800c9990, 0x180022400, 0x18015e100, 0x18015e0e0, 0x180175410, 0x18015e100, 0x18015e0e0, 0x180175410
+
+### A-fn1 0x180139970: n=503 floats={'movss': 46, 'comiss': 11, 'cvtdq2ps': 4, 'mulss': 4, 'xorps': 2, 'minss': 3, 'ucomiss': 2, 'movaps': 1}
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    calls=10 crt_math=[]
+    call list: 0x180022400, 0x18015e100, 0x18015e0e0, 0x180175410, 0x18015e100, 0x18015e0e0, 0x180175410, 0x18015e100, 0x18015e0e0, 0x180175410
+
+### A-special 0x180139b40: n=493 floats={'movss': 39, 'cvtdq2ps': 4, 'mulss': 4, 'comiss': 8, 'xorps': 2, 'minss': 5, 'ucomiss': 3, 'movaps': 2}
+    const 0x180412c90 f32=-0 f64=-1.0609979e-314 x1
+    const 0x1804128dc f32=-32768 f64=-2.65813246e+36 x1
+    const 0x180412768 f32=32767 f64=1.42788186e+35 x1
+    calls=9 crt_math=[]
+    call list: 0x18015e100, 0x18015e0e0, 0x180175410, 0x18015e100, 0x18015e0e0, 0x180175410, 0x180180200, 0x18015e100, 0x18015e0e0
+
+### graph-pre? 0x18013d6f0: n=598 floats={'xorps': 4, 'ucomiss': 1, 'movups': 7, 'movsd': 9, 'movss': 7, 'mulss': 5, 'movaps': 13, 'cvtps2pd': 3, 'cvtsd2ss': 2, 'cvtdq2ps': 4, 'divsd': 1, 'sqrtss': 1, 'divss': 1, 'comiss': 1}
+    const 0x180412058 f32=0.5 f64=4.2040432e-05 x2
+    const 0x18041267c f32=40 f64=6.01295506e+10 x2
+    const 0x180411f3c f32=0.0250000004 f64=4.83169019e-15 x1
+    const 0x180412438 f32=0 f64=10 x1
+    const 0x180412328 f32=0 f64=1 x1
+    const 0x1804ccd9c f32=1.94702014e-40 f64=2.95258738e-309 x1
+    const 0x18041213c f32=1 f64=8.69222111e-311 x1
+    calls=20 crt_math=['0x1803528e0']
+    call list: 0x180014890, 0x180011020, 0x18015e100, 0x18015e100, 0x18015e100, 0x18015e100, 0x180010e30, 0x18015e100, 0x18015e100, 0x18015e100, 0x18015e100, 0x18015e100, 0x18015e100, 0x18015e100, 0x180175410, 0x18015e0e0, 0x18017eb60, 0x18017eb60, 0x1803528e0, 0x1803528e0

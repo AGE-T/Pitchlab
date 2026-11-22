@@ -1,0 +1,6 @@
+.text: ptr refs to pantable: []
+.rdata: ptr refs to pantable: []
+.data: ptr refs to pantable: []
+.text: ptr refs to 0x180409E20: []
+.rdata: ptr refs to 0x180409E20: []
+.data: ptr refs to 0x180409E20: []

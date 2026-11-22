@@ -1,0 +1,53 @@
+===== FUN_180066620 (addss/mulss 0.5 cluster) 0x180066620 =====
+0x180066620: sub       rsp, 0x28
+0x180066624: mov       r10, qword ptr [rcx + 0xd0]
+0x18006662b: test      r10, r10
+0x18006662e: je        0x180066669
+0x180066630: movss     dword ptr [rsp + 0x30], xmm1
+0x180066636: movss     xmm0, dword ptr [rcx + 4]
+0x18006663b: movss     dword ptr [rsp + 0x40], xmm0
+0x180066641: movss     xmm1, dword ptr [rcx]
+0x180066645: movss     dword ptr [rsp + 0x48], xmm1
+0x18006664b: mov       rax, qword ptr [r10]
+0x18006664e: lea       r9, [rsp + 0x30]
+0x180066653: lea       r8, [rsp + 0x40]
+0x180066658: lea       rdx, [rsp + 0x48]
+0x18006665d: mov       rcx, r10
+0x180066660: call      qword ptr [rax + 0x10]
+0x180066663: nop       
+0x180066664: add       rsp, 0x28
+0x180066668: ret       
+0x180066669: movss     xmm3, dword ptr [rcx + 8]
+0x18006666e: movss     xmm2, dword ptr [rcx]
+0x180066672: xorps     xmm0, xmm0
+0x180066675: comiss    xmm3, xmm0
+0x180066678: jbe       0x1800666bc
+0x18006667a: subss     xmm1, xmm2
+0x18006667e: divss     xmm1, xmm3
+0x180066682: addss     xmm1, dword ptr [rip + 0x3ab9ce]  ; ->0x180412058 f32=0.5
+0x18006668a: cvttss2si edx, xmm1
+0x18006668e: cmp       edx, 0x80000000
+0x180066694: je        0x1800666b4
+0x180066696: movd      xmm0, edx
+0x18006669a: cvtdq2ps  xmm0, xmm0
+0x18006669d: ucomiss   xmm0, xmm1
+0x1800666a0: je        0x1800666b4
+0x1800666a2: unpcklps  xmm1, xmm1
+0x1800666a5: movmskps  eax, xmm1
+0x1800666a8: and       eax, 1
+0x1800666ab: sub       edx, eax
+0x1800666ad: movd      xmm1, edx
+0x1800666b1: cvtdq2ps  xmm1, xmm1
+0x1800666b4: mulss     xmm1, xmm3
+0x1800666b8: addss     xmm1, xmm2
+0x1800666bc: comiss    xmm1, xmm2
+0x1800666bf: jbe       0x1800666d4
+0x1800666c1: movss     xmm0, dword ptr [rcx + 4]
+0x1800666c6: comiss    xmm0, xmm2
+0x1800666c9: jbe       0x1800666d4
+0x1800666cb: minss     xmm0, xmm1
+0x1800666cf: add       rsp, 0x28
+0x1800666d3: ret       
+0x1800666d4: movaps    xmm0, xmm2
+0x1800666d7: add       rsp, 0x28
+0x1800666db: ret       

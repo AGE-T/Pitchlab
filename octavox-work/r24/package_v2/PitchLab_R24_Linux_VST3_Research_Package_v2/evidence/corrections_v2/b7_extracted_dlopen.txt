@@ -1,0 +1,10 @@
+  plugins/additional_variants/PitchLab_Lagrange6Q.vst3/Contents/x86_64-linux/PitchLab_Lagrange6Q.so: dlopen OK, factory OK
+  plugins/additional_variants/PitchLab_Lagrange6Q_FullRate.vst3/Contents/x86_64-linux/PitchLab_Lagrange6Q_FullRate.so: dlopen OK, factory OK
+  plugins/additional_variants/PitchLab_Lagrange6Q_Hybrid.vst3/Contents/x86_64-linux/PitchLab_Lagrange6Q_Hybrid.so: dlopen OK, factory OK
+  plugins/additional_variants/PitchLab_Lagrange6_FullRate.vst3/Contents/x86_64-linux/PitchLab_Lagrange6_FullRate.so: dlopen OK, factory OK
+  plugins/additional_variants/PitchLab_ObsKernel6_FullRate.vst3/Contents/x86_64-linux/PitchLab_ObsKernel6_FullRate.so: dlopen OK, factory OK
+  plugins/additional_variants/PitchLab_ObsKernel6_Hybrid.vst3/Contents/x86_64-linux/PitchLab_ObsKernel6_Hybrid.so: dlopen OK, factory OK
+  plugins/recommended/PitchLab_Lagrange6_Balanced.vst3/Contents/x86_64-linux/PitchLab_Lagrange6_Balanced.so: dlopen OK, factory OK
+  plugins/recommended/PitchLab_Lagrange6_Hybrid.vst3/Contents/x86_64-linux/PitchLab_Lagrange6_Hybrid.so: dlopen OK, factory OK
+  plugins/recommended/PitchLab_ObsKernel6_Balanced.vst3/Contents/x86_64-linux/PitchLab_ObsKernel6_Balanced.so: dlopen OK, factory OK
+RESULT: PASS

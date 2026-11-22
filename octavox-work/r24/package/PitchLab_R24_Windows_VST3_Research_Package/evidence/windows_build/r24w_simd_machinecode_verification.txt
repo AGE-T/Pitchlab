@@ -1,0 +1,34 @@
+R24-W SIMD COMPILATION VERIFICATION (Windows x64 cross-build, zig 0.13.0)
+==========================================================================
+Date: 2026-11-09T16:51:39Z
+
+1) PER-TU COMPILER FLAGS (ninja -t commands, build_win_r24w_bal):
+   dsp.cpp: -O3 
+   pitch_control.cpp: -O3 
+   simd_dispatch.cpp: -O3 
+   simd_avx2.cpp: -O3 -ffp-contract=off -mavx2 
+   simd_fma.cpp: -O3 -ffp-contract=off -mavx2 -mfma 
+
+2) OBJECT-LEVEL INSTRUCTION SCAN (objdump -d, pe-x86-64):
+   dsp.cpp.obj: ymm=0 vfmadd=0 vex_fp=0
+   pitch_control.cpp.obj: ymm=0 vfmadd=0 vex_fp=0
+   simd_dispatch.cpp.obj: ymm=0 vfmadd=0 vex_fp=0
+   simd_avx2.cpp.obj: ymm=86 vfmadd=0 vex_fp=99
+   simd_fma.cpp.obj: ymm=68 vfmadd=26 vex_fp=48
+
+3) FINAL DLL SCAN (objdump -d on the shipped modules):
+   PitchLab_Lagrange6_Balanced.vst3: ymm=154 vfmadd=26 cpuid=3 xgetbv=1
+   PitchLab_Lagrange6_FullRate.vst3: ymm=154 vfmadd=26 cpuid=3 xgetbv=1
+
+   ymm arithmetic: 154 = 86 (simd_avx2.obj) + 68 (simd_fma.obj) -> EVERY
+   256-bit instruction in the final DLL originates from the two ISA kernel
+   units; the baseline code contributes ZERO mandatory AVX2/FMA.
+   vfmadd arithmetic: 26 = 26 (simd_fma.obj only).
+   cpuid(3 leaves: 0,1,7) + xgetbv(1) = the explicit Windows detection path.
+
+COUNTING NOTE: the evidence above counts disassembly LINES containing >=1
+match (rg -c: 154 lines); the JSON verification record
+(r24w_windows_verification.json isa_counts) counts TOTAL regex matches
+(317: two ymm operands per instruction line on average). Both reflect the
+same instruction set; the arithmetic proof uses the line counts (154 =
+86+68).

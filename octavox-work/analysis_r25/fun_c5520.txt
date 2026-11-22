@@ -1,0 +1,159 @@
+===== module table record E ctor 0x1800c5520 0x1800c5520 =====
+0x1800c5520: push      rbx
+0x1800c5522: sub       rsp, 0x20
+0x1800c5526: lea       rax, [rip + 0x3449f3]  ; ->0x180409f20 f32=-1.13256e-39 f64=3.18339e-314
+0x1800c552d: mov       rbx, rcx
+0x1800c5530: mov       qword ptr [rcx], rax
+0x1800c5533: test      dl, 1
+0x1800c5536: je        0x1800c5542
+0x1800c5538: mov       edx, 8
+0x1800c553d: call      0x18015e100  ; -> 0x18015e100
+0x1800c5542: mov       rax, rbx
+0x1800c5545: add       rsp, 0x20
+0x1800c5549: pop       rbx
+0x1800c554a: ret       
+0x1800c554b: int3      
+0x1800c554c: int3      
+0x1800c554d: int3      
+0x1800c554e: int3      
+0x1800c554f: int3      
+0x1800c5550: add       rcx, 0x10
+0x1800c5554: jmp       0x180017ac0
+0x1800c5559: int3      
+0x1800c555a: int3      
+0x1800c555b: int3      
+0x1800c555c: int3      
+0x1800c555d: int3      
+0x1800c555e: int3      
+0x1800c555f: int3      
+0x1800c5560: mov       rax, qword ptr [rcx + 0x20]
+0x1800c5564: test      rax, rax
+0x1800c5567: je        0x1800c556f
+0x1800c5569: movss     xmm1, dword ptr [rax]
+0x1800c556d: jmp       0x1800c5574
+0x1800c556f: movss     xmm1, dword ptr [rcx + 0x28]
+0x1800c5574: movss     xmm0, dword ptr [rcx]
+0x1800c5578: lea       rax, [rsp + 8]
+0x1800c557d: comiss    xmm1, xmm0
+0x1800c5580: lea       rdx, [rsp + 0x10]
+0x1800c5585: movss     dword ptr [rsp + 0x10], xmm0
+0x1800c558b: movss     dword ptr [rsp + 8], xmm1
+0x1800c5591: cmovbe    rax, rdx
+0x1800c5595: movss     xmm0, dword ptr [rax]
+0x1800c5599: minss     xmm0, dword ptr [rcx + 4]
+0x1800c559e: ret       
+0x1800c559f: int3      
+0x1800c55a0: mov       qword ptr [rsp + 0x10], rbx
+0x1800c55a5: mov       qword ptr [rsp + 0x18], rbp
+0x1800c55aa: push      rsi
+0x1800c55ab: push      rdi
+0x1800c55ac: push      r14
+0x1800c55ae: sub       rsp, 0x60
+0x1800c55b2: mov       rdi, qword ptr [rsp + 0xa0]
+0x1800c55ba: mov       rbx, r8
+0x1800c55bd: mov       rbp, rdx
+0x1800c55c0: mov       r14, rcx
+0x1800c55c3: mov       rdx, rdi
+0x1800c55c6: mov       rcx, rbx
+0x1800c55c9: mov       r8, r9
+0x1800c55cc: mov       rsi, r9
+0x1800c55cf: call      0x18032b520  ; -> 0x18032b520
+0x1800c55d4: mov       r8, rsi
+0x1800c55d7: movss     dword ptr [r14], xmm0
+0x1800c55dc: mov       rdx, rdi
+0x1800c55df: mov       rcx, rbx
+0x1800c55e2: call      0x18032b420  ; -> 0x18032b420
+0x1800c55e7: mov       r8, rsi
+0x1800c55ea: movss     dword ptr [r14 + 4], xmm0
+0x1800c55f0: mov       rdx, rdi
+0x1800c55f3: mov       rcx, rbx
+0x1800c55f6: call      0x18032b320  ; -> 0x18032b320
+0x1800c55fb: mov       r8, rsi
+0x1800c55fe: movss     dword ptr [r14 + 8], xmm0
+0x1800c5604: mov       rdx, rdi
+0x1800c5607: mov       rcx, rbx
+0x1800c560a: call      0x18032b230  ; -> 0x18032b230
+0x1800c560f: mov       eax, dword ptr [rsp + 0xa8]
+0x1800c5616: lea       rdx, [rsp + 0x50]
+0x1800c561b: mov       dword ptr [rsp + 0x28], eax
+0x1800c561f: mov       r9, rdi
+0x1800c5622: mov       r8, rsi
+0x1800c5625: movss     dword ptr [rsp + 0x20], xmm0
+0x1800c562b: mov       rcx, rbp
+0x1800c562e: call      0x1800c4930  ; -> 0x1800c4930
+0x1800c5633: mov       r8, qword ptr [rax]
+0x1800c5636: mov       qword ptr [r14 + 0x20], r8
+0x1800c563a: test      r8, r8
+0x1800c563d: je        0x1800c567e
+0x1800c563f: mov       rdx, qword ptr [r14 + 0x10]
+0x1800c5643: test      rdx, rdx
+0x1800c5646: je        0x1800c567e
+0x1800c5648: mov       eax, dword ptr [r14 + 0x18]
+0x1800c564c: lea       rcx, [r8 + 8]
+0x1800c5650: mov       qword ptr [rsp + 0x40], rdx
+0x1800c5655: mov       rdx, qword ptr [r8 + 0x10]
+0x1800c5659: mov       dword ptr [rsp + 0x48], eax
+0x1800c565d: cmp       rdx, qword ptr [r8 + 0x18]
+0x1800c5661: je        0x1800c5672
+0x1800c5663: movups    xmm0, xmmword ptr [rsp + 0x40]
+0x1800c5668: movups    xmmword ptr [rdx], xmm0
+0x1800c566b: add       qword ptr [rcx + 8], 0x10
+0x1800c5670: jmp       0x1800c56c9
+0x1800c5672: lea       r8, [rsp + 0x40]
+0x1800c5677: call      0x18006b730  ; -> 0x18006b730
+0x1800c567c: jmp       0x1800c56c9
+0x1800c567e: movss     xmm0, dword ptr [rax + 8]
+0x1800c5683: lea       rcx, [rsp + 0x80]
+0x1800c568b: movss     xmm1, dword ptr [r14]
+0x1800c5690: lea       rax, [rsp + 0x30]
+0x1800c5695: movss     xmm2, dword ptr [r14 + 4]
+0x1800c569b: comiss    xmm0, xmm1
+0x1800c569e: movss     dword ptr [rsp + 0x30], xmm1
+0x1800c56a4: movss     dword ptr [rsp + 0x80], xmm0
+0x1800c56ad: cmovbe    rcx, rax
+0x1800c56b1: movss     dword ptr [rsp + 0x38], xmm2
+0x1800c56b7: lea       rax, [rsp + 0x38]
+0x1800c56bc: comiss    xmm2, dword ptr [rcx]
+0x1800c56bf: cmova     rax, rcx
+0x1800c56c3: mov       eax, dword ptr [rax]
+0x1800c56c5: mov       dword ptr [r14 + 0x28], eax
+0x1800c56c9: lea       r11, [rsp + 0x60]
+0x1800c56ce: mov       rax, r14
+0x1800c56d1: mov       rbx, qword ptr [r11 + 0x28]
+0x1800c56d5: mov       rbp, qword ptr [r11 + 0x30]
+0x1800c56d9: mov       rsp, r11
+0x1800c56dc: pop       r14
+0x1800c56de: pop       rdi
+0x1800c56df: pop       rsi
+0x1800c56e0: ret       
+0x1800c56e1: int3      
+0x1800c56e2: int3      
+0x1800c56e3: int3      
+0x1800c56e4: int3      
+0x1800c56e5: int3      
+0x1800c56e6: int3      
+0x1800c56e7: int3      
+0x1800c56e8: int3      
+0x1800c56e9: int3      
+0x1800c56ea: int3      
+0x1800c56eb: int3      
+0x1800c56ec: int3      
+0x1800c56ed: int3      
+0x1800c56ee: int3      
+0x1800c56ef: int3      
+0x1800c56f0: lea       rax, [rip + 0x3444d1]  ; ->0x180409bc8 f32=-1.13324e-39 f64=3.18339e-314
+0x1800c56f7: mov       qword ptr [rcx], rax
+0x1800c56fa: ret       
+0x1800c56fb: int3      
+0x1800c56fc: int3      
+0x1800c56fd: int3      
+0x1800c56fe: int3      
+0x1800c56ff: int3      
+0x1800c5700: push      rbx
+0x1800c5702: sub       rsp, 0x20
+0x1800c5706: lea       rax, [rip + 0x3444bb]  ; ->0x180409bc8 f32=-1.13324e-39 f64=3.18339e-314
+0x1800c570d: mov       rbx, rcx
+0x1800c5710: mov       qword ptr [rcx], rax
+0x1800c5713: test      dl, 1
+0x1800c5716: je        0x1800c5722
+0x1800c5718: mov       edx, 0x10

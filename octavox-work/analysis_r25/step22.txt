@@ -1,0 +1,83 @@
+===== FUN_1800d9b20 continue 0x1800d9c0a =====
+0x1800d9c0a: mov       rcx, qword ptr [rbx + 0x28]
+0x1800d9c0e: movaps    xmm4, xmm0
+0x1800d9c11: mov       rdx, qword ptr [rcx + rdi + 0x20]
+0x1800d9c16: test      rdx, rdx
+0x1800d9c19: je        0x1800d9c21
+0x1800d9c1b: movss     xmm1, dword ptr [rdx]
+0x1800d9c1f: jmp       0x1800d9c27
+0x1800d9c21: movss     xmm1, dword ptr [rcx + rdi + 0x28]
+0x1800d9c27: movss     xmm2, dword ptr [rcx + rdi]
+0x1800d9c2c: lea       rax, [rbp + 0x77]
+0x1800d9c30: movss     xmm3, dword ptr [rcx + rdi + 4]
+0x1800d9c36: lea       r8, [rbp + 0x7f]
+0x1800d9c3a: comiss    xmm1, xmm2
+0x1800d9c3d: movss     dword ptr [rbp + 0x77], xmm1
+0x1800d9c42: movaps    xmm1, xmm7
+0x1800d9c45: movss     dword ptr [rbp + 0x7f], xmm2
+0x1800d9c4a: cmovbe    rax, r8
+0x1800d9c4e: movss     xmm0, dword ptr [rax]
+0x1800d9c52: minss     xmm0, xmm3
+0x1800d9c56: mulss     xmm0, xmm7
+0x1800d9c5a: subss     xmm1, xmm0
+0x1800d9c5e: mulss     xmm1, xmm4
+0x1800d9c62: test      rdx, rdx
+0x1800d9c65: je        0x1800d9c6d
+0x1800d9c67: movss     xmm0, dword ptr [rdx]
+0x1800d9c6b: jmp       0x1800d9c73
+0x1800d9c6d: movss     xmm0, dword ptr [rcx + rdi + 0x28]
+0x1800d9c73: comiss    xmm0, xmm2
+0x1800d9c76: lea       rdx, [rbp - 0x41]
+0x1800d9c7a: mov       dword ptr [rbp - 0x41], 0xbf800000
+0x1800d9c81: lea       rcx, [rbp - 0x51]
+0x1800d9c85: mov       r9d, r14d
+0x1800d9c88: lea       rax, [rbp - 0x59]
+0x1800d9c8c: mov       dword ptr [rbp - 0x31], 0xbf800000
+0x1800d9c93: movss     dword ptr [rbp - 0x59], xmm0
+0x1800d9c98: movss     dword ptr [rbp - 0x51], xmm2
+0x1800d9c9d: cmovbe    rax, rcx
+0x1800d9ca1: movss     dword ptr [rbp - 0x49], xmm1
+0x1800d9ca6: mov       rcx, qword ptr [rbx]
+0x1800d9ca9: comiss    xmm1, xmm10
+0x1800d9cad: mov       r10, qword ptr [rcx]
+0x1800d9cb0: movss     xmm6, dword ptr [rax]
+0x1800d9cb4: lea       rax, [rbp - 0x49]
+0x1800d9cb8: minss     xmm6, xmm3
+0x1800d9cbc: cmovbe    rax, rdx
+0x1800d9cc0: xor       r8d, r8d
+0x1800d9cc3: mov       edx, dword ptr [rbx + 8]
+0x1800d9cc6: movss     xmm0, dword ptr [rax]
+0x1800d9cca: addss     xmm6, xmm9
+0x1800d9ccf: minss     xmm0, xmm9
+0x1800d9cd4: mulss     xmm6, xmm7
+0x1800d9cd8: movss     dword ptr [rsp + 0x20], xmm0
+0x1800d9cde: mulss     xmm6, xmm4
+0x1800d9ce2: movss     dword ptr [rbp - 0x39], xmm6
+0x1800d9ce7: call      qword ptr [r10 + 0xa0]
+0x1800d9cee: mov       rcx, qword ptr [rbx]
+0x1800d9cf1: lea       rdx, [rbp - 0x31]
+0x1800d9cf5: comiss    xmm6, xmm10
+0x1800d9cf9: lea       rax, [rbp - 0x39]
+0x1800d9cfd: mov       r9d, r14d
+0x1800d9d00: mov       r8d, 1
+0x1800d9d06: mov       r10, qword ptr [rcx]
+0x1800d9d09: cmovbe    rax, rdx
+0x1800d9d0d: mov       edx, dword ptr [rbx + 8]
+0x1800d9d10: movss     xmm0, dword ptr [rax]
+0x1800d9d14: minss     xmm0, xmm9
+0x1800d9d19: movss     dword ptr [rsp + 0x20], xmm0
+0x1800d9d1f: call      qword ptr [r10 + 0xa0]
+0x1800d9d26: inc       r14d
+0x1800d9d29: rol       rsi, 1
+0x1800d9d2c: add       rdi, 0x30
+0x1800d9d30: cmp       r14d, dword ptr [rbx + 0xc]
+0x1800d9d34: jl        0x1800d9b90
+0x1800d9d3a: movaps    xmm10, xmmword ptr [rsp + 0x70]
+0x1800d9d40: movaps    xmm9, xmmword ptr [rsp + 0x80]
+0x1800d9d49: movaps    xmm8, xmmword ptr [rsp + 0x90]
+0x1800d9d52: movaps    xmm7, xmmword ptr [rsp + 0xa0]
+0x1800d9d5a: movaps    xmm6, xmmword ptr [rsp + 0xb0]
+0x1800d9d62: mov       rdi, qword ptr [rsp + 0xc8]
+0x1800d9d6a: mov       rsi, qword ptr [rsp + 0xd0]
+0x1800d9d72: prefetchw byte ptr [rbx + 0x78]
+0x1800d9d76: mov       rax, qword ptr [rbx + 0x78]

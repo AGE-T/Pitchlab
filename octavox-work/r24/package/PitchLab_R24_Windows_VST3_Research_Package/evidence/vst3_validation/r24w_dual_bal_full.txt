@@ -1,0 +1,35 @@
+octavox_dual_nulltest (R19-P3b) -- deterministic dual-module VST3 null test
+harness scope: two separately-built bundles loaded SIMULTANEOUSLY in ONE
+process (SDK VST3::Hosting::Module loader = real dlopen + GetPluginFactory);
+lockstep process() driving with identical stimulus; sample-for-sample
+output comparison. NOT a DAW test.
+
+[lagrange6] build_vst3_r24w_bal/VST3/Release/PitchLab_Lagrange6_Balanced.vst3
+    factory classes: 1 | category: 'Audio Module Class' | class: 'PitchLab Harmonizer Lagrange6 Balanced' | version: '1.2.0'
+    class id found:    6F4E62589A3142E18F3C5A971D2B4E60
+    class id expected: {6F4E6258-9A31-42E1-8F3C-5A971D2B4E60}  -> IDENTITY OK
+    instance: params 38, buses 1 in / 1 out, latency 2304 samples
+[fullrate] build_vst3_r24w_full/VST3/Release/PitchLab_Lagrange6_FullRate.vst3
+    factory classes: 1 | category: 'Audio Module Class' | class: 'PitchLab Harmonizer Lagrange6 FullRate' | version: '1.2.0'
+    class id found:    C13E1BB55BFB0598F25DDD4A52B0E817
+    class id expected: {C13E1BB5-5BFB-0598-F25D-DD4A52B0E817}  -> IDENTITY OK
+    instance: params 38, buses 1 in / 1 out, latency 2304 samples
+
+simultaneous load: lagrange6=loaded fullrate=loaded; live factory re-probe after both dlopens: OK
+loader note: module_linux.cpp dlopen flags = RTLD_LAZY (no RTLD_GLOBAL ->
+    glibc default RTLD_LOCAL); per-handle dlsym resolves each module's own
+    GetPluginFactory -- identical exported symbol names do not collide.
+
+signal: 3 s @ 48000 Hz, 144000 samples, block 128, mono; 220Hz*0.35 + 330Hz*0.2 + LCG(987654321)*0.05
+analysis region: k >= 6400 (2304 startup/latency + 4096 grain), 137600 samples
+
+case                            maxdiff     rmsdiff     reldB     corr  bitident expect         ok   
+---------------------------------------------------------------------------------------------------------
+unity_exact                           0           0      -inf   1.0000  1.000000 bit-identical  ok   
+moderate_shift_plus400c            1.09      0.3425      1.57   0.2771  0.025174 different      ok   
+shift_minus24st                  0.4665      0.1199     -7.54   0.9119  0.000022 different      ok   
+---------------------------------------------------------------------------------------------------------
+identity checks: OK | cases: 3 passed, 0 failed, 0 skipped, 0 build-config defect(s)
+verdict: PASS
+json: evidence/analysis_round24/logs_r24w/r24w_dual_bal_full.json
+wavs: evidence/analysis_round24/logs_r24w/dual/<case>_lagrange6.wav, <case>_fullrate.wav, <case>_diff.wav

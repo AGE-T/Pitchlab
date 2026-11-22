@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/z/my-project/octavox-work/r24/build_r24w_asan/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

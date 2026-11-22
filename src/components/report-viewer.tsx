@@ -17,6 +17,9 @@ type Delivery = {
   url: string;
   sizeBytes: number;
   sha256: string | null;
+  title?: string;
+  note?: string;
+  chips?: string;
 };
 
 function formatBytes(bytes: number): string {
@@ -32,10 +35,19 @@ function formatBytes(bytes: number): string {
 function extractHeadings(markdown: string): Heading[] {
   const headings: Heading[] = [];
   const seen = new Map<string, number>();
+  let inFence = false; // ``` / ~~~ fenced code blocks contain no headings
   for (const line of markdown.split("\n")) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
     const m = /^(#{1,3})\s+(.+)$/.exec(line.trim());
     if (!m) continue;
-    const text = m[2].replace(/[*`]/g, "").trim();
+    const text = m[2]
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // flatten markdown links
+      .replace(/[*`]/g, "")
+      .trim();
     let id = text
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -67,11 +79,11 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 24 · SIMD képességréteg (YIN kernelek) + mért döntési rekord" },
-  { label: "Bit-exakt gyorsítás", value: "AVX2 lag-tengelyes kernel 4.8–6.3× · motor-bit-azonosság mindhárom detektor-módban" },
-  { label: "FullRate @96k", value: "det_estimate 5.9–6.0× · 8 hang sztereó falidő 1144 → 368 ms/s" },
-  { label: "Kapuk", value: "110/110 core (Release + ASan/UBSan) · hash-pinek bit-exakt · VST3 21/21 + 12/12 + 47/47 friss bundle-ön" },
-  { label: "R23-rés", value: "az R23 modul-szintű kapu elő-delta bundle-ön futott — lezárva, újraépítve, zöld" },
+  { label: "Kör", value: "Round 25 · az EREDETI Octavox VST3 belső DSP-láncának teljes feltárása (statikus RE)" },
+  { label: "Lánc", value: "VST3 burkolat → profilok (mimo/miso/siso) → 395-modulos graph → dtonicii9: tracker (12 kHz FIR) + diatonikus harmonia-térkép + 8 hangos változó-rátájú olvasó → keverés → kimenet" },
+  { label: "R25-ben lezárva", value: "tracker FIR-együtthatók (3 SR-osztály, bit-exakt felezőlánc) · stereomixer3 PAN-törvény: lineáris konstans-összegű L=0.5(1−p)g, R=0.5(1+p)g" },
+  { label: "Kézbesítés", value: "R24-W: két Windows x64 VST3 plugin (Balanced + FullRate) · 110/110 Release+ASan · validátor 47/47 · MSVC-blocked sandboxban (zig cross)" },
+  { label: "Őszinte határok", value: "az eredetit sosem futtattuk (minden állítás statikus OBS/DER) · a kernel generátora és a futásidejű viselkedések listája a dokumentumban" },
 ];
 
 export function ReportViewer({
@@ -97,22 +109,29 @@ export function ReportViewer({
   };
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-            break;
-          }
-        }
-      },
-      { rootMargin: "-20% 0px -70% 0px" }
-    );
-    for (const h of headings) {
-      const el = document.getElementById(h.id);
-      if (el) observer.observe(el);
-    }
-    return () => observer.disconnect();
+    const ids = headings.map((h) => h.id);
+    if (ids.length === 0) return;
+    const update = () => {
+      let current = ids[0];
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (el.getBoundingClientRect().top <= 200) current = id;
+        else break;
+      }
+      setActiveId(current);
+    };
+    const onHash = () => {
+      const hash = decodeURIComponent(window.location.hash.slice(1));
+      if (hash && ids.includes(hash)) setActiveId(hash);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("hashchange", onHash);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("hashchange", onHash);
+    };
   }, [headings]);
 
   return (
@@ -122,21 +141,21 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 24. kör
+                PitchLab Research — 25. kör (az eredeti DSP-lánc feltárása)
               </h1>
-              <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm sm:line-clamp-none">
-                SIMD képességréteg a YIN kernelekhez: per-TU ISA-egységek (AVX2 / AVX2+FMA, -ffp-contract=off), RT-biztos kernel-diszpécs prepare-időben, Config::simd (alapértelmezés Scalar = bit-exakt az R12–R23 rekorddal), a lag-tengelyes AVX2 kernel koncepció szerint bit-azonos a skalár referenciával (kemény exact-equality kapu) · 10 új r24 teszteset (100→110, Release + ASan) · a megszakadt előző session állapotának diagnosztikája és helyreállítása (hiányzó simd_fma.cpp, CMake/motor/teszt bekötés) · Eventide Octavox RE statikus reverzibilis projekt
+              <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm">
+                Az eredeti Eventide Octavox VST3 (Ox.vst3) belső DSP-láncának teljes, evidencia-alapú térképe: a JuceVST3Component→VoxAudioProcessor burkolattól a dtonicii9 motor 8 hangos magjáig (periodicitás-tracker ~12 kHz-en, diatonikus harmonia-térképezés 5 temperamentummal, kvartikus ráta-törvény, 256×6-os statikus kernel), a keverésig és kimenetig — minden cím- és konstanshivatkozással, OBS/DER/UNK besorolással · R25-ben lezárva a tracker FIR-együtthatói és a stereomixer3 pan-törvénye (lineáris konstans-összegű) · az eredetit sosem futtattuk, minden állítás statikus · Eventide Octavox RE statikus reverzibilis projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 24 · KÉSZ
+              ROUND 25 · DSP-LÁNC + 24-W
             </Badge>
           </div>
           <div
-            className="mt-3 flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="mt-3 flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label="Kör összefoglaló adatok"
           >
             {META.map((m) => (
@@ -165,15 +184,15 @@ export function ReportViewer({
                       aria-hidden="true"
                     />
                     <h2 className="text-base font-semibold tracking-tight">
-                      {di === 0 ? "R23 eredménycsomag — letöltés (az utolsó archivált kör)" : di === 1 ? "R22-baseline archívum — letöltés" : "Helyreállított R21-alapvonal — letöltés"}
+                      {entry.title ??
+                        (di === 0
+                          ? "Eredménycsomag — letöltés"
+                          : "Archívum — letöltés")}
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                    {di === 0
-                      ? "A 23. kör teljes kutatási csomagja: 16 dokumentum (forrás-összehasonlítás, kanonikus matematikai levezetés, ablak/lag/latencia tanulmány, variáns-taxonómia, decimáló szűrő tanulmány, confidence/voicing tanulmány, Step-6 valós idejű tanulmány, benchmark protokoll és eredmények, döntési rekord), a kanonikus YIN referencia implementáció (12/12 — FFT-gyorsítás ekvivalenciája 3.7e-9 relatív hibán belül bizonyítva), a 15 jel × 4 mintavételi frekvencia × 7 variáns detektor-mátrix (a motor Decimated módja: 0.02 cent medián, 361 ns/minta síkban 44.1–192 kHz-ig), a független Pitch Control Layer (290/290 elfogadási teszt — lock/hold/outlier/oktáv/jitter/glissando/recovery), az R22 mérési harnes mind a nyolc §27 javítása (58 hamis 2000 Hz-es határcella eltávolítva, a verdiktumok 141/18/31/170 null eltéréssel reprodukálva), és a négy felhasználói tünet gyökérok-vizsgálata: a NaN/Inf propagáció reprodukálva ÉS javítva (rögzített motor-delta), a kattogás-mechanizmus megmérve (spacing-commit ugrások mozgás+jitter alatt — a default 8 ms crossfade véd), a dual-mono sztereó bit-exakt a natív ÉS a valódi VST3-modul szintjén (12/12), a build-különbségek 3.8–58× CPU-n mérve."
-                      : di === 1
-                      ? "A 22. kör leszállított bizonyítékarchívuma — az R23 kiinduló alapvonala (SHA-256 782e7ab8…, újraellenőrizve). Tartalmazza a Minimum Pitch jelútvonal teljes 8 szintű láncolatát, az egységesített spacing-kaput, a 360 cellás mátrixot és a 100/100 alapvonál-tesztcsomagot — minden, amire az R23 épült."
-                      : "A 21. kör bizonyítékarchívuma — a teljes R21 kutatási fa (633 fájl: natív forrás, dokumentumok, PoC-mérések és a háromvariáns Windows-kiadás validációs láncolata: Lagrange6 / ObsKernel6 / Lagrange6+ObsKernel6). A körök közti bináris-azonosság és visszamenőleges alapvonal-ellenőrzés céljából őrizzük meg."}
+                    {entry.note ??
+                      "A csomag tartalma a kézbesítési jegyzőkönyvben (DELIVERY) található."}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline" className="max-w-full truncate font-mono text-[11px]">
@@ -183,7 +202,7 @@ export function ReportViewer({
                       {formatBytes(entry.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      {di === 0 ? "93 fájl · 16 dokumentum · friss cmake-build 100/100" : di === 1 ? "638 fájl · R23-alapvonal" : "632 fájl · alapvonal"}
+                      {entry.chips ?? "archívum"}
                     </Badge>
                   </div>
                   {entry.sha256 ? (
@@ -276,7 +295,7 @@ export function ReportViewer({
                       return (
                         <h1
                           id={id}
-                          className="mb-4 mt-2 scroll-mt-32 border-b pb-3 text-xl font-bold tracking-tight sm:text-2xl"
+                          className="mb-4 mt-2 scroll-mt-44 border-b pb-3 text-xl font-bold tracking-tight sm:text-2xl"
                         >
                           {children}
                         </h1>
@@ -287,7 +306,7 @@ export function ReportViewer({
                       return (
                         <h2
                           id={id}
-                          className="mb-3 mt-8 scroll-mt-32 text-lg font-semibold tracking-tight sm:text-xl"
+                          className="mb-3 mt-8 scroll-mt-44 text-lg font-semibold tracking-tight sm:text-xl"
                         >
                           {children}
                         </h2>
@@ -296,7 +315,7 @@ export function ReportViewer({
                     h3: ({ children }) => {
                       const id = slugify(childText(children));
                       return (
-                        <h3 id={id} className="mb-2 mt-6 scroll-mt-32 text-base font-semibold">
+                        <h3 id={id} className="mb-2 mt-6 scroll-mt-44 text-base font-semibold">
                           {children}
                         </h3>
                       );
@@ -373,10 +392,13 @@ export function ReportViewer({
       <footer className="mt-auto border-t bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
           <p>
-            Octavox RE — 23. körös megállapítások · csak statikus elemzés, a cél sosem volt futtatva ·
-            forrásfájl: <code className="font-mono">OCTAVOX_ROUND22_FINDINGS.md</code> · csomag:{" "}
-            <code className="font-mono">Octavox_RE_evidence_round22.zip</code> +
-            <code className="font-mono">Octavox_RE_evidence_round21.zip</code> (alapvonal)
+            PitchLab RE — 25. kör: az eredeti Octavox VST3 belső DSP-láncának
+            teljes statikus térképe · a cél binárist sosem futtattuk, minden
+            állítás OBS/DER evidencia · forrásfájl:{" "}
+            <code className="font-mono">OCTAVOX_ORIGINAL_DSP_CHAIN.md</code> ·
+            elsődleges csomag:{" "}
+            <code className="font-mono">PitchLab_R24_Windows_VST3_Research_Package.zip</code>{" "}
+            (R24-W leszállítás)
           </p>
         </div>
       </footer>

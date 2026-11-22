@@ -1,0 +1,20 @@
+=== R24-v2 BINARY COMPATIBILITY AUDIT — nine delivered module binaries ===
+2026-11-08T22:21:42Z
+
+--- PitchLab_Lagrange6_Balanced.vst3 ---
+ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, BuildID[sha1]=72af97c52aeedc20ae76557956453157ddb24ff6, stripped
+  sha256: 27db6db6b728f1bba6f83735f99de30f02f90ba199b0f9472f6a2bb474cdcaa0
+  size: 417072 bytes
+  GLIBC versions: GLIBC_2.2.5 GLIBC_2.3 GLIBC_2.7 GLIBC_2.14 GLIBC_2.29 GLIBC_2.34 
+  maxGLIBCXX: GLIBCXX_3.4.29
+  isoc23 refs: 0
+  NEEDED: libstdc++.so.6 libm.so.6 libgcc_s.so.1 libc.so.6 ld-linux-x86-64.so.2 
+  undefined syms count: 90
+
+--- PitchLab_Lagrange6_Hybrid.vst3 ---
+ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, BuildID[sha1]=d1c14eb00ea70379385b31842d55b77a9d339ac5, stripped
+  sha256: 6c0a4c7ffbaff8ddac71103d81a596288e0f10a3a7f317d393dc1e658f8171b8
+  size: 417072 bytes
+  GLIBC versions: GLIBC_2.2.5 GLIBC_2.3 GLIBC_2.7 GLIBC_2.14 GLIBC_2.29 GLIBC_2.34 
+  maxGLIBCXX: GLIBCXX_3.4.29
+  isoc23 refs: 0

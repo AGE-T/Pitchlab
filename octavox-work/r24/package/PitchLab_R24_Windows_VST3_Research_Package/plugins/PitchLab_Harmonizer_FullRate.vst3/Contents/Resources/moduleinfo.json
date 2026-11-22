@@ -1,0 +1,32 @@
+{
+  "Name": "PitchLab_Harmonizer_FullRate",
+  "Version": "1.0.0",
+  "Factory Info": {
+    "Vendor": "PitchLab Project",
+    "URL": "",
+    "E-Mail": "",
+    "Flags": {
+      "Unicode": true,
+      "Classes Discardable": false,
+      "Component Non Discardable": false,
+    },
+  },
+  "Classes": [
+    {
+      "CID": "C13E1BB55BFB0598F25DDD4A52B0E817",
+      "Category": "Audio Module Class",
+      "Name": "PitchLab Harmonizer Lagrange6 FullRate",
+      "Vendor": "PitchLab Project",
+      "Version": "1.2.0",
+      "SDKVersion": "VST 3.7.12",
+      "Sub Categories": [
+        "Fx",
+        "Pitch Shift",
+      ],
+      "Class Flags": 0,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+  ],
+}

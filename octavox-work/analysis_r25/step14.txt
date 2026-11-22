@@ -1,0 +1,8 @@
+0x1800e8b50: 0x1800e8b50 .. 0x1800e9020 size 0x4d0
+0x1800ea650: 0x1800ea650 .. 0x1800eabf1 size 0x5a1
+0x1800d7f10: 0x1800d7f10 .. 0x1800d8222 size 0x312
+0x1800cec80: 0x1800cec80 .. 0x1800cecad size 0x2d
+0x1800dc430: 0x1800dc430 .. 0x1800dc761 size 0x331
+Traceback (most recent call last):
+  File "<stdin>", line 22, in <module>
+TypeError: 'NoneType' object is not subscriptable

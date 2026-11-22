@@ -1,0 +1,7 @@
+0x1800d9b20 bounds: 0x1800d9b20..0x1800d9b33 (size 19)
+0x1800d9b20: 488bc4                   mov rax, rsp
+0x1800d9b23: 885010                   mov byte ptr [rax + 0x10], dl
+0x1800d9b26: 55                       push rbp
+0x1800d9b27: 53                       push rbx
+0x1800d9b28: 488d68a1                 lea rbp, [rax - 0x5f]
+0x1800d9b2c: 4881ecd8000000           sub rsp, 0xd8

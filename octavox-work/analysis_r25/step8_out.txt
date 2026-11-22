@@ -1,0 +1,433 @@
+== vtable 0x180409d80 ==
+  slot[0] @ 0x180409d80 -> 0x18013d990 (.text)
+  slot[1] @ 0x180409d88 -> 0x18013ba50 (.text)
+  slot[2] @ 0x180409d90 -> 0x18013ba40 (.text)
+  slot[3] @ 0x180409d98 -> 0x180435958 (.rdata)
+  slot[4] @ 0x180409da0 -> 0x1800e9d80 (.text)
+  slot[5] @ 0x180409da8 -> 0x1800c5730 (.text)
+  slot[6] @ 0x180409db0 -> 0x1800c5740 (.text)
+  slot[7] @ 0x180409db8 -> 0x1800c5750 (.text)
+  slot[8] @ 0x180409dc0 -> 0x1800c5770 (.text)
+  slot[9] @ 0x180409dc8 -> 0x1800c5790 (.text)
+  slot[10] @ 0x180409dd0 -> 0x1800c57b0 (.text)
+  slot[11] @ 0x180409dd8 -> 0x180435c48 (.rdata)
+
+== slot[0] target 0x18013d990 (first 40 insns) ==
+0x18013d990: 48895c2408               mov qword ptr [rsp + 8], rbx
+0x18013d995: 57                       push rdi
+0x18013d996: 4883ec20                 sub rsp, 0x20
+0x18013d99a: 488bf9                   mov rdi, rcx
+0x18013d99d: 8bda                     mov ebx, edx
+0x18013d99f: 4883c110                 add rcx, 0x10
+0x18013d9a3: e88834edff               call 0x180010e30  ; imm VA 0x180010e30 (.text)
+0x18013d9a8: 488d0519c22c00           lea rax, [rip + 0x2cc219]  ; -> 0x180409bc8
+0x18013d9af: 488907                   mov qword ptr [rdi], rax
+0x18013d9b2: f6c301                   test bl, 1
+0x18013d9b5: 740d                     je 0x18013d9c4  ; imm VA 0x18013d9c4 (.text)
+0x18013d9b7: ba28000000               mov edx, 0x28
+0x18013d9bc: 488bcf                   mov rcx, rdi
+0x18013d9bf: e83c070200               call 0x18015e100  ; imm VA 0x18015e100 (.text)
+0x18013d9c4: 488b5c2430               mov rbx, qword ptr [rsp + 0x30]
+0x18013d9c9: 488bc7                   mov rax, rdi
+0x18013d9cc: 4883c420                 add rsp, 0x20
+0x18013d9d0: 5f                       pop rdi
+0x18013d9d1: c3                       ret 
+0x18013d9d2: cc                       int3 
+0x18013d9d3: cc                       int3 
+0x18013d9d4: cc                       int3 
+0x18013d9d5: cc                       int3 
+0x18013d9d6: cc                       int3 
+0x18013d9d7: cc                       int3 
+0x18013d9d8: cc                       int3 
+0x18013d9d9: cc                       int3 
+0x18013d9da: cc                       int3 
+0x18013d9db: cc                       int3 
+0x18013d9dc: cc                       int3 
+0x18013d9dd: cc                       int3 
+0x18013d9de: cc                       int3 
+0x18013d9df: cc                       int3 
+0x18013d9e0: 4053                     push rbx
+0x18013d9e2: 4883ec20                 sub rsp, 0x20
+0x18013d9e6: 488d05dbc12c00           lea rax, [rip + 0x2cc1db]  ; -> 0x180409bc8
+0x18013d9ed: 488bd9                   mov rbx, rcx
+0x18013d9f0: 488901                   mov qword ptr [rcx], rax
+0x18013d9f3: f6c201                   test dl, 1
+0x18013d9f6: 740a                     je 0x18013da02  ; imm VA 0x18013da02 (.text)
+
+== slot[1] target 0x18013ba50 (first 40 insns) ==
+0x18013ba50: 488b4910                 mov rcx, qword ptr [rcx + 0x10]
+0x18013ba54: 418b00                   mov eax, dword ptr [r8]
+0x18013ba57: 448bca                   mov r9d, edx
+0x18013ba5a: 42890489                 mov dword ptr [rcx + r9*4], eax
+0x18013ba5e: c3                       ret 
+0x18013ba5f: cc                       int3 
+0x18013ba60: 48895c2410               mov qword ptr [rsp + 0x10], rbx
+0x18013ba65: 48894c2408               mov qword ptr [rsp + 8], rcx
+0x18013ba6a: 55                       push rbp
+0x18013ba6b: 56                       push rsi
+0x18013ba6c: 57                       push rdi
+0x18013ba6d: 4156                     push r14
+0x18013ba6f: 4157                     push r15
+0x18013ba71: 4883ec20                 sub rsp, 0x20
+0x18013ba75: 418be9                   mov ebp, r9d
+0x18013ba78: 458bf0                   mov r14d, r8d
+0x18013ba7b: 4c8bfa                   mov r15, rdx
+0x18013ba7e: 488bf9                   mov rdi, rcx
+0x18013ba81: 33c9                     xor ecx, ecx
+0x18013ba83: 894f08                   mov dword ptr [rdi + 8], ecx
+0x18013ba86: 488d05dbe12c00           lea rax, [rip + 0x2ce1db]  ; -> 0x180409c68
+0x18013ba8d: 488907                   mov qword ptr [rdi], rax
+0x18013ba90: 48894f10                 mov qword ptr [rdi + 0x10], rcx
+0x18013ba94: 48894f18                 mov qword ptr [rdi + 0x18], rcx
+0x18013ba98: 48894f20                 mov qword ptr [rdi + 0x20], rcx
+0x18013ba9c: 4585c9                   test r9d, r9d
+0x18013ba9f: 740b                     je 0x18013baac  ; imm VA 0x18013baac (.text)
+0x18013baa1: 8bd5                     mov edx, ebp
+0x18013baa3: 488d4f10                 lea rcx, [rdi + 0x10]
+0x18013baa7: e834410000               call 0x18013fbe0  ; imm VA 0x18013fbe0 (.text)
+0x18013baac: 488b442470               mov rax, qword ptr [rsp + 0x70]
+0x18013bab1: 8b08                     mov ecx, dword ptr [rax]
+0x18013bab3: 894c2468                 mov dword ptr [rsp + 0x68], ecx
+0x18013bab7: 4c8d442468               lea r8, [rsp + 0x68]
+0x18013babc: 488bd5                   mov rdx, rbp
+0x18013babf: 488d4f10                 lea rcx, [rdi + 0x10]
+0x18013bac3: e8782b0000               call 0x18013e640  ; imm VA 0x18013e640 (.text)
+0x18013bac8: 448bcd                   mov r9d, ebp
+0x18013bacb: 4c8bc7                   mov r8, rdi
+0x18013bace: 418bd6                   mov edx, r14d
+
+== slot[2] target 0x18013ba40 (first 40 insns) ==
+0x18013ba40: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x18013ba44: 8bd2                     mov edx, edx
+0x18013ba46: 8b0c90                   mov ecx, dword ptr [rax + rdx*4]
+0x18013ba49: 418908                   mov dword ptr [r8], ecx
+0x18013ba4c: c3                       ret 
+0x18013ba4d: cc                       int3 
+0x18013ba4e: cc                       int3 
+0x18013ba4f: cc                       int3 
+0x18013ba50: 488b4910                 mov rcx, qword ptr [rcx + 0x10]
+0x18013ba54: 418b00                   mov eax, dword ptr [r8]
+0x18013ba57: 448bca                   mov r9d, edx
+0x18013ba5a: 42890489                 mov dword ptr [rcx + r9*4], eax
+0x18013ba5e: c3                       ret 
+0x18013ba5f: cc                       int3 
+0x18013ba60: 48895c2410               mov qword ptr [rsp + 0x10], rbx
+0x18013ba65: 48894c2408               mov qword ptr [rsp + 8], rcx
+0x18013ba6a: 55                       push rbp
+0x18013ba6b: 56                       push rsi
+0x18013ba6c: 57                       push rdi
+0x18013ba6d: 4156                     push r14
+0x18013ba6f: 4157                     push r15
+0x18013ba71: 4883ec20                 sub rsp, 0x20
+0x18013ba75: 418be9                   mov ebp, r9d
+0x18013ba78: 458bf0                   mov r14d, r8d
+0x18013ba7b: 4c8bfa                   mov r15, rdx
+0x18013ba7e: 488bf9                   mov rdi, rcx
+0x18013ba81: 33c9                     xor ecx, ecx
+0x18013ba83: 894f08                   mov dword ptr [rdi + 8], ecx
+0x18013ba86: 488d05dbe12c00           lea rax, [rip + 0x2ce1db]  ; -> 0x180409c68
+0x18013ba8d: 488907                   mov qword ptr [rdi], rax
+0x18013ba90: 48894f10                 mov qword ptr [rdi + 0x10], rcx
+0x18013ba94: 48894f18                 mov qword ptr [rdi + 0x18], rcx
+0x18013ba98: 48894f20                 mov qword ptr [rdi + 0x20], rcx
+0x18013ba9c: 4585c9                   test r9d, r9d
+0x18013ba9f: 740b                     je 0x18013baac  ; imm VA 0x18013baac (.text)
+0x18013baa1: 8bd5                     mov edx, ebp
+0x18013baa3: 488d4f10                 lea rcx, [rdi + 0x10]
+0x18013baa7: e834410000               call 0x18013fbe0  ; imm VA 0x18013fbe0 (.text)
+0x18013baac: 488b442470               mov rax, qword ptr [rsp + 0x70]
+0x18013bab1: 8b08                     mov ecx, dword ptr [rax]
+
+== slot[4] target 0x1800e9d80 (first 40 insns) ==
+0x1800e9d80: 48895c2408               mov qword ptr [rsp + 8], rbx
+0x1800e9d85: 57                       push rdi
+0x1800e9d86: 4883ec20                 sub rsp, 0x20
+0x1800e9d8a: 8bda                     mov ebx, edx
+0x1800e9d8c: 488bf9                   mov rdi, rcx
+0x1800e9d8f: e82c000000               call 0x1800e9dc0  ; imm VA 0x1800e9dc0 (.text)
+0x1800e9d94: f6c301                   test bl, 1
+0x1800e9d97: 740d                     je 0x1800e9da6  ; imm VA 0x1800e9da6 (.text)
+0x1800e9d99: baa0010000               mov edx, 0x1a0
+0x1800e9d9e: 488bcf                   mov rcx, rdi
+0x1800e9da1: e85a430700               call 0x18015e100  ; imm VA 0x18015e100 (.text)
+0x1800e9da6: 488b5c2430               mov rbx, qword ptr [rsp + 0x30]
+0x1800e9dab: 488bc7                   mov rax, rdi
+0x1800e9dae: 4883c420                 add rsp, 0x20
+0x1800e9db2: 5f                       pop rdi
+0x1800e9db3: c3                       ret 
+0x1800e9db4: cc                       int3 
+0x1800e9db5: cc                       int3 
+0x1800e9db6: cc                       int3 
+0x1800e9db7: cc                       int3 
+0x1800e9db8: cc                       int3 
+0x1800e9db9: cc                       int3 
+0x1800e9dba: cc                       int3 
+0x1800e9dbb: cc                       int3 
+0x1800e9dbc: cc                       int3 
+0x1800e9dbd: cc                       int3 
+0x1800e9dbe: cc                       int3 
+0x1800e9dbf: cc                       int3 
+0x1800e9dc0: 4053                     push rbx
+0x1800e9dc2: 4883ec20                 sub rsp, 0x20
+0x1800e9dc6: 488d05fbfd3100           lea rax, [rip + 0x31fdfb]  ; -> 0x180409bc8
+0x1800e9dcd: 488bd9                   mov rbx, rcx
+0x1800e9dd0: 48898178010000           mov qword ptr [rcx + 0x178], rax
+0x1800e9dd7: 48898160010000           mov qword ptr [rcx + 0x160], rax
+0x1800e9dde: 48898148010000           mov qword ptr [rcx + 0x148], rax
+0x1800e9de5: 48898130010000           mov qword ptr [rcx + 0x130], rax
+0x1800e9dec: 48898118010000           mov qword ptr [rcx + 0x118], rax
+0x1800e9df3: 48898100010000           mov qword ptr [rcx + 0x100], rax
+0x1800e9dfa: 488981e8000000           mov qword ptr [rcx + 0xe8], rax
+0x1800e9e01: 4883c130                 add rcx, 0x30
+
+== slot[5] target 0x1800c5730 (first 40 insns) ==
+0x1800c5730: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5733: 4d8bc8                   mov r9, r8
+0x1800c5736: 4533c0                   xor r8d, r8d
+0x1800c5739: 48ff6018                 jmp qword ptr [rax + 0x18]
+0x1800c573d: cc                       int3 
+0x1800c573e: cc                       int3 
+0x1800c573f: cc                       int3 
+0x1800c5740: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5743: 4d8bc8                   mov r9, r8
+0x1800c5746: 4533c0                   xor r8d, r8d
+0x1800c5749: 48ff6020                 jmp qword ptr [rax + 0x20]
+0x1800c574d: cc                       int3 
+0x1800c574e: cc                       int3 
+0x1800c574f: cc                       int3 
+0x1800c5750: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5754: 458bd0                   mov r10d, r8d
+0x1800c5757: 8bd2                     mov edx, edx
+0x1800c5759: 4d8bc1                   mov r8, r9
+0x1800c575c: 488b0cd0                 mov rcx, qword ptr [rax + rdx*8]
+0x1800c5760: 418bd2                   mov edx, r10d
+0x1800c5763: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5766: 48ff6008                 jmp qword ptr [rax + 8]
+0x1800c576a: cc                       int3 
+0x1800c576b: cc                       int3 
+0x1800c576c: cc                       int3 
+0x1800c576d: cc                       int3 
+0x1800c576e: cc                       int3 
+0x1800c576f: cc                       int3 
+0x1800c5770: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5774: 458bd0                   mov r10d, r8d
+0x1800c5777: 8bd2                     mov edx, edx
+0x1800c5779: 4d8bc1                   mov r8, r9
+0x1800c577c: 488b0cd0                 mov rcx, qword ptr [rax + rdx*8]
+0x1800c5780: 418bd2                   mov edx, r10d
+0x1800c5783: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5786: 48ff6010                 jmp qword ptr [rax + 0x10]
+0x1800c578a: cc                       int3 
+0x1800c578b: cc                       int3 
+0x1800c578c: cc                       int3 
+0x1800c578d: cc                       int3 
+
+== slot[6] target 0x1800c5740 (first 40 insns) ==
+0x1800c5740: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5743: 4d8bc8                   mov r9, r8
+0x1800c5746: 4533c0                   xor r8d, r8d
+0x1800c5749: 48ff6020                 jmp qword ptr [rax + 0x20]
+0x1800c574d: cc                       int3 
+0x1800c574e: cc                       int3 
+0x1800c574f: cc                       int3 
+0x1800c5750: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5754: 458bd0                   mov r10d, r8d
+0x1800c5757: 8bd2                     mov edx, edx
+0x1800c5759: 4d8bc1                   mov r8, r9
+0x1800c575c: 488b0cd0                 mov rcx, qword ptr [rax + rdx*8]
+0x1800c5760: 418bd2                   mov edx, r10d
+0x1800c5763: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5766: 48ff6008                 jmp qword ptr [rax + 8]
+0x1800c576a: cc                       int3 
+0x1800c576b: cc                       int3 
+0x1800c576c: cc                       int3 
+0x1800c576d: cc                       int3 
+0x1800c576e: cc                       int3 
+0x1800c576f: cc                       int3 
+0x1800c5770: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5774: 458bd0                   mov r10d, r8d
+0x1800c5777: 8bd2                     mov edx, edx
+0x1800c5779: 4d8bc1                   mov r8, r9
+0x1800c577c: 488b0cd0                 mov rcx, qword ptr [rax + rdx*8]
+0x1800c5780: 418bd2                   mov edx, r10d
+0x1800c5783: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5786: 48ff6010                 jmp qword ptr [rax + 0x10]
+0x1800c578a: cc                       int3 
+0x1800c578b: cc                       int3 
+0x1800c578c: cc                       int3 
+0x1800c578d: cc                       int3 
+0x1800c578e: cc                       int3 
+0x1800c578f: cc                       int3 
+0x1800c5790: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5794: 8bca                     mov ecx, edx
+0x1800c5796: 488b0cc8                 mov rcx, qword ptr [rax + rcx*8]
+0x1800c579a: 8b4108                   mov eax, dword ptr [rcx + 8]
+0x1800c579d: 4103c0                   add eax, r8d
+
+== slot[7] target 0x1800c5750 (first 40 insns) ==
+0x1800c5750: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5754: 458bd0                   mov r10d, r8d
+0x1800c5757: 8bd2                     mov edx, edx
+0x1800c5759: 4d8bc1                   mov r8, r9
+0x1800c575c: 488b0cd0                 mov rcx, qword ptr [rax + rdx*8]
+0x1800c5760: 418bd2                   mov edx, r10d
+0x1800c5763: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5766: 48ff6008                 jmp qword ptr [rax + 8]
+0x1800c576a: cc                       int3 
+0x1800c576b: cc                       int3 
+0x1800c576c: cc                       int3 
+0x1800c576d: cc                       int3 
+0x1800c576e: cc                       int3 
+0x1800c576f: cc                       int3 
+0x1800c5770: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5774: 458bd0                   mov r10d, r8d
+0x1800c5777: 8bd2                     mov edx, edx
+0x1800c5779: 4d8bc1                   mov r8, r9
+0x1800c577c: 488b0cd0                 mov rcx, qword ptr [rax + rdx*8]
+0x1800c5780: 418bd2                   mov edx, r10d
+0x1800c5783: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5786: 48ff6010                 jmp qword ptr [rax + 0x10]
+0x1800c578a: cc                       int3 
+0x1800c578b: cc                       int3 
+0x1800c578c: cc                       int3 
+0x1800c578d: cc                       int3 
+0x1800c578e: cc                       int3 
+0x1800c578f: cc                       int3 
+0x1800c5790: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5794: 8bca                     mov ecx, edx
+0x1800c5796: 488b0cc8                 mov rcx, qword ptr [rax + rcx*8]
+0x1800c579a: 8b4108                   mov eax, dword ptr [rcx + 8]
+0x1800c579d: 4103c0                   add eax, r8d
+0x1800c57a0: c3                       ret 
+0x1800c57a1: cc                       int3 
+0x1800c57a2: cc                       int3 
+0x1800c57a3: cc                       int3 
+0x1800c57a4: cc                       int3 
+0x1800c57a5: cc                       int3 
+0x1800c57a6: cc                       int3 
+
+== slot[8] target 0x1800c5770 (first 40 insns) ==
+0x1800c5770: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5774: 458bd0                   mov r10d, r8d
+0x1800c5777: 8bd2                     mov edx, edx
+0x1800c5779: 4d8bc1                   mov r8, r9
+0x1800c577c: 488b0cd0                 mov rcx, qword ptr [rax + rdx*8]
+0x1800c5780: 418bd2                   mov edx, r10d
+0x1800c5783: 488b01                   mov rax, qword ptr [rcx]
+0x1800c5786: 48ff6010                 jmp qword ptr [rax + 0x10]
+0x1800c578a: cc                       int3 
+0x1800c578b: cc                       int3 
+0x1800c578c: cc                       int3 
+0x1800c578d: cc                       int3 
+0x1800c578e: cc                       int3 
+0x1800c578f: cc                       int3 
+0x1800c5790: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5794: 8bca                     mov ecx, edx
+0x1800c5796: 488b0cc8                 mov rcx, qword ptr [rax + rcx*8]
+0x1800c579a: 8b4108                   mov eax, dword ptr [rcx + 8]
+0x1800c579d: 4103c0                   add eax, r8d
+0x1800c57a0: c3                       ret 
+0x1800c57a1: cc                       int3 
+0x1800c57a2: cc                       int3 
+0x1800c57a3: cc                       int3 
+0x1800c57a4: cc                       int3 
+0x1800c57a5: cc                       int3 
+0x1800c57a6: cc                       int3 
+0x1800c57a7: cc                       int3 
+0x1800c57a8: cc                       int3 
+0x1800c57a9: cc                       int3 
+0x1800c57aa: cc                       int3 
+0x1800c57ab: cc                       int3 
+0x1800c57ac: cc                       int3 
+0x1800c57ad: cc                       int3 
+0x1800c57ae: cc                       int3 
+0x1800c57af: cc                       int3 
+0x1800c57b0: 8b4108                   mov eax, dword ptr [rcx + 8]
+0x1800c57b3: c3                       ret 
+0x1800c57b4: cc                       int3 
+0x1800c57b5: cc                       int3 
+0x1800c57b6: cc                       int3 
+
+== slot[9] target 0x1800c5790 (first 40 insns) ==
+0x1800c5790: 488b4110                 mov rax, qword ptr [rcx + 0x10]
+0x1800c5794: 8bca                     mov ecx, edx
+0x1800c5796: 488b0cc8                 mov rcx, qword ptr [rax + rcx*8]
+0x1800c579a: 8b4108                   mov eax, dword ptr [rcx + 8]
+0x1800c579d: 4103c0                   add eax, r8d
+0x1800c57a0: c3                       ret 
+0x1800c57a1: cc                       int3 
+0x1800c57a2: cc                       int3 
+0x1800c57a3: cc                       int3 
+0x1800c57a4: cc                       int3 
+0x1800c57a5: cc                       int3 
+0x1800c57a6: cc                       int3 
+0x1800c57a7: cc                       int3 
+0x1800c57a8: cc                       int3 
+0x1800c57a9: cc                       int3 
+0x1800c57aa: cc                       int3 
+0x1800c57ab: cc                       int3 
+0x1800c57ac: cc                       int3 
+0x1800c57ad: cc                       int3 
+0x1800c57ae: cc                       int3 
+0x1800c57af: cc                       int3 
+0x1800c57b0: 8b4108                   mov eax, dword ptr [rcx + 8]
+0x1800c57b3: c3                       ret 
+0x1800c57b4: cc                       int3 
+0x1800c57b5: cc                       int3 
+0x1800c57b6: cc                       int3 
+0x1800c57b7: cc                       int3 
+0x1800c57b8: cc                       int3 
+0x1800c57b9: cc                       int3 
+0x1800c57ba: cc                       int3 
+0x1800c57bb: cc                       int3 
+0x1800c57bc: cc                       int3 
+0x1800c57bd: cc                       int3 
+0x1800c57be: cc                       int3 
+0x1800c57bf: cc                       int3 
+0x1800c57c0: 48895c2408               mov qword ptr [rsp + 8], rbx
+0x1800c57c5: 48896c2410               mov qword ptr [rsp + 0x10], rbp
+0x1800c57ca: 4889742418               mov qword ptr [rsp + 0x18], rsi
+0x1800c57cf: 48897c2420               mov qword ptr [rsp + 0x20], rdi
+0x1800c57d4: 4154                     push r12
+
+== slot[10] target 0x1800c57b0 (first 40 insns) ==
+0x1800c57b0: 8b4108                   mov eax, dword ptr [rcx + 8]
+0x1800c57b3: c3                       ret 
+0x1800c57b4: cc                       int3 
+0x1800c57b5: cc                       int3 
+0x1800c57b6: cc                       int3 
+0x1800c57b7: cc                       int3 
+0x1800c57b8: cc                       int3 
+0x1800c57b9: cc                       int3 
+0x1800c57ba: cc                       int3 
+0x1800c57bb: cc                       int3 
+0x1800c57bc: cc                       int3 
+0x1800c57bd: cc                       int3 
+0x1800c57be: cc                       int3 
+0x1800c57bf: cc                       int3 
+0x1800c57c0: 48895c2408               mov qword ptr [rsp + 8], rbx
+0x1800c57c5: 48896c2410               mov qword ptr [rsp + 0x10], rbp
+0x1800c57ca: 4889742418               mov qword ptr [rsp + 0x18], rsi
+0x1800c57cf: 48897c2420               mov qword ptr [rsp + 0x20], rdi
+0x1800c57d4: 4154                     push r12
+0x1800c57d6: 4156                     push r14
+0x1800c57d8: 4157                     push r15
+0x1800c57da: 4883ec20                 sub rsp, 0x20
+0x1800c57de: 4c8b7118                 mov r14, qword ptr [rcx + 0x18]
+0x1800c57e2: 488bf9                   mov rdi, rcx
+0x1800c57e5: 448bfa                   mov r15d, edx
+0x1800c57e8: 458be1                   mov r12d, r9d
+0x1800c57eb: 488b5110                 mov rdx, qword ptr [rcx + 0x10]
+0x1800c57ef: 498be8                   mov rbp, r8
+0x1800c57f2: 498bce                   mov rcx, r14
+0x1800c57f5: 482bca                   sub rcx, rdx
+0x1800c57f8: 48c1f903                 sar rcx, 3
+0x1800c57fc: 418d5f01                 lea ebx, [r15 + 1]
+0x1800c5800: 483bcb                   cmp rcx, rbx
+0x1800c5803: 733d                     jae 0x1800c5842  ; imm VA 0x1800c5842 (.text)
+0x1800c5805: 488b4720                 mov rax, qword ptr [rdi + 0x20]
+0x1800c5809: 482bc2                   sub rax, rdx
+0x1800c580c: 48c1f803                 sar rax, 3
+0x1800c5810: 483bd8                   cmp rbx, rax
+0x1800c5813: 760d                     jbe 0x1800c5822  ; imm VA 0x1800c5822 (.text)
+0x1800c5815: 8bd3                     mov edx, ebx

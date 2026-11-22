@@ -1,0 +1,24 @@
+bytes at 0x180412850: 7589b5bbb16b02c0
+as double: -2.302585093
+0x180351f50: sub       rsp, 0x38
+0x180351f54: movq      xmm0, xmm0
+0x180351f58: movq      rdx, xmm0
+0x180351f5d: btr       rdx, 0x3f
+0x180351f62: cmp       rdx, qword ptr [rip + 0xc2de7]
+0x180351f69: jge       0x1803520e0
+0x180351f6f: cmp       dword ptr [rip + 0x179fce], 0
+0x180351f76: jne       0x1803521b0
+0x180351f7c: movapd    xmm2, xmm0
+0x180351f80: movapd    xmm3, xmm0
+0x180351f84: cmplesd   xmm2, qword ptr [rip + 0xc2da3]
+0x180351f8d: cmpnltsd  xmm3, qword ptr [rip + 0xc2da2]
+0x180351f96: andps     xmm2, xmm3
+0x180351f99: ucomisd   xmm2, xmm2
+0x180351f9d: jp        0x180351fc0
+0x180351f9f: ucomisd   xmm0, qword ptr [rip + 0xc2d89]
+0x180351fa7: ja        0x180352110
+0x180351fad: jmp       0x180352130
+0x180351fb2: nop       word ptr [rax + rax]
+0x180351fc0: movapd    xmm1, xmm0
+0x180351fc4: btr       rdx, 0x3f
+0x180351fc9: cmp       rdx, qword ptr [rip + 0xc2dc0]

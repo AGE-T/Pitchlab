@@ -1,0 +1,60 @@
+===== leafA 0x1800d8230 0x1800d8230 len=0x100 =====
+0x1800d8230: mov       qword ptr [rsp + 0x20], rbx
+0x1800d8235: push      rbp
+0x1800d8236: push      rsi
+0x1800d8237: push      rdi
+0x1800d8238: push      r12
+0x1800d823a: push      r13
+0x1800d823c: push      r14
+0x1800d823e: push      r15
+0x1800d8240: sub       rsp, 0x60
+0x1800d8244: mov       rax, qword ptr [rip + 0x3ccdf5]  ; ->0x1804a5040 d=2.3684e-310 f32=2.54242e-11 q=0x2b992ddfa232 f64=2.3684e-310
+0x1800d824b: xor       rax, rsp
+0x1800d824e: mov       qword ptr [rsp + 0x50], rax
+0x1800d8253: mov       r15, rdx
+0x1800d8256: mov       r14, rcx
+0x1800d8259: mov       qword ptr [rsp + 0x20], rcx
+0x1800d825e: mov       qword ptr [rcx], rdx
+0x1800d8261: mov       dword ptr [rcx + 8], 0x152
+0x1800d8268: xor       r12d, r12d
+0x1800d826b: mov       qword ptr [rcx + 0x10], r12
+0x1800d826f: mov       qword ptr [rcx + 0x18], r12
+0x1800d8273: mov       qword ptr [rcx + 0x20], r12
+0x1800d8277: mov       qword ptr [rcx + 0x28], r12
+0x1800d827b: mov       qword ptr [rcx + 0x30], r12
+0x1800d827f: mov       qword ptr [rcx + 0x38], r12
+0x1800d8283: mov       dword ptr [rcx + 0x40], 0xc7000000
+0x1800d828a: mov       dword ptr [rcx + 0x44], 0x46fffe00
+0x1800d8291: mov       dword ptr [rcx + 0x48], 0x3f800000
+0x1800d8298: mov       qword ptr [rcx + 0x50], r12
+0x1800d829c: mov       dword ptr [rcx + 0x58], r12d
+0x1800d82a0: mov       qword ptr [rcx + 0x60], r12
+0x1800d82a4: mov       qword ptr [rcx + 0x70], 0xffffffffffffffff
+0x1800d82ac: mov       qword ptr [rcx + 0x78], 0xffffffffffffffff
+0x1800d82b4: lea       rbx, [rcx + 0x80]
+0x1800d82bb: mov       qword ptr [rsp + 0x30], r12
+0x1800d82c0: mov       r13d, 0xf
+0x1800d82c6: mov       qword ptr [rsp + 0x48], r13
+0x1800d82cb: mov       esi, 3
+0x1800d82d0: mov       qword ptr [rsp + 0x40], rsi
+0x1800d82d5: movzx     eax, word ptr [rip + 0x3300e8]  ; ->0x1804083c4 d=4.26137e+257 f32=9.76987e-39 q=0x756c6176006a626f f64=4.26137e+257
+0x1800d82dc: mov       word ptr [rsp + 0x30], ax
+0x1800d82e1: movzx     eax, byte ptr [rip + 0x3300de]  ; ->0x1804083c6 d=9.54943e-307 f32=2.83621e+20 q=0x65756c6176006a f64=9.54943e-307
+0x1800d82e8: mov       byte ptr [rsp + 0x32], al
+0x1800d82ec: mov       byte ptr [rsp + 0x33], r12b
+0x1800d82f1: mov       rdx, r8
+0x1800d82f4: mov       rcx, rbx
+0x1800d82f7: call      0x180022400  ; -> 0x180022400
+0x1800d82fc: nop       
+0x1800d82fd: mov       qword ptr [rbx + 0x20], r12
+0x1800d8301: mov       qword ptr [rbx + 0x30], r12
+0x1800d8305: mov       qword ptr [rbx + 0x38], r12
+0x1800d8309: lea       rbp, [rsp + 0x30]
+0x1800d830e: movups    xmm0, xmmword ptr [rbp]
+0x1800d8312: movups    xmmword ptr [rbx + 0x20], xmm0
+0x1800d8316: mov       eax, esi
+0x1800d8318: mov       qword ptr [rbx + 0x30], rax
+0x1800d831c: mov       qword ptr [rbx + 0x38], r13
+0x1800d8320: mov       dword ptr [rbx + 0x40], r12d
+0x1800d8324: mov       dword ptr [rbx + 0x44], 1
+0x1800d832b: mov       qword ptr [rbx + 0x48], r12

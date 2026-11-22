@@ -1,0 +1,35 @@
+octavox_dual_nulltest (R19-P3b) -- deterministic dual-module VST3 null test
+harness scope: two separately-built bundles loaded SIMULTANEOUSLY in ONE
+process (SDK VST3::Hosting::Module loader = real dlopen + GetPluginFactory);
+lockstep process() driving with identical stimulus; sample-for-sample
+output comparison. NOT a DAW test.
+
+[lagrange6] ../build_r24v2_vst3_L6B/VST3/Release/PitchLab_Lagrange6_Balanced.vst3
+    factory classes: 1 | category: 'Audio Module Class' | class: 'PitchLab Harmonizer Lagrange6 Balanced' | version: '1.2.0'
+    class id found:    6F4E62589A3142E18F3C5A971D2B4E60
+    class id expected: {6F4E6258-9A31-42E1-8F3C-5A971D2B4E60}  -> IDENTITY OK
+    instance: params 38, buses 1 in / 1 out, latency 2304 samples
+[obskernel6] ../build_r24v2_vst3_OK6B/VST3/Release/PitchLab_ObsKernel6_Balanced.vst3
+    factory classes: 1 | category: 'Audio Module Class' | class: 'PitchLab Harmonizer ObsKernel6 Balanced' | version: '1.2.0'
+    class id found:    E3E7FA706A380D35B05F64B91F1E2689
+    class id expected: {E3E7FA70-6A38-0D35-B05F-64B91F1E2689}  -> IDENTITY OK
+    instance: params 38, buses 1 in / 1 out, latency 2304 samples
+
+simultaneous load: lagrange6=loaded obskernel6=loaded; live factory re-probe after both dlopens: OK
+loader note: module_linux.cpp dlopen flags = RTLD_LAZY (no RTLD_GLOBAL ->
+    glibc default RTLD_LOCAL); per-handle dlsym resolves each module's own
+    GetPluginFactory -- identical exported symbol names do not collide.
+
+signal: 3 s @ 48000 Hz, 144000 samples, block 128, mono; 220Hz*0.35 + 330Hz*0.2 + LCG(987654321)*0.05
+analysis region: k >= 6400 (2304 startup/latency + 4096 grain), 137600 samples
+
+case                            maxdiff     rmsdiff     reldB     corr  bitident expect         ok   
+---------------------------------------------------------------------------------------------------------
+unity_exact                           0           0      -inf   1.0000  1.000000 bit-identical  ok   
+moderate_shift_plus400c         0.01492    0.003422    -38.43   0.9999  0.000000 different      ok   
+shift_minus24st                 0.01474    0.003379    -38.55   0.9999  0.000000 different      ok   
+---------------------------------------------------------------------------------------------------------
+identity checks: OK | cases: 3 passed, 0 failed, 0 skipped, 0 build-config defect(s)
+verdict: PASS
+json: /home/z/my-project/octavox-work/r24/evidence/corrections_v2/logs/b6_dual_nulltest.json
+wavs: /tmp/dual_nulltest_out/<case>_lagrange6.wav, <case>_obskernel6.wav, <case>_diff.wav

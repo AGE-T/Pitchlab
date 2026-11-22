@@ -1,0 +1,176 @@
+// OCTAVOX native core -- R24 SIMD CAPABILITY LAYER (public API)
+// ============================================================================
+// PROVENANCE: our own implementation (round 24). The layer provides:
+//   * the Config-facing SIMD mode enum (Config::simd, default Auto since
+//     the R24 corrective delivery -- was Scalar through the R24 round),
+//   * one-time, cached CPU feature detection (AVX2 and FMA detected
+//     INDEPENDENTLY via CPUID),
+//   * the YIN difference-function / window-peak kernels in three
+//     implementations: scalar (baseline TU, every supported processor),
+//     AVX2 (TU compiled with -mavx2 only) and AVX2+FMA (TU compiled with
+//     -mavx2 -mfma), and
+//   * the dispatch table resolved OUTSIDE the realtime processing loop.
+//
+// RT-SAFETY CONTRACT (the acceptance rules of the R24 brief):
+//   * Every kernel is a pure function over caller-owned buffers: no
+//     allocation, no locks, no CPUID, no blocking operation, reentrant.
+//   * The kernels are selected (simd::kernels(level)) in
+//     PitchDetector::configure(), i.e. at prepare() time -- NEVER inside
+//     process(). The audio callback only performs an indirect call through
+//     a function pointer stored at configuration time.
+//   * The production DSP library itself is compiled with the baseline ISA
+//     (x86-64 SSE2); the AVX2 / AVX2+FMA kernels live in separate
+//     translation units with their own ISA flags (see CMakeLists.txt),
+//     so the library loads and runs on every x86-64 processor. A CPU
+//     without the required feature never executes an ISA-extended
+//     instruction (the dispatch table only ever hands out the scalar
+//     entry points there).
+//
+// NUMERICAL SEMANTICS OF THE DIFFERENCE KERNELS (R24 audit, OBS from the
+// disassembly of the R23 release build): the historical scalar reference
+//   d[tau] = sum_{j=0..m-1} (x[seg0+j] - x[seg0+tau+j])^2
+// is compiled by GCC -O2 as 2-lane SSE2 with an ORDER-PRESERVING
+// reduction: the per-term squaring is vectorised (mulpd) but the
+// accumulation stays strictly sequential in j (addsd x2). Per term the
+// reference therefore performs one multiplication rounding and one
+// addition rounding, summed in ascending j order. All kernels in this
+// layer are specified relative to that reference:
+//
+//   kernel               summation order        per-term rounding
+//   -------------------  ---------------------  ---------------------------
+//   scalar (reference)  sequential j           mul+add (2 roundings)
+//   lag-axis  AVX2      sequential j (per tau) mul+add (2 roundings)
+//                       => BIT-IDENTICAL to the reference by construction
+//                          (each lane reproduces the exact reference op
+//                          sequence for its tau; verified empirically).
+//   lag-axis  AVX2+FMA  sequential j (per tau) fused (1 rounding) in the
+//                       VECTOR LANES; the <= ntau % 4 scalar-tail taus
+//                       keep the reference's mul+add (2 roundings) -- the
+//                       tail is then bit-exact vs Scalar AND faster than
+//                       a serial std::fma chain (the R24 measurement: the
+//                       fused tail loop is vfmadd231sd-latency-bound and
+//                       ran at 0.45x the SLP'd reference loop).
+//   sample-axis AVX2    4-lane reassociated    mul+add (2 roundings)
+//   sample-axis AVX2+FMA 4-lane reassociated   fused (1 rounding)
+//
+// The AVX2+FMA level's deviation from the reference therefore applies to
+// the vector-processed taus only (fused per-term rounding, order
+// preserved); every scalar-tail tau is bit-exact vs the Scalar level.
+//
+// The horizontal reduction of the sample-axis kernels is
+//   d = ((P0 + P2) + (P1 + P3)) + s_tail
+// with P0..P3 the lane accumulators (fixed, documented association) and
+// s_tail the sequential scalar remainder (m mod 4 terms).
+//
+// The peak kernel computes max |x[i]|; max is exact and order-free, so the
+// SIMD peak is bit-identical to the scalar peak at every level.
+// ---------------------------------------------------------------------------
+#pragma once
+
+namespace octavox {
+namespace simd {
+
+/// Config-facing SIMD mode (Config::simd). Default = Auto (since the R24
+/// corrective delivery; was Scalar through the R24 round itself): Auto
+/// resolves to the BIT-EXACT AVX2 level when available and degrades
+/// silently to Scalar otherwise, so the engine output is bit-exact against
+/// every recorded reference hash (the R12--R23 record) on every processor.
+/// AVX2FMA stays OPT-IN and is validated by the R24 numerical battery before
+/// use; the historical reference implementation is preserved verbatim as the
+/// Scalar level. See resolve().
+enum class Mode : int {
+    Scalar = 0,   ///< baseline implementation (bit-exact historical reference)
+    AVX2 = 1,     ///< AVX2 kernels (lag-axis: bit-exact by construction)
+    AVX2FMA = 2,  ///< AVX2 + FMA kernels (fused per-term rounding; opt-in)
+    Auto = 3      ///< bit-exact AVX2 when available, else Scalar (R24)
+};
+
+/// Resolved implementation level (never Auto). Returned by resolve().
+enum class Level : int {
+    Scalar = 0,
+    AVX2 = 1,
+    AVX2FMA = 2
+};
+
+/// CPU feature report (each feature detected INDEPENDENTLY).
+struct Capabilities {
+    bool avx2;
+    bool fma;
+};
+
+/// One-time CPUID-based feature detection. Cached after the first call
+/// (function-local static -- thread-safe, no allocation after init).
+/// Call outside the audio callback (prepare() does); the result is a POD.
+Capabilities detect();
+
+/// True iff this build contains the ISA-extended kernel units (always true
+/// on the supported x86-64 toolchains; false on architectures without the
+/// units, where every non-Scalar mode is rejected at prepare()).
+bool isaUnitsCompiled();
+
+/// Mode name for diagnostics ("scalar" / "avx2" / "avx2+fma" / "auto").
+const char* modeName(Mode m);
+
+/// Level name for diagnostics ("scalar" / "avx2" / "avx2+fma").
+const char* levelName(Level l);
+
+/// Resolve a Mode against the detected capabilities and the build. Never
+/// fails and never upgrades past the available features:
+///   Scalar  -> Scalar
+///   AVX2    -> AVX2 if (units && caps.avx2)            else Scalar
+///   AVX2FMA -> AVX2FMA if (units && caps.avx2 && caps.fma) else Scalar
+///   Auto    -> AVX2 if available, else Scalar
+/// prepare() uses the RESOLVED level for the engine and REJECTS the
+/// configuration when an explicitly forced mode (AVX2 / AVX2FMA) cannot be
+/// honoured (loud failure, the house validation rule); only Auto degrades
+/// silently.
+///
+/// R24 DECISION (Auto prefers the BIT-EXACT level): the kernel measurements
+/// (PITCHLAB_R24_SIMD_BENCHMARK_RESULTS.md) show the AVX2 lag-axis kernel
+/// >= the AVX2+FMA kernel on EVERY representative shape on the reference
+/// machine -- the FMA level's halved dependent-op count only pays off in
+/// the throughput-bound 16-tau batch regime where both already run at
+/// ~5-6x, and it LOSES in the latency-bound single-batch regime (the
+/// Hybrid fine stage) -- while AVX2+FMA additionally carries the fused
+/// per-term rounding deviation. Auto therefore selects the bit-exact
+/// accelerated level; AVX2+FMA remains an explicit opt-in.
+Level resolve(Mode m);
+
+// ---------------------------------------------------------------------------
+// Kernels. All operate on the sliding-analysis-window layout of the YIN
+// detector (see src/dsp.cpp PitchDetector::estimate):
+//   d[i] = sum_{j=0..m-1} (x[seg0 + j] - x[seg0 + tau0 + i + j])^2
+///     for i in [0, ntau); caller guarantees
+///     seg0 + tau0 + ntau - 1 + m <= n (the window law).
+// No alignment is required of x or d (unaligned loads/stores throughout);
+// buffers are caller-owned and never written beyond ntau results.
+// ---------------------------------------------------------------------------
+
+/// Difference-function kernel signature (see block comment above).
+using DiffFn = void (*)(const double* x, int seg0, int tau0, int ntau, int m,
+                        double* d);
+
+/// Window peak kernel: returns max |x[i]| for i in [0, n) (exact, order-free).
+using PeakFn = double (*)(const double* x, int n);
+
+/// The dispatch table for one level. `diff` is the PRODUCTION kernel choice
+/// for the level (see the numerical-semantics table above; the lag-axis
+/// kernels are the order-preserving choices). `diff_sample` and `diff_lag`
+/// expose both vectorisation axes for the benchmark harness; the detector
+/// calls `diff`.
+struct Kernels {
+    Level level;
+    DiffFn diff;         ///< production choice for this level
+    DiffFn diff_sample;  ///< sample-axis (j-reassociating) variant
+    DiffFn diff_lag;     ///< lag-axis (order-preserving) variant
+    PeakFn peak;
+};
+
+/// The kernel table for a level. The Scalar table is available in every
+/// build; AVX2 / AVX2FMA tables exist only when isaUnitsCompiled() (the
+/// function pointers are resolved at first use from the baseline TU -- no
+/// static initialisation order hazard across the ISA units).
+Kernels kernels(Level l);
+
+}  // namespace simd
+}  // namespace octavox

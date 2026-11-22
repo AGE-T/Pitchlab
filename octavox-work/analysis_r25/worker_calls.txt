@@ -1,0 +1,1039 @@
+--- CALL at 0x180103a22 -> 0x18013d6f0
+    push rbx
+    sub rsp, 0x30
+    mov rbx, rcx
+    movaps xmmword ptr [rsp + 0x20], xmm6
+    add rcx, 0x10
+>>> call 0x18013d6f0
+    movss xmm3, dword ptr [rbx + 0x940]
+    movss xmm1, dword ptr [rbx + 0x958]
+--- CALL at 0x180103f11 -> 0x180139b40
+    movaps xmm0, xmm3
+    movss dword ptr [rax + 0xc], xmm3
+    subss xmm0, xmm1
+    mulss xmm0, xmm2
+    addss xmm0, xmm3
+    movss dword ptr [rbx + 0x72e0], xmm0
+>>> call 0x180139b40
+    movss xmm2, dword ptr [rip + 0x30ed42]
+    mov rax, qword ptr [rbx + 0x8488]
+--- CALL at 0x180103f7d -> 0x180139970
+    movss dword ptr [rax + 8], xmm1
+    movss xmm0, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0x84a8]
+    mov rax, qword ptr [rbx + 0x84a0]
+    andps xmm0, xmm2
+    movss dword ptr [rax + 0xc], xmm0
+>>> call 0x180139970
+    lea rcx, [rbx + 0x8518]
+    call 0x180139790
+--- CALL at 0x180103f89 -> 0x180139790
+    lea rcx, [rbx + 0x84a8]
+    mov rax, qword ptr [rbx + 0x84a0]
+    andps xmm0, xmm2
+    movss dword ptr [rax + 0xc], xmm0
+    call 0x180139970
+    lea rcx, [rbx + 0x8518]
+>>> call 0x180139790
+    lea rcx, [rbx + 0x8648]
+    call 0x180139480
+--- CALL at 0x180103f95 -> 0x180139480
+    andps xmm0, xmm2
+    movss dword ptr [rax + 0xc], xmm0
+    call 0x180139970
+    lea rcx, [rbx + 0x8518]
+    call 0x180139790
+    lea rcx, [rbx + 0x8648]
+>>> call 0x180139480
+    mov rcx, qword ptr [rbx + 0x87d8]
+    mov rax, qword ptr [rcx]
+--- CALL at 0x180103fb3 -> 0x180139970
+    call 0x180139480
+    mov rcx, qword ptr [rbx + 0x87d8]
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x87f0], ecx
+    lea rcx, [rbx + 0x87f8]
+>>> call 0x180139970
+    lea rcx, [rbx + 0x8868]
+    call 0x180139790
+--- CALL at 0x180103fbf -> 0x180139790
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x87f0], ecx
+    lea rcx, [rbx + 0x87f8]
+    call 0x180139970
+    lea rcx, [rbx + 0x8868]
+>>> call 0x180139790
+    lea rcx, [rbx + 0x8998]
+    call 0x180139480
+--- CALL at 0x180103fcb -> 0x180139480
+    mov dword ptr [rbx + 0x87f0], ecx
+    lea rcx, [rbx + 0x87f8]
+    call 0x180139970
+    lea rcx, [rbx + 0x8868]
+    call 0x180139790
+    lea rcx, [rbx + 0x8998]
+>>> call 0x180139480
+    mov rcx, qword ptr [rbx + 0x8b28]
+    mov rax, qword ptr [rcx]
+--- CALL at 0x180103fe9 -> 0x180139970
+    call 0x180139480
+    mov rcx, qword ptr [rbx + 0x8b28]
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x8b40], ecx
+    lea rcx, [rbx + 0x8b48]
+>>> call 0x180139970
+    lea rcx, [rbx + 0x8bb8]
+    call 0x180139790
+--- CALL at 0x180103ff5 -> 0x180139790
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x8b40], ecx
+    lea rcx, [rbx + 0x8b48]
+    call 0x180139970
+    lea rcx, [rbx + 0x8bb8]
+>>> call 0x180139790
+    lea rcx, [rbx + 0x8ce8]
+    call 0x180139480
+--- CALL at 0x180104001 -> 0x180139480
+    mov dword ptr [rbx + 0x8b40], ecx
+    lea rcx, [rbx + 0x8b48]
+    call 0x180139970
+    lea rcx, [rbx + 0x8bb8]
+    call 0x180139790
+    lea rcx, [rbx + 0x8ce8]
+>>> call 0x180139480
+    mov rcx, qword ptr [rbx + 0x8e78]
+    mov rax, qword ptr [rcx]
+--- CALL at 0x18010401f -> 0x180139970
+    call 0x180139480
+    mov rcx, qword ptr [rbx + 0x8e78]
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x8e90], ecx
+    lea rcx, [rbx + 0x8e98]
+>>> call 0x180139970
+    lea rcx, [rbx + 0x8f08]
+    call 0x180139790
+--- CALL at 0x18010402b -> 0x180139790
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x8e90], ecx
+    lea rcx, [rbx + 0x8e98]
+    call 0x180139970
+    lea rcx, [rbx + 0x8f08]
+>>> call 0x180139790
+    lea rcx, [rbx + 0x9038]
+    call 0x180139480
+--- CALL at 0x180104037 -> 0x180139480
+    mov dword ptr [rbx + 0x8e90], ecx
+    lea rcx, [rbx + 0x8e98]
+    call 0x180139970
+    lea rcx, [rbx + 0x8f08]
+    call 0x180139790
+    lea rcx, [rbx + 0x9038]
+>>> call 0x180139480
+    mov rcx, qword ptr [rbx + 0x91c8]
+    mov rax, qword ptr [rcx]
+--- CALL at 0x180104055 -> 0x180139970
+    call 0x180139480
+    mov rcx, qword ptr [rbx + 0x91c8]
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x91e0], ecx
+    lea rcx, [rbx + 0x91e8]
+>>> call 0x180139970
+    lea rcx, [rbx + 0x9258]
+    call 0x180139790
+--- CALL at 0x180104061 -> 0x180139790
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x91e0], ecx
+    lea rcx, [rbx + 0x91e8]
+    call 0x180139970
+    lea rcx, [rbx + 0x9258]
+>>> call 0x180139790
+    lea rcx, [rbx + 0x9388]
+    call 0x180139480
+--- CALL at 0x18010406d -> 0x180139480
+    mov dword ptr [rbx + 0x91e0], ecx
+    lea rcx, [rbx + 0x91e8]
+    call 0x180139970
+    lea rcx, [rbx + 0x9258]
+    call 0x180139790
+    lea rcx, [rbx + 0x9388]
+>>> call 0x180139480
+    mov rcx, qword ptr [rbx + 0x9518]
+    mov rax, qword ptr [rcx]
+--- CALL at 0x18010408b -> 0x180139970
+    call 0x180139480
+    mov rcx, qword ptr [rbx + 0x9518]
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x9530], ecx
+    lea rcx, [rbx + 0x9538]
+>>> call 0x180139970
+    lea rcx, [rbx + 0x95a8]
+    call 0x180139790
+--- CALL at 0x180104097 -> 0x180139790
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x9530], ecx
+    lea rcx, [rbx + 0x9538]
+    call 0x180139970
+    lea rcx, [rbx + 0x95a8]
+>>> call 0x180139790
+    lea rcx, [rbx + 0x96d8]
+    call 0x180139480
+--- CALL at 0x1801040a3 -> 0x180139480
+    mov dword ptr [rbx + 0x9530], ecx
+    lea rcx, [rbx + 0x9538]
+    call 0x180139970
+    lea rcx, [rbx + 0x95a8]
+    call 0x180139790
+    lea rcx, [rbx + 0x96d8]
+>>> call 0x180139480
+    mov rcx, qword ptr [rbx + 0x9868]
+    mov rax, qword ptr [rcx]
+--- CALL at 0x1801040c1 -> 0x180139970
+    call 0x180139480
+    mov rcx, qword ptr [rbx + 0x9868]
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x9880], ecx
+    lea rcx, [rbx + 0x9888]
+>>> call 0x180139970
+    lea rcx, [rbx + 0x98f8]
+    call 0x180139790
+--- CALL at 0x1801040cd -> 0x180139790
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x9880], ecx
+    lea rcx, [rbx + 0x9888]
+    call 0x180139970
+    lea rcx, [rbx + 0x98f8]
+>>> call 0x180139790
+    lea rcx, [rbx + 0x9a28]
+    call 0x180139480
+--- CALL at 0x1801040d9 -> 0x180139480
+    mov dword ptr [rbx + 0x9880], ecx
+    lea rcx, [rbx + 0x9888]
+    call 0x180139970
+    lea rcx, [rbx + 0x98f8]
+    call 0x180139790
+    lea rcx, [rbx + 0x9a28]
+>>> call 0x180139480
+    mov rcx, qword ptr [rbx + 0x9bb8]
+    mov rax, qword ptr [rcx]
+--- CALL at 0x1801040f7 -> 0x180139970
+    call 0x180139480
+    mov rcx, qword ptr [rbx + 0x9bb8]
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x9bd0], ecx
+    lea rcx, [rbx + 0x9bd8]
+>>> call 0x180139970
+    lea rcx, [rbx + 0x9c48]
+    call 0x180139790
+--- CALL at 0x180104103 -> 0x180139790
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x9bd0], ecx
+    lea rcx, [rbx + 0x9bd8]
+    call 0x180139970
+    lea rcx, [rbx + 0x9c48]
+>>> call 0x180139790
+    mov rcx, qword ptr [rbx + 0x9dc0]
+    mov rax, qword ptr [rbx + 0x9db0]
+--- CALL at 0x180104178 -> 0x180139480
+    movss dword ptr [rax + 8], xmm0
+    movss xmm1, dword ptr [rdx + 0xc]
+    mulss xmm1, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0x9de0]
+    mov rax, qword ptr [rbx + 0x9dd8]
+    movss dword ptr [rax + 0xc], xmm1
+>>> call 0x180139480
+    mov rcx, qword ptr [rbx + 0x9f70]
+    mov rax, qword ptr [rcx]
+--- CALL at 0x180104196 -> 0x180138e70
+    call 0x180139480
+    mov rcx, qword ptr [rbx + 0x9f70]
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x9f88], ecx
+    lea rcx, [rbx + 0x9f90]
+>>> call 0x180138e70
+    lea rcx, [rbx + 0xa100]
+    call 0x180138b00
+--- CALL at 0x1801041a2 -> 0x180138b00
+    mov rax, qword ptr [rcx]
+    mov ecx, dword ptr [rax]
+    mov dword ptr [rbx + 0x9f88], ecx
+    lea rcx, [rbx + 0x9f90]
+    call 0x180138e70
+    lea rcx, [rbx + 0xa100]
+>>> call 0x180138b00
+    lea rcx, [rbx + 0xa278]
+    call 0x180138870
+--- CALL at 0x1801041ae -> 0x180138870
+    mov dword ptr [rbx + 0x9f88], ecx
+    lea rcx, [rbx + 0x9f90]
+    call 0x180138e70
+    lea rcx, [rbx + 0xa100]
+    call 0x180138b00
+    lea rcx, [rbx + 0xa278]
+>>> call 0x180138870
+    lea rcx, [rbx + 0xa398]
+    call 0x180138e70
+--- CALL at 0x1801041ba -> 0x180138e70
+    call 0x180138e70
+    lea rcx, [rbx + 0xa100]
+    call 0x180138b00
+    lea rcx, [rbx + 0xa278]
+    call 0x180138870
+    lea rcx, [rbx + 0xa398]
+>>> call 0x180138e70
+    lea rcx, [rbx + 0xa508]
+    call 0x180138b00
+--- CALL at 0x1801041c6 -> 0x180138b00
+    call 0x180138b00
+    lea rcx, [rbx + 0xa278]
+    call 0x180138870
+    lea rcx, [rbx + 0xa398]
+    call 0x180138e70
+    lea rcx, [rbx + 0xa508]
+>>> call 0x180138b00
+    lea rcx, [rbx + 0xa680]
+    call 0x180138870
+--- CALL at 0x1801041d2 -> 0x180138870
+    call 0x180138870
+    lea rcx, [rbx + 0xa398]
+    call 0x180138e70
+    lea rcx, [rbx + 0xa508]
+    call 0x180138b00
+    lea rcx, [rbx + 0xa680]
+>>> call 0x180138870
+    lea rcx, [rbx + 0xa820]
+    call 0x1800d0d50
+--- CALL at 0x1801041de -> 0x1800d0d50
+    call 0x180138e70
+    lea rcx, [rbx + 0xa508]
+    call 0x180138b00
+    lea rcx, [rbx + 0xa680]
+    call 0x180138870
+    lea rcx, [rbx + 0xa820]
+>>> call 0x1800d0d50
+    lea rcx, [rbx + 0xa900]
+    call 0x180138870
+--- CALL at 0x1801041ea -> 0x180138870
+    call 0x180138b00
+    lea rcx, [rbx + 0xa680]
+    call 0x180138870
+    lea rcx, [rbx + 0xa820]
+    call 0x1800d0d50
+    lea rcx, [rbx + 0xa900]
+>>> call 0x180138870
+    lea rcx, [rbx + 0xaa20]
+    call 0x180138870
+--- CALL at 0x1801041f6 -> 0x180138870
+    call 0x180138870
+    lea rcx, [rbx + 0xa820]
+    call 0x1800d0d50
+    lea rcx, [rbx + 0xa900]
+    call 0x180138870
+    lea rcx, [rbx + 0xaa20]
+>>> call 0x180138870
+    lea rcx, [rbx + 0xac20]
+    call 0x1800ee420
+--- CALL at 0x180104202 -> 0x1800ee420
+    call 0x1800d0d50
+    lea rcx, [rbx + 0xa900]
+    call 0x180138870
+    lea rcx, [rbx + 0xaa20]
+    call 0x180138870
+    lea rcx, [rbx + 0xac20]
+>>> call 0x1800ee420
+    mov r8, qword ptr [rbx + 0xad90]
+    movss xmm2, dword ptr [rbx + 0xb3b8]
+--- CALL at 0x1801042ab -> 0x1801383d0
+    movaps xmm0, xmm3
+    movss dword ptr [rax + 0xc], xmm3
+    subss xmm0, xmm1
+    mulss xmm0, xmm2
+    addss xmm0, xmm3
+    movss dword ptr [rbx + 0xb388], xmm0
+>>> call 0x1801383d0
+    movss xmm4, dword ptr [rbx + 0xb580]
+    movss xmm1, dword ptr [rbx + 0xb598]
+--- CALL at 0x1801043ab -> 0x180138170
+    movss dword ptr [rax + 8], xmm0
+    movss xmm1, dword ptr [rdx + 0xc]
+    mulss xmm1, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0xb628]
+    mov rax, qword ptr [rbx + 0xb620]
+    movss dword ptr [rax + 0xc], xmm1
+>>> call 0x180138170
+    lea rcx, [rbx + 0xb858]
+    call 0x180138870
+--- CALL at 0x1801043b7 -> 0x180138870
+    mulss xmm1, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0xb628]
+    mov rax, qword ptr [rbx + 0xb620]
+    movss dword ptr [rax + 0xc], xmm1
+    call 0x180138170
+    lea rcx, [rbx + 0xb858]
+>>> call 0x180138870
+    lea rcx, [rbx + 0xb978]
+    call 0x180137f70
+--- CALL at 0x1801043c3 -> 0x180137f70
+    mov rax, qword ptr [rbx + 0xb620]
+    movss dword ptr [rax + 0xc], xmm1
+    call 0x180138170
+    lea rcx, [rbx + 0xb858]
+    call 0x180138870
+    lea rcx, [rbx + 0xb978]
+>>> call 0x180137f70
+    lea rcx, [rbx + 0xbf48]
+    call 0x180137e90
+--- CALL at 0x1801043cf -> 0x180137e90
+    call 0x180138170
+    lea rcx, [rbx + 0xb858]
+    call 0x180138870
+    lea rcx, [rbx + 0xb978]
+    call 0x180137f70
+    lea rcx, [rbx + 0xbf48]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0xc3e8]
+    call 0x1800e2030
+--- CALL at 0x1801043db -> 0x1800e2030
+    call 0x180138870
+    lea rcx, [rbx + 0xb978]
+    call 0x180137f70
+    lea rcx, [rbx + 0xbf48]
+    call 0x180137e90
+    lea rcx, [rbx + 0xc3e8]
+>>> call 0x1800e2030
+    cmp dword ptr [rbx + 0x16bf8], 0
+    lea rcx, [rbx + 0x16a88]
+--- CALL at 0x180104401 -> 0x1800e8b50
+    cmp dword ptr [rbx + 0x16bf8], 0
+    lea rcx, [rbx + 0x16a88]
+    movss xmm6, dword ptr [rip + 0x30da5e]
+    je 0x180104401
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104406
+>>> call 0x1800e8b50
+    lea rcx, [rbx + 0x16ce0]
+    call 0x1800ea650
+--- CALL at 0x18010440d -> 0x1800ea650
+    movss xmm6, dword ptr [rip + 0x30da5e]
+    je 0x180104401
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104406
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x16ce0]
+>>> call 0x1800ea650
+    lea rcx, [rbx + 0x16f70]
+    call 0x180137e90
+--- CALL at 0x180104419 -> 0x180137e90
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104406
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x16ce0]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x16f70]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x17098]
+    call 0x1800d38b0
+--- CALL at 0x180104425 -> 0x1800d38b0
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x16ce0]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x16f70]
+    call 0x180137e90
+    lea rcx, [rbx + 0x17098]
+>>> call 0x1800d38b0
+    movss xmm3, dword ptr [rbx + 0x17448]
+    movss xmm1, dword ptr [rbx + 0x17460]
+--- CALL at 0x180104537 -> 0x1800e8b50
+    mov rax, qword ptr [rbx + 0x174e8]
+    movss dword ptr [rax + 0xc], xmm1
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x180104537
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x18010453c
+>>> call 0x1800e8b50
+    lea rcx, [rbx + 0x17850]
+    call 0x1800ea650
+--- CALL at 0x180104543 -> 0x1800ea650
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x180104537
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x18010453c
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x17850]
+>>> call 0x1800ea650
+    lea rcx, [rbx + 0x17ae0]
+    call 0x180137e90
+--- CALL at 0x18010454f -> 0x180137e90
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x18010453c
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x17850]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x17ae0]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x17c08]
+    call 0x1800d38b0
+--- CALL at 0x18010455b -> 0x1800d38b0
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x17850]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x17ae0]
+    call 0x180137e90
+    lea rcx, [rbx + 0x17c08]
+>>> call 0x1800d38b0
+    movss xmm3, dword ptr [rbx + 0x17fb8]
+    movss xmm1, dword ptr [rbx + 0x17fd0]
+--- CALL at 0x18010466d -> 0x1800e8b50
+    mov rax, qword ptr [rbx + 0x18058]
+    movss dword ptr [rax + 0xc], xmm1
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x18010466d
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104672
+>>> call 0x1800e8b50
+    lea rcx, [rbx + 0x183c0]
+    call 0x1800ea650
+--- CALL at 0x180104679 -> 0x1800ea650
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x18010466d
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104672
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x183c0]
+>>> call 0x1800ea650
+    lea rcx, [rbx + 0x18650]
+    call 0x180137e90
+--- CALL at 0x180104685 -> 0x180137e90
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104672
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x183c0]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x18650]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x18778]
+    call 0x1800d38b0
+--- CALL at 0x180104691 -> 0x1800d38b0
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x183c0]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x18650]
+    call 0x180137e90
+    lea rcx, [rbx + 0x18778]
+>>> call 0x1800d38b0
+    movss xmm3, dword ptr [rbx + 0x18b28]
+    movss xmm1, dword ptr [rbx + 0x18b40]
+--- CALL at 0x1801047a3 -> 0x1800e8b50
+    mov rax, qword ptr [rbx + 0x18bc8]
+    movss dword ptr [rax + 0xc], xmm1
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x1801047a3
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x1801047a8
+>>> call 0x1800e8b50
+    lea rcx, [rbx + 0x18f30]
+    call 0x1800ea650
+--- CALL at 0x1801047af -> 0x1800ea650
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x1801047a3
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x1801047a8
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x18f30]
+>>> call 0x1800ea650
+    lea rcx, [rbx + 0x191c0]
+    call 0x180137e90
+--- CALL at 0x1801047bb -> 0x180137e90
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x1801047a8
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x18f30]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x191c0]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x192e8]
+    call 0x1800d38b0
+--- CALL at 0x1801047c7 -> 0x1800d38b0
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x18f30]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x191c0]
+    call 0x180137e90
+    lea rcx, [rbx + 0x192e8]
+>>> call 0x1800d38b0
+    movss xmm3, dword ptr [rbx + 0x19698]
+    movss xmm1, dword ptr [rbx + 0x196b0]
+--- CALL at 0x1801048d9 -> 0x1800e8b50
+    mov rax, qword ptr [rbx + 0x19738]
+    movss dword ptr [rax + 0xc], xmm1
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x1801048d9
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x1801048de
+>>> call 0x1800e8b50
+    lea rcx, [rbx + 0x19aa0]
+    call 0x1800ea650
+--- CALL at 0x1801048e5 -> 0x1800ea650
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x1801048d9
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x1801048de
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x19aa0]
+>>> call 0x1800ea650
+    lea rcx, [rbx + 0x19d30]
+    call 0x180137e90
+--- CALL at 0x1801048f1 -> 0x180137e90
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x1801048de
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x19aa0]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x19d30]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x19e58]
+    call 0x1800d38b0
+--- CALL at 0x1801048fd -> 0x1800d38b0
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x19aa0]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x19d30]
+    call 0x180137e90
+    lea rcx, [rbx + 0x19e58]
+>>> call 0x1800d38b0
+    movss xmm3, dword ptr [rbx + 0x1a208]
+    movss xmm1, dword ptr [rbx + 0x1a220]
+--- CALL at 0x180104a0f -> 0x1800e8b50
+    mov rax, qword ptr [rbx + 0x1a2a8]
+    movss dword ptr [rax + 0xc], xmm1
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x180104a0f
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104a14
+>>> call 0x1800e8b50
+    lea rcx, [rbx + 0x1a610]
+    call 0x1800ea650
+--- CALL at 0x180104a1b -> 0x1800ea650
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x180104a0f
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104a14
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x1a610]
+>>> call 0x1800ea650
+    lea rcx, [rbx + 0x1a8a0]
+    call 0x180137e90
+--- CALL at 0x180104a27 -> 0x180137e90
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104a14
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x1a610]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x1a8a0]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x1a9c8]
+    call 0x1800d38b0
+--- CALL at 0x180104a33 -> 0x1800d38b0
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x1a610]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x1a8a0]
+    call 0x180137e90
+    lea rcx, [rbx + 0x1a9c8]
+>>> call 0x1800d38b0
+    movss xmm3, dword ptr [rbx + 0x1ad78]
+    movss xmm1, dword ptr [rbx + 0x1ad90]
+--- CALL at 0x180104b45 -> 0x1800e8b50
+    mov rax, qword ptr [rbx + 0x1ae18]
+    movss dword ptr [rax + 0xc], xmm1
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x180104b45
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104b4a
+>>> call 0x1800e8b50
+    lea rcx, [rbx + 0x1b180]
+    call 0x1800ea650
+--- CALL at 0x180104b51 -> 0x1800ea650
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x180104b45
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104b4a
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x1b180]
+>>> call 0x1800ea650
+    lea rcx, [rbx + 0x1b410]
+    call 0x180137e90
+--- CALL at 0x180104b5d -> 0x180137e90
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104b4a
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x1b180]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x1b410]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x1b538]
+    call 0x1800d38b0
+--- CALL at 0x180104b69 -> 0x1800d38b0
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x1b180]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x1b410]
+    call 0x180137e90
+    lea rcx, [rbx + 0x1b538]
+>>> call 0x1800d38b0
+    movss xmm3, dword ptr [rbx + 0x1b8e8]
+    movss xmm1, dword ptr [rbx + 0x1b900]
+--- CALL at 0x180104c7b -> 0x1800e8b50
+    mov rax, qword ptr [rbx + 0x1b988]
+    movss dword ptr [rax + 0xc], xmm1
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x180104c7b
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104c80
+>>> call 0x1800e8b50
+    lea rcx, [rbx + 0x1bcf0]
+    call 0x1800ea650
+--- CALL at 0x180104c87 -> 0x1800ea650
+    cmp dword ptr [rcx + 0x170], 0
+    je 0x180104c7b
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104c80
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x1bcf0]
+>>> call 0x1800ea650
+    lea rcx, [rbx + 0x1bf80]
+    call 0x180137e90
+--- CALL at 0x180104c93 -> 0x180137e90
+    comiss xmm6, dword ptr [rcx + 0x190]
+    jae 0x180104c80
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x1bcf0]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x1bf80]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x1c0a8]
+    call 0x1800d38b0
+--- CALL at 0x180104c9f -> 0x1800d38b0
+    call 0x1800e8b50
+    lea rcx, [rbx + 0x1bcf0]
+    call 0x1800ea650
+    lea rcx, [rbx + 0x1bf80]
+    call 0x180137e90
+    lea rcx, [rbx + 0x1c0a8]
+>>> call 0x1800d38b0
+    cmp dword ptr [rbx + 0x1c5f8], 0
+    lea rcx, [rbx + 0x1c4b0]
+--- CALL at 0x180104cbd -> 0x1800d7f10
+    call 0x1800d38b0
+    cmp dword ptr [rbx + 0x1c5f8], 0
+    lea rcx, [rbx + 0x1c4b0]
+    je 0x180104cbd
+    comiss xmm6, dword ptr [rcx + 0x168]
+    jae 0x180104cc2
+>>> call 0x1800d7f10
+    lea rcx, [rbx + 0x1c6a0]
+    call 0x1800d0d50
+--- CALL at 0x180104cc9 -> 0x1800d0d50
+    lea rcx, [rbx + 0x1c4b0]
+    je 0x180104cbd
+    comiss xmm6, dword ptr [rcx + 0x168]
+    jae 0x180104cc2
+    call 0x1800d7f10
+    lea rcx, [rbx + 0x1c6a0]
+>>> call 0x1800d0d50
+    lea rcx, [rbx + 0x1c780]
+    call 0x180137f70
+--- CALL at 0x180104cd5 -> 0x180137f70
+    comiss xmm6, dword ptr [rcx + 0x168]
+    jae 0x180104cc2
+    call 0x1800d7f10
+    lea rcx, [rbx + 0x1c6a0]
+    call 0x1800d0d50
+    lea rcx, [rbx + 0x1c780]
+>>> call 0x180137f70
+    lea rcx, [rbx + 0x1cdf8]
+    call 0x1800cec80
+--- CALL at 0x180104ce1 -> 0x1800cec80
+    call 0x1800d7f10
+    lea rcx, [rbx + 0x1c6a0]
+    call 0x1800d0d50
+    lea rcx, [rbx + 0x1c780]
+    call 0x180137f70
+    lea rcx, [rbx + 0x1cdf8]
+>>> call 0x1800cec80
+    lea rcx, [rbx + 0x1d2b8]
+    call 0x1800dc430
+--- CALL at 0x180104ced -> 0x1800dc430
+    call 0x1800d0d50
+    lea rcx, [rbx + 0x1c780]
+    call 0x180137f70
+    lea rcx, [rbx + 0x1cdf8]
+    call 0x1800cec80
+    lea rcx, [rbx + 0x1d2b8]
+>>> call 0x1800dc430
+    lea rcx, [rbx + 0x1d3d8]
+    call 0x1801370b0
+--- CALL at 0x180104cf9 -> 0x1801370b0
+    call 0x180137f70
+    lea rcx, [rbx + 0x1cdf8]
+    call 0x1800cec80
+    lea rcx, [rbx + 0x1d2b8]
+    call 0x1800dc430
+    lea rcx, [rbx + 0x1d3d8]
+>>> call 0x1801370b0
+    lea rcx, [rbx + 0x1d538]
+    call 0x180136ee0
+--- CALL at 0x180104d05 -> 0x180136ee0
+    call 0x1800cec80
+    lea rcx, [rbx + 0x1d2b8]
+    call 0x1800dc430
+    lea rcx, [rbx + 0x1d3d8]
+    call 0x1801370b0
+    lea rcx, [rbx + 0x1d538]
+>>> call 0x180136ee0
+    lea rcx, [rbx + 0x1d628]
+    call 0x1800d0d50
+--- CALL at 0x180104d11 -> 0x1800d0d50
+    call 0x1800dc430
+    lea rcx, [rbx + 0x1d3d8]
+    call 0x1801370b0
+    lea rcx, [rbx + 0x1d538]
+    call 0x180136ee0
+    lea rcx, [rbx + 0x1d628]
+>>> call 0x1800d0d50
+    lea rcx, [rbx + 0x1d708]
+    call 0x180137f70
+--- CALL at 0x180104d1d -> 0x180137f70
+    call 0x1801370b0
+    lea rcx, [rbx + 0x1d538]
+    call 0x180136ee0
+    lea rcx, [rbx + 0x1d628]
+    call 0x1800d0d50
+    lea rcx, [rbx + 0x1d708]
+>>> call 0x180137f70
+    lea rcx, [rbx + 0x1dd80]
+    call 0x1800cec80
+--- CALL at 0x180104d29 -> 0x1800cec80
+    call 0x180136ee0
+    lea rcx, [rbx + 0x1d628]
+    call 0x1800d0d50
+    lea rcx, [rbx + 0x1d708]
+    call 0x180137f70
+    lea rcx, [rbx + 0x1dd80]
+>>> call 0x1800cec80
+    lea rcx, [rbx + 0x1e240]
+    call 0x1800dc430
+--- CALL at 0x180104d35 -> 0x1800dc430
+    call 0x1800d0d50
+    lea rcx, [rbx + 0x1d708]
+    call 0x180137f70
+    lea rcx, [rbx + 0x1dd80]
+    call 0x1800cec80
+    lea rcx, [rbx + 0x1e240]
+>>> call 0x1800dc430
+    lea rcx, [rbx + 0x1e360]
+    call 0x1801370b0
+--- CALL at 0x180104d41 -> 0x1801370b0
+    call 0x180137f70
+    lea rcx, [rbx + 0x1dd80]
+    call 0x1800cec80
+    lea rcx, [rbx + 0x1e240]
+    call 0x1800dc430
+    lea rcx, [rbx + 0x1e360]
+>>> call 0x1801370b0
+    lea rcx, [rbx + 0x1e4c0]
+    call 0x180136ee0
+--- CALL at 0x180104d4d -> 0x180136ee0
+    call 0x1800cec80
+    lea rcx, [rbx + 0x1e240]
+    call 0x1800dc430
+    lea rcx, [rbx + 0x1e360]
+    call 0x1801370b0
+    lea rcx, [rbx + 0x1e4c0]
+>>> call 0x180136ee0
+    movss xmm4, dword ptr [rbx + 0x1e660]
+    movss xmm1, dword ptr [rbx + 0x1e678]
+--- CALL at 0x180104fee -> 0x1800d0d50
+    movss dword ptr [rax + 8], xmm0
+    movss xmm1, dword ptr [rdx + 0xc]
+    mulss xmm1, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0x1ea10]
+    mov rax, qword ptr [rbx + 0x1e988]
+    movss dword ptr [rax + 0xc], xmm1
+>>> call 0x1800d0d50
+    lea rcx, [rbx + 0x1eaf0]
+    call 0x180138870
+--- CALL at 0x180104ffa -> 0x180138870
+    mulss xmm1, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0x1ea10]
+    mov rax, qword ptr [rbx + 0x1e988]
+    movss dword ptr [rax + 0xc], xmm1
+    call 0x1800d0d50
+    lea rcx, [rbx + 0x1eaf0]
+>>> call 0x180138870
+    mov r10, qword ptr [rbx + 0x1ec58]
+    mov rdx, qword ptr [r10]
+--- CALL at 0x18010506f -> 0x180138870
+    movss dword ptr [rax + 8], xmm0
+    movss xmm1, dword ptr [rdx + 0xc]
+    mulss xmm1, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0x1ec78]
+    mov rax, qword ptr [rbx + 0x1ec70]
+    movss dword ptr [rax + 0xc], xmm1
+>>> call 0x180138870
+    mov rax, qword ptr [rbx + 0x1edd0]
+    mov r10, qword ptr [rbx + 0x1ede0]
+--- CALL at 0x1801050e4 -> 0x180138870
+    movss dword ptr [rax + 8], xmm0
+    movss xmm1, dword ptr [rdx + 0xc]
+    mulss xmm1, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0x1ee00]
+    mov rax, qword ptr [rbx + 0x1edf8]
+    movss dword ptr [rax + 0xc], xmm1
+>>> call 0x180138870
+    mov rax, qword ptr [rbx + 0x1ef58]
+    mov r10, qword ptr [rbx + 0x1ef68]
+--- CALL at 0x180105159 -> 0x180137e90
+    movss dword ptr [rax + 8], xmm0
+    movss xmm1, dword ptr [rdx + 0xc]
+    mulss xmm1, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0x1ef88]
+    mov rax, qword ptr [rbx + 0x1ef80]
+    movss dword ptr [rax + 0xc], xmm1
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x1eff8]
+    call 0x180137e90
+--- CALL at 0x180105165 -> 0x180137e90
+    mulss xmm1, dword ptr [rcx + 0xc]
+    lea rcx, [rbx + 0x1ef88]
+    mov rax, qword ptr [rbx + 0x1ef80]
+    movss dword ptr [rax + 0xc], xmm1
+    call 0x180137e90
+    lea rcx, [rbx + 0x1eff8]
+>>> call 0x180137e90
+    lea rcx, [rbx + 0x1f068]
+    call 0x180138e70
+--- CALL at 0x180105171 -> 0x180138e70
+    mov rax, qword ptr [rbx + 0x1ef80]
+    movss dword ptr [rax + 0xc], xmm1
+    call 0x180137e90
+    lea rcx, [rbx + 0x1eff8]
+    call 0x180137e90
+    lea rcx, [rbx + 0x1f068]
+>>> call 0x180138e70
+    lea rcx, [rbx + 0x1f1d8]
+    call 0x180138e70
+--- CALL at 0x18010517d -> 0x180138e70
+    call 0x180137e90
+    lea rcx, [rbx + 0x1eff8]
+    call 0x180137e90
+    lea rcx, [rbx + 0x1f068]
+    call 0x180138e70
+    lea rcx, [rbx + 0x1f1d8]
+>>> call 0x180138e70
+    lea rcx, [rbx + 0x1f348]
+    call 0x180138870
+--- CALL at 0x180105189 -> 0x180138870
+    call 0x180137e90
+    lea rcx, [rbx + 0x1f068]
+    call 0x180138e70
+    lea rcx, [rbx + 0x1f1d8]
+    call 0x180138e70
+    lea rcx, [rbx + 0x1f348]
+>>> call 0x180138870
+    lea rcx, [rbx + 0x1f468]
+    call 0x180138870
+--- CALL at 0x180105195 -> 0x180138870
+    call 0x180138e70
+    lea rcx, [rbx + 0x1f1d8]
+    call 0x180138e70
+    lea rcx, [rbx + 0x1f348]
+    call 0x180138870
+    lea rcx, [rbx + 0x1f468]
+>>> call 0x180138870
+    lea rcx, [rbx + 0x1f588]
+    call 0x180138870
+--- CALL at 0x1801051a1 -> 0x180138870
+    call 0x180138e70
+    lea rcx, [rbx + 0x1f348]
+    call 0x180138870
+    lea rcx, [rbx + 0x1f468]
+    call 0x180138870
+    lea rcx, [rbx + 0x1f588]
+>>> call 0x180138870
+    lea rcx, [rbx + 0x1f788]
+    call 0x1800ee420
+--- CALL at 0x1801051ad -> 0x1800ee420
+    call 0x180138870
+    lea rcx, [rbx + 0x1f468]
+    call 0x180138870
+    lea rcx, [rbx + 0x1f588]
+    call 0x180138870
+    lea rcx, [rbx + 0x1f788]
+>>> call 0x1800ee420
+    lea rcx, [rbx + 0x1f950]
+    call 0x1800ee420
+--- CALL at 0x1801051b9 -> 0x1800ee420
+    call 0x180138870
+    lea rcx, [rbx + 0x1f588]
+    call 0x180138870
+    lea rcx, [rbx + 0x1f788]
+    call 0x1800ee420
+    lea rcx, [rbx + 0x1f950]
+>>> call 0x1800ee420
+    lea rcx, [rbx + 0x1fb80]
+    call 0x1800ee420
+--- CALL at 0x1801051c5 -> 0x1800ee420
+    call 0x180138870
+    lea rcx, [rbx + 0x1f788]
+    call 0x1800ee420
+    lea rcx, [rbx + 0x1f950]
+    call 0x1800ee420
+    lea rcx, [rbx + 0x1fb80]
+>>> call 0x1800ee420
+    mov r8, qword ptr [rbx + 0x1fcf0]
+    mov rax, qword ptr [r8]
+--- CALL at 0x180105207 -> 0x1801368e0
+    mov dword ptr [rbx + 0x1ffc8], eax
+    mov rax, qword ptr [rbx + 0x20058]
+    mov rcx, qword ptr [rax]
+    mov eax, dword ptr [rcx]
+    lea rcx, [rbx + 0x202f8]
+    mov dword ptr [rbx + 0x20070], eax
+>>> call 0x1801368e0
+    lea rcx, [rbx + 0x203f8]
+    call 0x1801368e0
+--- CALL at 0x180105213 -> 0x1801368e0
+    mov rcx, qword ptr [rax]
+    mov eax, dword ptr [rcx]
+    lea rcx, [rbx + 0x202f8]
+    mov dword ptr [rbx + 0x20070], eax
+    call 0x1801368e0
+    lea rcx, [rbx + 0x203f8]
+>>> call 0x1801368e0
+    lea rcx, [rbx + 0x204f8]
+    call 0x1801368e0
+--- CALL at 0x18010521f -> 0x1801368e0
+    lea rcx, [rbx + 0x202f8]
+    mov dword ptr [rbx + 0x20070], eax
+    call 0x1801368e0
+    lea rcx, [rbx + 0x203f8]
+    call 0x1801368e0
+    lea rcx, [rbx + 0x204f8]
+>>> call 0x1801368e0
+    lea rcx, [rbx + 0x205f8]
+    movaps xmm6, xmmword ptr [rsp + 0x20]

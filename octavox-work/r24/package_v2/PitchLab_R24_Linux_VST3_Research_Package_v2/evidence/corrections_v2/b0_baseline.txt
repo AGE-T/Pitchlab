@@ -1,0 +1,45 @@
+=== PITCHLAB R24-v2 CORRECTIONS — BASELINE RECORD ===
+2026-11-08T21:56:13Z
+
+--- Git ---
+HEAD: ac6612ca4c2ee6ee8941f80eefde8796686a07d7
+branch: main
+expected R24 source commit per correction brief: 757f242
+  git cat-file -t 757f242 -> fatal: Not a valid object name 757f242
+last commits:
+  ac6612c R24 web: round-24 delivery page (findings + measured decision record prepended, R24 header/meta/badges, archive cards relabeled as R23-last-archived); lint clean; browser-verified (desktop+390px, TOC anchors, no console errors, archive hash intact)
+  fb01b3f R24: SIMD capability layer completed from the interrupted session (missing simd_fma.cpp written; CMake per-TU ISA wiring; Config::simd + full engine integration incl. Hybrid fine stage; 10-case r24 battery -> suite 110/110 Release+ASan; hash pins bit-exact; VST3 core lib fixed+rebuilt: wrapper 21/21, module integration 12/12 on FRESH bundle, validator 47/47; R23 stale-bundle gap closed; kernel bench 4.8-6.3x bit-exact AVX2, FullRate 96k 8v 1144->368 ms/s; measured decision record PITCHLAB_R24_SIMD_BENCHMARK_RESULTS.md + findings + worklog)
+  febd4c3 efd3171c-bd85-444a-8051-0e8a710ef91a
+
+working tree: content-identical to HEAD (all diffs are 0-line / mode-bit only):
+   r24-mobile.png                                     | Bin 86433 -> 86433 bytes
+   tool-results/read_1793973980544_208b0de5edc6.txt   |   0
+   1147 files changed, 0 insertions(+), 0 deletions(-)
+
+--- Authoritative v1 archive ---
+PitchLab_R24_Linux_VST3_Research_Package.zip: NOT FOUND anywhere on this filesystem
+  (glob **/PitchLab_R24* over /home/z/my-project: no archive; public/ holds only R21/R22 Windows
+   zips and Octavox evidence zips; no SHA-256 to record)
+  => the corrective pass is executed directly against the actual repository state;
+     the v2 package is the FIRST complete Linux VST3 research package, built with all
+     four corrections applied. Recorded honestly per the brief's evidence rules.
+
+--- Pre-correction VST3 build state ---
+build_r24_vst3 contains exactly ONE bundle: PitchLab_Lagrange6_Balanced.vst3 (Nov 8, GLIBC_2.38-requiring;
+  retained as the Debian-13 reference build, superseded by the v2 corrected binaries)
+
+--- Environment ---
+CPU: Intel(R) Xeon(R) Processor (2 cores)
+CPU flags incl.: avx2 fma
+fma
+g++: g++ (Debian 14.2.0-19) 14.2.0
+glibc (build host): ldd (Debian GLIBC 2.41-12+deb13u4) 2.41
+cmake: 4.4.4 (pip-installed at /home/z/.venv/bin/cmake; reinstalled this session -- the R24 worklog records the same 6th-reset loss pattern)
+kernel: 5.10.134-013.15.kangaroo.al8.x86_64 (x86_64)
+
+--- Pre-correction binary audit (reference build) ---
+file: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, BuildID[sha1]=c7b8826d3503c630942179e9491668b561caf62e, stripped
+max GLIBC symbol version: GLIBC_2.38
+  GLIBC-requiring >= 2.34 symbols: GLIBC_2.34 GLIBC_2.38 
+  GLIBC_2.38 symbols: __isoc23_sscanf 
+max GLIBCXX symbol version: GLIBCXX_3.4.29

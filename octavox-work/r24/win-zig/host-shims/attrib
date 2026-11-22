@@ -1,0 +1,5 @@
+#!/bin/sh
+# R24-W host shim: Windows `attrib +s` is a no-op on the Linux cross-build
+# host (the +s bit is Windows Explorer decoration only; the bundle files
+# are byte-identical without it -- recorded deviation, same as R21/R22).
+exit 0
