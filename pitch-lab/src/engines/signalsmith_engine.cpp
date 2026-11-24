@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <vector>
@@ -27,6 +28,7 @@
 #pragma GCC diagnostic pop
 #endif
 
+#include "analysis/pitch_tracker_streaming.h"
 #include "core/errors.h"
 
 namespace pitchlab {
@@ -119,6 +121,19 @@ class SignalsmithEngine final : public PitchEngine {
       inF_[c].assign(kControlBlock, 0.0f);
       outF_[c].assign(kControlBlock, 0.0f);
     }
+    // Formant base tracking (only with "Keep Formants"): the library's own
+    // base detection was measured unreliable on higher voices (a synthetic
+    // vowel at 294 Hz: 20-22 dB formant error vs 2-4 dB with the true base),
+    // so the project's streaming pYIN tracker feeds setFormantBase() with the
+    // latest voiced F0 of the mono mix. All allocation happens here.
+    trackerOn_ = false;
+    if (preserveFormants_) {
+      trackerOn_ = tracker_.configure(ctx.sampleRate, kTrackFminHz, kTrackFmaxHz);
+      if (trackerOn_) {
+        tracker_.prepare();
+        mono_.assign(static_cast<std::size_t>(2 * tracker_.windowFrames() + 2 * kControlBlock), 0.0);
+      }
+    }
     resetStreaming();
     prepared_ = true;
   }
@@ -194,16 +209,54 @@ class SignalsmithEngine final : public PitchEngine {
     } else {
       stretch_->presetDefault(channels_, fs);
     }
-    actualLatency_ = static_cast<int64_t>(stretch_->inputLatency()) +
-                     static_cast<int64_t>(stretch_->outputLatency());
+    inputLatency_ = static_cast<int64_t>(stretch_->inputLatency());
+    actualLatency_ = inputLatency_ + static_cast<int64_t>(stretch_->outputLatency());
   }
 
   void resetStreaming() {
+    if (trackerOn_) tracker_.reset();
+    monoStart_ = 0;
+    monoCount_ = 0;
+    formantBaseHz_ = 0.0;
     consumedTotal_ = 0;
     stretchOut_ = 0;
     outM_ = 0;
     inputExhausted_ = false;
     finished_ = false;
+  }
+
+  /// Feed the mono mix of the current sub-block to the streaming tracker and
+  /// keep the latest VOICED F0 (held through unvoiced frames). No allocation.
+  void trackFormantBase(int n) {
+    const int64_t win = tracker_.windowFrames();
+    // append
+    if (monoCount_ + n > static_cast<int64_t>(mono_.size())) return;  // defensive (sized in prepare)
+    for (int i = 0; i < n; ++i) {
+      double v = 0.0;
+      for (int c = 0; c < channels_; ++c) v += static_cast<double>(inF_[c][static_cast<std::size_t>(i)]);
+      mono_[static_cast<std::size_t>(monoCount_ + i)] = v / static_cast<double>(channels_);
+    }
+    monoCount_ += n;
+    // observe every complete window
+    while (tracker_.nextFrameStart() + win <= monoStart_ + monoCount_) {
+      const int64_t fsAbs = tracker_.nextFrameStart();
+      tracker_.observeFrame(mono_.data() + (fsAbs - monoStart_), fsAbs);
+    }
+    const int k = tracker_.decodedCount();
+    for (int i = 0; i < k; ++i) {
+      const auto& d = tracker_.decoded(i);
+      if (d.voiced && d.f0Hz > 0.0) formantBaseHz_ = d.f0Hz;
+    }
+    tracker_.consumeDecoded(k);
+    // drop the samples no future window needs (compact to the buffer start)
+    const int64_t keepFrom = tracker_.nextFrameStart();
+    if (keepFrom > monoStart_) {
+      const int64_t drop = std::min(keepFrom - monoStart_, monoCount_);
+      std::memmove(mono_.data(), mono_.data() + drop,
+                   sizeof(double) * static_cast<std::size_t>(monoCount_ - drop));
+      monoStart_ += drop;
+      monoCount_ -= drop;
+    }
   }
 
   /// Limit a sub-block of `n` library frames so the aligned frames it emits
@@ -222,13 +275,26 @@ class SignalsmithEngine final : public PitchEngine {
   }
 
   void runBlock(int n, bool zeros, AudioBlockOut& out, int& produced) {
-    // control: the ratio at the sub-block's input position (FixedBlock rate)
-    const FrameCount idx = std::clamp<FrameCount>(consumedTotal_, 0, ctx_.totalInputFrames - 1);
+    // control: the ratio at the library's PROCESSING time. Signalsmith centres
+    // a transpose change at its processing position, which trails the newest
+    // input by inputLatency() (README "Automation" / "Seeking and starting").
+    // Reading the curve at the newest input frame applied every change
+    // ~inputLatency (60 ms @ 48 kHz) EARLY on the aligned output (measured:
+    // steps landed 55-67 ms early at 44.1/48/96 kHz). The aligned output m
+    // carries the content processed at input time m, so the curve index is
+    // consumed - inputLatency (clamped to the stream start).
+    const FrameCount idx = std::clamp<FrameCount>(consumedTotal_ - inputLatency_, 0,
+                                                  ctx_.totalInputFrames - 1);
     const double ratio = ctx_.curve->ratio[static_cast<std::size_t>(idx)];
     stretch_->setTransposeFactor(static_cast<float>(ratio));
     stretch_->setFormantFactor(static_cast<float>(formantRatio_), preserveFormants_);
     if (zeros) {
       for (int c = 0; c < channels_; ++c) std::fill(inF_[c].begin(), inF_[c].begin() + n, 0.0f);
+    }
+    if (trackerOn_) {
+      trackFormantBase(n);
+      // 0 = the library's automatic detection until the first voiced frame
+      stretch_->setFormantBase(static_cast<float>(formantBaseHz_ / ctx_.sampleRate));
     }
     float* inPtrs[2] = {inF_[0].data(), inF_[1].data()};
     float* outPtrs[2] = {outF_[0].data(), outF_[1].data()};
@@ -257,6 +323,16 @@ class SignalsmithEngine final : public PitchEngine {
   int channels_ = 1;
   std::unique_ptr<Stretch> stretch_;
   int64_t actualLatency_ = 0;
+  int64_t inputLatency_ = 0;  // the library's processing-time lag (automation index)
+  // formant base tracking ("Keep Formants" only)
+  static constexpr double kTrackFminHz = 60.0;
+  static constexpr double kTrackFmaxHz = 1000.0;
+  analysis::StreamingPitchTracker tracker_;
+  bool trackerOn_ = false;
+  std::vector<double> mono_;
+  int64_t monoStart_ = 0;
+  int64_t monoCount_ = 0;
+  double formantBaseHz_ = 0.0;
   int64_t declaredLatency_ = 0;
   Latency latency_{};
   std::vector<float> inF_[2];

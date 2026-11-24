@@ -6,7 +6,7 @@ project(PitchLab
   LANGUAGES CXX)
 
 # ---------------------------------------------------------------------------
-# Pitch Lab build (v0.1 offline harness + 6 production DSP engines + VST3 product layer).
+# Pitch Lab build (v0.1 offline harness + 8 production DSP engines + VST3 product layer).
 #
 # This CMake project builds the Pitch Lab C++20 DSP research and product system
 # (architecture: research/pitch-lab-architecture-design.md v1.1;
@@ -308,7 +308,7 @@ set_tests_properties(rc2b_octave_null_probe PROPERTIES LABELS "probe")  # audit 
 # contract + function suite (length, F0 accuracy, determinism, reset,
 # block/capacity independence, configuration validation).
 pitchlab_add_doctest(external_engines_test tests/external_engines_test.cpp)
-target_link_libraries(external_engines_test PRIVATE pitchlab_world)  # the WORLD stage profile
+target_link_libraries(external_engines_test PRIVATE pitchlab_world pitchlab_signalsmith)  # WORLD stage profile + the formant-base measurement
 target_compile_definitions(rc2b_octave_null_probe PRIVATE
   PITCHLAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 

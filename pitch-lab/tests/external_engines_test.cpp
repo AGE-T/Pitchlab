@@ -713,3 +713,241 @@ TEST_CASE("native.world sample rates: the declared set works, everything else is
   }
 }
 
+// ===========================================================================
+// native.signalsmith — automation TIMING on the aligned output timeline
+// (the library centres pitch changes at its PROCESSING time, inputLatency()
+// behind the newest input — README "Automation"). A ratio change commanded
+// for input frame T must appear at aligned output frame T.
+// ===========================================================================
+
+namespace {
+
+/// Instantaneous frequency of a (shifted) sine from rising zero crossings in
+/// [c - w/2, c + w/2).
+double localFreq(const std::vector<double>& x, std::size_t c, std::size_t w, double fs) {
+  const std::size_t a = c > w / 2 ? c - w / 2 : 0;
+  const std::size_t b = std::min(x.size(), a + w);
+  return zeroCrossFreq(x, a, b, fs);
+}
+
+/// First frame (scanning in `hop` steps from `from`) where the local frequency
+/// crosses `threshold` in the direction from f0 to f1.
+int64_t crossingFrame(const std::vector<double>& x, std::size_t from, std::size_t to, double fs,
+                      double f0, double f1) {
+  const double thr = 0.5 * (f0 + f1);
+  for (std::size_t c = from; c < to; c += 32) {
+    const double f = localFreq(x, c, 1024, fs);
+    if (f <= 0.0) continue;
+    if ((f1 > f0 && f > thr) || (f1 < f0 && f < thr)) return static_cast<int64_t>(c);
+  }
+  return -1;
+}
+
+RenderResult renderSs(const std::vector<double>& in, const std::vector<double>& curve, double fs,
+                      int block, EngineConfiguration cfg = {}) {
+  PitchCurveView cv{curve.data(), static_cast<FrameCount>(curve.size()), fs};
+  cfg.seed = 1;
+  auto e = make("native.signalsmith", cfg);
+  std::vector<std::vector<double>> ins{in};
+  return render(*e, ins, cv, fs, block, 4096);
+}
+
+}  // namespace
+
+TEST_CASE("native.signalsmith automation timing: steps land at their input frame (all rates, blocks)") {
+  for (double fs : {44100.0, 48000.0, 96000.0}) {
+    for (int block : {64, 512, 3000}) {
+      CAPTURE(fs);
+      CAPTURE(block);
+      const std::size_t n = static_cast<std::size_t>(fs * 3.0);
+      const double f = 330.0;
+      std::vector<double> x(n);
+      for (std::size_t i = 0; i < n; ++i) x[i] = 0.5 * std::sin(2.0 * kPi * f * static_cast<double>(i) / fs);
+      // up step at 1.0 s, down step back at 2.0 s (repeated stepping)
+      const std::size_t t1 = static_cast<std::size_t>(fs * 1.0), t2 = static_cast<std::size_t>(fs * 2.0);
+      std::vector<double> curve(n, 1.0);
+      for (std::size_t i = t1; i < t2; ++i) curve[i] = 1.5;
+      const RenderResult r = renderSs(x, curve, fs, block);
+      REQUIRE(r.out[0].size() == n);
+      const int64_t up = crossingFrame(r.out[0], t1 - static_cast<std::size_t>(0.3 * fs),
+                                       t1 + static_cast<std::size_t>(0.3 * fs), fs, f, 1.5 * f);
+      const int64_t down = crossingFrame(r.out[0], t2 - static_cast<std::size_t>(0.3 * fs),
+                                         t2 + static_cast<std::size_t>(0.3 * fs), fs, 1.5 * f, f);
+      const double upMs = 1000.0 * static_cast<double>(up - static_cast<int64_t>(t1)) / fs;
+      const double downMs = 1000.0 * static_cast<double>(down - static_cast<int64_t>(t2)) / fs;
+      MESSAGE("fs " << fs << " block " << block << ": up-step lands " << upMs << " ms, down-step "
+                    << downMs << " ms (0 = on time)");
+      // measured after the processing-time fix: within +-5.5 ms at every rate
+      // and block size (before: 55-67 ms EARLY). Gate: 15 ms (half the
+      // 30 ms spectral interval) — a regression to the input-position index
+      // fails by ~4x.
+      CHECK(std::fabs(upMs) < 15.0);
+      CHECK(std::fabs(downMs) < 15.0);
+    }
+  }
+}
+
+TEST_CASE("native.signalsmith automation timing: slow/fast sweeps track the commanded ratio") {
+  const double fs = 48000.0;
+  const std::size_t n = static_cast<std::size_t>(fs * 4.0);
+  const double f = 300.0;
+  std::vector<double> x(n);
+  for (std::size_t i = 0; i < n; ++i) x[i] = 0.5 * std::sin(2.0 * kPi * f * static_cast<double>(i) / fs);
+  struct Sweep {
+    const char* name;
+    double seconds;
+    double fromSt;
+    double toSt;
+  };
+  for (const Sweep sw : {Sweep{"slow up", 3.0, -6.0, 6.0}, Sweep{"slow down", 3.0, 6.0, -6.0},
+                         Sweep{"fast up", 0.5, -6.0, 6.0}, Sweep{"fast down", 0.5, 6.0, -6.0}}) {
+    CAPTURE(sw.name);
+    std::vector<double> curve(n);
+    const std::size_t s0 = static_cast<std::size_t>(fs * 0.5);
+    const std::size_t s1 = s0 + static_cast<std::size_t>(fs * sw.seconds);
+    for (std::size_t i = 0; i < n; ++i) {
+      const double u = i < s0 ? 0.0 : (i >= s1 ? 1.0 : static_cast<double>(i - s0) / static_cast<double>(s1 - s0));
+      curve[i] = std::exp2((sw.fromSt + (sw.toSt - sw.fromSt) * u) / 12.0);
+    }
+    const RenderResult r = renderSs(x, curve, fs, 512);
+    // mean absolute tracking error (cents) over the sweep, sampled every 10 ms
+    double sum = 0.0;
+    int cnt = 0;
+    for (std::size_t c = s0 + 2048; c + 2048 < s1; c += static_cast<std::size_t>(fs * 0.01)) {
+      const double got = localFreq(r.out[0], c, 1024, fs);
+      if (got <= 0.0) continue;
+      sum += std::fabs(1200.0 * std::log2(got / (f * curve[c])));
+      ++cnt;
+    }
+    const double meanC = cnt > 0 ? sum / cnt : 1e9;
+    MESSAGE(sw.name << ": mean tracking error " << meanC << " c over " << cnt << " points");
+    // measured: slow 5.6 c / fast 33-34 c after the fix (before: 29.5 c /
+    // 136-175 c — the 60 ms early application)
+    CHECK(meanC < (sw.seconds < 1.0 ? 60.0 : 10.0));
+  }
+}
+
+// ===========================================================================
+// native.signalsmith formant preservation: automatic base-frequency
+// detection (what the engine uses — it cannot know the input's f0) versus
+// the library given the true f0 through setFormantBase(). A synthetic vowel
+// with a KNOWN smooth envelope is shifted with formants kept; each output
+// harmonic's level is compared with the envelope at its new frequency.
+// ===========================================================================
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4244 4267 4305)
+#endif
+#include <signalsmith-stretch/signalsmith-stretch.h>
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace {
+
+/// Four two-pole resonances (700/1220/2600/3400 Hz) — an /a/-like envelope (dB).
+double vowelEnvDb(double f) {
+  const double formants[4] = {700.0, 1220.0, 2600.0, 3400.0};
+  const double bw[4] = {130.0, 70.0, 160.0, 250.0};
+  double p = 0.0;
+  for (int i = 0; i < 4; ++i) {
+    const double d = (f - formants[i]) / (0.5 * bw[i]);
+    p += 1.0 / (1.0 + d * d) * (i == 0 ? 1.0 : 0.5);
+  }
+  return 10.0 * std::log10(p + 1e-6);
+}
+
+double goertzelDb(const std::vector<double>& x, std::size_t a, std::size_t n, double f, double fs) {
+  double re = 0.0, im = 0.0;
+  for (std::size_t i = 0; i < n; ++i) {
+    const double w = 0.5 - 0.5 * std::cos(2.0 * kPi * static_cast<double>(i) / static_cast<double>(n - 1));
+    const double ph = 2.0 * kPi * f * static_cast<double>(a + i) / fs;
+    re += x[a + i] * w * std::cos(ph);
+    im -= x[a + i] * w * std::sin(ph);
+  }
+  return 20.0 * std::log10(std::sqrt(re * re + im * im) + 1e-12);
+}
+
+/// RMS dB error of the output harmonics (250..2500 Hz) against the envelope,
+/// after matching the total level once.
+// mode 0: the raw library, automatic base; 1: the raw library given the
+// true f0; 2: the native.signalsmith ENGINE with preserve_formants (its
+// tracker-fed base)
+double formantErrorDb(int mode, double f0, double st) {
+  const double fs = 48000.0;
+  const std::size_t n = static_cast<std::size_t>(fs * 3.0);
+  std::vector<float> x(n), y(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    double v = 0.0;
+    for (int h = 1; h * f0 < 5000.0; ++h) {
+      v += std::pow(10.0, vowelEnvDb(h * f0) / 20.0) * std::sin(2.0 * kPi * h * f0 * static_cast<double>(i) / fs);
+    }
+    x[i] = static_cast<float>(0.05 * v);
+  }
+  std::vector<double> yd;
+  if (mode == 2) {
+    std::vector<std::vector<double>> ins{std::vector<double>(x.begin(), x.end())};
+    std::vector<double> curve(n, std::exp2(st / 12.0));
+    PitchCurveView cv{curve.data(), static_cast<FrameCount>(n), fs};
+    EngineConfiguration cfg;
+    cfg.seed = 1;
+    cfg.parameters = {{"preserve_formants", ParameterValue{true}}};
+    auto e = make("native.signalsmith", cfg);
+    yd = render(*e, ins, cv, fs, 256, 4096).out[0];
+  } else {
+    signalsmith::stretch::SignalsmithStretch<float> s(1);
+    s.presetDefault(1, static_cast<float>(fs));
+    s.setTransposeSemitones(static_cast<float>(st));
+    s.setFormantFactor(1.0f, true);
+    if (mode == 1) s.setFormantBase(static_cast<float>(f0 / fs));
+    for (std::size_t p = 0; p + 256 <= n; p += 256) {
+      float* in[1] = {x.data() + p};
+      float* out[1] = {y.data() + p};
+      s.process(in, 256, out, 256);
+    }
+    yd.assign(y.begin(), y.end());
+  }
+  const double f1 = f0 * std::exp2(st / 12.0);
+  std::vector<double> errs;
+  for (int h = 1; h * f1 < 2500.0; ++h) {
+    const double f = h * f1;
+    if (f < 250.0) continue;
+    errs.push_back(goertzelDb(yd, n / 2, 32768, f, fs) - vowelEnvDb(f));
+  }
+  double mean = 0.0;
+  for (double e : errs) mean += e;
+  mean /= static_cast<double>(errs.size());
+  double sq = 0.0;
+  for (double e : errs) sq += (e - mean) * (e - mean);
+  return std::sqrt(sq / static_cast<double>(errs.size()));
+}
+
+}  // namespace
+
+TEST_CASE("native.signalsmith formants: tracked base vs automatic detection vs a given f0") {
+  double sumAuto = 0.0, sumBase = 0.0, sumEngine = 0.0, worstEngine = 0.0;
+  int n = 0;
+  for (double f0 : {147.0, 220.0, 294.0}) {
+    for (double st : {-5.0, 3.0}) {
+      const double eAuto = formantErrorDb(0, f0, st);
+      const double eBase = formantErrorDb(1, f0, st);
+      const double eEng = formantErrorDb(2, f0, st);
+      MESSAGE("f0 " << f0 << " Hz, " << st << " st: formant RMS error  library-auto " << eAuto
+                    << " dB | library-given-base " << eBase << " dB | ENGINE (tracked base) " << eEng
+                    << " dB");
+      sumAuto += eAuto;
+      sumBase += eBase;
+      sumEngine += eEng;
+      worstEngine = std::max(worstEngine, eEng);
+      ++n;
+    }
+  }
+  MESSAGE("mean: library-auto " << sumAuto / n << " dB, given base " << sumBase / n
+                                << " dB, ENGINE " << sumEngine / n << " dB (worst " << worstEngine
+                                << ")");
+  // the engine's tracked base must stay close to the given-base reference
+  // (the library's own auto detection measured 9.4 dB mean / 22 dB worst)
+  CHECK(sumEngine / n < 3.5);
+  CHECK(worstEngine < 6.0);
+}
