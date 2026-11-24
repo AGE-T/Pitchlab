@@ -23,8 +23,11 @@
 // unified time-pitch engine native.timepitch (§6.6/§6.6.1; 6th production
 // engine, selector index 5; the four Task28 algorithms are its internal
 // MODES, never registry entries — the proto.* research artefacts stay
-// outside the production registry). The engine_registry_smoke test (T-E19)
-// asserts the exact intended content.
+// outside the production registry) — PLUS (2026-11) the two vendored
+// external integrations native.world (WORLD v1.0.1, index 6) and
+// native.signalsmith (Signalsmith Stretch 1.4.0, index 7): EIGHT production
+// engines in total, appended so the earlier selector indices never move.
+// The engine_registry_smoke test (T-E19) asserts the exact intended content.
 //
 // Task-33 checkpoint note: native.timepitch's MODE surface lands per VST
 // checkpoint (Fixed=OLA first); the ENGINE registration (identity,
@@ -228,7 +231,7 @@ class EngineRegistry {
 /// §D.6). Called exactly once per process, from the harness/CLI entry, then
 /// the registry is sealed. Deliberately NOT static initialisation.
 ///
-/// Freeze state: registers NOTHING (see file header).
+/// Registers the eight production engines (see the file header).
 void registerProductionEngines(EngineRegistry& registry);
 
 }  // namespace pitchlab

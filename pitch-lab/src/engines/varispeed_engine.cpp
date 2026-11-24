@@ -230,7 +230,7 @@ class VarispeedEngine final : public PitchEngine {
     const FrameCount streamEnd = ctx_.totalInputFrames + latency_.inputLatencyFrames;
     inputExhausted_ = inputExhausted_ || (consumedTotal_ >= streamEnd);
 
-    return ProcessReport{consumed, produced, inputExhausted_};
+    return ProcessReport{consumed, produced, inputExhausted_, false};
   }
 
   ProcessReport finish(AudioBlockOut& out, int outCapacity) override {
@@ -256,7 +256,7 @@ class VarispeedEngine final : public PitchEngine {
     // outputLatencyFrames (§6.1.1 item 7 — the bound holds by construction;
     // the cap is the honest guard).
     const int produced = produceInto(out, outCapacity, /*inFinish=*/true);
-    return ProcessReport{0, produced, inputExhausted_};
+    return ProcessReport{0, produced, inputExhausted_, false};
   }
 
   void reset() override {

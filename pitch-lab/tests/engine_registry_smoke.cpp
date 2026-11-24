@@ -48,10 +48,10 @@ class DummyEngine : public pitchlab::PitchEngine {
   pitchlab::ProcessReport process(const pitchlab::AudioBlockView&, int inFrames,
                                   pitchlab::AudioBlockOut&, int, const pitchlab::PitchCurveView&,
                                   pitchlab::FrameCount) override {
-    return pitchlab::ProcessReport{inFrames, 0, false};
+    return pitchlab::ProcessReport{inFrames, 0, false, false};
   }
   pitchlab::ProcessReport finish(pitchlab::AudioBlockOut&, int) override {
-    return pitchlab::ProcessReport{0, 0, false};
+    return pitchlab::ProcessReport{0, 0, false, false};
   }
   void reset() override {}
 };

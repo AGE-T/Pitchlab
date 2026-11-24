@@ -434,7 +434,7 @@ class WorldEngine final : public PitchEngine, private WorldPool::Client {
     const int produced = emit(out, 0, outCapacity, /*finishing=*/false, starved);
     throwIfFailed();
     inputExhausted_ = inputExhausted_ || (consumedTotal_ >= nPad_);
-    ProcessReport rep{consumed, produced, inputExhausted_};
+    ProcessReport rep{consumed, produced, inputExhausted_, false};
     rep.starved = starved;
     return rep;
   }
@@ -472,7 +472,7 @@ class WorldEngine final : public PitchEngine, private WorldPool::Client {
       if (ctx_.realtime) break;  // never wait on a realtime callback
       if (inputSpace() <= 0) waitForChunkProgress(done_.load(std::memory_order_acquire));
     }
-    ProcessReport rep{0, produced, inputExhausted_};
+    ProcessReport rep{0, produced, inputExhausted_, false};
     rep.starved = starved;
     return rep;
   }

@@ -86,9 +86,9 @@ class NarrowDummy : public PitchEngine {
   Latency latency() const override { return Latency{0, 0}; }
   ProcessReport process(const AudioBlockView&, int inFrames, AudioBlockOut&, int,
                         const PitchCurveView&, FrameCount) override {
-    return ProcessReport{inFrames, 0, false};
+    return ProcessReport{inFrames, 0, false, false};
   }
-  ProcessReport finish(AudioBlockOut&, int) override { return ProcessReport{0, 0, true}; }
+  ProcessReport finish(AudioBlockOut&, int) override { return ProcessReport{0, 0, true, false}; }
   void reset() override {}
 };
 

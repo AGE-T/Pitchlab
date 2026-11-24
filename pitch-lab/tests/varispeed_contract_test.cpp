@@ -443,13 +443,13 @@ class OverFlushDummy : public PitchEngine {
     (void)out;
     (void)outCapacity;
     // Sticky exhaustion from the first call (fixture simplicity; §4.2.1 item 7).
-    return ProcessReport{inFrames, 0, true};
+    return ProcessReport{inFrames, 0, true, false};
   }
   ProcessReport finish(AudioBlockOut& out, int outCapacity) override {
     for (int i = 0; i < 3 && i < outCapacity; ++i) {
       out.channels[0][i] = 0.0;
     }
-    return ProcessReport{0, std::min(3, outCapacity), true};
+    return ProcessReport{0, std::min(3, outCapacity), true, false};
   }
   void reset() override {}
 
@@ -540,13 +540,13 @@ class PassthroughDummy : public PitchEngine {
       out.channels[0][i] = in.channels[0][i];
     }
     // Sticky exhaustion from the first call (fixture simplicity; §4.2.1 item 7).
-    return ProcessReport{inFrames, n, true};
+    return ProcessReport{inFrames, n, true, false};
   }
   ProcessReport finish(AudioBlockOut& out, int outCapacity) override {
     for (int i = 0; i < 5 && i < outCapacity; ++i) {
       out.channels[0][i] = 0.0;
     }
-    return ProcessReport{0, std::min(5, outCapacity), true};
+    return ProcessReport{0, std::min(5, outCapacity), true, false};
   }
   void reset() override {}
 

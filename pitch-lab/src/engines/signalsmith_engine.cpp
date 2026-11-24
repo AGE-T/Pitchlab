@@ -172,7 +172,7 @@ class SignalsmithEngine final : public PitchEngine {
     }
     const FrameCount streamEnd = ctx_.totalInputFrames + latency_.inputLatencyFrames;
     inputExhausted_ = inputExhausted_ || (consumedTotal_ >= streamEnd);
-    return ProcessReport{consumed, produced, inputExhausted_};
+    return ProcessReport{consumed, produced, inputExhausted_, false};
   }
 
   ProcessReport finish(AudioBlockOut& out, int outCapacity) override {
@@ -191,7 +191,7 @@ class SignalsmithEngine final : public PitchEngine {
       if (n <= 0) break;
       runBlock(n, /*zeros=*/true, out, produced);
     }
-    return ProcessReport{0, produced, inputExhausted_};
+    return ProcessReport{0, produced, inputExhausted_, false};
   }
 
   void reset() override {

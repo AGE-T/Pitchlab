@@ -332,7 +332,7 @@ class PvClassicEngine final : public PitchEngine {
     const FrameCount streamEnd = ctx_.totalInputFrames + latency_.inputLatencyFrames;
     inputExhausted_ = inputExhausted_ || (consumedTotal_ >= streamEnd);
 
-    return ProcessReport{consumed, produced, inputExhausted_};
+    return ProcessReport{consumed, produced, inputExhausted_, false};
   }
 
   ProcessReport finish(AudioBlockOut& out, int outCapacity) override {
@@ -353,7 +353,7 @@ class PvClassicEngine final : public PitchEngine {
     // The tail [N_in, N_in + N) — exactly N frames (§6.3.1 item 11); the
     // analysis completes with semantic-zero taps beyond the padded stream.
     const int produced = produceInto(out, outCapacity, /*finishMode=*/true);
-    return ProcessReport{0, produced, inputExhausted_};
+    return ProcessReport{0, produced, inputExhausted_, false};
   }
 
   void reset() override {

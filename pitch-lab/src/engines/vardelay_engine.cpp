@@ -222,7 +222,7 @@ class VardelayEngine final : public PitchEngine {
     const FrameCount streamEnd = ctx_.totalInputFrames + latency_.inputLatencyFrames;
     inputExhausted_ = inputExhausted_ || (consumedTotal_ >= streamEnd);
 
-    return ProcessReport{consumed, produced, inputExhausted_};
+    return ProcessReport{consumed, produced, inputExhausted_, false};
   }
 
   ProcessReport finish(AudioBlockOut& out, int outCapacity) override {
@@ -245,7 +245,7 @@ class VardelayEngine final : public PitchEngine {
     // beyond the delivered end are §7.6 semantic zeros (interpolateAt's
     // zero padding beyond frameCount).
     const int produced = produceInto(out, outCapacity, /*finishMode=*/true);
-    return ProcessReport{0, produced, inputExhausted_};
+    return ProcessReport{0, produced, inputExhausted_, false};
   }
 
   void reset() override {
