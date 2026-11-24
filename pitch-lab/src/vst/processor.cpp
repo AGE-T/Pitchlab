@@ -319,6 +319,9 @@ tresult PLUGIN_API PitchLabProcessor::setActive(TBool state) {
     // reset into the just-built chain (the Task 24 P1.4 lifecycle fix)
     processingSuspended_.store(false, std::memory_order_release);
     latencyNotifyPending_.store(false, std::memory_order_release);
+    // 2026-11: a host offline bounce (kOffline) lets asynchronous engines
+    // (native.world) wait for their work — realtime never waits
+    adapter_.setOfflineRendering(processSetup.processMode == kOffline);
     adapter_.activate(fs, channels, maxBlock);
     publishSnapshot();
     adapter_.requestHardReset();

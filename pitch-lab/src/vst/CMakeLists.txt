@@ -257,6 +257,11 @@ pitchlab_add_vst_suite(vst_realtime_diagnostics_test)
 # cross-engine switch control.
 pitchlab_add_vst_suite(vst_seam_test)
 
+# 2026-11: native.world through the REAL realtime adapter path — paced drive,
+# overload (never-wait + counted misses), worker failure -> engine exception
+# + rebuild, concurrent instances within the shared pool bound.
+pitchlab_add_vst_suite(vst_world_realtime_test)
+
 # T-RT* (Task 32): the realtime-capability status suite — the classifier's
 # levels/bases/thresholds/fault-escalation/benchmark-prior rules as pure
 # unit fixtures + the label texts (incl. the required warning wording) +

@@ -129,6 +129,12 @@ struct StatusSnapshot {
   // New diagnostic categories (NOT in the aggregate — compatibility):
   uint64_t jobStalls = 0;            // scheduled jobs overdue-unfinished
   uint64_t chainAdoptionFailures = 0;  // forced-deadline adoptions + drops
+  // 2026-11: process()/finish() calls in which an asynchronous engine
+  // (native.world) reported ProcessReport::starved — due wet frames not yet
+  // computed (realtime mode never waits). Diagnostic, NOT in `faults`: the
+  // frames that are actually read while missing are counted (once each) by
+  // deliveryUnderruns / dryFallbackFrames.
+  uint64_t engineStarvedCalls = 0;
   // Preparation-side (prep thread; never block audio):
   uint64_t preparationFailures = 0;  // prepare/reset/buildChain failures (retry loop)
   // Cadence + workload (diagnostics for the 96 kHz investigations):
@@ -186,7 +192,9 @@ struct StatusSnapshot {
                                  // since adoption (F7 fix)
   int64_t rtFrames = 0;         // input frames processed since the current
                                 // chain's adoption (the measurement window)
+
 };
+
 
 // ---------------------------------------------------------------------------
 // Per-block automation (VST3 IParameterChanges, resolved by the processor)
@@ -254,6 +262,13 @@ class RealtimeAdapter final {
   /// requires deactivate() first — the processor does this from
   /// setActive(false), the VST3 contract for setup changes).
   void activate(double sampleRate, int channels, int maxBlockFrames);
+
+  /// 2026-11: offline rendering (the VST3 kOffline process mode, set before
+  /// activate()). Offline, engines receive ProcessContext::realtime = false
+  /// and may wait for their asynchronous work (deterministic bounce);
+  /// realtime (the default) they must never wait. Applies to chains built
+  /// after the call.
+  void setOfflineRendering(bool offline);
 
   /// Stop the preparation thread and drop every chain (audio stopped).
   void deactivate();

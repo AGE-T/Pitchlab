@@ -867,6 +867,8 @@ struct RealtimeAdapter::Impl {
   int channels = 2;
   int maxBlock = 4096;
   bool activated = false;
+  std::atomic<bool> offlineRendering{false};  // VST3 kOffline (see setOfflineRendering)
+  uint64_t engineStarvedCalls = 0;            // audio thread (see StatusSnapshot)
 
   SeqLock<ParamSnapshot> params;           // writer: main thread
   std::atomic<bool> paramsPublished{false};  // set by the first
@@ -1271,14 +1273,18 @@ struct RealtimeAdapter::Impl {
       job->ctx.sampleRate = fs;
       job->ctx.channels = channels;
       job->ctx.maxBlockFrames = maxBlock;
+      job->ctx.realtime = !offlineRendering.load(std::memory_order_acquire);
       job->ctx.totalInputFrames = chain->jobInputLen;
       job->ctx.curve = &job->curveView;
-      // Audit fix: a FULL-capacity slack (2x physical backing). With zero
-      // slack every dropBefore() compacted (a multi-MB memmove per audio
-      // sub-block once the job aged past dryRetention); with slack ==
-      // capacity a compaction runs at most once per `capacity` dropped
-      // frames (amortised <= 1 copied frame per produced frame).
-      job->lane.allocate(channels, chain->laneCapacity, chain->laneCapacity);
+      // Audit fix: a quarter-capacity slack. With zero slack every
+      // dropBefore() compacted (a multi-MB memmove per audio sub-block once
+      // the job aged past dryRetention); with slack = capacity/4 a
+      // compaction runs at most once per capacity/4 dropped frames
+      // (~0.9 s at 48 kHz). A full-capacity slack doubled the chain's lane
+      // memory and measurably slowed chain builds (the faster-than-realtime
+      // phase-G reset drive then timed out ~1 in 4 runs) — capacity/4 keeps
+      // the build cost near the original.
+      job->lane.allocate(channels, chain->laneCapacity, chain->laneCapacity / 4);
       job->index.store(-1, std::memory_order_relaxed);
       job->spanStart = -1;
       chain->ownedJobs.push_back(std::move(job));
@@ -1286,7 +1292,7 @@ struct RealtimeAdapter::Impl {
 
     // Task 31: the retained wet history (the Chain::history note) — same
     // capacity formula as the job lanes (prep-thread allocation).
-    chain->history.allocate(channels, chain->laneCapacity, chain->laneCapacity);
+    chain->history.allocate(channels, chain->laneCapacity, chain->laneCapacity / 4);
 
     // Prepare job 0 (the chain's first job) so adoption can start feeding
     // immediately. Its engine is prepared on THIS thread (allocation is
@@ -1741,7 +1747,7 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   const int64_t prepLead = 2 * static_cast<int64_t>(im.maxBlock) + kPrepLeadExtra;
   im.dryRetention = std::max(worstLatency, prepLead);
   const int64_t dryCap = im.dryRetention + 2 * static_cast<int64_t>(im.maxBlock) + 64;
-  im.dry.allocate(im.channels, dryCap, dryCap);  // audit fix: full slack (see job lanes)
+  im.dry.allocate(im.channels, dryCap, dryCap / 4);  // audit fix: slack (see job lanes)
 
   im.curveScratch.assign(static_cast<std::size_t>(im.maxBlock), 1.0);
 
@@ -1779,6 +1785,7 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   // Task 29: categorized diagnostics reset with the activation
   im.engineProcessFaults = 0;
   im.engineExceptions = 0;
+  im.engineStarvedCalls = 0;
   im.deliveryUnderruns = 0;
   im.dryHistoryMisses = 0;
   im.jobStalls = 0;
@@ -1823,6 +1830,10 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
     im.latencyNow = im.latencyEff;
     im.waitForFirstChain();
   }
+}
+
+void RealtimeAdapter::setOfflineRendering(bool offline) {
+  impl_->offlineRendering.store(offline, std::memory_order_release);
 }
 
 void RealtimeAdapter::deactivate() {
@@ -2620,6 +2631,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   // Task 29: categorized fault diagnostics (numeric only; the UI formats)
   st.engineProcessFaults = im.engineProcessFaults;
   st.engineExceptions = im.engineExceptions;
+  st.engineStarvedCalls = im.engineStarvedCalls;
   st.deliveryUnderruns = im.deliveryUnderruns;
   st.dryHistoryMisses = im.dryHistoryMisses;
   st.jobStalls = im.jobStalls;
@@ -2789,6 +2801,7 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
         std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now() - rtT0)
             .count());
+    if (!threw && rep.starved) ++im.engineStarvedCalls;  // async engine behind (realtime)
     if (threw) {
       ++im.engineExceptions;  // Task 29: categorized (engine exception)
     } else if (failed || rep.inputFramesConsumed < 0 || rep.outputFramesProduced < 0 ||
@@ -2835,6 +2848,7 @@ void RealtimeAdapter::finishJob(Job& job, int64_t historyFloor) {
   const auto rtT0 = std::chrono::steady_clock::now();
   try {
     const ProcessReport rep = job.engine->finish(outView, static_cast<int>(free));
+    if (rep.starved) ++im.engineStarvedCalls;
     const int64_t append =
         std::min<int64_t>(std::max<int64_t>(rep.outputFramesProduced, 0),
                           job.wetLen - job.wetWritten);

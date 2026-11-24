@@ -51,7 +51,7 @@ DriveResult driveAdapter(const ParamSnapshot& snap, int64_t totalFrames,
   RealtimeAdapter adapter;
   int32_t maxBlock = 0;
   for (int32_t b : blockSchedule) maxBlock = std::max(maxBlock, b);
-  adapter.activate(kFs, 2, maxBlock);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, maxBlock);
   adapter.setParameterSnapshot(snap);
   adapter.requestHardReset();
 
@@ -224,7 +224,7 @@ TEST_CASE("envelope re-prepare: automation beyond ±1 st rebuilds the chain") {
   snap.pitchSt = 0.0;
 
   RealtimeAdapter adapter;
-  adapter.activate(kFs, 2, 512);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, 512);
   adapter.setParameterSnapshot(snap);
   adapter.requestHardReset();
   const auto sig = makeSine(total, 440.0);
@@ -290,7 +290,7 @@ TEST_CASE("block-size robustness: any schedule produces consistent audio") {
 
 TEST_CASE("mono processing: single-channel chain runs fault-free") {
   RealtimeAdapter adapter;
-  adapter.activate(kFs, 1, 1024);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 1, 1024);
   ParamSnapshot snap;
   snap.engineIndex = 2;
   snap.pitchSt = 2.0;
@@ -351,7 +351,7 @@ struct StreamDrive {
 
   StatusSnapshot status() const { return adapter.status(); }
   void deactivate() { adapter.deactivate(); }
-  void start(int ch = 2, int maxBlock = 4096) { adapter.activate(kFs, ch, maxBlock); }
+  void start(int ch = 2, int maxBlock = 4096) { adapter.setOfflineRendering(true);  adapter.activate(kFs, ch, maxBlock); }
   void snap(int engine, double pitchSt) {
     ParamSnapshot s;
     s.engineIndex = engine;
@@ -537,7 +537,7 @@ TEST_CASE("P0.1 regression: startup is non-blocking — the audio thread never w
   // publish). Driving the adapter with NO published snapshot leaves the
   // audio path chainless forever — every block must return immediately.
   RealtimeAdapter adapter;
-  adapter.activate(kFs, 2, 1024);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, 1024);
   const int32_t frames = 512;
   std::vector<double> inL(frames, 0.25), outL(frames), outR(frames);
   const double* in[2] = {inL.data(), inL.data()};
@@ -571,7 +571,7 @@ TEST_CASE("P0.2 regression: concurrent publication stress (race-free snapshots)"
   // valid snapshots and no crashes.)
   RealtimeAdapter adapter;
   ParamSnapshot snap;  // default vardelay
-  adapter.activate(kFs, 2, 1024);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, 1024);
   adapter.setParameterSnapshot(snap);
   const int32_t frames = 256;
   std::vector<double> inL(frames), outL(frames), outR(frames);
@@ -888,7 +888,7 @@ TEST_CASE("P1.4 regression: adapter processing reset (suspend/resume)") {
       done += take;
     }
   };
-  adapter.activate(kFs, 2, 2048);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, 2048);
   adapter.setParameterSnapshot(snap);
   drive();
   const StatusSnapshot before = adapter.status();
@@ -1043,7 +1043,7 @@ TEST_CASE("T-J9: a true engine-configuration change still re-prepares") {
   // chain reflects the new geometry (the latency changes with the grain).
   initEngineRegistryOnce();
   RealtimeAdapter adapter;
-  adapter.activate(kFs, 2, 512);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, 512);
   ParamSnapshot snap;
   snap.engineIndex = 4;
   snap.pitchSt = -4.0;
@@ -1384,7 +1384,7 @@ TEST_CASE("Task 32: the snapshot path (UI slider) OFF/ON mid-stream — frame-al
   const int64_t F = static_cast<int64_t>(kFs * 0.5);
   const int64_t total = F + static_cast<int64_t>(kFs * 0.5);
   const std::vector<int32_t> blocks = {1024};
-  adapter.activate(kFs, 2, 1024);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, 1024);
   ParamSnapshot snap;  // vardelay, pitch -8, depth 1, rate 5 (on)
   snap.engineIndex = 1;
   snap.pitchSt = -8.0;
@@ -1424,7 +1424,7 @@ TEST_CASE("Task 32: the snapshot path (UI slider) OFF/ON mid-stream — frame-al
 TEST_CASE("F-01 regression: rapid pre-audio setParameterSnapshot calls supersede unadopted pending chain without 2s timeout") {
   initEngineRegistryOnce();
   RealtimeAdapter adapter;
-  adapter.activate(kFs, 2, 1024);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, 1024);
 
   // Wait briefly so prepLoop builds the initial default chain into `pending`
   // while streamPosMirror == 0 (no process() called yet).

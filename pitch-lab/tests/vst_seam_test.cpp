@@ -96,7 +96,7 @@ SeamDriveResult driveSeam(double fs, const std::vector<int32_t>& blockSchedule,
   RealtimeAdapter adapter;
   int32_t maxBlock = 0;
   for (int32_t b : blockSchedule) maxBlock = std::max(maxBlock, b);
-  adapter.activate(fs, 2, maxBlock);
+  adapter.setOfflineRendering(true);  adapter.activate(fs, 2, maxBlock);
   adapter.setParameterSnapshot(snap);
   adapter.requestHardReset();
 

@@ -137,7 +137,10 @@ struct Host {
     s.symbolicSampleSize = kSample32;  // the typical host path
     s.sampleRate = fs;
     s.maxSamplesPerBlock = maxBlock;
-    s.processMode = kRealtime;
+    // 2026-11: these drives run FASTER than realtime = an offline render;
+    // asynchronous engines (native.world) may wait (deterministic). The
+    // realtime never-wait path is covered by vst_world_realtime_test.
+    s.processMode = kOffline;
     audio->setupProcessing(s);
     // apply the full parameter state BEFORE activation — the standard host
     // order (the same order the processor test harness uses; every real

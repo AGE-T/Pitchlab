@@ -566,7 +566,10 @@ struct TestHost {
     s.symbolicSampleSize = kSample32;  // the typical host path
     s.sampleRate = fs;
     s.maxSamplesPerBlock = maxBlock;
-    s.processMode = kRealtime;
+    // 2026-11: these drives run FASTER than realtime = an offline render;
+    // asynchronous engines (native.world) may wait (deterministic). The
+    // realtime never-wait path is covered by vst_world_realtime_test.
+    s.processMode = kOffline;
     REQUIRE(plug->setupProcessing(s) == kResultOk);
     // the full parameter state BEFORE activation (the standard host order;
     // activate() then performs the bounded first-chain wait -> the first
@@ -1816,6 +1819,15 @@ TEST_CASE("phase E: sample-rate matrix 44.1k..192k") {
       // only on 44.1/48/88.2/96/192) — the harness JOB SKIPs the combination
       // (spec §4.2.1 item 5); the audio-path suite mirrors that skip.
       if (e == kTimepitchEngineIndex && fs == 176400.0) continue;
+      // 2026-11: generically, every rate outside the engine's DECLARED
+      // supportedSampleRates is the harness JOB SKIP (native.world declares
+      // only its validated 44.1/48/88.2/96 kHz); the product behaviour at an
+      // undeclared rate (no chain, counted preparation failure, dry output)
+      // is asserted by vst_world_realtime_test.
+      {
+        const auto& rates = engineRegistry().at(static_cast<std::size_t>(e)).capabilities.supportedSampleRates;
+        if (std::find(rates.begin(), rates.end(), static_cast<uint32_t>(fs)) == rates.end()) continue;
+      }
       CaseSpec spec;
       spec.phase = "E";
       char name[64];

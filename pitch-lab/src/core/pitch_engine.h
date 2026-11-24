@@ -58,6 +58,14 @@ struct ProcessContext {
   const struct PitchCurveView* curve = nullptr;  // EFFECTIVE curve (§4.4.6);
                                       // renderer-owned storage, valid for the
                                       // whole job; same object every process()
+  // 2026-11 (additive): true when process()/finish() run on a REALTIME
+  // audio callback (the VST realtime adapter in kRealtime/kPrefetch mode).
+  // An engine with asynchronous internals (native.world's worker pool) must
+  // then NEVER wait inside process()/finish(): it emits only what is ready
+  // and reports ProcessReport::starved. false (the default: the offline
+  // renderer, a VST3 kOffline bounce) permits a bounded-by-work wait, which
+  // keeps the output deterministic. Synchronous engines ignore the flag.
+  bool realtime = false;
 };
 
 /// Dense, INPUT-timeline-indexed ratio signal (architecture §D.4.2).
@@ -78,6 +86,13 @@ struct ProcessReport {
   bool inputExhausted = false;  // sticky: set when cumulative consumption
                                 // reaches the full padded stream (§4.2.1
                                 // item 7); reported as-is thereafter
+  // 2026-11 (additive): set in realtime mode when aligned output that is
+  // already DUE (its input has been delivered) could not be emitted because
+  // the engine's asynchronous computation has not finished it yet. Not an
+  // error: the adapter serves the missing wet frames from its counted
+  // fallback path. A FAILED computation is reported by throwing
+  // EngineException instead (never as starvation).
+  bool starved = false;
 };
 
 /// §4.5 typed parameter value (engine-defined semantics; harness validates

@@ -19,11 +19,15 @@
 #include <chrono>
 #include <cmath>
 #include <memory>
+#include <random>
+#include <thread>
 #include <string>
 #include <vector>
 
 #include "core/engine_registry.h"
+#include "core/errors.h"
 #include "core/pitch_engine.h"
+#include "engines/world_engine.h"
 
 using namespace pitchlab;
 
@@ -446,3 +450,266 @@ TEST_CASE("PROFILE world stages on one chunk region" * doctest::skip()) {  // ru
   MESSAGE("fft=" << ct.fft_size << " frames=" << f0Len << " | harvest " << tH << " ms, dio+stonemask " << tD
           << " ms, cheaptrick " << tC << " ms, d4c " << t4 << " ms, synthesis " << tS << " ms");
 }
+
+// ===========================================================================
+// native.world — realtime safety, failure handling, pool bound, stress,
+// the stereo F0 model and the sample-rate declaration (2026-11 P0 work)
+// ===========================================================================
+
+namespace {
+
+std::vector<double> sineStack(double f0, double fs, std::size_t n, int harmonics, double sign = 1.0) {
+  std::vector<double> x = harmonicStack(f0, fs, n, harmonics);
+  if (sign < 0.0) {
+    for (double& v : x) v = -v;
+  }
+  return x;
+}
+
+struct WorldJob {
+  std::vector<double> curve;
+  PitchCurveView cv{};
+  ProcessContext ctx{};
+  void init(std::size_t n, double fs, int ch, int block, double ratio, bool realtime) {
+    curve.assign(n, ratio);
+    cv = PitchCurveView{curve.data(), static_cast<FrameCount>(n), fs};
+    ctx.sampleRate = fs;
+    ctx.channels = ch;
+    ctx.maxBlockFrames = block;
+    ctx.totalInputFrames = static_cast<FrameCount>(n);
+    ctx.curve = &cv;
+    ctx.realtime = realtime;
+  }
+};
+
+struct WorldHooksOff {
+  ~WorldHooksOff() {
+    pitchlab::testing::setWorldFaultInjectionChunk(-1);
+    pitchlab::testing::setWorldChunkDelayMs(0);
+  }
+};
+
+}  // namespace
+
+TEST_CASE("native.world realtime: process() never waits for a slow pool (starvation is reported)") {
+  WorldHooksOff guard;
+  const double fs = 48000.0;
+  const std::size_t n = static_cast<std::size_t>(fs * 1.0);
+  std::vector<double> x = harmonicStack(150.0, fs, n, 6);
+  WorldJob job;
+  job.init(n, fs, 1, 256, 1.2, /*realtime=*/true);
+  auto e = make("native.world", EngineConfiguration{});
+  e->prepare(job.ctx);
+  pitchlab::testing::setWorldChunkDelayMs(250);  // every chunk takes >= 250 ms
+  std::vector<double> outBuf(4096);
+  double* op[1] = {outBuf.data()};
+  const double* ip[1] = {nullptr};
+  double worstMs = 0.0;
+  bool sawStarved = false;
+  FrameCount pos = 0;
+  const FrameCount total = static_cast<FrameCount>(n) + e->latency().inputLatencyFrames;
+  std::vector<double> blockIn(256, 0.0);
+  while (pos < total) {
+    const int take = static_cast<int>(std::min<FrameCount>(256, total - pos));
+    for (int i = 0; i < take; ++i) {
+      blockIn[static_cast<std::size_t>(i)] =
+          pos + i < static_cast<FrameCount>(n) ? x[static_cast<std::size_t>(pos + i)] : 0.0;
+    }
+    ip[0] = blockIn.data();
+    AudioBlockView iv{ip, 1, take};
+    AudioBlockOut ov{op, 1, 4096};
+    const auto t0 = std::chrono::steady_clock::now();
+    const ProcessReport rep = e->process(iv, take, ov, 4096, job.cv, pos);
+    worstMs = std::max(worstMs, std::chrono::duration<double, std::milli>(
+                                    std::chrono::steady_clock::now() - t0)
+                                    .count());
+    sawStarved = sawStarved || rep.starved;
+    if (rep.inputFramesConsumed == 0) break;  // ring full: a host would re-offer later
+    pos += rep.inputFramesConsumed;
+  }
+  MESSAGE("worst process() call: " << worstMs << " ms (chunk delay 250 ms)");
+  CHECK(sawStarved);
+  CHECK(worstMs < 50.0);  // the pre-fix emit() waited the full chunk time here
+  pitchlab::testing::setWorldChunkDelayMs(0);
+  e.reset();  // destruction while chunks are in flight must not hang or crash
+}
+
+TEST_CASE("native.world: a worker failure becomes EngineException (never an abort); reset recovers") {
+  WorldHooksOff guard;
+  const double fs = 48000.0;
+  const std::size_t n = static_cast<std::size_t>(fs * 1.0);
+  std::vector<std::vector<double>> in(1, harmonicStack(150.0, fs, n, 6));
+  std::vector<double> curve(n, 1.25);
+  PitchCurveView cv{curve.data(), static_cast<FrameCount>(n), fs};
+  auto ref = make("native.world", EngineConfiguration{});
+  const RenderResult good = render(*ref, in, cv, fs, 512, 4096);
+  pitchlab::testing::setWorldFaultInjectionChunk(3);  // chunk 3 throws on the pool thread
+  auto e = make("native.world", EngineConfiguration{});
+  CHECK_THROWS_AS(render(*e, in, cv, fs, 512, 4096), EngineException);
+  pitchlab::testing::setWorldFaultInjectionChunk(-1);
+  e->reset();  // reset clears the failure: bit-identical to a fresh engine
+  const RenderResult again = render(*e, in, cv, fs, 512, 4096, /*prepare=*/false);
+  CHECK(again.out == good.out);
+  pitchlab::testing::setWorldFaultInjectionChunk(5);
+  auto f = make("native.world", EngineConfiguration{});
+  CHECK_THROWS_AS(render(*f, in, cv, fs, 512, 4096), EngineException);
+  pitchlab::testing::setWorldFaultInjectionChunk(-1);
+  const RenderResult re = render(*f, in, cv, fs, 512, 4096, /*prepare=*/true);  // re-prepare
+  CHECK(re.out == good.out);
+}
+
+TEST_CASE("native.world: the shared pool is bounded across many engines and threads") {
+  const double fs = 48000.0;
+  const std::size_t n = static_cast<std::size_t>(fs * 0.5);
+  CHECK(pitchlab::testing::worldPoolLiveThreads() == 0);  // nothing attached
+  const int bound = pitchlab::testing::worldPoolSize();
+  CHECK(bound >= 1);
+  CHECK(bound <= 8);
+  {
+    std::vector<WorldJob> jobs(10);
+    std::vector<std::unique_ptr<PitchEngine>> engines;
+    for (std::size_t i = 0; i < jobs.size(); ++i) {
+      jobs[i].init(n, fs, 2, 512, 1.1, false);
+      engines.push_back(make("native.world", EngineConfiguration{}));
+      engines.back()->prepare(jobs[i].ctx);
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    MESSAGE("10 prepared engines -> live pool threads " << pitchlab::testing::worldPoolLiveThreads()
+                                                        << " (bound " << bound << ")");
+    CHECK(pitchlab::testing::worldPoolLiveThreads() <= bound);
+    // three concurrent renders ("plug-in instances"): results stay deterministic
+    std::vector<std::vector<double>> in(2, harmonicStack(180.0, fs, n, 6));
+    std::vector<double> curve(n, 0.9);
+    PitchCurveView cv{curve.data(), static_cast<FrameCount>(n), fs};
+    auto refE = make("native.world", EngineConfiguration{});
+    const RenderResult reference = render(*refE, in, cv, fs, 512, 4096);
+    std::vector<RenderResult> results(3);
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 3; ++t) {
+      threads.emplace_back([&, t] {
+        auto eng = make("native.world", EngineConfiguration{});
+        results[static_cast<std::size_t>(t)] = render(*eng, in, cv, fs, 256 + 128 * t, 4096);
+      });
+    }
+    for (auto& th : threads) th.join();
+    for (const auto& r : results) CHECK(r.out == reference.out);
+    CHECK(pitchlab::testing::worldPoolLiveThreads() <= bound);
+  }
+  CHECK(pitchlab::testing::worldPoolLiveThreads() == 0);  // the last detach joined the pool
+}
+
+TEST_CASE("native.world: reset / re-prepare / destruction stress (in-flight chunks)") {
+  WorldHooksOff guard;
+  const double fs = 48000.0;
+  const std::size_t n = static_cast<std::size_t>(fs * 0.6);
+  std::vector<double> x = harmonicStack(200.0, fs, n, 5);
+  for (int iter = 0; iter < 30; ++iter) {
+    pitchlab::testing::setWorldChunkDelayMs(iter % 3 == 0 ? 15 : 0);
+    WorldJob job;
+    job.init(n, fs, 1 + (iter & 1), 512, 1.0 + 0.01 * iter, iter % 2 == 0);
+    auto e = make("native.world", EngineConfiguration{});
+    e->prepare(job.ctx);
+    std::vector<double> blk(512), o0(4096), o1(4096);
+    const double* ip[2] = {blk.data(), blk.data()};
+    double* op[2] = {o0.data(), o1.data()};
+    FrameCount pos = 0;
+    for (int b = 0; b < 12; ++b) {
+      for (int i = 0; i < 512; ++i) blk[static_cast<std::size_t>(i)] = x[static_cast<std::size_t>((pos + i) % n)];
+      AudioBlockView iv{ip, job.ctx.channels, 512};
+      AudioBlockOut ov{op, job.ctx.channels, 4096};
+      pos += e->process(iv, 512, ov, 4096, job.cv, pos).inputFramesConsumed;
+    }
+    if (iter % 3 == 1) e->reset();
+    if (iter % 3 == 2) e->prepare(job.ctx);
+    // destruction here (possibly with chunks in flight)
+  }
+  pitchlab::testing::setWorldChunkDelayMs(0);
+  CHECK(pitchlab::testing::worldPoolLiveThreads() == 0);
+}
+
+TEST_CASE("native.world stereo F0 model (dual mono): in-phase, anti-phase, different L/R, silence, noise") {
+  const double fs = 48000.0;
+  const std::size_t n = static_cast<std::size_t>(fs * 1.5);
+  const double ratio = std::exp2(4.0 / 12.0);
+  std::vector<double> curve(n, ratio);
+  PitchCurveView cv{curve.data(), static_cast<FrameCount>(n), fs};
+  const std::size_t from = n / 2, len = 8192;
+  for (const char* method : {"dio", "harvest"}) {
+    CAPTURE(std::string(method));
+    EngineConfiguration cfg;
+    cfg.parameters = {{"f0_method", ParameterValue{std::string(method)}}};
+    {  // same F0, in phase -> identical channels
+      std::vector<std::vector<double>> in{sineStack(200.0, fs, n, 6), sineStack(200.0, fs, n, 6)};
+      auto e = make("native.world", cfg);
+      const RenderResult r = render(*e, in, cv, fs, 512, 4096);
+      CHECK(r.out[0] == r.out[1]);
+      CHECK(std::fabs(estimateF0(r.out[0], from, len, fs) - 200.0 * ratio) / (200.0 * ratio) < 0.02);
+    }
+    {  // same F0, anti-phase -> both channels keep their pitch and level
+      std::vector<std::vector<double>> in{sineStack(200.0, fs, n, 6), sineStack(200.0, fs, n, 6, -1.0)};
+      auto e = make("native.world", cfg);
+      const RenderResult r = render(*e, in, cv, fs, 512, 4096);
+      for (int c = 0; c < 2; ++c) {
+        CHECK(std::fabs(estimateF0(r.out[static_cast<std::size_t>(c)], from, len, fs) - 200.0 * ratio) /
+                  (200.0 * ratio) <
+              0.02);
+        CHECK(rms(r.out[static_cast<std::size_t>(c)], from, len) >
+              0.25 * rms(in[static_cast<std::size_t>(c)], from, len));
+      }
+    }
+    {  // different F0 per channel (L 220, R 311) -> each channel follows its own
+      std::vector<std::vector<double>> in{sineStack(220.0, fs, n, 6), sineStack(311.0, fs, n, 6)};
+      auto e = make("native.world", cfg);
+      const RenderResult r = render(*e, in, cv, fs, 512, 4096);
+      const double gl = estimateF0(r.out[0], from, len, fs);
+      const double gr = estimateF0(r.out[1], from, len, fs);
+      MESSAGE(method << " L/R " << gl << " / " << gr << " Hz (expected " << 220.0 * ratio << " / "
+                     << 311.0 * ratio << ")");
+      CHECK(std::fabs(gl - 220.0 * ratio) / (220.0 * ratio) < 0.02);
+      CHECK(std::fabs(gr - 311.0 * ratio) / (311.0 * ratio) < 0.02);
+    }
+    {  // silence -> finite, silent
+      std::vector<std::vector<double>> in(2, std::vector<double>(n, 0.0));
+      auto e = make("native.world", cfg);
+      const RenderResult r = render(*e, in, cv, fs, 512, 4096);
+      for (double v : r.out[0]) REQUIRE(std::isfinite(v));
+      CHECK(rms(r.out[0], 0, n) < 1e-3);
+    }
+    {  // white noise -> finite, not silent, bounded
+      std::mt19937 rng(7);
+      std::normal_distribution<double> nd(0.0, 0.1);
+      std::vector<double> noise(n);
+      for (double& v : noise) v = nd(rng);
+      std::vector<std::vector<double>> in{noise};
+      auto e = make("native.world", cfg);
+      const RenderResult r = render(*e, in, cv, fs, 512, 4096);
+      for (double v : r.out[0]) REQUIRE(std::isfinite(v));
+      const double ro = rms(r.out[0], from, len), ri = rms(noise, from, len);
+      CHECK(ro > 0.05 * ri);
+      CHECK(ro < 5.0 * ri);
+    }
+  }
+}
+
+TEST_CASE("native.world sample rates: the declared set works, everything else is rejected") {
+  for (double fs : {44100.0, 48000.0, 88200.0, 96000.0}) {
+    CAPTURE(fs);
+    const std::size_t n = static_cast<std::size_t>(fs * 1.0);
+    std::vector<std::vector<double>> in(1, harmonicStack(180.0, fs, n, 6));
+    std::vector<double> curve(n, std::exp2(5.0 / 12.0));
+    PitchCurveView cv{curve.data(), static_cast<FrameCount>(n), fs};
+    auto e = make("native.world", EngineConfiguration{});
+    const RenderResult r = render(*e, in, cv, fs, 512, 4096);
+    REQUIRE(r.out[0].size() == n);
+    const double want = 180.0 * std::exp2(5.0 / 12.0);
+    CHECK(std::fabs(estimateF0(r.out[0], n / 2, 8192, fs) - want) / want < 0.02);
+  }
+  for (double fs : {22050.0, 32000.0, 176400.0, 192000.0}) {
+    CAPTURE(fs);
+    WorldJob job;
+    job.init(4096, fs, 1, 512, 1.0, false);
+    auto e = make("native.world", EngineConfiguration{});
+    CHECK_THROWS_AS(e->prepare(job.ctx), ConfigError);
+  }
+}
+

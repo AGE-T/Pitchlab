@@ -62,7 +62,7 @@ struct DriveStats {
 DriveStats driveAt(double fs, int32_t block, const ParamSnapshot& snap,
                   int64_t seconds, double inputFreq = 220.0, double amp = 0.5) {
   RealtimeAdapter adapter;
-  adapter.activate(fs, 2, block);
+  adapter.setOfflineRendering(true);  adapter.activate(fs, 2, block);
   adapter.setParameterSnapshot(snap);
   adapter.requestHardReset();
 

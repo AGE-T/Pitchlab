@@ -87,7 +87,7 @@ double rtfOf(int64_t frames, int64_t cpuNs, double fs) {
 StatusSnapshot pacedDrive(const ParamSnapshot& snap, double fs, int32_t block,
                           double seconds, double inputFreq = 220.0) {
   RealtimeAdapter adapter;
-  adapter.activate(fs, 2, block);
+  adapter.setOfflineRendering(true);  adapter.activate(fs, 2, block);
   adapter.setParameterSnapshot(snap);
   adapter.requestHardReset();
   const int64_t total = static_cast<int64_t>(fs * seconds);
@@ -463,7 +463,7 @@ TEST_CASE("T-RT3: the measurement window FOLLOWS the active chain (engine switch
   // more: the accumulators reset at the ADOPTION, so the final window
   // covers only the current (pv.classic) configuration
   RealtimeAdapter adapter;
-  adapter.activate(kFs, 2, 1024);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, 1024);
   ParamSnapshot snap;  // vardelay
   snap.pitchSt = -5.0;
   adapter.setParameterSnapshot(snap);
@@ -555,7 +555,7 @@ TEST_CASE("T-RT3: the LFO rate never touches the chain lifecycle (OFF/ON mid-str
   // toggling the rate OFF and back ON mid-stream must NOT rebuild the
   // chain (no churn) and stays fault-free.
   RealtimeAdapter adapter;
-  adapter.activate(kFs, 2, 1024);
+  adapter.setOfflineRendering(true);  adapter.activate(kFs, 2, 1024);
   ParamSnapshot snap;  // vardelay
   snap.pitchSt = -5.0;
   snap.lfoRateHz = 5.0;

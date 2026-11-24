@@ -12,6 +12,9 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#include <fstream>
+#include <iterator>
+#include <string>
 #include <limits>
 #include <thread>
 #include <vector>
@@ -169,7 +172,10 @@ struct Host {
     s.symbolicSampleSize = kSample64;
     s.sampleRate = fs;
     s.maxSamplesPerBlock = maxBlock;
-    s.processMode = kRealtime;
+    // 2026-11: these drives run FASTER than realtime = an offline render;
+    // asynchronous engines (native.world) may wait (deterministic). The
+    // realtime never-wait path is covered by vst_world_realtime_test.
+    s.processMode = kOffline;
     CHECK(plug->setupProcessing(s) == kResultOk);
     CHECK(plug->setActive(true) == kResultOk);
     CHECK(plug->setProcessing(true) == kResultOk);
@@ -1477,4 +1483,5 @@ TEST_CASE("F4 regression: audio-thread latency growth triggers kLatencyChanged o
   CHECK((handler.reasons.load() & kLatencyChanged) != 0u);
   h.shutdown();
 }
+
 
