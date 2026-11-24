@@ -332,6 +332,11 @@ class RealtimeAdapter final {
                const double* const* in, int64_t feedLimit, int64_t historyFloor,
                bool& clampDetected);
   void finishJob(Job& job, int64_t historyFloor);
+  // 2026-11 (audit): an asynchronous engine that reported starvation at its
+  // job's input end is polled (process() with no input) instead of being
+  // finished, while its missing wet can still be read — finish() is called
+  // exactly once, so finishing early would drop a chunk that lands later.
+  void pollJob(Job& job, int64_t historyFloor);
 
   std::unique_ptr<Impl> impl_;
 

@@ -19,6 +19,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <thread>
 #include <vector>
 
@@ -28,6 +29,19 @@
 using namespace pitchlab::vst;
 
 namespace {
+
+/// Wall-clock CAPACITY gates (realtime factor, zero fallback at real-time
+/// pacing) are machine-dependent: sanitizer builds (2-10x slower) set
+/// PITCHLAB_SANITIZER=1 and skip them — the functional and never-wait
+/// assertions still run there.
+inline bool capacityGates() { return std::getenv("PITCHLAB_SANITIZER") == nullptr; }
+
+struct WorldHooksOff {  // a REQUIRE abort must not leak a hook into later cases
+  ~WorldHooksOff() {
+    pitchlab::testing::setWorldFaultInjectionChunk(-1);
+    pitchlab::testing::setWorldChunkDelayMs(0);
+  }
+};
 
 constexpr double kFs = 48000.0;
 constexpr int kWorldIndex = 6;  // registry position of native.world
@@ -97,8 +111,10 @@ TEST_CASE("native.world realtime-paced drive: DIO and Harvest, stereo, no fallba
     MESSAGE((method == 0 ? "DIO" : "Harvest")
             << ": starved=" << st.engineStarvedCalls << " underruns=" << st.deliveryUnderruns
             << " dryFb=" << st.dryFallbackFrames << " worst call " << d.worstCallMs << " ms");
-    CHECK(st.faults == 0);
-    CHECK(st.dryFallbackFrames == 0);
+    if (capacityGates()) {
+      CHECK(st.faults == 0);
+      CHECK(st.dryFallbackFrames == 0);
+    }
     CHECK(st.chainReady);
     d.adapter.deactivate();
   }
@@ -107,6 +123,7 @@ TEST_CASE("native.world realtime-paced drive: DIO and Harvest, stereo, no fallba
 TEST_CASE("native.world realtime: an overloaded pool never blocks the callback; misses are counted") {
   initEngineRegistryOnce();
   const auto sig = voiceLike(static_cast<int64_t>(kFs * 2.0), 160.0);
+  WorldHooksOff guard;
   Drive d;
   d.start(0, 5.0);
   pitchlab::testing::setWorldChunkDelayMs(300);
@@ -131,16 +148,17 @@ TEST_CASE("native.world realtime: an overloaded pool never blocks the callback; 
   d.run(sig, /*paced=*/true);
   const uint64_t fbAfter = d.adapter.status().dryFallbackFrames;
   MESSAGE("recovery: dry fallback frames in the last paced 2 s: " << (fbAfter - fbBefore));
-  CHECK(fbAfter == fbBefore);
+  if (capacityGates()) CHECK(fbAfter == fbBefore);
   d.adapter.deactivate();
 }
 
 TEST_CASE("native.world realtime: a worker failure is a counted engine exception + rebuild") {
   initEngineRegistryOnce();
   const auto sig = voiceLike(static_cast<int64_t>(kFs * 1.5), 160.0);
+  WorldHooksOff guard;
   Drive d;
   d.start(0, 3.0);
-  pitchlab::testing::setWorldFaultInjectionChunk(4);
+  pitchlab::testing::setWorldFaultInjectionChunk(4);  // global: every job's chunk 4 fails
   d.run(sig, /*paced=*/true);
   pitchlab::testing::setWorldFaultInjectionChunk(-1);
   d.run(sig, /*paced=*/true);
@@ -206,7 +224,9 @@ TEST_CASE("native.world realtime: three concurrent plug-in instances stay within
   MESSAGE("3 instances: max live WORLD pool threads " << maxLive.load() << " (bound "
                                                       << pitchlab::testing::worldPoolSize() << ")");
   CHECK(maxLive.load() <= pitchlab::testing::worldPoolSize());
-  for (uint64_t f : faults) CHECK(f == 0);
+  if (capacityGates()) {
+    for (uint64_t f : faults) CHECK(f == 0);
+  }
   CHECK(pitchlab::testing::worldPoolLiveThreads() == 0);
 }
 

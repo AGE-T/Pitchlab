@@ -48,7 +48,7 @@ concurrency:
 
 jobs:
   t-inf1-infrastructure:
-    name: T-INF1 core & DSP suite (6 production engines + harness)
+    name: T-INF1 core & DSP suite (8 production engines + harness)
     runs-on: ubuntu-24.04
     timeout-minutes: 60  # audit fix: never the 6 h default
     steps:
@@ -327,7 +327,7 @@ jobs:
           if-no-files-found: error
 
   # -------------------------------------------------------------------------
-  # Audit fix: SANITIZER lanes. Every other lane is Release-only; for a
+  # Audit fix: SANITIZER lanes (RelWithDebInfo + sanitizer). Every other lane is Release-only; for a
   # lock-free realtime adapter and hand-written parsers this was the largest
   # coverage gap. ASan+UBSan runs the core + VST suites (the long-running
   # research probes are excluded); TSan runs the threaded adapter/processor
@@ -345,8 +345,10 @@ jobs:
             targets: ""
             tests: ""
           - san: thread
-            targets: "--target vst_adapter_test vst_processor_test vst_seam_test vst_realtime_status_test"
-            tests: "-R ^(vst_adapter_test|vst_processor_test|vst_seam_test|vst_realtime_status_test)$"
+            # the threaded surfaces: the adapter/processor AND the WORLD pool
+            # (external_engines_test + vst_world_realtime_test)
+            targets: "--target vst_adapter_test vst_processor_test vst_seam_test vst_realtime_status_test external_engines_test vst_world_realtime_test"
+            tests: "-R ^(vst_adapter_test|vst_processor_test|vst_seam_test|vst_realtime_status_test|external_engines_test|vst_world_realtime_test)$"
     steps:
       - name: Checkout (pinned by commit SHA)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -379,6 +381,9 @@ jobs:
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
           TSAN_OPTIONS: halt_on_error=1:second_deadlock_stack=1
           PITCHLAB_AUDIO_PATH_ARTIFACT: ${{ github.workspace }}/build-san/audio-path-report.json
+          # machine-capacity (wall-clock) gates are skipped under sanitizers;
+          # functional + never-wait assertions still run
+          PITCHLAB_SANITIZER: "1"
         run: |
           ctest --test-dir build-san --output-on-failure --timeout 1800 \
             -E "probe|differential_harness|vst_audio_path_test|vst_ui" ${{ matrix.tests }} 2>&1 | tee test-san.log

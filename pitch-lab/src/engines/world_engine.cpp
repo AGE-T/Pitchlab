@@ -180,9 +180,10 @@ class WorldPool {
     if (n > 1) wake();
     runSubtask(Subtask{&g, 0});
     while (true) {
-      const int left = g.remaining.load(std::memory_order_acquire);
-      if (left == 0) break;
-      if (!runOneQueued()) g.remaining.wait(left, std::memory_order_acquire);
+      // read the pool-level generation BEFORE the check (no lost wakeup)
+      const uint32_t gen = groupGen_.load(std::memory_order_acquire);
+      if (g.remaining.load(std::memory_order_acquire) == 0) break;
+      if (!runOneQueued()) groupGen_.wait(gen, std::memory_order_acquire);
     }
     if (g.error) std::rethrow_exception(g.error);
   }
@@ -204,15 +205,19 @@ class WorldPool {
   WorldPool() = default;
   ~WorldPool() = default;  // threads are always joined by the last detach
 
-  static void runSubtask(const Subtask& t) {
+  void runSubtask(const Subtask& t) {
     try {
       (*t.g->fn)(t.index);
     } catch (...) {
       std::lock_guard<std::mutex> lock(t.g->errorMutex);
       if (!t.g->error) t.g->error = std::current_exception();
     }
+    // the LAST touch of the Group: once remaining reaches 0 the owner may
+    // return and destroy it, so the wake-up goes through a pool-level word
+    // that is always alive (audit: no notify on freed storage)
     if (t.g->remaining.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      t.g->remaining.notify_all();
+      groupGen_.fetch_add(1, std::memory_order_acq_rel);
+      groupGen_.notify_all();
     }
   }
 
@@ -278,6 +283,7 @@ class WorldPool {
   std::vector<std::thread> threads_;
   std::atomic<bool> stop_{false};
   std::atomic<uint32_t> epoch_{0};
+  std::atomic<uint32_t> groupGen_{0};  // fork-join completion wake-ups
 };
 
 // ===========================================================================
@@ -464,7 +470,7 @@ class WorldEngine final : public PitchEngine, private WorldPool::Client {
       if (outM_ >= nIn_ || produced >= outCapacity) break;
       if (consumedTotal_ >= nPad_) break;
       if (ctx_.realtime) break;  // never wait on a realtime callback
-      if (inputSpace() <= 0) waitForChunkProgress();
+      if (inputSpace() <= 0) waitForChunkProgress(done_.load(std::memory_order_acquire));
     }
     ProcessReport rep{0, produced, inputExhausted_};
     rep.starved = starved;
@@ -556,10 +562,22 @@ class WorldEngine final : public PitchEngine, private WorldPool::Client {
     }
   }
 
-  void waitForChunkProgress() {  // OFFLINE only
-    const int64_t d = done_.load(std::memory_order_acquire);
-    if (d >= chunks_ || failed_.load(std::memory_order_acquire)) return;
-    done_.wait(d, std::memory_order_acquire);
+  /// OFFLINE only: wait until chunk `k` is committed or the job failed.
+  /// Waits on progress_, which BOTH a commit and a failure advance; the
+  /// generation is read before the check, so no wake-up can be lost (audit:
+  /// a failure used to notify done_ without changing it -> a possible hang).
+  void waitForChunkProgress(int64_t k) {
+    const uint32_t gen = progress_.load(std::memory_order_acquire);
+    if (done_.load(std::memory_order_acquire) > k || done_.load(std::memory_order_acquire) >= chunks_ ||
+        failed_.load(std::memory_order_acquire)) {
+      return;
+    }
+    progress_.wait(gen, std::memory_order_acquire);
+  }
+
+  void bumpProgress() {
+    progress_.fetch_add(1, std::memory_order_acq_rel);
+    progress_.notify_all();
   }
 
   int emit(AudioBlockOut& out, int offset, int outCapacity, bool finishing, bool& starved) {
@@ -583,7 +601,7 @@ class WorldEngine final : public PitchEngine, private WorldPool::Client {
         }
         while (done_.load(std::memory_order_acquire) <= k &&
                !failed_.load(std::memory_order_acquire)) {
-          waitForChunkProgress();  // OFFLINE: bounded by the remaining work
+          waitForChunkProgress(k);  // OFFLINE: bounded by the remaining work
         }
         if (failed_.load(std::memory_order_acquire)) break;
       }
@@ -645,7 +663,7 @@ class WorldEngine final : public PitchEngine, private WorldPool::Client {
         // a failed chunk invalidates the job: published atomically, never a
         // process abort; process()/finish() throw EngineException next call
         failed_.store(true, std::memory_order_release);
-        done_.notify_all();  // release any OFFLINE waiter
+        bumpProgress();  // release any OFFLINE waiter
         return true;
       }
       slotChunk_[static_cast<std::size_t>(k % kSlots)].store(k, std::memory_order_release);
@@ -669,7 +687,7 @@ class WorldEngine final : public PitchEngine, private WorldPool::Client {
       if (writeEnd - outEmitted_.load(std::memory_order_acquire) > ring_) break;
       commitChunk(k, slots_[si]);
       done_.store(k + 1, std::memory_order_release);
-      done_.notify_all();
+      bumpProgress();
       any = true;
     }
     if (any) WorldPool::instance().wake();  // freed slots: more claims possible
@@ -870,6 +888,7 @@ class WorldEngine final : public PitchEngine, private WorldPool::Client {
   std::atomic<int64_t> outEmitted_{0};  // output frames consumed (process -> pool)
   std::atomic<int64_t> nextClaim_{0};   // next chunk index a pool thread may claim
   std::atomic<bool> failed_{false};     // a chunk computation threw (job invalid)
+  std::atomic<uint32_t> progress_{0};   // advanced by every commit AND by a failure
   std::atomic<bool> detached_{false};   // no new claims (quiescing)
   std::atomic<int> inflight_{0};        // pool threads currently inside tryRunChunk()
   std::mutex commitMutex_;              // serialises the in-order commit (pool only)

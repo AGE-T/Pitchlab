@@ -599,7 +599,7 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
                    worldLatencyFrames(fs, true) + kKernelMargin + kLatencySafety,  // native.world (Harvest worst)
                    std::max(signalsmithLatencyBoundFrames(fs, 0),           // native.signalsmith
                             signalsmithLatencyBoundFrames(fs, 1)) +
-                       kKernelMargin + kLatencySafety});                                 // timepitch Pitch-Synced splice
+                       kKernelMargin + kLatencySafety});
 }
 
 /// Envelope (§4.1 item 2, the Task 30 policy — derived, not intuited):
@@ -697,6 +697,7 @@ struct RealtimeAdapter::Job {
   // Task 29: one stall event per job (fully-fed but unfinished past the
   // grace window — the job-starvation diagnostic)
   bool stallCounted = false;
+  bool lastStarved = false;  // the last process() reported ProcessReport::starved
 
   LaneWindow lane;
 
@@ -727,6 +728,7 @@ struct RealtimeAdapter::Job {
     finished = false;
     everFed = false;
     stallCounted = false;
+    lastStarved = false;
     dead.store(false, std::memory_order_release);
   }
 };
@@ -1350,15 +1352,20 @@ struct RealtimeAdapter::Impl {
                                                        std::memory_order_acq_rel);
     }
 
-    prefillCurve(victim->curve, chain.envMin, chain.envMax, chain.engineId);
     // lifecycle: prepare() once (allocation), reset() for later reuses —
-    // reset() on an unprepared engine is invalid (v0.1 §5 rule 3)
+    // reset() on an unprepared engine is invalid (v0.1 §5 rule 3).
+    // Audit fix: the curve prefill happens AFTER reset() — an asynchronous
+    // engine (native.world) may still be computing a chunk of the dead job
+    // and reading its curve until reset() quiesces it; prepare() validates
+    // the curve, so a never-prepared engine gets the prefill first.
     victim->ctx.totalInputFrames = victim->inputLen;
     victim->ctx.curve = &victim->curveView;
     try {
       if (victim->enginePrepared) {
         victim->engine->reset();  // clears DSP state, keeps configuration
+        prefillCurve(victim->curve, chain.envMin, chain.envMax, chain.engineId);
       } else {
+        prefillCurve(victim->curve, chain.envMin, chain.envMax, chain.engineId);
         victim->engine->prepare(victim->ctx);
         victim->enginePrepared = true;
       }
@@ -2134,7 +2141,9 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
 
     // ---- 1) chain adoption ---------------------------------------------------
     {
-      Chain* pend = im.pending.load(std::memory_order_acquire);
+      // seq_cst: the Dekker pairing with the preparation thread's
+      // pending.exchange + audioInBlock load (see Impl::audioInBlock)
+      Chain* pend = im.pending.load(std::memory_order_seq_cst);
       if (pend != nullptr) {
         if (im.pendingSeenAt < 0) im.pendingSeenAt = t;
         bool adopt = (im.active.load(std::memory_order_acquire) == nullptr);
@@ -2289,6 +2298,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       if (automation.mixCount == 0) {
         if (std::isnan(im.mixSmooth)) im.mixSmooth = snap.mix;
         im.mixSmooth += (snap.mix - im.mixSmooth) * im.smoothAlpha;
+        if (std::fabs(snap.mix - im.mixSmooth) < 1e-9) im.mixSmooth = snap.mix;  // exact settle
         mixv = im.mixSmooth;
       } else {
         im.mixSmooth = mixv;  // automation is already ramped: track it
@@ -2302,6 +2312,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       } else {
         if (std::isnan(im.gainSmooth)) im.gainSmooth = gainBase;
         im.gainSmooth += (gainBase - im.gainSmooth) * im.smoothAlpha;
+        if (std::fabs(gainBase - im.gainSmooth) < 1e-9) im.gainSmooth = gainBase;  // exact settle
         gain = im.gainSmooth;
       }
       // bypass fade — FRAME-CORRECT (P1.2): the step target is resolved at
@@ -2434,9 +2445,15 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
         // detector firing one max-block past the span end. finishJob()
         // itself returns early when the cell is full (no flush exists).
         if (job->consumed >= job->inputLen && !job->finished) {
-          finishJob(*job, historyFloor);
-          ++im.jobsCompleted;  // Task 34 telemetry (the !finished guard runs
-                               // the block exactly once per job)
+          if (job->lastStarved && job->wetWritten < job->wetLen && ef <= job->wetEnd()) {
+            // an async engine is still computing due wet: keep polling while
+            // it can still be read (finish() would drop that chunk for good)
+            pollJob(*job, historyFloor);
+          } else {
+            finishJob(*job, historyFloor);
+            ++im.jobsCompleted;  // Task 34 telemetry (the !finished guard runs
+                                 // the block exactly once per job)
+          }
         }
         // Task 29: JOB STALL — a FED job's whole input span has been offered
         // (t > spanEnd) yet it remains unfinished one full max-block past
@@ -2519,7 +2536,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   {
     const double rLive = std::exp2(im.lastPitchSt / 12.0);
     Chain* actE = im.active.load(std::memory_order_acquire);
-    Chain* pendE = im.pending.load(std::memory_order_acquire);
+    Chain* pendE = im.pending.load(std::memory_order_seq_cst);  // Dekker pairing
     if (actE != nullptr && pendE == nullptr &&
         (rLive < actE->envMin || rLive > actE->envMax)) {
       double r = rLive;
@@ -2845,6 +2862,7 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
             std::chrono::steady_clock::now() - rtT0)
             .count());
     if (!threw && rep.starved) ++im.engineStarvedCalls;  // async engine behind (realtime)
+    if (!threw) job.lastStarved = rep.starved;
     if (threw) {
       ++im.engineExceptions;  // Task 29: categorized (engine exception)
     } else if (failed || rep.inputFramesConsumed < 0 || rep.outputFramesProduced < 0 ||
@@ -2870,6 +2888,46 @@ void RealtimeAdapter::feedJob(const Chain& chain, Job& job, int64_t t, int32_t s
     pos += rep.inputFramesConsumed;
     if (rep.inputFramesConsumed < chunk) break;  // partial consumption: re-offer next block
   }
+}
+
+void RealtimeAdapter::pollJob(Job& job, int64_t historyFloor) {
+  Impl& im = *impl_;
+  const int ch = im.channels;
+  job.lane.dropBefore(historyFloor);
+  const int64_t free = job.lane.freeSpace();
+  if (free <= 0) return;
+  const double* inPtr[2] = {nullptr, nullptr};
+  double* outPtr[2] = {nullptr, nullptr};
+  for (int c = 0; c < ch; ++c) outPtr[c] = job.lane.writePtr(c);
+  AudioBlockView inView;
+  inView.channels = inPtr;
+  inView.channelCount = ch;
+  inView.frameCount = 0;
+  AudioBlockOut outView;
+  outView.channels = outPtr;
+  outView.channelCount = ch;
+  outView.frameCapacity = free;
+  const auto rtT0 = std::chrono::steady_clock::now();
+  try {
+    const ProcessReport rep = job.engine->process(inView, 0, outView, static_cast<int>(free),
+                                                  job.curveView, job.consumed);
+    job.lastStarved = rep.starved;
+    if (rep.starved) ++im.engineStarvedCalls;
+    const int64_t append = std::min<int64_t>(std::max<int64_t>(rep.outputFramesProduced, 0),
+                                             job.wetLen - job.wetWritten);
+    if (append > 0) {
+      job.wetWritten += append;
+      job.lane.count += append;
+    }
+  } catch (...) {
+    im.faults++;
+    im.engineExceptions++;
+    job.lastStarved = false;  // finish next block (the job is invalid)
+  }
+  im.engineCpuNanos += static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::steady_clock::now() - rtT0)
+          .count());
 }
 
 void RealtimeAdapter::finishJob(Job& job, int64_t historyFloor) {

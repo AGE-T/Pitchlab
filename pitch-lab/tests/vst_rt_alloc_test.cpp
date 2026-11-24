@@ -39,6 +39,38 @@ void* operator new[](std::size_t n) {
   if (void* p = std::malloc(n == 0 ? 1 : n)) return p;
   throw std::bad_alloc();
 }
+void* operator new(std::size_t n, const std::nothrow_t&) noexcept {
+  if (tInCallback) gCallbackAllocs.fetch_add(1, std::memory_order_relaxed);
+  return std::malloc(n == 0 ? 1 : n);
+}
+void* operator new[](std::size_t n, const std::nothrow_t&) noexcept {
+  if (tInCallback) gCallbackAllocs.fetch_add(1, std::memory_order_relaxed);
+  return std::malloc(n == 0 ? 1 : n);
+}
+#if defined(_MSC_VER)
+#include <malloc.h>
+inline void* plAlignedAlloc(std::size_t n, std::size_t a) { return _aligned_malloc(n == 0 ? 1 : n, a); }
+inline void plAlignedFree(void* p) { _aligned_free(p); }
+#else
+inline void* plAlignedAlloc(std::size_t n, std::size_t a) {
+  return std::aligned_alloc(a, ((n == 0 ? 1 : n) + a - 1) / a * a);
+}
+inline void plAlignedFree(void* p) { std::free(p); }
+#endif
+void* operator new(std::size_t n, std::align_val_t al) {
+  if (tInCallback) gCallbackAllocs.fetch_add(1, std::memory_order_relaxed);
+  if (void* p = plAlignedAlloc(n, static_cast<std::size_t>(al))) return p;
+  throw std::bad_alloc();
+}
+void* operator new[](std::size_t n, std::align_val_t al) {
+  if (tInCallback) gCallbackAllocs.fetch_add(1, std::memory_order_relaxed);
+  if (void* p = plAlignedAlloc(n, static_cast<std::size_t>(al))) return p;
+  throw std::bad_alloc();
+}
+void operator delete(void* p, std::align_val_t) noexcept { plAlignedFree(p); }
+void operator delete[](void* p, std::align_val_t) noexcept { plAlignedFree(p); }
+void operator delete(void* p, std::size_t, std::align_val_t) noexcept { plAlignedFree(p); }
+void operator delete[](void* p, std::size_t, std::align_val_t) noexcept { plAlignedFree(p); }
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete[](void* p) noexcept { std::free(p); }
 void operator delete(void* p, std::size_t) noexcept { std::free(p); }
@@ -149,6 +181,10 @@ TEST_CASE("F1: zero callback allocations — every engine, mode and lifecycle ev
                    << callbackPercentileNanos(st, 0.999) / 1000.0 << " us");
     CHECK(d.allocs == 0);
     CHECK(st.chainsAdopted >= 2);  // the exits really rebuilt
+    CHECK(st.chainReady);
+    // the drive really ran WET (a fully starved/bypassed engine would pass
+    // an allocation audit trivially): at most 10% of the frames dry-served
+    CHECK(st.dryFallbackFrames < static_cast<uint64_t>(0.1 * static_cast<double>(d.pos)));
     // F7: the distribution is populated and ordered
     CHECK(st.callbackCount > 0);
     uint64_t histTotal = 0;

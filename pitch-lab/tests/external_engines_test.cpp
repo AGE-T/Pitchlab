@@ -16,6 +16,7 @@
 #include <doctest/doctest.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -32,6 +33,12 @@
 using namespace pitchlab;
 
 namespace {
+
+/// Wall-clock CAPACITY gates (realtime factor, zero fallback at real-time
+/// pacing) are machine-dependent: sanitizer builds (2-10x slower) set
+/// PITCHLAB_SANITIZER=1 and skip them — the functional and never-wait
+/// assertions still run there.
+inline bool capacityGates() { return std::getenv("PITCHLAB_SANITIZER") == nullptr; }
 
 constexpr double kPi = 3.14159265358979323846;
 
@@ -405,7 +412,7 @@ TEST_CASE("native.world: offline throughput (realtime factor, stereo 48 kHz)") {
     const double rtf = sec / (static_cast<double>(n) / fs);
     MESSAGE("native.world " << method << " stereo: realtime factor " << rtf);
     CHECK(r.out[0].size() == n);
-    CHECK(rtf < 1.0);  // must run faster than realtime on the build machine
+    if (capacityGates()) CHECK(rtf < 1.0);  // faster than realtime on the build machine
   }
 }
 
