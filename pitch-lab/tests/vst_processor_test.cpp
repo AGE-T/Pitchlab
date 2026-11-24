@@ -1485,3 +1485,121 @@ TEST_CASE("F4 regression: audio-thread latency growth triggers kLatencyChanged o
 }
 
 
+// ---------------------------------------------------------------------------
+// 2026-11 merge-readiness checks: F4 (timer-driven latency notification,
+// editor closed) and F5 (binary state fixtures, PLV1/PLV2/PLV3)
+// ---------------------------------------------------------------------------
+
+namespace {
+/// Records the latency the plug-in reports AT THE MOMENT it notifies the host.
+class OrderHandler final : public IComponentHandler {
+ public:
+  PitchLabProcessor* plug = nullptr;
+  std::vector<uint32> latencyAtNotify;
+  tresult PLUGIN_API queryInterface(const TUID iid, void** obj) override {
+    QUERY_INTERFACE(iid, obj, IComponentHandler::iid, IComponentHandler)
+    QUERY_INTERFACE(iid, obj, FUnknown::iid, FUnknown)
+    *obj = nullptr;
+    return kNoInterface;
+  }
+  uint32 PLUGIN_API addRef() override { return 1; }
+  uint32 PLUGIN_API release() override { return 1; }
+  tresult PLUGIN_API beginEdit(ParamID) override { return kResultOk; }
+  tresult PLUGIN_API performEdit(ParamID, ParamValue) override { return kResultOk; }
+  tresult PLUGIN_API endEdit(ParamID) override { return kResultOk; }
+  tresult PLUGIN_API restartComponent(int32 flags) override {
+    if ((flags & kLatencyChanged) != 0 && plug != nullptr) {
+      latencyAtNotify.push_back(plug->getLatencySamples());
+    }
+    return kResultOk;
+  }
+};
+
+std::vector<char> readFile(const std::string& path) {
+  std::ifstream f(path, std::ios::binary);
+  return std::vector<char>((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+}
+}  // namespace
+
+TEST_CASE("F4 (2026-11): automation latency growth is notified by the processor TIMER (no editor)") {
+  const double fs = 48000.0;
+  Host h;
+  OrderHandler handler;
+  handler.plug = h.plug.get();
+  h.plug->setComponentHandler(&handler);
+  h.setParam(param::kEngine, 4.0);  // native.granular (envelope-scoped latency)
+  h.setParam(param::kPitch, 0.0);
+  h.setParam(param::kGrGrain, 0.10);
+  h.setup(fs, 512);
+  const auto sig = makeSine(512, 220.0, fs);
+  (void)h.process(sig);
+  const uint32 latInitial = h.plug->getLatencySamples();
+  handler.latencyAtNotify.clear();
+  // audio-thread automation only (no setParamNormalized): +12 st re-centres
+  for (int b = 0; b < 40; ++b) {
+    HostChanges changes;
+    if (b == 0) {
+      int32 idx = 0;
+      IParamValueQueue* q = changes.addParameterData(param::kPitch, idx);
+      q->addPoint(0, normalise(param::kPitch, 12.0), idx);
+    }
+    (void)h.process(sig, &changes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  const uint32 latGrown = h.plug->getLatencySamples();
+  REQUIRE(latGrown > latInitial);
+  CHECK(handler.latencyAtNotify.empty());  // nothing polled yet (no editor)
+  // the SDK main-thread timer fires (the host's message loop): notification
+  h.plug->onTimer(nullptr);
+  REQUIRE(handler.latencyAtNotify.size() == 1);
+  // ORDER: the host, when notified, already reads the NEW latency
+  CHECK(handler.latencyAtNotify[0] == latGrown);
+  // no duplicate notification without a further change
+  h.plug->onTimer(nullptr);
+  CHECK(handler.latencyAtNotify.size() == 1);
+  h.shutdown();
+}
+
+TEST_CASE("F5 (2026-11): binary state fixtures (PLV1 / PLV2 / PLV3) restore exactly") {
+  struct Case {
+    const char* file;
+    int engine;
+    double pitch;
+    double mix;
+  };
+  const Case cases[] = {
+      {"plv1_engine0_pitch-7.50.bin", 0, -7.5, 0.5},  {"plv1_engine2_pitch+3.25.bin", 2, 3.25, 0.5},
+      {"plv1_engine4_pitch+12.00.bin", 4, 12.0, 0.5}, {"plv2_engine1_pitch-24.00.bin", 1, -24.0, 0.25},
+      {"plv2_engine3_pitch+0.00.bin", 3, 0.0, 0.25},  {"plv2_engine5_pitch+19.50.bin", 5, 19.5, 0.25},
+      {"plv3_engine6_pitch-5.00.bin", 6, -5.0, 0.75}, {"plv3_engine7_pitch+7.00.bin", 7, 7.0, 0.75},
+  };
+  for (const Case& c : cases) {
+    CAPTURE(c.file);
+    const std::vector<char> bytes = readFile(std::string("tests/fixtures/state/") + c.file);
+    REQUIRE(!bytes.empty());
+    MemStream in;
+    int32 written = 0;
+    in.write(const_cast<char*>(bytes.data()), static_cast<int32>(bytes.size()), &written);
+    in.pos = 0;
+    Host h;
+    h.setup(48000.0, 1024);
+    CHECK(h.plug->setState(&in) == kResultOk);
+    const ParamSnapshot got = h.snapshot();
+    CHECK(got.engineIndex == c.engine);
+    CHECK(std::fabs(got.pitchSt - c.pitch) < 1e-9);
+    CHECK(std::fabs(got.mix - c.mix) < 1e-9);
+    // PLV3 save -> load -> save is byte-stable
+    MemStream s1;
+    REQUIRE(h.plug->getState(&s1) == kResultOk);
+    s1.pos = 0;
+    Host h2;
+    h2.setup(48000.0, 1024);
+    REQUIRE(h2.plug->setState(&s1) == kResultOk);
+    MemStream s2;
+    REQUIRE(h2.plug->getState(&s2) == kResultOk);
+    CHECK(s1.data == s2.data);
+    CHECK(std::memcmp(s1.data.data(), "PLV3", 4) == 0);
+    h2.shutdown();
+    h.shutdown();
+  }
+}

@@ -1,0 +1,50 @@
+[
+ {
+  "file": "plv1_engine0_pitch-7.50.bin",
+  "engine": 0,
+  "pitch": -7.5,
+  "mix": 0.5
+ },
+ {
+  "file": "plv1_engine2_pitch+3.25.bin",
+  "engine": 2,
+  "pitch": 3.25,
+  "mix": 0.5
+ },
+ {
+  "file": "plv1_engine4_pitch+12.00.bin",
+  "engine": 4,
+  "pitch": 12.0,
+  "mix": 0.5
+ },
+ {
+  "file": "plv2_engine1_pitch-24.00.bin",
+  "engine": 1,
+  "pitch": -24.0,
+  "mix": 0.25
+ },
+ {
+  "file": "plv2_engine3_pitch+0.00.bin",
+  "engine": 3,
+  "pitch": 0.0,
+  "mix": 0.25
+ },
+ {
+  "file": "plv2_engine5_pitch+19.50.bin",
+  "engine": 5,
+  "pitch": 19.5,
+  "mix": 0.25
+ },
+ {
+  "file": "plv3_engine6_pitch-5.00.bin",
+  "engine": 6,
+  "pitch": -5.0,
+  "mix": 0.75
+ },
+ {
+  "file": "plv3_engine7_pitch+7.00.bin",
+  "engine": 7,
+  "pitch": 7.0,
+  "mix": 0.75
+ }
+]

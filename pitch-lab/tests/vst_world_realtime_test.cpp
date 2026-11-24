@@ -119,6 +119,10 @@ TEST_CASE("native.world realtime: an overloaded pool never blocks the callback; 
   CHECK(overloaded.engineStarvedCalls > 0);
   CHECK(overloaded.deliveryUnderruns > 0);  // honest accounting
   CHECK(overloaded.engineExceptions == 0);
+  // F2: no chain geometry sets rateFollowing today, so the rate-following
+  // fault exemption cannot apply — every dry-served covered frame is also a
+  // counted delivery underrun (one-to-one)
+  CHECK(overloaded.dryFallbackFrames == overloaded.deliveryUnderruns);
   // recovery: the delay removed, a paced continuation stops falling back
   pitchlab::testing::setWorldChunkDelayMs(0);
   d.adapter.requestProcessingReset();

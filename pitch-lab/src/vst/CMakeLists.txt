@@ -262,6 +262,11 @@ pitchlab_add_vst_suite(vst_seam_test)
 # + rebuild, concurrent instances within the shared pool bound.
 pitchlab_add_vst_suite(vst_world_realtime_test)
 
+# 2026-11 (F1/F7): zero heap allocations on the audio callback (every engine,
+# every timepitch mode, signalsmith keep-formants; resets, envelope exits,
+# rebuilds, adoptions) + the per-callback latency distribution.
+pitchlab_add_vst_suite(vst_rt_alloc_test)
+
 # T-RT* (Task 32): the realtime-capability status suite — the classifier's
 # levels/bases/thresholds/fault-escalation/benchmark-prior rules as pure
 # unit fixtures + the label texts (incl. the required warning wording) +

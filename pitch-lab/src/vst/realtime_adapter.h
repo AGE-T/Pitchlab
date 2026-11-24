@@ -193,8 +193,25 @@ struct StatusSnapshot {
   int64_t rtFrames = 0;         // input frames processed since the current
                                 // chain's adoption (the measurement window)
 
+  // 2026-11 (F7): per-CALLBACK latency distribution since activate() (NOT
+  // reset at adoption — the adoption block itself is a candidate worst
+  // case). The cumulative RTF above cannot show a single late callback.
+  // Histogram: half-octave buckets from 1 us (bucket 0 = < 1.024 us; see
+  // callbackBucketUpperNanos); read percentiles with callbackPercentileNanos.
+  static constexpr int kCallbackBuckets = 64;
+  uint64_t callbackWorstNanos = 0;
+  uint64_t callbackCount = 0;
+  uint64_t callbackHist[kCallbackBuckets] = {};
 };
 
+/// Half-octave bucket of a callback duration (ns) — see StatusSnapshot.
+[[nodiscard]] int callbackBucket(uint64_t nanos);
+/// Upper bound (ns) of a bucket.
+[[nodiscard]] uint64_t callbackBucketUpperNanos(int bucket);
+/// The q-quantile (0 < q <= 1) of the callback durations as a bucket upper
+/// bound (a conservative estimate: true value <= result; capped at the
+/// measured worst). 0 when no callback was measured.
+[[nodiscard]] uint64_t callbackPercentileNanos(const StatusSnapshot& st, double q);
 
 // ---------------------------------------------------------------------------
 // Per-block automation (VST3 IParameterChanges, resolved by the processor)

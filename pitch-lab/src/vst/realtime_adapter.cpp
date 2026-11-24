@@ -1026,6 +1026,9 @@ struct RealtimeAdapter::Impl {
   // the hard/resume resets (a fresh chain re-measures from zero).
   uint64_t engineCpuNanos = 0;
   uint64_t callbackCpuNanos = 0;
+  uint64_t callbackWorstNanos = 0;                               // F7 (since activate)
+  uint64_t callbackCount = 0;                                    // F7
+  uint64_t callbackHist[StatusSnapshot::kCallbackBuckets] = {};  // F7
   int64_t rtFrames = 0;
   // Preparation-side (prep thread; never block audio):
   std::atomic<uint64_t> preparationFailures{0};
@@ -1786,6 +1789,9 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   im.engineProcessFaults = 0;
   im.engineExceptions = 0;
   im.engineStarvedCalls = 0;
+  im.callbackWorstNanos = 0;  // F7: the distribution spans the activation
+  im.callbackCount = 0;
+  for (uint64_t& h : im.callbackHist) h = 0;
   im.deliveryUnderruns = 0;
   im.dryHistoryMisses = 0;
   im.jobStalls = 0;
@@ -1830,6 +1836,33 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
     im.latencyNow = im.latencyEff;
     im.waitForFirstChain();
   }
+}
+
+int callbackBucket(uint64_t nanos) {
+  if (nanos < 1024) return 0;
+  const int lg = 63 - std::countl_zero(nanos);  // floor(log2)
+  const int half = static_cast<int>((nanos >> (lg - 1)) & 1u);
+  return std::min(2 * (lg - 10) + half + 1, StatusSnapshot::kCallbackBuckets - 1);
+}
+
+uint64_t callbackBucketUpperNanos(int bucket) {
+  if (bucket <= 0) return 1024;
+  const int lg = 10 + (bucket - 1) / 2;
+  const bool upperHalf = ((bucket - 1) % 2) == 1;
+  return upperHalf ? (uint64_t{1} << (lg + 1)) : (uint64_t{3} << (lg - 1));
+}
+
+uint64_t callbackPercentileNanos(const StatusSnapshot& st, double q) {
+  if (st.callbackCount == 0) return 0;
+  const double target = std::clamp(q, 0.0, 1.0) * static_cast<double>(st.callbackCount);
+  uint64_t acc = 0;
+  for (int b = 0; b < StatusSnapshot::kCallbackBuckets; ++b) {
+    acc += st.callbackHist[b];
+    if (static_cast<double>(acc) >= target) {
+      return std::min(callbackBucketUpperNanos(b), st.callbackWorstNanos);
+    }
+  }
+  return st.callbackWorstNanos;
 }
 
 void RealtimeAdapter::setOfflineRendering(bool offline) {
@@ -2643,10 +2676,20 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
   st.seamRecoveries = im.seamRecoveries;  // Task 31: the retention at work
   // Task 32: the realtime-capability measurement (numeric only; the UI-side
   // classifier — vst/realtime_status.h — derives the level from these)
-  im.callbackCpuNanos += static_cast<uint64_t>(
-      std::chrono::duration_cast<std::chrono::nanoseconds>(
-          std::chrono::steady_clock::now() - cbT0)
-          .count());
+  {
+    const uint64_t cbNanos = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - cbT0)
+            .count());
+    im.callbackCpuNanos += cbNanos;
+    // F7: the per-callback distribution (worst + half-octave histogram)
+    im.callbackWorstNanos = std::max(im.callbackWorstNanos, cbNanos);
+    ++im.callbackCount;
+    ++im.callbackHist[callbackBucket(cbNanos)];
+  }
+  st.callbackWorstNanos = im.callbackWorstNanos;
+  st.callbackCount = im.callbackCount;
+  for (int b = 0; b < StatusSnapshot::kCallbackBuckets; ++b) st.callbackHist[b] = im.callbackHist[b];
   st.engineCpuNanos = im.engineCpuNanos;
   st.callbackCpuNanos = im.callbackCpuNanos;
   st.rtFrames = im.rtFrames;
