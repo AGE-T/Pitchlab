@@ -1792,3 +1792,4 @@ Work Log:
 Stage Summary:
 - CI (19a5c1b, VST3 attempt 2): 52/52 tests, artifact gate PASS, validator 47/47, 11/11 examples byte-identical; T-INF1 + Windows green; sanitizers: only the pre-existing LFO test fails; TSan reports no data race.
 - Open: the pre-existing LFO test; one realtime timepitch determinism flake (1 of 5 runs); the owner's engine review (granular removal likely, timepitch undecided; Bungee MPL-2.0 / stftPitchShift MIT as A/B candidates). Details: pitch-lab/docs/merge-readiness-report-2026-11.md §13.
+- Follow-up: the long-standing LFO test failure was an offline-bounce defect (envelope-exit re-centre not waited for in kOffline) — fixed with a bounded wait on the exit watermark (f2ecee9; deterministic 2010.07 in Release and ASan). UI-lane switch stall: intermittent, not reproducible at the adapter level (new realtime regression test), diagnostics added (24e90c6). CI at 24e90c6: ALL JOBS GREEN.

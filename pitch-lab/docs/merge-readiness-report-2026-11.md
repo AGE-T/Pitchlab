@@ -114,9 +114,19 @@ The CI logs became readable after the owner's GitHub sign-in in Chrome. Findings
 | 8db371b | **Offline bounce dry start/resume**: P1.4 suspend/resume rendered chainless (engine −1) while the rebuild ran | kOffline also waits for a chain build the prep thread can do on its own (no chain; or a switch with no pending chain); repro test: engine −1 → 3 on the first block after resume |
 | 19a5c1b | audio-path golden still 6-engine (182 → 228 records); WORLD EXPECTED-LIMITATION records carried the GRANULAR diagnostic text | golden regenerated from the CI GCC artifact (181 identical identities, 46 new WORLD/Signalsmith, 1 phase-G switch target now WORLD); WORLD diagnostic fixed |
 | 66e00cd | UI lane: the pixel-art editor's real capture has 18 colours; the ">100 colours" blank check failed it | blank = < 8 colours or one colour >= 98% |
-| (this) | UI parameter-binding lane (synthetic X11 clicks): the pixel-art `PLSlider` maps the mouse onto the bar inset by 7 px; the harness still used the full 172 px width (CI: 0.7532 vs 0.7326 at x=610), so a pv.classic hop drag hit an unintended FFT/hop combination and every later engine switch stalled | the harness derives the click value from the same inset (`kThumbPad`) |
+| 54f01bf | UI parameter-binding lane (synthetic X11 clicks): the pixel-art `PLSlider` maps the mouse onto the bar inset by 7 px; the harness still used the full 172 px width (CI: 0.7532 vs 0.7326 at x=610), so a pv.classic hop drag hit an unintended FFT/hop combination and every later engine switch stalled | the harness derives the click value from the same inset (`kThumbPad`) |
 
 CI state at 19a5c1b (VST3 job attempt 2) and 66e00cd (UI capture check PASS, the parameter-binding lane then failed on the slider inset — fixed above): **52/52 tests, audio-path artifact gate PASS (228 records), validator 47/47, all 11 host-sim examples byte-identical**; T-INF1 and Windows x64 green. Realtime mode is unchanged by the offline waits (the overload test's worst callback stays ~0.07 ms).
 
 **Final CI state at 54f01bf (run 45674762563):** T-INF1 core ✅, VST3 product layer ✅ (52/52 tests, audio-path artifact gate, validator 47/47, 11/11 examples, UI capture + parameter-binding lanes), Windows x64 ✅. Sanitizers (ASan+UBSan, TSan): every test passes except the pre-existing LFO test `vst_processor_test:1286` (also failing on `main` / 92e15be); no sanitizer report.
+
+### 13.1 Follow-up (same day)
+| Commit | Finding | Fix |
+|---|---|---|
+| f2ecee9 | **The long-standing LFO test failure was a real offline-bounce defect.** Pitch/LFO are curve parameters handled by the envelope-EXIT path; in kOffline nothing waited for the exit's re-centre chain, so a slow prep thread (ASan) rendered the whole bounce clamped at the old envelope (LFO without effect), and on a fast machine two identical bounces differed (reproduced locally in Release) | kOffline waits (bounded) until published exits are consumed and the re-centre chain is pending; the test passes 3/3 in Release and under ASan with the SAME measured value (2010.07); the 16 host-sim renders are byte-identical before/after |
+| 24e90c6 | UI lane: an intermittent stall of every engine switch after a pv.classic hop drag (54f01bf passed, f2ecee9 failed, same tool code). Not reproducible at the adapter level (new REALTIME regression test: fft 4096 / hop 512 then 5 switches, each adopted in 2-3 blocks) | diagnostics in the lane (the controller's engine value next to the adapter state on a failed switch) |
+
+**CI at 24e90c6 (run 45689638405): ALL JOBS GREEN** — T-INF1 core, VST3 product layer (52/52, audio-path gate, validator 47/47, 11/11 examples, UI capture + parameter binding), Windows x64, ASan+UBSan, TSan.
+
+Remaining open items: the intermittent UI-lane engine-switch stall (1 of 3 runs; the diagnostics will localise it on recurrence); the realtime timepitch render-determinism flake (1 of 6 runs); F7 callback budget (granular, timepitch adaptive); the engine-portfolio decision (granular removal, timepitch A/B against Bungee / stftPitchShift).
 
