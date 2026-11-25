@@ -266,9 +266,16 @@ jobs:
           data = open(ppm, 'rb').read().split(b'\n', 3)
           img = Image.frombytes('RGB', (680, 486), data[3])
           img.save(png)
-          colors = len(img.getcolors(200000))
-          assert colors > 100, 'UI capture is blank (%d colors)' % colors
-          print(png, 'ok:', colors, 'colors')
+          # blank = (nearly) one colour. The pixel-art editor draws with a
+          # small fixed palette and no anti-aliasing (18 colours measured),
+          # so a raw colour COUNT is not a blankness signal; the dominant
+          # colour's coverage is.
+          counts = img.getcolors(200000)
+          colors = len(counts)
+          dominant = max(c for c, _ in counts) / float(680 * 486)
+          msg = 'UI capture is blank (%d colors, dominant %.1f%%)' % (colors, 100 * dominant)
+          assert colors >= 8 and dominant < 0.98, msg
+          print(png, 'ok:', colors, 'colors, dominant %.1f%%' % (100 * dominant))
           EOC
           Xvfb :99 -screen 0 800x600x24 -nolisten tcp &
           XVFB_PID=$!
