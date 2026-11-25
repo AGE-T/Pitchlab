@@ -68,6 +68,7 @@ constexpr double kRegistryMaxRatio = 16.0;          // the registry's widest
                                                     // (native.varispeed)
 constexpr double kAdoptionForceSeconds = 0.050;     // deferred-adoption deadline (§4.1 item 4)
 constexpr int kParamSettleMs = 2;                    // parameter-batch debounce (see prepLoop)
+constexpr int kOfflinePrepWaitMaxMs = 10000;       // OFFLINE-only safety bound for a due job
 constexpr int kFirstChainWaitMs = 2000;              // bounded MAIN-thread wait for the first
                                                     // chain (activate/first publish — audio
                                                     // never waits; Task 24 P0.1 fix)
@@ -1053,6 +1054,15 @@ struct RealtimeAdapter::Impl {
 
   std::thread prepThread;
   std::atomic<bool> prepRunning{false};
+  // OFFLINE bounce determinism (2026-11): the preparation thread publishes a
+  // completed-pass counter and whether that pass found nothing to do; the
+  // audio thread (kOffline only) waits on them for a job that is already
+  // due (see waitForDuePreparationOffline).
+  std::atomic<uint64_t> prepPassSeq{0};
+  std::atomic<bool> prepLastPassIdle{false};
+  uint64_t offlinePrepWaits = 0;     // audio-thread-only (diagnostics)
+  uint64_t offlinePrepTimeouts = 0;  // audio-thread-only (diagnostics)
+  int64_t offlineIdleEscapeKey = -1; // audio-thread-only: last un-servable due span
   uint64_t builtRequestEpoch = 0;
   ParamSnapshot::ChainSignature builtSig{};
   double builtFs = 0.0;
@@ -1401,6 +1411,8 @@ struct RealtimeAdapter::Impl {
 
   void prepLoop() {
     while (prepRunning.load(std::memory_order_acquire)) {
+      const uint64_t jobsAtPassStart = jobsPreparedTotal.load(std::memory_order_relaxed);
+      const uint64_t buildsAtPassStart = reprepares.load(std::memory_order_relaxed);
       freeRetired();
       freeDeferredPending(/*all=*/false);
 
@@ -1611,12 +1623,79 @@ struct RealtimeAdapter::Impl {
         serveJobNeeds(ret, limit);
       }
 
+      prepLastPassIdle.store(
+          jobsPreparedTotal.load(std::memory_order_relaxed) == jobsAtPassStart &&
+              reprepares.load(std::memory_order_relaxed) == buildsAtPassStart,
+          std::memory_order_release);
+      prepPassSeq.fetch_add(1, std::memory_order_acq_rel);
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     freeRetired();
   }
 
   // ---- audio thread ---------------------------------------------------------
+
+  /// True when the preparation thread has a job of `c` that is ALREADY DUE
+  /// (inside the same lead window serveJobNeeds() prepares for) but not yet
+  /// prepared.
+  [[nodiscard]] bool preparationDue(const Chain* c, int64_t serveLimit, int64_t frontier,
+                                    int64_t& key) const {
+    if (c == nullptr || c->base.load(std::memory_order_acquire) < 0) return false;
+    const int64_t next =
+        c->jobSpanStart(c->highestPrepared.load(std::memory_order_acquire) + 1);
+    const int64_t lead = 2 * static_cast<int64_t>(maxBlock) + kPrepLeadExtra;
+    const bool isDue = next <= frontier + lead && next < serveLimit;
+    if (isDue) key = std::min(key, next);
+    return isDue;
+  }
+
+  /// AUDIO THREAD, OFFLINE (VST3 kOffline) ONLY — bounce determinism.
+  /// Realtime mode never waits (a late job is the counted dry fallback). An
+  /// offline render has no deadline, so a job that is due but not yet
+  /// prepared (e.g. the preparation thread is inside native.world's reset(),
+  /// which quiesces an in-flight analysis chunk) is WAITED FOR instead of
+  /// becoming a dry gap in the bounce (CI: 52928 underrun frames on a
+  /// WORLD -> vardelay switch under the sanitizers). The wait ends when the
+  /// job is prepared, when a full preparation pass that started after the
+  /// wait began did nothing (the slot it needs is still held by a job this
+  /// thread must finish first — waiting longer cannot help), or after a
+  /// safety bound (counted).
+  void waitForDuePreparationOffline() {
+    if (!offlineRendering.load(std::memory_order_acquire) ||
+        !prepRunning.load(std::memory_order_acquire)) {
+      return;
+    }
+    const int64_t frontier = streamPos;
+    int64_t key = std::numeric_limits<int64_t>::max();  // the earliest due job span
+    const auto due = [&]() {
+      key = std::numeric_limits<int64_t>::max();
+      const bool a = preparationDue(active.load(std::memory_order_acquire),
+                                    std::numeric_limits<int64_t>::max(), frontier, key);
+      const bool p = preparationDue(pending.load(std::memory_order_acquire),
+                                    std::numeric_limits<int64_t>::max(), frontier, key);
+      const bool r = preparationDue(
+          retiring, retiringServeLimit.load(std::memory_order_acquire), frontier, key);
+      return a || p || r;
+    };
+    if (!due()) return;
+    if (key == offlineIdleEscapeKey) return;  // already shown un-servable this far
+    ++offlinePrepWaits;
+    const uint64_t seq0 = prepPassSeq.load(std::memory_order_acquire);
+    const auto t0 = std::chrono::steady_clock::now();
+    while (due()) {
+      if (prepPassSeq.load(std::memory_order_acquire) >= seq0 + 2 &&
+          prepLastPassIdle.load(std::memory_order_acquire)) {
+        offlineIdleEscapeKey = key;  // do not re-wait for the same job every block
+        return;  // the preparation thread cannot advance until this block runs
+      }
+      if (std::chrono::steady_clock::now() - t0 >
+          std::chrono::milliseconds(kOfflinePrepWaitMaxMs)) {
+        ++offlinePrepTimeouts;
+        return;
+      }
+      std::this_thread::sleep_for(std::chrono::microseconds(200));
+    }
+  }
 
   void retireActiveNow() {
     if (blockFaultGuard) return;  // one chain retirement per block (memory safety)
@@ -1763,6 +1842,7 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
 
   im.streamPos = 0;
   im.streamPosMirror.store(0, std::memory_order_release);
+  im.offlineIdleEscapeKey = -1;
   // Task 35: the exit-event ring is drained on activation/reset — the stale
   // events of a previous stream must not drive the new stream's re-centres
   // (the cursors are audio/prep pair; at reset neither is running a build,
@@ -2009,6 +2089,7 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
       im.audioInBlock.store(false, std::memory_order_seq_cst);
     }
   } blockGuard(im);
+  im.waitForDuePreparationOffline();  // kOffline only: no dry gap in a bounce
 
   // ---- effective musical state for this block -------------------------------
   const ParamSnapshot snap = im.params.load();

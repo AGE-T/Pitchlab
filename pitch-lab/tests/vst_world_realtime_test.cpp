@@ -224,10 +224,58 @@ TEST_CASE("native.world realtime: three concurrent plug-in instances stay within
   MESSAGE("3 instances: max live WORLD pool threads " << maxLive.load() << " (bound "
                                                       << pitchlab::testing::worldPoolSize() << ")");
   CHECK(maxLive.load() <= pitchlab::testing::worldPoolSize());
-  if (capacityGates()) {
+  // zero dry fallback for THREE realtime stereo instances is a machine
+  // CAPACITY property: the pool has hardware-2 threads, so a 4-vCPU CI
+  // runner (2 pool threads) cannot carry it (measured: 3k-44k fallback
+  // frames there). Gated on >= 8 hardware threads; the pool BOUND above and
+  // the clean shutdown below are asserted everywhere.
+  MESSAGE("3 instances: fault frames " << faults[0] << " / " << faults[1] << " / " << faults[2]
+                                       << " (hardware threads "
+                                       << std::thread::hardware_concurrency() << ")");
+  if (capacityGates() && std::thread::hardware_concurrency() >= 8) {
     for (uint64_t f : faults) CHECK(f == 0);
   }
   CHECK(pitchlab::testing::worldPoolLiveThreads() == 0);
+}
+
+TEST_CASE("OFFLINE bounce: a slow native.world (reset waits on its chunk) never leaves a dry gap") {
+  // Reproduces the CI sanitizer failure (52928 underrun frames on a WORLD ->
+  // vardelay switch): a slow analysis chunk keeps the preparation thread
+  // inside native.world's reset() (it quiesces the in-flight chunk) while
+  // an unpaced OFFLINE drive runs ahead — the next job was not prepared in
+  // time and its span was served dry. kOffline must wait instead.
+  initEngineRegistryOnce();
+  WorldHooksOff guard;
+  const auto sig = voiceLike(static_cast<int64_t>(kFs * 4.0), 160.0);
+  RealtimeAdapter adapter;
+  adapter.setOfflineRendering(true);  // VST3 kOffline (a bounce)
+  adapter.activate(kFs, 2, 512);
+  ParamSnapshot s;
+  s.engineIndex = kWorldIndex;
+  s.pitchSt = 4.0;
+  adapter.setParameterSnapshot(s);
+  adapter.requestHardReset();
+  pitchlab::testing::setWorldChunkDelayMs(60);  // a sanitizer-slow chunk
+  std::vector<double> l(512), r(512);
+  const std::size_t half = sig.size() / 2;
+  for (std::size_t pos = 0; pos + 512 <= sig.size(); pos += 512) {
+    if (pos == half - half % 512) {
+      s.engineIndex = 0;  // native.vardelay: the WORLD chain retires
+      adapter.setParameterSnapshot(s);
+    }
+    const double* in[2] = {sig.data() + pos, sig.data() + pos};
+    double* out[2] = {l.data(), r.data()};
+    BlockAutomation none;
+    adapter.process(in, out, 512, none);
+  }
+  const StatusSnapshot st = adapter.status();
+  MESSAGE("offline slow-WORLD switch: underruns " << st.deliveryUnderruns << " faults "
+                                                  << st.faults << " adoptions "
+                                                  << st.chainsAdopted);
+  CHECK(st.deliveryUnderruns == 0);
+  CHECK(st.faults == 0);
+  CHECK(st.chainsAdopted >= 2);  // the switch really happened
+  adapter.deactivate();
 }
 
 TEST_CASE("native.world at an UNDECLARED sample rate: no chain, counted failure, finite dry output") {
