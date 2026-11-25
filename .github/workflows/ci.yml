@@ -348,7 +348,7 @@ jobs:
             # the threaded surfaces: the adapter/processor AND the WORLD pool
             # (external_engines_test + vst_world_realtime_test)
             targets: "--target vst_adapter_test vst_processor_test vst_seam_test vst_realtime_status_test external_engines_test vst_world_realtime_test"
-            tests: "-R ^(vst_adapter_test|vst_processor_test|vst_seam_test|vst_realtime_status_test|external_engines_test|vst_world_realtime_test)$"
+            tests: "-R '^(vst_adapter_test|vst_processor_test|vst_seam_test|vst_realtime_status_test|external_engines_test|vst_world_realtime_test)$'"
     steps:
       - name: Checkout (pinned by commit SHA)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

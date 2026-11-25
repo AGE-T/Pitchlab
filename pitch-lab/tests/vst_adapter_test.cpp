@@ -447,6 +447,14 @@ TEST_CASE("mid-stream engine switches: every ordered pair stays fault-free") {
       d.snap(b, 4.0);  // the switch happens with real audio after it
       d.run(std::vector<double>(sig.begin() + two, sig.end()), blocks);
       const StatusSnapshot st = d.status();
+      if (st.faults != 0) {  // categorised counters for a CI-only failure
+        MESSAGE("faults " << st.faults << " underruns " << st.deliveryUnderruns
+                          << " dryHistoryMisses " << st.dryHistoryMisses << " jobStalls "
+                          << st.jobStalls << " engineExceptions " << st.engineExceptions
+                          << " engineProcessFaults " << st.engineProcessFaults
+                          << " starvedCalls " << st.engineStarvedCalls << " adoptions "
+                          << st.chainsAdopted << " prepFailures " << st.preparationFailures);
+      }
       CHECK(st.faults == 0);
       CHECK(st.chainReady);
       // the effective emission latency is the MAXIMUM of the two chains

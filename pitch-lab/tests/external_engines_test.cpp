@@ -842,13 +842,28 @@ TEST_CASE("native.signalsmith automation timing: slow/fast sweeps track the comm
 // harmonic's level is compared with the envelope at its new frequency.
 // ===========================================================================
 
+// third-party header: the same warning fence as signalsmith_engine.cpp (the
+// test's -I external path makes it a NON-system include, so GCC -Wpedantic
+// -Werror would reject upstream's `COMPAT_SPELLING(...);` extra semicolons)
 #if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4244 4267 4305)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 #include <signalsmith-stretch/signalsmith-stretch.h>
 #if defined(_MSC_VER)
 #pragma warning(pop)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
 #endif
 
 namespace {

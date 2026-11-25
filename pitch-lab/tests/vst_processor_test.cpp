@@ -1558,6 +1558,10 @@ TEST_CASE("F4 (2026-11): automation latency growth is notified by the processor 
   h.plug->onTimer(nullptr);
   CHECK(handler.latencyAtNotify.size() == 1);
   h.shutdown();
+  // `handler` is destroyed before `h` (declaration order): detach it so the
+  // controller's terminate() (in ~Host) never releases a dead handler
+  // (UBSan: invalid vptr in IPtr<IComponentHandler>::reset)
+  h.plug->setComponentHandler(nullptr);
 }
 
 TEST_CASE("F5 (2026-11): binary state fixtures (PLV1 / PLV2 / PLV3) restore exactly") {

@@ -191,7 +191,9 @@ TEST_CASE("clean drives: every engine, every category zero (48 kHz)") {
       CHECK(st.status.preparationFailures == 0);
       CHECK(st.status.chainReady);
       CHECK(st.outRmsDb > -50.0);  // audible wet (continuity)
-      CHECK(st.rtf < 1.0);         // comfortably inside the realtime budget
+      // comfortably inside the realtime budget — a wall-clock CAPACITY gate:
+      // skipped under sanitizers (PITCHLAB_SANITIZER=1, 2-10x slower)
+      if (std::getenv("PITCHLAB_SANITIZER") == nullptr) CHECK(st.rtf < 1.0);
     }
   }
 }
