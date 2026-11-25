@@ -664,6 +664,16 @@ int main(int argc, char** argv) {
       std::printf("ui-binding: %-46s %s (status engineIndex=%d want %d)\n",
                   "engine selection: adapter adopted", adopted ? "PASS" : "FAIL",
                   statusIface->getStatus().engineIndex, e);
+      if (!adopted) {  // where did it stop: the controller value or the adapter?
+        const StatusSnapshot d = statusIface->getStatus();
+        std::printf("ui-binding:   diag: controller engine=%.0f reprepares=%llu "
+                    "prepFailures=%llu adoptFailures=%llu chainReady=%d\n",
+                    denormalise(param::kEngine, edit->getParamNormalized(param::kEngine)),
+                    static_cast<unsigned long long>(d.reprepares),
+                    static_cast<unsigned long long>(d.preparationFailures),
+                    static_cast<unsigned long long>(d.chainAdoptionFailures),
+                    d.chainReady ? 1 : 0);
+      }
       return adopted;
     };
     // the per-engine REALITY of the status (no fake indicators): the numeric

@@ -876,6 +876,54 @@ TEST_CASE("P2.4 regression: input and output clip states are distinct") {
   CHECK(r.meters.outClip[0] > 0.9);
 }
 
+TEST_CASE("REALTIME: pv.classic fft 4096 / hop 512, then engine switches keep adopting") {
+  // CI UI lane (ui-binding): after the pv.classic hop was set to 512 with
+  // fft 4096, no later engine switch was ever adopted (reprepares frozen).
+  initEngineRegistryOnce();
+  RealtimeAdapter adapter;
+  adapter.setOfflineRendering(false);
+  adapter.activate(kFs, 2, 1024);
+  ParamSnapshot snap;
+  snap.engineIndex = 2;
+  snap.pitchSt = 0.0;
+  adapter.setParameterSnapshot(snap);
+  adapter.requestHardReset();
+  const auto sig = makeSine(1024, 220.0);
+  std::vector<double> l(1024), r(1024);
+  const double* in[2] = {sig.data(), sig.data()};
+  double* out[2] = {l.data(), r.data()};
+  BlockAutomation none;
+  auto blocks = [&](int n) {
+    for (int i = 0; i < n; ++i) {
+      adapter.process(in, out, 1024, none);
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+  };
+  blocks(20);
+  snap.pvcFftSize = 4096;
+  adapter.setParameterSnapshot(snap);
+  blocks(20);
+  snap.pvcHop = 512;
+  adapter.setParameterSnapshot(snap);
+  blocks(20);
+  for (int e : {3, 4, 0, 2, 1}) {
+    snap.engineIndex = e;
+    adapter.setParameterSnapshot(snap);
+    int waited = 0;
+    while (adapter.status().engineIndex != e && waited < 400) {
+      blocks(1);
+      ++waited;
+    }
+    const StatusSnapshot st = adapter.status();
+    MESSAGE("switch to " << e << ": engine " << st.engineIndex << " after " << waited
+                         << " blocks, reprepares " << st.reprepares << " prepFailures "
+                         << st.preparationFailures << " adoptFailures "
+                         << st.chainAdoptionFailures << " chainReady " << st.chainReady);
+    CHECK(st.engineIndex == e);
+  }
+  adapter.deactivate();
+}
+
 TEST_CASE("OFFLINE bounce: the first block after start / resume already runs a live chain") {
   // kOffline waits for a chain build the preparation thread can do on its
   // own (no chain yet; or a parameter switch with no pending chain) instead
