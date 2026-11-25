@@ -876,6 +876,39 @@ TEST_CASE("P2.4 regression: input and output clip states are distinct") {
   CHECK(r.meters.outClip[0] > 0.9);
 }
 
+TEST_CASE("OFFLINE bounce: the first block after start / resume already runs a live chain") {
+  // kOffline waits for a chain build the preparation thread can do on its
+  // own (no chain yet; or a parameter switch with no pending chain) instead
+  // of rendering the dry signal into the bounce (CI: the P1.4 resume drive
+  // outran the rebuild on a 4-vCPU runner — chainReady false, engine -1).
+  initEngineRegistryOnce();
+  RealtimeAdapter adapter;
+  adapter.setOfflineRendering(true);
+  adapter.activate(kFs, 2, 1024);
+  ParamSnapshot snap;
+  snap.engineIndex = 3;
+  snap.pitchSt = 5.0;
+  adapter.setParameterSnapshot(snap);
+  adapter.requestHardReset();
+  const auto sig = makeSine(1024, 220.0);
+  std::vector<double> l(1024), r(1024);
+  const double* in[2] = {sig.data(), sig.data()};
+  double* out[2] = {l.data(), r.data()};
+  BlockAutomation none;
+  adapter.process(in, out, 1024, none);
+  StatusSnapshot st = adapter.status();
+  CHECK(st.chainReady);
+  CHECK(st.engineIndex == 3);
+  // resume reset (suspend/resume): the fresh chain is again live at once
+  adapter.requestProcessingReset();
+  adapter.process(in, out, 1024, none);
+  st = adapter.status();
+  CHECK(st.chainReady);
+  CHECK(st.engineIndex == 3);
+  CHECK(st.faults == 0);
+  adapter.deactivate();
+}
+
 TEST_CASE("P1.4 regression: adapter processing reset (suspend/resume)") {
   // The setProcessing resume contract: after requestProcessingReset() the
   // stream continues fault-free with a fresh chain and correct parameters.

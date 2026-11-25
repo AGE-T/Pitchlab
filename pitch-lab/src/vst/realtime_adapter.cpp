@@ -1660,11 +1660,45 @@ struct RealtimeAdapter::Impl {
   /// wait began did nothing (the slot it needs is still held by a job this
   /// thread must finish first — waiting longer cannot help), or after a
   /// safety bound (counted).
+  /// AUDIO THREAD, OFFLINE ONLY — a chain BUILD the preparation thread can
+  /// perform on its own is waited for instead of rendering dry/stale audio:
+  /// (A) no chain at all (start of a bounce, after a resume/hard reset), or
+  /// (B) an active chain, no pending one, and the published parameter
+  /// signature differs from the built one (an engine/parameter switch). A
+  /// rebuild while a pending chain exists is NOT waited for: the
+  /// preparation thread builds it only after this thread adopts the
+  /// pending chain (waiting would only hit the bound). Bounded; a counted
+  /// preparation failure ends the wait (an invalid configuration).
+  void waitForChainBuildOffline() {
+    if (!paramsPublished.load(std::memory_order_acquire)) return;
+    if (pending.load(std::memory_order_acquire) != nullptr) return;
+    const ParamSnapshot::ChainSignature sig = params.load().chainSignature();
+    const auto satisfied = [&]() {
+      if (pending.load(std::memory_order_acquire) != nullptr) return true;
+      if (active.load(std::memory_order_acquire) == nullptr) return false;  // (A)
+      return builtSigPub_.load() == sig;                                    // (B)
+    };
+    if (satisfied()) return;
+    ++offlinePrepWaits;
+    const uint64_t failuresAtEntry = preparationFailures.load(std::memory_order_acquire);
+    const auto t0 = std::chrono::steady_clock::now();
+    while (!satisfied()) {
+      if (preparationFailures.load(std::memory_order_acquire) != failuresAtEntry) return;
+      if (std::chrono::steady_clock::now() - t0 >
+          std::chrono::milliseconds(kOfflinePrepWaitMaxMs)) {
+        ++offlinePrepTimeouts;
+        return;
+      }
+      std::this_thread::sleep_for(std::chrono::microseconds(200));
+    }
+  }
+
   void waitForDuePreparationOffline() {
     if (!offlineRendering.load(std::memory_order_acquire) ||
         !prepRunning.load(std::memory_order_acquire)) {
       return;
     }
+    waitForChainBuildOffline();
     const int64_t frontier = streamPos;
     int64_t key = std::numeric_limits<int64_t>::max();  // the earliest due job span
     const auto due = [&]() {
@@ -2171,6 +2205,12 @@ void RealtimeAdapter::process(const double* const* in, double* const* out, int32
     im.engineCpuNanos = 0;
     im.callbackCpuNanos = 0;
     im.rtFrames = 0;
+    // OFFLINE: the fresh chain is waited for HERE (after the retirement
+    // above), so this very block adopts it instead of rendering dry
+    if (im.offlineRendering.load(std::memory_order_acquire) &&
+        im.prepRunning.load(std::memory_order_acquire)) {
+      im.waitForChainBuildOffline();
+    }
   }
 
   // ---- pitch base resolution (the deterministic VST3-correct model) --------
