@@ -1078,7 +1078,12 @@ class Recorder {
     rec.rtFaultDelta = res.after.faults;  // fresh-adapter baseline (before == 0)
     rec.reprepareDelta = res.after.reprepares > 1 ? res.after.reprepares - 1 : 0;
     rec.result = res.expectedLimitation ? "EXPECTED-LIMITATION" : (res.pass ? "PASS" : "FAIL");
-    if (res.expectedLimitation) {
+    if (res.expectedLimitation && worldEnvelopeLimit(spec.engine, spec.pitchSt)) {
+      rec.diagnostic =
+          "world source-filter: a pure tone's spectral envelope is one narrow peak, "
+          "a >= 7 st shift places the carrier in its trough (level drop; the "
+          "carrier frequency stays exact)";
+    } else if (res.expectedLimitation) {
       rec.diagnostic =
           "granular downshift: carrier at the envelope edge (boundary-indexed curve "
           "reads ahead of the live-write frontier see the envMax prefill; engine-direct "
