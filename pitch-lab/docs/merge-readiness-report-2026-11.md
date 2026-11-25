@@ -118,3 +118,5 @@ The CI logs became readable after the owner's GitHub sign-in in Chrome. Findings
 
 CI state at 19a5c1b (VST3 job attempt 2) and 66e00cd (UI capture check PASS, the parameter-binding lane then failed on the slider inset — fixed above): **52/52 tests, audio-path artifact gate PASS (228 records), validator 47/47, all 11 host-sim examples byte-identical**; T-INF1 and Windows x64 green. Realtime mode is unchanged by the offline waits (the overload test's worst callback stays ~0.07 ms).
 
+**Final CI state at 54f01bf (run 45674762563):** T-INF1 core ✅, VST3 product layer ✅ (52/52 tests, audio-path artifact gate, validator 47/47, 11/11 examples, UI capture + parameter-binding lanes), Windows x64 ✅. Sanitizers (ASan+UBSan, TSan): every test passes except the pre-existing LFO test `vst_processor_test:1286` (also failing on `main` / 92e15be); no sanitizer report.
+
