@@ -1269,7 +1269,12 @@ TEST_CASE("Task 32: LFO rate host automation to 0 Hz mid-block is frame-exact (t
     void* obj = nullptr;
     REQUIRE(h.plug->queryInterface(IPitchLabStatus::iid, &obj) == kResultOk);
     auto* st = static_cast<IPitchLabStatus*>(obj);
-    CHECK(st->getStatus().faults == 0);
+    const StatusSnapshot s = st->getStatus();
+    MESSAGE("LFO drive (event " << withEvent << "): chainReady " << s.chainReady << " engine "
+                                << s.engineIndex << " adopted " << s.chainsAdopted
+                                << " dryFallback " << s.dryFallbackFrames << " latency "
+                                << s.latencyFrames << " reprepares " << s.reprepares);
+    CHECK(s.faults == 0);
     st->release();
     h.shutdown();
     return outs;
@@ -1283,6 +1288,7 @@ TEST_CASE("Task 32: LFO rate host automation to 0 Hz mid-block is frame-exact (t
   for (std::size_t i = 0; i < ref[3].size(); ++i) {
     diff += std::fabs(ref[3][static_cast<std::size_t>(i)] - off[3][static_cast<std::size_t>(i)]);
   }
+  MESSAGE("LFO OFF-event block-3 |ref-off| sum: " << diff);
   CHECK(diff > 1.0);
   // determinism: the same event sequence renders bit-identically
   const auto off2 = drive(true);

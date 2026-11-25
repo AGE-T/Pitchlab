@@ -907,6 +907,10 @@ struct RealtimeAdapter::Impl {
   ExitEventSlot exitRing[kExitRingSlots];
   std::atomic<uint64_t> exitHead{0};     // audio-thread publish cursor
   std::atomic<uint64_t> exitTail{0};     // prep-thread consumption watermark
+  // OFFLINE bounce determinism (2026-11): the consumption watermark as of
+  // the END of a preparation pass — every event below it is fully handled
+  // (its re-centre build, if any, already published as the pending chain)
+  std::atomic<uint64_t> exitResolved{0};
   uint64_t exitEvents = 0;               // audio-private counter (status)
   uint64_t exitDropped = 0;              // audio-private counter (status)
   // Task 30: the audio thread's LIVE LFO depth (the depth timeline's block-end
@@ -1623,6 +1627,7 @@ struct RealtimeAdapter::Impl {
         serveJobNeeds(ret, limit);
       }
 
+      exitResolved.store(exitTail.load(std::memory_order_acquire), std::memory_order_release);
       prepLastPassIdle.store(
           jobsPreparedTotal.load(std::memory_order_relaxed) == jobsAtPassStart &&
               reprepares.load(std::memory_order_relaxed) == buildsAtPassStart,
@@ -1669,6 +1674,34 @@ struct RealtimeAdapter::Impl {
   /// preparation thread builds it only after this thread adopts the
   /// pending chain (waiting would only hit the bound). Bounded; a counted
   /// preparation failure ends the wait (an invalid configuration).
+  /// AUDIO THREAD, OFFLINE ONLY — an ENVELOPE EXIT published at the end of
+  /// an earlier block (a pitch/LFO move beyond the active chain's envelope:
+  /// pitch is a CURVE parameter, not part of the chain signature) is waited
+  /// for until the preparation thread has consumed it and published the
+  /// re-centre chain. Without this a bounce rendered the exit span CLAMPED
+  /// at the old envelope edge for a timing-dependent number of blocks (CI
+  /// ASan: the whole drive; locally two identical bounces differed). Only
+  /// while no pending chain exists (the preparation thread consumes exits
+  /// only then). Bounded; a counted preparation failure ends it.
+  void waitForExitRebuildOffline() {
+    if (pending.load(std::memory_order_acquire) != nullptr) return;
+    const uint64_t head = exitHead.load(std::memory_order_acquire);
+    if (exitResolved.load(std::memory_order_acquire) >= head) return;
+    ++offlinePrepWaits;
+    const uint64_t failuresAtEntry = preparationFailures.load(std::memory_order_acquire);
+    const auto t0 = std::chrono::steady_clock::now();
+    while (exitResolved.load(std::memory_order_acquire) < head &&
+           pending.load(std::memory_order_acquire) == nullptr) {
+      if (preparationFailures.load(std::memory_order_acquire) != failuresAtEntry) return;
+      if (std::chrono::steady_clock::now() - t0 >
+          std::chrono::milliseconds(kOfflinePrepWaitMaxMs)) {
+        ++offlinePrepTimeouts;
+        return;
+      }
+      std::this_thread::sleep_for(std::chrono::microseconds(200));
+    }
+  }
+
   void waitForChainBuildOffline() {
     if (!paramsPublished.load(std::memory_order_acquire)) return;
     if (pending.load(std::memory_order_acquire) != nullptr) return;
@@ -1698,6 +1731,7 @@ struct RealtimeAdapter::Impl {
         !prepRunning.load(std::memory_order_acquire)) {
       return;
     }
+    waitForExitRebuildOffline();
     waitForChainBuildOffline();
     const int64_t frontier = streamPos;
     int64_t key = std::numeric_limits<int64_t>::max();  // the earliest due job span
@@ -1883,6 +1917,7 @@ void RealtimeAdapter::activate(double sampleRate, int channels, int maxBlockFram
   // so the aligned re-init is race-free under the reset protocol).
   im.exitHead.store(0, std::memory_order_release);
   im.exitTail.store(0, std::memory_order_release);
+  im.exitResolved.store(0, std::memory_order_release);
   im.exitEvents = 0;
   im.exitDropped = 0;
   im.exitLiveDepth.store(-1.0, std::memory_order_release);  // no audio yet (sentinel)
