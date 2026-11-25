@@ -65,7 +65,7 @@ Files (39 against 92e15be): `pitch_engine.h`, `world_engine.{h,cpp}`, `signalsmi
 - **ASan (MSVC /fsanitize=address, build-asan, PITCHLAB_SANITIZER=1):**
   - `external_engines_test` 17/17, `vst_world_realtime_test` 5/5, `vst_rt_alloc_test` 2/2.
   - **0 AddressSanitizer reports.**
-- **UBSan / TSan:** not available on MSVC. They run in the CI Linux sanitizer matrix (`ci.yml`; TSan covers the WORLD tests). Result: **not verified locally**. The CI logs need a GitHub sign-in.
+- **UBSan / TSan:** not available on MSVC; they run in the CI Linux sanitizer matrix (see §13). TSan (incl. the WORLD pool tests): **no data race reported**. ASan+UBSan on GCC: one UBSan finding in a new test (fixed, §13), no memory error. The only remaining sanitizer failure is the pre-existing LFO test.
 
 ## 9. VST3 validator
 Official SDK validator on the bundle: **Result: 47 tests passed, 0 tests failed.**
@@ -75,15 +75,16 @@ Successful (see §6). The bundle loads and the validator passes.
 
 ## 11. Open problems
 1. **F7:** the worst callback time for `granular` (~12.0 ms) and `timepitch adaptive` (~14.8 ms) exceeds the 10.67 ms budget at 512/48k. Measured, not fixed (out of scope; profiling needed).
-2. **Audio-path golden artifact:** CI generates it with GCC; regenerating it locally under MSVC is not authoritative. The CI artifact download needs a sign-in.
-3. **The CI Linux result** (after the GCC -Werror fix) has not been read: the logs need a GitHub sign-in.
+2. ~~Audio-path golden artifact~~ — regenerated from the CI GCC run (§13).
+3. ~~CI Linux result unread~~ — read and fixed (§13).
 4. **`pollJob()`** (audit fix A4) has no dedicated targeted test. It is covered indirectly by the overload and recovery test.
 5. **The pool-bound test cannot fail** with the current design (the pool size is fixed). It is a regression guard against a future redesign.
 6. **On the realtime path:**
    - Each callback can make at most one `notify` syscall (`wake()`).
    - `throwIfFailed()` allocates the exception object, but only on the failure path.
 7. **Pre-existing:**
-   - The flaky LFO test and `corpus_gen_test`.
+   - The flaky LFO test (`vst_processor_test:1286`, "LFO rate host automation to 0 Hz mid-block"): fails consistently under the CI sanitizers and on `main`/92e15be too; and `corpus_gen_test`.
+   - `timepitch_differential_harness:493` (REALTIME render-determinism A/B of a static drive): failed once in five CI runs on unchanged adapter code (9599 mismatching samples) — realtime adoption timing under runner load, not the offline path.
    - The PLV1 state ambiguity: from 2026-10-03 to 11-20, PLV1 states were written with 6 engines and ±48 st.
    - Web sync has CSRF-only protection.
 
@@ -96,3 +97,24 @@ Successful (see §6). The bundle loads and the validator passes.
 - Signalsmith: upstream #34 (formant envelope) is not applied (a measurable follow-up); #33/#35 are not relevant at 1:1.
 - WORLD #159 (RemoveDCComponent) is not patched (open upstream, unconfirmed).
 - TSan and UBSan run only on CI.
+- The three-concurrent-instance WORLD zero-fallback check is gated on >= 8 hardware threads (a 4-vCPU runner has 2 pool threads; measured 3k-44k fallback frames there).
+- Offline (kOffline) waits are bounded at 10 s per wait; a timeout is counted, never a hang.
+
+## 13. Addendum — the CI loop (2026-11-25, after GitHub sign-in)
+The CI logs became readable after the owner's GitHub sign-in in Chrome. Findings and fixes, each with a reproducing test:
+
+| Commit | Finding (CI) | Fix |
+|---|---|---|
+| fc3a6a8 | GCC `-Wpedantic -Werror`: `external_engines_test.cpp` included Signalsmith via the NON-system `-I external` path → upstream `COMPAT_SPELLING(...);` "extra ;" — **both Linux builds broken since 699fdd9** | the same GCC diagnostic fence as `signalsmith_engine.cpp` |
+| fc3a6a8 | TSan job never ran a test: the unquoted `-R ^(a\|b)$` regex was a bash syntax error (since 40eb017) | quoted |
+| fc3a6a8 | UBSan: invalid vptr — the F4 test's stack handler destroyed before `~Host` terminated the controller | handler detached before scope end |
+| fc3a6a8 | `rtf < 1` capacity check under sanitizers (also failing on 92e15be) | `PITCHLAB_SANITIZER` gate |
+| df635b1 | **Offline bounce dry gap**: WORLD → other engine served exactly one job span (52 928 frames) dry under ASan+TSan — the prep thread sat in WORLD `reset()` (quiescing an in-flight chunk) and the next job was not prepared in time | kOffline: the audio thread waits (bounded) for an already-due job; repro test with the chunk-delay hook: **60 912 → 0** dry frames |
+| df635b1 | 3 realtime WORLD instances on a 4-vCPU runner (capacity) | gated on >= 8 hardware threads |
+| 8db371b | **Offline bounce dry start/resume**: P1.4 suspend/resume rendered chainless (engine −1) while the rebuild ran | kOffline also waits for a chain build the prep thread can do on its own (no chain; or a switch with no pending chain); repro test: engine −1 → 3 on the first block after resume |
+| 19a5c1b | audio-path golden still 6-engine (182 → 228 records); WORLD EXPECTED-LIMITATION records carried the GRANULAR diagnostic text | golden regenerated from the CI GCC artifact (181 identical identities, 46 new WORLD/Signalsmith, 1 phase-G switch target now WORLD); WORLD diagnostic fixed |
+| 66e00cd | UI lane: the pixel-art editor's real capture has 18 colours; the ">100 colours" blank check failed it | blank = < 8 colours or one colour >= 98% |
+| (this) | UI parameter-binding lane (synthetic X11 clicks): the pixel-art `PLSlider` maps the mouse onto the bar inset by 7 px; the harness still used the full 172 px width (CI: 0.7532 vs 0.7326 at x=610), so a pv.classic hop drag hit an unintended FFT/hop combination and every later engine switch stalled | the harness derives the click value from the same inset (`kThumbPad`) |
+
+CI state at 19a5c1b (VST3 job attempt 2) and 66e00cd (UI capture check PASS, the parameter-binding lane then failed on the slider inset — fixed above): **52/52 tests, audio-path artifact gate PASS (228 records), validator 47/47, all 11 host-sim examples byte-identical**; T-INF1 and Windows x64 green. Realtime mode is unchanged by the offline waits (the overload test's worst callback stays ~0.07 ms).
+

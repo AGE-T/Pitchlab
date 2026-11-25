@@ -12,6 +12,7 @@
 //                          <out-ppm>
 // Run under Xvfb (xvfb-run). Output: PPM (converted to PNG by scripts).
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -487,6 +488,18 @@ int main(int argc, char** argv) {
     // declared descriptor order (granular: grain, overlap, window, jitter).
     // Engine selector (12,70)-(160,240), 5 segments of 34 px: segment i
     // center (86, 70+34i+17).
+    //
+    // 2026-11 (pixel-art editor): PLSlider maps the mouse onto the DRAWN
+    // bar, inset by PLSlider::kThumbPad (7 px) on both sides — u = (x -
+    // (left+7)) / (width-14). The value math below derives from the SAME
+    // inset, so a click lands on the value the editor computes (the CI
+    // measured 0.7532 vs the old full-width expectation 0.7326 at x=610).
+    constexpr double kThumbPad = 7.0;  // == PLSlider::kThumbPad (views.h)
+    constexpr double kBarX0 = 484.0 + kThumbPad;
+    constexpr double kBarX1 = 656.0 - kThumbPad;
+    const auto sliderU = [&](double x) {
+      return std::clamp((x - kBarX0) / (kBarX1 - kBarX0), 0.0, 1.0);
+    };
     if (engine != 1) {
       std::fprintf(stderr, "ui-binding: requires engine 1 (native.vardelay)\n");
       return 1;
@@ -592,7 +605,7 @@ int main(int argc, char** argv) {
     frame.runFor(150);
 
     // ---- CHECK 1: Vardelay Excursion (a chain-signature parameter) --------
-    const double excU = (610.0 - 484.0) / 172.0;  // the drag's final position
+    const double excU = sliderU(610.0);  // the drag's final position
     const uint64_t reprepBase = statusIface->getStatus().reprepares;
     drag(484 + 20, 610, 114);
     expectNear("CHECK1 excursion: controller value", edit->getParamNormalized(param::kVdExcursion),
@@ -615,7 +628,7 @@ int main(int argc, char** argv) {
                1.0, 0.0);
 
     // ---- CHECK 2: Vardelay Crossfade (integer-domain, discrete metadata) --
-    const double xfU = (600.0 - 484.0) / 172.0;
+    const double xfU = sliderU(600.0);
     drag(484 + 20, 600, 154);
     expectNear("CHECK2 crossfade: controller value",
                edit->getParamNormalized(param::kVdCrossfade), xfU, kUiTol);
@@ -678,8 +691,8 @@ int main(int argc, char** argv) {
     // received it: every engine parameter is in the chain signature) + poll
     // stability. Returns the EXACT normalized value for persistence checks.
     auto driveSlider = [&](const char* name, uint32_t tag, int y, double u) {
-      const int x = 484 + static_cast<int>(u * 172.0 + 0.5);
-      const double uExact = (x - 484) / 172.0;
+      const int x = static_cast<int>(kBarX0 + u * (kBarX1 - kBarX0) + 0.5);
+      const double uExact = sliderU(x);
       const uint64_t before = statusIface->getStatus().reprepares;
       drag(484 + 20, x, y);
       char label[96];

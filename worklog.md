@@ -1778,3 +1778,17 @@ Work Log:
 Stage Summary:
 - MSVC Release build green; CTest 45/47 (corpus_gen + the flaky LFO case in vst_processor_test are pre-existing, also on main); probes 5/5; MSVC ASan 0 reports; VST3 validator 47/47 (module sha256 FBFAC67B...).
 - Open: F7 budget exceeded by granular (~12.0 ms) and timepitch adaptive (~14.8 ms); TSan/UBSan + the Linux CI result + the GCC audio-path golden need the CI logs (GitHub sign-in). Details: the report's sections 11-12.
+
+---
+Task ID: 36b-ci-loop-offline-bounce
+Agent: Claude Code (Opus 5.5)
+Task: read the CI logs (owner's GitHub sign-in), fix every finding with a reproducing test; owner decision: offline bounces must never contain dry gaps; run only the necessary tests.
+
+Work Log:
+- GCC -Werror build break (Signalsmith include via the non-system path in external_engines_test), the TSan job's bash syntax error (unquoted ctest regex), a UBSan invalid-vptr in the new F4 test, sanitizer capacity gates (fc3a6a8).
+- kOffline bounce determinism in RealtimeAdapter (df635b1, 8db371b): the audio thread waits (bounded, 10 s, counted) for an already-due job and for a chain build the prep thread can perform on its own; realtime mode never waits. Repro tests: slow-WORLD offline switch 60912 -> 0 dry frames; first block after resume engine -1 -> 3.
+- audio-path golden regenerated from the CI GCC artifact (182 -> 228 records; identity split verified) + WORLD EXPECTED-LIMITATION diagnostic text fixed (19a5c1b). UI lane blank check adapted to the pixel-art palette (66e00cd). The UI parameter-binding harness's click math updated to the pixel-art slider's 7-px bar inset (the CI measured 0.7532 vs 0.7326).
+
+Stage Summary:
+- CI (19a5c1b, VST3 attempt 2): 52/52 tests, artifact gate PASS, validator 47/47, 11/11 examples byte-identical; T-INF1 + Windows green; sanitizers: only the pre-existing LFO test fails; TSan reports no data race.
+- Open: the pre-existing LFO test; one realtime timepitch determinism flake (1 of 5 runs); the owner's engine review (granular removal likely, timepitch undecided; Bungee MPL-2.0 / stftPitchShift MIT as A/B candidates). Details: pitch-lab/docs/merge-readiness-report-2026-11.md §13.
