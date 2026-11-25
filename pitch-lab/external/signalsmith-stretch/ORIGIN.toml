@@ -3,6 +3,9 @@
 [[origin]]
 name = "signalsmith-stretch"
 version = "1.4.0 (tag 1.4.0, commit a670068d9aeb64913331d5cc29337b19a457a7df)"
+# NOTE: the header's own `version[3] = {1, 3, 2}` constant is UPSTREAM's value
+# at the 1.4.0 tag (upstream did not bump it) — verified with
+# `git show 1.4.0:signalsmith-stretch.h`; the tag/commit above is authoritative.
 upstream = "https://github.com/Signalsmith-Audio/signalsmith-stretch"
 homepage = "https://signalsmith-audio.co.uk/code/stretch/"
 retrieved = "2026-11-21"
@@ -23,5 +26,16 @@ patches = [
 ]
 not_applied = [
   { issue = "#33/#35", reason = "reanalysePrev +-1 sample tolerance: only at in:out rates within 2/H of 1:1; native.signalsmith always runs process(n, n) (exact 1:1), measured unaffected upstream at 1:1" },
-  { issue = "#34", reason = "formant envelope fix engages only with setFormantBase(f0 > 0); native.signalsmith uses automatic base detection" },
+  { issue = "#34", reason = "NOT applied. Its code path (formantBaseFreq > 0) IS live since the engine feeds setFormantBase() from its pYIN tracker (2026-11). Measured WITHOUT #34 on the engine's own synthetic-vowel test: 2.03 dB mean / 3.66 dB worst formant RMS error (equal to the given-base reference). Applying #34 is a separate, measurable follow-up (the issue reports 4.22 -> 2.54 dB on its own corpus)." },
 ]
+
+# Engine-side usage notes (2026-11, NO library change — the library stays
+# verbatim apart from the two patches above):
+#   * automation timing: native.signalsmith passes the transpose ratio of the
+#     library's PROCESSING time (newest input - inputLatency(), README
+#     "Automation"); reading the newest input frame applied every change
+#     ~60 ms early (measured; tests "automation timing").
+#   * formant base: with "Keep Formants" the engine feeds setFormantBase()
+#     from the project's streaming pYIN tracker; the library's automatic base
+#     detection measured 9.4 dB mean / 22 dB worst formant error on a
+#     synthetic vowel (294 Hz) vs 2.0 dB with the tracked base.

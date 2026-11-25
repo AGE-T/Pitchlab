@@ -13,3 +13,10 @@ licence = "modified BSD (3-clause), Copyright (c) 2010 M. Morise — LICENSE.txt
 purpose = "native.world engine: Harvest/DIO F0 + CheapTrick spectral envelope + D4C aperiodicity analysis, vocoder resynthesis with pitch and formant transformation."
 consumer = "pitch-lab/src/engines/world_engine.cpp"
 patches = "none (verbatim)"
+
+# Engine-side usage notes (2026-11, NO library change): the WORLD sources are
+# thread-safe for concurrent use (no globals; per-call randn state since
+# upstream PR #149, included in v1.0.1). Upstream issues reviewed 2026-11:
+# #147 (D4C NaN) fixed in v1.0.1; #150 (Blackman window) not a bug per the
+# author; #159 (RemoveDCComponent overwrite, open, unconfirmed) not patched —
+# in-place use drops only the anti-causal wrap of the minimum-phase response.
