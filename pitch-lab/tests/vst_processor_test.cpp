@@ -1598,7 +1598,7 @@ TEST_CASE("F5 (2026-11): binary state fixtures (PLV1 / PLV2 / PLV3) restore exac
     CHECK(got.engineIndex == c.engine);
     CHECK(std::fabs(got.pitchSt - c.pitch) < 1e-9);
     CHECK(std::fabs(got.mix - c.mix) < 1e-9);
-    // PLV3 save -> load -> save is byte-stable
+    // save (PLV4 since 2026-11) -> load -> save is byte-stable
     MemStream s1;
     REQUIRE(h.plug->getState(&s1) == kResultOk);
     s1.pos = 0;
@@ -1608,7 +1608,7 @@ TEST_CASE("F5 (2026-11): binary state fixtures (PLV1 / PLV2 / PLV3) restore exac
     MemStream s2;
     REQUIRE(h2.plug->getState(&s2) == kResultOk);
     CHECK(s1.data == s2.data);
-    CHECK(std::memcmp(s1.data.data(), "PLV3", 4) == 0);
+    CHECK(std::memcmp(s1.data.data(), "PLV4", 4) == 0);
     h2.shutdown();
     h.shutdown();
   }

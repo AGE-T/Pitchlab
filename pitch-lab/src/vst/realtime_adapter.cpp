@@ -16,7 +16,9 @@
 
 #include "core/engine_registry.h"
 #include "core/errors.h"
+#include "engines/bungee_engine.h"
 #include "engines/signalsmith_engine.h"
+#include "engines/stft_engine.h"
 #include "engines/world_engine.h"
 
 namespace pitchlab::vst {
@@ -480,6 +482,17 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
       g.seamX = n;
       g.latency = n + 2 * kResamplerK + 256;
     }
+  } else if (id == "native.bungee" || id == "native.stft") {
+    // 2026-11 A/B candidates: the same WET-GRID, time-aligned pattern as
+    // native.signalsmith (fixed-latency streaming libraries; the job input
+    // is extended by the engine latency so finish() is never needed).
+    const int64_t engineLat = (id == "native.bungee")
+                                  ? bungeeLatencyBoundFrames(fs, snap.bgGranularity)
+                                  : stftLatencyFrames(snap.stFrameSize);
+    g.wetLen = kSegmentSeconds * static_cast<int64_t>(fs);
+    g.jobInputLen = g.wetLen + engineLat;
+    g.seamX = std::min<int64_t>(engineLat, g.wetLen / 4);
+    g.latency = engineLat + kKernelMargin + kLatencySafety;
   } else if (id == "native.world" || id == "native.signalsmith") {
     // 2026-11 external integrations: WET-GRID, duration-preserving,
     // time-aligned engines (the pv pattern). The job input is EXTENDED by
@@ -600,6 +613,10 @@ Geometry chainGeometry(const ParamSnapshot& snap, const EngineDescriptor& desc,
                    worldLatencyFrames(fs, true) + kKernelMargin + kLatencySafety,  // native.world (Harvest worst)
                    std::max(signalsmithLatencyBoundFrames(fs, 0),           // native.signalsmith
                             signalsmithLatencyBoundFrames(fs, 1)) +
+                       kKernelMargin + kLatencySafety,
+                   std::max({bungeeLatencyBoundFrames(fs, 0),               // native.bungee
+                             bungeeLatencyBoundFrames(fs, 1), bungeeLatencyBoundFrames(fs, 2),
+                             stftLatencyFrames(4096)}) +                    // native.stft
                        kKernelMargin + kLatencySafety});
 }
 

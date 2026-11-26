@@ -35,7 +35,9 @@ constexpr std::array<ParamMeta, 7> kSharedTable{{
     // the default stays native.vardelay (index 1) — no state-compat change.
     // 2026-11: 0..7 — native.world (6) and native.signalsmith (7) appended
     // (state PLV3; PLV2 engine values are re-mapped on load).
-    {param::kEngine, "engine", "Engine", "ENGINE", "", 0, 7, 1, 7,
+    // 2026-11: 0..9 — native.bungee (8) and native.stft (9) appended
+    // (state PLV4; PLV3 engine values are re-mapped on load).
+    {param::kEngine, "engine", "Engine", "ENGINE", "", 0, 9, 1, 9,
      "Engine", "%d", ParamRole::SharedRealtime, /*automatable=*/false},
     // Task-33 continuation (Phase 5): the pitch control widens -12..+12 ->
     // -48..+48 — the broadest range the SHARED control surface needs (the
@@ -121,6 +123,9 @@ constexpr EngineParamBinding kEngineParamBindings[]{
     {"native.signalsmith", "preset", param::kSsPreset, "ss_preset"},
     {"native.signalsmith", "preserve_formants", param::kSsPreserve, "ss_preserve"},
     {"native.signalsmith", "formant_ratio", param::kSsFormant, "ss_formant"},
+    {"native.bungee", "granularity", param::kBgGranularity, "bg_granularity"},
+    {"native.stft", "frame_size", param::kStFrame, "st_frame"},
+    {"native.stft", "preserve_formants", param::kStPreserve, "st_preserve"},
 };
 
 [[nodiscard]] const EngineParamBinding* findBinding(const char* engineId,
@@ -422,6 +427,13 @@ void applyNormalised(ParamSnapshot& snap, uint32_t tag, double norm) {
     case param::kSsPreset: snap.ssPreset = clampInt(p, 0, 1); break;
     case param::kSsPreserve: snap.ssPreserveFormants = (p >= 0.5); break;
     case param::kSsFormant: snap.ssFormantRatio = p; break;
+    case param::kBgGranularity: snap.bgGranularity = clampInt(p, 0, 2); break;
+    case param::kStFrame: {
+      static constexpr int kFrames[] = {1024, 2048, 4096};
+      snap.stFrameSize = kFrames[clampInt(p, 0, 2)];
+      break;
+    }
+    case param::kStPreserve: snap.stPreserveFormants = (p >= 0.5); break;
     case param::kMix: snap.mix = p; break;
     case param::kBypass: snap.bypass = (p >= 0.5); break;
     case param::kOutputLevel: snap.outputDb = p; break;
@@ -508,6 +520,10 @@ double plainValue(const ParamSnapshot& snap, uint32_t tag) {
     case param::kSsPreset: return static_cast<double>(snap.ssPreset);
     case param::kSsPreserve: return snap.ssPreserveFormants ? 1.0 : 0.0;
     case param::kSsFormant: return snap.ssFormantRatio;
+    case param::kBgGranularity: return static_cast<double>(snap.bgGranularity);
+    case param::kStFrame:
+      return snap.stFrameSize == 1024 ? 0.0 : snap.stFrameSize == 4096 ? 2.0 : 1.0;
+    case param::kStPreserve: return snap.stPreserveFormants ? 1.0 : 0.0;
     case param::kMix: return snap.mix;
     case param::kBypass: return snap.bypass ? 1.0 : 0.0;
     case param::kOutputLevel: return snap.outputDb;
@@ -567,6 +583,7 @@ void formatParamValue(uint32_t tag, double plain, char* buf, std::size_t bufSize
   switch (tag) {
     case param::kVsAllowAliasing:
     case param::kSsPreserve:
+    case param::kStPreserve:
     case param::kBypass:
       std::snprintf(buf, bufSize, "%s", plain >= 0.5 ? "on" : "off");
       return;
@@ -623,6 +640,7 @@ bool parseParamPlain(uint32_t tag, const char* text, double& plainOut) {
   switch (tag) {
     case param::kVsAllowAliasing:
     case param::kSsPreserve:
+    case param::kStPreserve:
     case param::kBypass:
       if (equalsInsensitive(text, "on") || equalsInsensitive(text, "1") ||
           equalsInsensitive(text, "true")) {

@@ -652,7 +652,7 @@ int main(int argc, char** argv) {
     // The click math derives from the SAME formula the editor uses, so a
     // future registry change cannot desync the test again.
     auto selectEngine = [&](int e) {
-      const double segH = 170.0 / static_cast<double>(engineCount());
+      const double segH = 216.0 / static_cast<double>(engineCount());  // editor: (12,70)-(160,286)
       click(86, static_cast<int>(70.0 + segH * static_cast<double>(e) + segH / 2.0));
       bool adopted = false;
       for (int attempt = 0; attempt < 10 && !adopted; ++attempt) {

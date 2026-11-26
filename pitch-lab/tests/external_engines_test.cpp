@@ -973,3 +973,86 @@ TEST_CASE("native.signalsmith formants: tracked base vs automatic detection vs a
   CHECK(sumEngine / n < 3.5);
   CHECK(worstEngine < 6.0);
 }
+
+// ---------------------------------------------------------------------------
+// 2026-11 A/B candidates: native.bungee (Bungee Basic) and native.stft
+// (stftPitchShift core in a streaming STFT)
+// ---------------------------------------------------------------------------
+
+TEST_CASE("native.bungee / native.stft: pitch, determinism, reset, block independence") {
+  EngineConfiguration bg;
+  checkPitchShift("native.bungee", bg, std::exp2(7.0 / 12.0), 1);
+  checkPitchShift("native.bungee", bg, std::exp2(-5.0 / 12.0), 2);
+  EngineConfiguration bgFine;
+  bgFine.parameters = {{"granularity", ParameterValue{std::string("fine")}}};
+  checkPitchShift("native.bungee", bgFine, std::exp2(4.0 / 12.0), 1);
+  EngineConfiguration st;
+  checkPitchShift("native.stft", st, std::exp2(7.0 / 12.0), 1);
+  checkPitchShift("native.stft", st, std::exp2(-5.0 / 12.0), 2);
+  EngineConfiguration stF;
+  stF.parameters = {{"frame_size", ParameterValue{int64_t{1024}}},
+                    {"preserve_formants", ParameterValue{true}}};
+  checkPitchShift("native.stft", stF, std::exp2(3.0 / 12.0), 1);
+}
+
+TEST_CASE("native.bungee / native.stft: time alignment at ratio 1 (output frame m == input frame m)") {
+  for (const char* id : {"native.bungee", "native.stft"}) {
+    for (double fs : {44100.0, 48000.0, 96000.0}) {
+      CAPTURE(id);
+      CAPTURE(fs);
+      const std::size_t n = static_cast<std::size_t>(fs);
+      std::vector<double> x = harmonicStack(180.0, fs, n, 8);
+      // a few clicks make the correlation peak unambiguous
+      for (std::size_t k = n / 4; k < n; k += n / 5) x[k] += 0.8;
+      std::vector<double> curve(n, 1.0);
+      PitchCurveView cv{curve.data(), static_cast<FrameCount>(n), fs};
+      auto e = make(id, EngineConfiguration{});
+      const RenderResult r = render(*e, {x}, cv, fs, 512, 4096);
+      REQUIRE(r.ok);
+      REQUIRE(r.out[0].size() == n);
+      const std::size_t from = n / 4, len = n / 2;
+      int bestLag = 0;
+      double best = -1e300;
+      for (int lag = -400; lag <= 400; ++lag) {
+        double acc = 0.0;
+        for (std::size_t i = from; i < from + len; ++i) {
+          acc += x[i] * r.out[0][static_cast<std::size_t>(static_cast<int64_t>(i) + lag)];
+        }
+        if (acc > best) {
+          best = acc;
+          bestLag = lag;
+        }
+      }
+      MESSAGE(id << " @" << fs << ": alignment lag " << bestLag << " frames, declared latency "
+                 << e->latency().inputLatencyFrames);
+      CHECK(std::abs(bestLag) <= 2);
+    }
+  }
+}
+
+TEST_CASE("native.bungee / native.stft: automation steps land near their input frame") {
+  for (const char* id : {"native.bungee", "native.stft"}) {
+    const double fs = 48000.0;
+    const std::size_t n = static_cast<std::size_t>(fs * 3.0);
+    const double f = 330.0;
+    std::vector<double> x(n);
+    for (std::size_t i = 0; i < n; ++i) x[i] = 0.5 * std::sin(2.0 * kPi * f * static_cast<double>(i) / fs);
+    const std::size_t t1 = static_cast<std::size_t>(fs * 1.0), t2 = static_cast<std::size_t>(fs * 2.0);
+    std::vector<double> curve(n, 1.0);
+    for (std::size_t i = t1; i < t2; ++i) curve[i] = 1.5;
+    PitchCurveView cv{curve.data(), static_cast<FrameCount>(n), fs};
+    auto e = make(id, EngineConfiguration{});
+    const RenderResult r = render(*e, {x}, cv, fs, 512, 4096);
+    REQUIRE(r.out[0].size() == n);
+    const int64_t up = crossingFrame(r.out[0], t1 - static_cast<std::size_t>(0.3 * fs),
+                                     t1 + static_cast<std::size_t>(0.3 * fs), fs, f, 1.5 * f);
+    const int64_t down = crossingFrame(r.out[0], t2 - static_cast<std::size_t>(0.3 * fs),
+                                       t2 + static_cast<std::size_t>(0.3 * fs), fs, 1.5 * f, f);
+    const double upMs = 1000.0 * static_cast<double>(up - static_cast<int64_t>(t1)) / fs;
+    const double downMs = 1000.0 * static_cast<double>(down - static_cast<int64_t>(t2)) / fs;
+    MESSAGE(id << ": up-step lands " << upMs << " ms, down-step " << downMs << " ms (0 = on time)");
+    CHECK(std::fabs(upMs) < 30.0);
+    CHECK(std::fabs(downMs) < 30.0);
+  }
+}
+

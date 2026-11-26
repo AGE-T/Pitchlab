@@ -1,0 +1,28 @@
+# Vendored dependency provenance (architecture §J; external/README.md rules).
+
+[[origin]]
+name = "bungee"
+version = "Bungee Basic, commit 61f52bf34be577d189d388772ddfa3696dee77d8 (2026-10-18)"
+upstream = "https://github.com/kupix/bungee"
+homepage = "https://bungee.parabolaresearch.com/"
+retrieved = "2026-11-26"
+files = ["bungee/Bungee.h", "bungee/Modes.h", "bungee/Stream.h", "bungee/Push.h", "src/*.cpp", "src/*.h", "LICENSE", "README.md"]
+excluded_paths = ["cmd/", "bungee/CommandLine.h", "submodules/cxxopts (CLI only)", "CMakeLists.txt / presets (built by pitch-lab/CMakeLists.txt)"]
+licence = "MPL-2.0 (Parabola Research Limited) — LICENSE verbatim. File-level copyleft: modifications to these files must be published under MPL-2.0; linking into the closed plug-in is allowed."
+purpose = "native.bungee engine (2026-11 A/B candidate): granular phase-vocoder pitch shift through Bungee::Stream."
+consumer = "pitch-lab/src/engines/bungee_engine.cpp"
+patches = "none (verbatim)"
+
+[[origin]]
+name = "eigen (Bungee dependency)"
+version = "commit c29c800126982c561e8d0b9255dc65474cd98de3 (eigen-git-mirror, Bungee submodule pin)"
+upstream = "https://github.com/eigenteam/eigen-git-mirror"
+files = ["eigen/Eigen/ (header-only)", "eigen/COPYING.MPL2", "eigen/COPYING.README"]
+licence = "MPL-2.0 (Eigen) — header-only, unmodified."
+
+[[origin]]
+name = "pffft (Bungee dependency)"
+version = "commit 02fe7715a5bf8bfd914681c53429600f94e0f536 (bitbucket jpommier/pffft, Bungee submodule pin)"
+upstream = "https://bitbucket.org/jpommier/pffft"
+files = ["pffft/pffft.c", "pffft/pffft.h", "pffft/fftpack.c", "pffft/fftpack.h", "pffft/README.md"]
+licence = "BSD-like (FFTPACKv5 licence, in the source headers of pffft.c / fftpack.c) — unmodified."

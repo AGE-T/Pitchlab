@@ -1249,12 +1249,12 @@ class Recorder {
 // 37086707318 / 37086805086. The table is now sized to the production
 // registry and PINNED to it by the test case below: a future registry change
 // fails loudly here instead of silently corrupting the evidence again.
-const char* kEngineIds[8] = {"native.varispeed", "native.vardelay", "native.pv.classic",
+const char* kEngineIds[10] = {"native.varispeed", "native.vardelay", "native.pv.classic",
                              "native.pv.phaselocked", "native.granular", "native.timepitch",
-                             "native.world", "native.signalsmith"};
+                             "native.world", "native.signalsmith", "native.bungee", "native.stft"};
 
 TEST_CASE("engine id table is registry-pinned (the cp1 out-of-bounds-name defect guard)") {
-  REQUIRE(engineCount() == 8);
+  REQUIRE(engineCount() == 10);  // 2026-11: + native.bungee, native.stft
   for (int i = 0; i < engineCount(); ++i) {
     REQUIRE_MESSAGE(std::string(kEngineIds[i]) == engineIdForIndex(i),
                     "kEngineIds drifted from the sealed production registry");

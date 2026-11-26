@@ -1,0 +1,13 @@
+# Vendored dependency provenance (architecture §J; external/README.md rules).
+
+[[origin]]
+name = "stftPitchShift"
+version = "commit 70c96db087458f8631edbc1bb4068d42ea5b52cc (2026-10-18)"
+upstream = "https://github.com/jurihock/stftPitchShift"
+retrieved = "2026-11-26"
+files = ["include/StftPitchShift/{StftPitchShiftCore,FFT,RFFT,Normalizer,Vocoder,Pitcher,Cepster,Resampler,Arctangent,ETC}.h", "LICENSE", "README.md"]
+excluded_paths = ["cpp/StftPitchShift/STFT.h, StftPitchShift.{h,cpp} (offline whole-buffer API — the engine runs its own streaming STFT)", "CLI, IO, packaging, python/"]
+licence = "MIT, Copyright (c) 2022 Juergen Hock — LICENSE verbatim. Permissive — allowed. (The separate JUCE plug-in stftPitchShiftPlugin is GPL-3.0 and is NOT used.)"
+purpose = "native.stft engine (2026-11 A/B candidate): STFT phase-vocoder pitch shift with optional cepstral formant preservation."
+consumer = "pitch-lab/src/engines/stft_engine.cpp"
+patches = "none (verbatim)"

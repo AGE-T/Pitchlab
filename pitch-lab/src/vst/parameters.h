@@ -94,6 +94,10 @@ enum Tags : uint32_t {
   kSsPreset = 44,        // signalsmith: 0 default / 1 cheaper
   kSsPreserve = 45,      // signalsmith: keep formants (bool)
   kSsFormant = 46,       // signalsmith: 0.25 .. 4.0 formant ratio
+  // --- 2026-11 A/B candidates ------------------------------------------------
+  kBgGranularity = 47,   // bungee: 0 fine / 1 normal / 2 dense
+  kStFrame = 48,         // stft: 0 1024 / 1 2048 / 2 4096
+  kStPreserve = 49,      // stft: keep formants (bool)
   // --- mix / output --------------------------------------------------------
   kMix = 30,         // 0 dry .. 1 wet
   kBypass = 31,      // VST3 bypass (Bypass parameter)
@@ -252,6 +256,10 @@ struct ParamSnapshot {
   int ssPreset = 0;            // choice index: 0 = default
   bool ssPreserveFormants = false;
   double ssFormantRatio = 1.0;
+  // native.bungee / native.stft (2026-11)
+  int bgGranularity = 1;       // choice index: 1 = normal
+  int stFrameSize = 2048;      // ENGINE-FACING value (1024/2048/4096)
+  bool stPreserveFormants = false;
   // mix / output
   double mix = 1.0;
   bool bypass = false;
@@ -302,6 +310,9 @@ struct ParamSnapshot {
     int ssPreset;
     bool ssPreserveFormants;
     double ssFormantRatio;
+    int bgGranularity;
+    int stFrameSize;
+    bool stPreserveFormants;
 
     bool operator==(const ChainSignature& o) const = default;
   };
@@ -319,7 +330,9 @@ struct ParamSnapshot {
                           tpFormantRatio,       tpVoicingGate,        woF0Method,
                           woFormantRatio,       woF0FloorHz,
                           woF0CeilHz,           ssPreset,
-                          ssPreserveFormants,   ssFormantRatio};
+                          ssPreserveFormants,   ssFormantRatio,
+                          bgGranularity,        stFrameSize,
+                          stPreserveFormants};
   }
 };
 

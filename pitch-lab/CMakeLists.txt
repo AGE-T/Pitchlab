@@ -60,6 +60,8 @@ add_library(pitchlab_core
   src/engines/timepitch_engine.cpp
   src/engines/signalsmith_engine.cpp
   src/engines/world_engine.cpp
+  src/engines/bungee_engine.cpp
+  src/engines/stft_engine.cpp
   src/harness/json_writer.cpp
   src/harness/json_reader.cpp
   src/harness/experiment_compiler.cpp
@@ -120,7 +122,49 @@ target_include_directories(pitchlab_signalsmith SYSTEM INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/external/signalsmith-stretch/include
   ${CMAKE_CURRENT_SOURCE_DIR}/external/signalsmith-linear/include)
 
-target_link_libraries(pitchlab_core PRIVATE pitchlab_world pitchlab_signalsmith)
+# 2026-11 (A/B candidates): Bungee (MPL-2.0; Parabola Research) with its
+# PFFFT (BSD-like) and Eigen (MPL-2.0, header-only) dependencies, and
+# stftPitchShift (MIT; header-only core). Vendored verbatim, see ORIGIN.toml.
+add_library(pitchlab_pffft STATIC
+  external/bungee/pffft/pffft.c
+  external/bungee/pffft/fftpack.c
+)
+target_include_directories(pitchlab_pffft SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/bungee/pffft)
+set_target_properties(pitchlab_pffft PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(MSVC)
+  target_compile_options(pitchlab_pffft PRIVATE /W0)
+  target_compile_definitions(pitchlab_pffft PRIVATE _CRT_SECURE_NO_WARNINGS _USE_MATH_DEFINES)
+else()
+  target_compile_options(pitchlab_pffft PRIVATE -w)
+endif()
+
+file(GLOB PITCHLAB_BUNGEE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external/bungee/src/*.cpp)
+add_library(pitchlab_bungee STATIC ${PITCHLAB_BUNGEE_SOURCES})
+target_include_directories(pitchlab_bungee SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/bungee)
+target_include_directories(pitchlab_bungee SYSTEM PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/bungee/eigen
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/bungee/pffft)
+target_compile_features(pitchlab_bungee PRIVATE cxx_std_20)
+target_compile_definitions(pitchlab_bungee PRIVATE
+  BUNGEE_VISIBILITY=
+  BUNGEE_SELF_TEST=0
+  BUNGEE_VERSION="61f52bf"
+  eigen_assert=BUNGEE_ASSERT1
+  EIGEN_DONT_PARALLELIZE=1)
+target_link_libraries(pitchlab_bungee PRIVATE pitchlab_pffft)
+set_target_properties(pitchlab_bungee PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(MSVC)
+  target_compile_options(pitchlab_bungee PRIVATE /W0 /bigobj)
+  target_compile_definitions(pitchlab_bungee PRIVATE _USE_MATH_DEFINES)
+else()
+  target_compile_options(pitchlab_bungee PRIVATE -w -fwrapv)
+endif()
+
+add_library(pitchlab_stftps INTERFACE)
+target_include_directories(pitchlab_stftps SYSTEM INTERFACE
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/stftpitchshift/include)
+
+target_link_libraries(pitchlab_core PRIVATE pitchlab_world pitchlab_signalsmith pitchlab_bungee pitchlab_stftps)
 target_link_libraries(pitchlab_core PUBLIC Threads::Threads)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")

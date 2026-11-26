@@ -46,7 +46,7 @@ const FrozenRow kFrozenSurface[] = {
     // native.vardelay (index 1) — no saved state changes meaning.
     // 2026-11: 0..7 (native.world = 6, native.signalsmith = 7 appended;
     // PLV2 states are re-mapped on load — vst_processor_test covers it).
-    {param::kEngine, 0, 7, 1, 7},
+    {param::kEngine, 0, 9, 1, 9},
     // Task-33 continuation (Phase 5): the control domain -48..+48 st —
     // per-engine support stays capability-derived (displayed); the clamp
     // semantics are the existing counted envelope saturation.
@@ -92,6 +92,10 @@ const FrozenRow kFrozenSurface[] = {
     {param::kSsPreset, 0, 1, 0, 1},
     {param::kSsPreserve, 0, 1, 0, 1},
     {param::kSsFormant, 0.25, 4.0, 1.0, -1},
+    // 2026-11: the A/B candidates (tags 47..49)
+    {param::kBgGranularity, 0, 2, 1, 2},
+    {param::kStFrame, 0, 2, 1, 2},
+    {param::kStPreserve, 0, 1, 0, 1},
     {param::kMix, 0.0, 1.0, 1.0, -1},
     {param::kBypass, 0, 1, 0, 1},
     {param::kOutputLevel, -24.0, 12.0, 0.0, -1},
@@ -110,7 +114,7 @@ TEST_CASE("descriptor integrity: every engine's parameter set is well-formed") {
   initEngineRegistryOnce();
   const EngineRegistry& reg = engineRegistry();
   // Task 33: the 6th production engine (native.timepitch) is registered.
-  REQUIRE(reg.size() == 8);
+  REQUIRE(reg.size() == 10);
   for (std::size_t e = 0; e < reg.size(); ++e) {
     const EngineDescriptor& d = reg.at(e);
     CAPTURE(d.info.id);
@@ -244,8 +248,8 @@ TEST_CASE("state compatibility: the generated table is exactly the frozen surfac
   // Task 33: 19 shared/existing rows + 5 native.timepitch rows (the
   // Fixed+Adaptive checkpoint) = 24 (the amendment's final surface is 25
   // when the Pitch+Formant formant_ratio row lands; tag 27 is bound then).
-  REQUIRE(parameterCount() == 33);  // 2026-11: +7 (native.world 4, native.signalsmith 3) +1 tp voicing gate
-  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 33);
+  REQUIRE(parameterCount() == 36);  // 2026-11: +7 (native.world 4, native.signalsmith 3) +1 tp voicing gate
+  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 36);
   for (const FrozenRow& row : kFrozenSurface) {
     const ParamMeta* m = metaOf(row.tag);
     REQUIRE(m != nullptr);
@@ -317,7 +321,7 @@ TEST_CASE("role split: shared realtime controls are explicit and complete") {
   for (uint32_t i = 0; i < parameterCount(); ++i) {
     if (parameterTable()[i].role == ParamRole::EngineConfiguration) ++engineOwned;
   }
-  CHECK(engineOwned == 26);  // 2026-11: +7 external-engine rows, +1 tp voicing gate
+  CHECK(engineOwned == 29);  // 2026-11: +7 external-engine rows, +1 tp voicing gate
 }
 
 // ---------------------------------------------------------------------------

@@ -6,6 +6,8 @@
 #include "engines/granular_engine.h"
 #include "engines/pv_classic_engine.h"
 #include "engines/pv_phaselocked_engine.h"
+#include "engines/bungee_engine.h"
+#include "engines/stft_engine.h"
 #include "engines/signalsmith_engine.h"
 #include "engines/timepitch_engine.h"
 #include "engines/vardelay_engine.h"
@@ -83,6 +85,9 @@ void registerProductionEngines(EngineRegistry& registry) {
   // APPENDED (indices 6, 7) — the existing selector indices never move.
   registry.registerEngine(worldEngineDescriptor());
   registry.registerEngine(signalsmithEngineDescriptor());
+  // 2026-11 A/B candidates (indices 8, 9 — appended; state PLV4)
+  registry.registerEngine(bungeeEngineDescriptor());
+  registry.registerEngine(stftEngineDescriptor());
 }
 
 }  // namespace pitchlab

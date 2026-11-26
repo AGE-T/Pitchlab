@@ -293,7 +293,9 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
                                       ui_::Palette::accent(), 3);
     root->addView(label);
 
-    const CRect r(12, 70, 160, 70 + 5 * 34.0);
+    // 2026-11: 10 engines — the selector runs down to the meters panel
+    // (216 px: ~21 px per engine key)
+    const CRect r(12, 70, 160, 286);
     std::vector<std::string> labels;
     for (int i = 0; i < engineCount(); ++i) {
       const char* id = engineIdForIndex(i);

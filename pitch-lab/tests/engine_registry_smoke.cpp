@@ -95,7 +95,9 @@ int main() {
     pitchlab::EngineRegistry registry;
     pitchlab::registerProductionEngines(registry);
     registry.seal();
-    CHECK(registry.size() == 8);  // the five v0.1 engines + native.timepitch + world + signalsmith
+    CHECK(registry.size() == 10);  // the five v0.1 engines + timepitch + world + signalsmith + bungee + stft
+    CHECK(std::string(registry.at(8).info.id) == "native.bungee");  // 2026-11 A/B candidates (appended)
+    CHECK(std::string(registry.at(9).info.id) == "native.stft");
     CHECK(std::string(registry.at(0).info.id) == "native.varispeed");       // §14 order
     CHECK(std::string(registry.at(1).info.id) == "native.vardelay");
     CHECK(std::string(registry.at(2).info.id) == "native.pv.classic");

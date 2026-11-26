@@ -161,13 +161,17 @@ const char kStateMagicV2[4] = {'P', 'L', 'V', '2'};
 // 8 entries (native.world, native.signalsmith) — V2 kEngine values are
 // re-mapped from the 6-engine normalisation on load.
 const char kStateMagicV3[4] = {'P', 'L', 'V', '3'};
+// PLV4 (2026-11): same layout; written since the engine list grew to 10
+// entries (native.bungee, native.stft) — V3 kEngine values are re-mapped
+// from the 8-engine normalisation on load.
+const char kStateMagicV4[4] = {'P', 'L', 'V', '4'};
 constexpr int32_t kMaxStateParams = 256;
 }  // namespace
 
 tresult PLUGIN_API PitchLabProcessor::getState(IBStream* state) {
   if (state == nullptr) return kInvalidArgument;
   int32 written = 0;
-  if (state->write(const_cast<char*>(kStateMagicV3), 4, &written) != kResultOk ||
+  if (state->write(const_cast<char*>(kStateMagicV4), 4, &written) != kResultOk ||
       written != 4) {
     return kResultFalse;
   }
@@ -206,7 +210,8 @@ tresult PLUGIN_API PitchLabProcessor::setState(IBStream* state) {
   const bool isV1 = (std::memcmp(magic, kStateMagicV1, 4) == 0);
   const bool isV2 = (std::memcmp(magic, kStateMagicV2, 4) == 0);
   const bool isV3 = (std::memcmp(magic, kStateMagicV3, 4) == 0);
-  if (!isV1 && !isV2 && !isV3) {
+  const bool isV4 = (std::memcmp(magic, kStateMagicV4, 4) == 0);
+  if (!isV1 && !isV2 && !isV3 && !isV4) {
     return kResultFalse;
   }
   int32_t count = 0;
@@ -254,6 +259,10 @@ tresult PLUGIN_API PitchLabProcessor::setState(IBStream* state) {
       // the engine indices themselves are unchanged (new engines append).
       const double plainV2 = std::floor(norm * 5.0 + 0.5);
       norm = normalise(param::kEngine, plainV2);
+    } else if (isV3 && tag == param::kEngine) {
+      // PLV3: kEngine was normalised over 8 engines (0..7, stepCount = 7).
+      const double plainV3 = std::floor(norm * 7.0 + 0.5);
+      norm = normalise(param::kEngine, plainV3);
     }
     entries.push_back({tag, norm});
   }
