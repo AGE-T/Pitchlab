@@ -1,0 +1,23 @@
+{
+  "bench": "octavox_native",
+  "version": "octavox-native 16.3.0",
+  "environment": {"timestamp_utc": "2026-11-22T15:25:00Z", "compiler": "14.2.0", "build_type": "Release", "sanitizers": false, "os": "Linux 5.10.134-013.15.kangaroo.al8.x86_64", "cpu": "Intel(R) Xeon(R) Processor", "cores": 2},
+  "sample_rate": [48000, 96000],
+  "input": "LCG(2025) noise, amp 0.5, 5 s per case, best of 3",
+  "note": "R16-P2: 13 cases -- mono_8v_b128_96k_ctrl512 (detection_interval 512 at 96 kHz) is the NEW R16 row; the round-15 delivery had 12",
+  "rows": [
+    {"name": "mono_1v_b64", "voices": 1, "channels": 1, "block": 64, "detection_interval": 64, "sample_rate": 48000, "surface": false, "ns_per_frame": 131.4378, "realtime_factor": 158.5034, "rss_kb": 10856, "steady_allocs": 0, "seconds": 0.031545, "wall_ms": 31.545},
+    {"name": "mono_1v_b128", "voices": 1, "channels": 1, "block": 128, "detection_interval": 64, "sample_rate": 48000, "surface": false, "ns_per_frame": 132.4309, "realtime_factor": 157.3147, "rss_kb": 10956, "steady_allocs": 0, "seconds": 0.031783, "wall_ms": 31.783},
+    {"name": "mono_1v_b512", "voices": 1, "channels": 1, "block": 512, "detection_interval": 64, "sample_rate": 48000, "surface": false, "ns_per_frame": 134.2845, "realtime_factor": 155.1433, "rss_kb": 10956, "steady_allocs": 0, "seconds": 0.032228, "wall_ms": 32.228},
+    {"name": "mono_8v_b64", "voices": 8, "channels": 1, "block": 64, "detection_interval": 64, "sample_rate": 48000, "surface": false, "ns_per_frame": 346.8915, "realtime_factor": 60.0572, "rss_kb": 10956, "steady_allocs": 0, "seconds": 0.083254, "wall_ms": 83.254},
+    {"name": "mono_8v_b128", "voices": 8, "channels": 1, "block": 128, "detection_interval": 64, "sample_rate": 48000, "surface": false, "ns_per_frame": 347.2742, "realtime_factor": 59.9910, "rss_kb": 10956, "steady_allocs": 0, "seconds": 0.083346, "wall_ms": 83.346},
+    {"name": "mono_8v_b512", "voices": 8, "channels": 1, "block": 512, "detection_interval": 64, "sample_rate": 48000, "surface": false, "ns_per_frame": 348.5363, "realtime_factor": 59.7738, "rss_kb": 10956, "steady_allocs": 0, "seconds": 0.083649, "wall_ms": 83.649},
+    {"name": "stereo_1v_b128", "voices": 1, "channels": 2, "block": 128, "detection_interval": 64, "sample_rate": 48000, "surface": false, "ns_per_frame": 264.9757, "realtime_factor": 78.6236, "rss_kb": 17028, "steady_allocs": 0, "seconds": 0.063594, "wall_ms": 63.594},
+    {"name": "stereo_8v_b128", "voices": 8, "channels": 2, "block": 128, "detection_interval": 64, "sample_rate": 48000, "surface": false, "ns_per_frame": 695.2531, "realtime_factor": 29.9651, "rss_kb": 17028, "steady_allocs": 0, "seconds": 0.166861, "wall_ms": 166.861},
+    {"name": "mono_8v_b128_ctrl512", "voices": 8, "channels": 1, "block": 128, "detection_interval": 512, "sample_rate": 48000, "surface": false, "ns_per_frame": 278.4457, "realtime_factor": 74.8201, "rss_kb": 17028, "steady_allocs": 0, "seconds": 0.066827, "wall_ms": 66.827},
+    {"name": "mono_1v_b128_96k", "voices": 1, "channels": 1, "block": 128, "detection_interval": 64, "sample_rate": 96000, "surface": false, "ns_per_frame": 131.7135, "realtime_factor": 79.0858, "rss_kb": 17028, "steady_allocs": 0, "seconds": 0.063222, "wall_ms": 63.222},
+    {"name": "mono_8v_b128_96k", "voices": 8, "channels": 1, "block": 128, "detection_interval": 64, "sample_rate": 96000, "surface": false, "ns_per_frame": 347.4477, "realtime_factor": 29.9805, "rss_kb": 17028, "steady_allocs": 0, "seconds": 0.166775, "wall_ms": 166.775},
+    {"name": "mono_8v_b128_96k_ctrl512", "voices": 8, "channels": 1, "block": 128, "detection_interval": 512, "sample_rate": 96000, "surface": false, "ns_per_frame": 278.8041, "realtime_factor": 37.3620, "rss_kb": 17028, "steady_allocs": 0, "seconds": 0.133826, "wall_ms": 133.826},
+    {"name": "mono_8v_b128_surface", "voices": 8, "channels": 1, "block": 128, "detection_interval": 64, "sample_rate": 48000, "surface": true, "ns_per_frame": 351.6303, "realtime_factor": 59.2478, "rss_kb": 17028, "steady_allocs": 0, "seconds": 0.084391, "wall_ms": 84.391}
+  ]
+}

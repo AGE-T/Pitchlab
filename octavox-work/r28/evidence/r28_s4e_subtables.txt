@@ -1,0 +1,120 @@
+=== sub-vtable @this+0x150 @0x1803F04E8 ===
+  +0x00 queryInterface         = 0x18001858C  (.text)
+  +0x08 addRef                 = 0x18041A638  (.rdata)
+  +0x10 release                = 0x18030C400  (.text)
+  +0x18 initialize             = 0x18030C360  (.text)
+  +0x20 terminate              = 0x18041A688  (.rdata)
+  +0x28 getControllerClass     = 0x1800177B0  (.text)
+  +0x30 setIoMode              = 0x18030FF40  (.text)
+  +0x38 getBusCount            = 0x18030FED0  (.text)
+  +0x40 getBusInfo             = 0x18041ADB8  (.rdata)
+  +0x48 getRoutingInfo         = 0x180017880  (.text)
+  +0x50 activateBus            = 0x180310250  (.text)
+  +0x58 setActive              = 0x180310190  (.text)
+  +0x60 setState               = 0x18041A350  (.rdata)
+  +0x68 getState               = 0x180017850  (.text)
+  +0x70 setBusArrangements     = 0x18016028C  (.text)
+  +0x78 getBusArrangement      = 0x18016028C  (.text)
+  +0x80 canProcessSampleSize   = 0x18041AB78  (.rdata)
+  +0x88 getLatencySamples      = 0x18030C400  (.text)
+  +0x90 setupProcessing        = 0x18030C360  (.text)
+  +0x98 setProcessing          = 0x18041AB38  (.rdata)
+  +0xA0 process                = 0x18030C400  (.text)
+  +0xA8 getTailSamples         = 0x18030C360  (.text)
+
+=== sub-vtable @this+0x158 region A @0x1803F0560 ===
+  +0x00 queryInterface         = 0x18016028C  (.text)
+  +0x08 addRef                 = 0x18041AB78  (.rdata)
+  +0x10 release                = 0x18030C400  (.text)
+  +0x18 initialize             = 0x18030C360  (.text)
+  +0x20 terminate              = 0x18041AB38  (.rdata)
+  +0x28 getControllerClass     = 0x18030C400  (.text)
+  +0x30 setIoMode              = 0x18030C360  (.text)
+  +0x38 getBusCount            = 0x18041A8D0  (.rdata)
+  +0x40 getBusInfo             = 0x180018574  (.text)
+  +0x48 getRoutingInfo         = 0x18041A300  (.rdata)
+  +0x50 activateBus            = 0x180017880  (.text)
+  +0x58 setActive              = 0x18030FFE0  (.text)
+  +0x60 setState               = 0x18030FF70  (.text)
+  +0x68 getState               = 0x18041ACF8  (.rdata)
+  +0x70 setBusArrangements     = 0x1800175D0  (.text)
+  +0x78 getBusArrangement      = 0x1801A72A0  (.text)
+  +0x80 canProcessSampleSize   = 0x1801A7250  (.text)
+  +0x88 getLatencySamples      = 0x180313D20  (.text)
+  +0x90 setupProcessing        = 0x180313BC0  (.text)
+  +0x98 setProcessing          = 0x180003B30  (.text)
+  +0xA0 process                = 0x180260310  (.text)
+  +0xA8 getTailSamples         = 0x180313D00  (.text)
+
+=== sub-vtable @this+0x158 region B @0x1803F0570 ===
+  +0x00 queryInterface         = 0x18030C400  (.text)
+  +0x08 addRef                 = 0x18030C360  (.text)
+  +0x10 release                = 0x18041AB38  (.rdata)
+  +0x18 initialize             = 0x18030C400  (.text)
+  +0x20 terminate              = 0x18030C360  (.text)
+  +0x28 getControllerClass     = 0x18041A8D0  (.rdata)
+  +0x30 setIoMode              = 0x180018574  (.text)
+  +0x38 getBusCount            = 0x18041A300  (.rdata)
+  +0x40 getBusInfo             = 0x180017880  (.text)
+  +0x48 getRoutingInfo         = 0x18030FFE0  (.text)
+  +0x50 activateBus            = 0x18030FF70  (.text)
+  +0x58 setActive              = 0x18041ACF8  (.rdata)
+  +0x60 setState               = 0x1800175D0  (.text)
+  +0x68 getState               = 0x1801A72A0  (.text)
+  +0x70 setBusArrangements     = 0x1801A7250  (.text)
+  +0x78 getBusArrangement      = 0x180313D20  (.text)
+  +0x80 canProcessSampleSize   = 0x180313BC0  (.text)
+  +0x88 getLatencySamples      = 0x180003B30  (.text)
+  +0x90 setupProcessing        = 0x180260310  (.text)
+  +0x98 setProcessing          = 0x180313D00  (.text)
+  +0xA0 process                = 0x180260270  (.text)
+  +0xA8 getTailSamples         = 0x180313CE0  (.text)
+
+=== sub-vtable @this+0x2600/0x2810 @0x1803F0580 ===
+  +0x00 queryInterface         = 0x18041AB38  (.rdata)
+  +0x08 addRef                 = 0x18030C400  (.text)
+  +0x10 release                = 0x18030C360  (.text)
+  +0x18 initialize             = 0x18041A8D0  (.rdata)
+  +0x20 terminate              = 0x180018574  (.text)
+  +0x28 getControllerClass     = 0x18041A300  (.rdata)
+  +0x30 setIoMode              = 0x180017880  (.text)
+  +0x38 getBusCount            = 0x18030FFE0  (.text)
+  +0x40 getBusInfo             = 0x18030FF70  (.text)
+  +0x48 getRoutingInfo         = 0x18041ACF8  (.rdata)
+  +0x50 activateBus            = 0x1800175D0  (.text)
+  +0x58 setActive              = 0x1801A72A0  (.text)
+  +0x60 setState               = 0x1801A7250  (.text)
+  +0x68 getState               = 0x180313D20  (.text)
+  +0x70 setBusArrangements     = 0x180313BC0  (.text)
+  +0x78 getBusArrangement      = 0x180003B30  (.text)
+  +0x80 canProcessSampleSize   = 0x180260310  (.text)
+  +0x88 getLatencySamples      = 0x180313D00  (.text)
+  +0x90 setupProcessing        = 0x180260270  (.text)
+  +0x98 setProcessing          = 0x180313CE0  (.text)
+  +0xA0 process                = 0x1800055F0  (.text)
+  +0xA8 getTailSamples         = 0x1800055F0  (.text)
+
+=== thunk cluster 0x180018560..0x1800185A0 ===
+0x180018560  add      esp, 0x20                                   
+0x180018563  pop      r14                                         
+0x180018565  ret                                                  
+0x180018566  int3                                                 
+0x180018567  int3                                                 
+0x180018568  sub      rcx, 0x158                                  
+0x18001856F  jmp      0x1800175d0                                 
+0x180018574  sub      rcx, 0x2600                                 
+0x18001857B  jmp      0x1800175d0                                 
+0x180018580  sub      rcx, 0x2810                                 
+0x180018587  jmp      0x1800175d0                                 
+0x18001858C  sub      rcx, 0x150                                  
+0x180018593  jmp      0x1800175d0                                 
+0x180018598  int3                                                 
+0x180018599  int3                                                 
+0x18001859A  int3                                                 
+0x18001859B  int3                                                 
+0x18001859C  int3                                                 
+0x18001859D  int3                                                 
+0x18001859E  int3                                                 
+0x18001859F  int3                                                 
+
+post-pass hash OK

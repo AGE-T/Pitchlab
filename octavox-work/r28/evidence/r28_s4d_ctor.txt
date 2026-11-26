@@ -1,0 +1,88 @@
+=== multi-vtable ctor fn 0x1800175D0 ===
+0x1800175D0  mov      qword ptr [rsp + 0x10], rbx                 
+0x1800175D5  push     rdi                                         
+0x1800175D6  sub      rsp, 0x20                                   
+0x1800175DA  lea      rax, [rip + 0x3d8fef]                         ; q=0x1800175D0
+0x1800175E1  mov      ebx, edx                                    
+0x1800175E3  mov      qword ptr [rcx], rax                        
+0x1800175E6  lea      rdx, [rcx + 0x2810]                         
+0x1800175ED  lea      rax, [rip + 0x3d8ef4]                         ; q=0x18001858C
+0x1800175F4  mov      rdi, rcx                                    
+0x1800175F7  mov      qword ptr [rcx + 0x150], rax                
+0x1800175FE  lea      rax, [rip + 0x3d8db3]                         ; q=0x180018568
+0x180017605  mov      qword ptr [rcx + 0x158], rax                
+0x18001760C  lea      rax, [rip + 0x3d8f8d]                         ; q=0x180018574
+0x180017613  mov      qword ptr [rcx + 0x2600], rax               
+0x18001761A  lea      rax, [rip + 0x3d8e57]                         ; q=0x180018580
+0x180017621  add      rcx, 0x208                                  
+0x180017628  mov      qword ptr [rdx], rax                        
+0x18001762B  call     0x18023fce0                                 
+0x180017630  lea      rcx, [rdi + 0x2868]                         
+0x180017637  lea      rax, [rip + 0x3fa7b2]                         ; q=0x18015A260
+0x18001763E  mov      qword ptr [rsp + 0x30], rcx                 
+0x180017643  mov      qword ptr [rcx], rax                        
+0x180017646  add      rcx, 0x20                                   
+0x18001764A  call     0x18015abc0                                 
+0x18001764F  lea      rcx, [rdi + 0x2830]                         
+0x180017656  call     0x1800178b0                                 
+0x18001765B  mov      rcx, rdi                                    
+0x18001765E  call     0x1803193a0                                 
+0x180017663  test     bl, 1                                       
+0x180017666  je       0x180017675                                 
+0x180017668  mov      edx, 0x28a0                                 
+0x18001766D  mov      rcx, rdi                                    
+0x180017670  call     0x18015e100                                 
+0x180017675  mov      rbx, qword ptr [rsp + 0x38]                 
+0x18001767A  mov      rax, rdi                                    
+0x18001767D  add      rsp, 0x20                                   
+0x180017681  pop      rdi                                         
+0x180017682  ret                                                  
+0x180017683  int3                                                 
+0x180017684  int3                                                 
+0x180017685  int3                                                 
+0x180017686  int3                                                 
+0x180017687  int3                                                 
+0x180017688  int3                                                 
+0x180017689  int3                                                 
+0x18001768A  int3                                                 
+0x18001768B  int3                                                 
+0x18001768C  int3                                                 
+0x18001768D  int3                                                 
+0x18001768E  int3                                                 
+0x18001768F  int3                                                 
+0x180017690  sub      rsp, 0x28                                   
+0x180017694  mov      rax, qword ptr [rcx]                        
+0x180017697  mov      rdx, qword ptr [rax + 0x58]                 
+0x18001769B  add      rcx, 8                                      
+0x18001769F  call     rdx                                         
+0x1800176A1  nop                                                  
+0x1800176A2  add      rsp, 0x28                                   
+0x1800176A6  ret                                                  
+0x1800176A7  int3                                                 
+0x1800176A8  int3                                                 
+0x1800176A9  int3                                                 
+0x1800176AA  int3                                                 
+0x1800176AB  int3                                                 
+0x1800176AC  int3                                                 
+0x1800176AD  int3                                                 
+0x1800176AE  int3                                                 
+0x1800176AF  int3                                                 
+0x1800176B0  push     rbx                                         
+0x1800176B2  sub      rsp, 0x50                                   
+0x1800176B6  movsd    xmm0, qword ptr [rsp + 0x90]                
+0x1800176BF  lea      rax, [rip + 0x3d8d02]                         ; "�����"
+0x1800176C6  movsd    xmm1, qword ptr [rsp + 0x80]                
+0x1800176CF  mov      rbx, rcx                                    
+0x1800176D2  mov      qword ptr [rcx + 8], rax                    
+0x1800176D6  lea      rax, [rip + 0x3d8c8b]                         ; q=0x800000000
+0x1800176DD  mov      qword ptr [rcx + 0xc8], rax                 
+0x1800176E4  lea      rax, [rip + 0x3d8e65]                         ; q=0x180017850
+0x1800176EB  mov      qword ptr [rcx + 0xd0], rax                 
+0x1800176F2  movzx    eax, byte ptr [rsp + 0x98]                  
+0x1800176FA  mov      byte ptr [rsp + 0x38], al                   
+0x1800176FE  .byte    0xf2                                        
+0x1800176FF  .byte    0x0f                                        
+
+raw @0x180260210: 865141c3cccccccc
+raw @0x180004C50: 33c0c3cccccccccc
+post-pass hash OK

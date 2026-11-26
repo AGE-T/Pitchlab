@@ -1,0 +1,44 @@
+=== JuceVST3Component vtable @0x1803F05D0 ===
+  +0x00 queryInterface         = 0x1800175D0  (.text)
+  +0x08 addRef                 = 0x1801A72A0  (.text)
+  +0x10 release                = 0x1801A7250  (.text)
+  +0x18 initialize             = 0x180313D20  (.text)
+  +0x20 terminate              = 0x180313BC0  (.text)
+  +0x28 getControllerClass     = 0x180003B30  (.text)
+  +0x30 setIoMode              = 0x180260310  (.text)
+  +0x38 getBusCount            = 0x180313D00  (.text)
+  +0x40 getBusInfo             = 0x180260270  (.text)
+  +0x48 getRoutingInfo         = 0x180313CE0  (.text)
+  +0x50 activateBus            = 0x1800055F0  (.text)
+  +0x58 setActive              = 0x1800055F0  (.text)
+  +0x60 setState               = 0x180260260  (.text)
+  +0x68 getState               = 0x180005AB0  (.text)
+  +0x70 setBusArrangements     = 0x1800055F0  (.text)
+  +0x78 getBusArrangement      = 0x1800055F0  (.text)
+  +0x80 canProcessSampleSize   = 0x1800055F0  (.text)
+  +0x88 getLatencySamples      = 0x1800055F0  (.text)
+  +0x90 setupProcessing        = 0x180313BD0  (.text)
+  +0x98 setProcessing          = 0x180004C50  (.text)
+  +0xA0 process                = 0x180260210  (.text)
+  +0xA8 getTailSamples         = 0x1801A74D0  (.text)
+  +0xB0 connect(IConnectionPoint) = 0x180017120  (.text)
+  +0xB8 disconnect             = 0x180260200  (.text)
+
+getLatencySamples slot target: 0x1800055F0
+function bounds: NO PDATA SCOPE
+=== getTailSamples implementation @0x1801A74D0 ===
+0x1801A74D0  push     rbx                                         
+0x1801A74D2  sub      rsp, 0x20                                   
+0x1801A74D6  mov      rbx, rcx                                    
+0x1801A74D9  mov      ecx, 0x420                                  
+0x1801A74DE  call     0x18015e63c                                 
+0x1801A74E3  mov      qword ptr [rsp + 0x38], rax                 
+0x1801A74E8  mov      rdx, rbx                                    
+0x1801A74EB  mov      rcx, rax                                    
+0x1801A74EE  call     0x18030f650                                 
+0x1801A74F3  nop                                                  
+0x1801A74F4  add      rsp, 0x20                                   
+0x1801A74F8  pop      rbx                                         
+0x1801A74F9  ret                                                  
+
+post-pass hash OK

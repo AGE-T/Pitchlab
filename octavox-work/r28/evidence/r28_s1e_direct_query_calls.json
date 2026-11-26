@@ -1,0 +1,58 @@
+[
+ {
+  "call_va": "0x18000f898",
+  "fn": "0x18000f810",
+  "rdx_set_va": "0x18000f881",
+  "rdx_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x10]"
+ },
+ {
+  "call_va": "0x18000fb12",
+  "fn": "0x18000faa0",
+  "rdx_set_va": "0x18000fafe",
+  "rdx_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x10]"
+ },
+ {
+  "call_va": "0x18014dea4",
+  "fn": "0x18014de60",
+  "rdx_set_va": "0x18014de95",
+  "rdx_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x10]"
+ },
+ {
+  "call_va": "0x18014deae",
+  "fn": "0x18014de60",
+  "rdx_set_va": "0x18014de95",
+  "rdx_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x10]"
+ },
+ {
+  "call_va": "0x18014deb8",
+  "fn": "0x18014de60",
+  "rdx_set_va": "0x18014de95",
+  "rdx_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x10]"
+ },
+ {
+  "call_va": "0x1802215aa",
+  "fn": "0x1802214e0",
+  "rdx_set_va": "0x180221583",
+  "rdx_set": "mov edx, 2",
+  "call": "call qword ptr [rax + 0x10]"
+ },
+ {
+  "call_va": "0x180276579",
+  "fn": "0x180276480",
+  "rdx_set_va": "0x180276574",
+  "rdx_set": "mov edx, 2",
+  "call": "call qword ptr [rax + 0x10]"
+ },
+ {
+  "call_va": "0x1802765ae",
+  "fn": "0x180276480",
+  "rdx_set_va": "0x1802765a9",
+  "rdx_set": "mov edx, 4",
+  "call": "call qword ptr [rax + 0x10]"
+ }
+]

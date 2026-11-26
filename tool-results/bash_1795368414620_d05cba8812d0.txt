@@ -1,0 +1,398 @@
+  0 adc                    FUN_1800c6260  ninputs=2 | noutputs=2 | out1=iswitch-out | out2=iswitch1-out | name=Empty | tag=Empty | nkids=5 | kids1=adc-nullobj | kids2=adc-nullobj | kids3=adc-nullobj | kids4=adc-nullobj | kids5=adc-nullobj
+  1 igan                   FUN_1800ca340  statement=input gain:%3.0f dB | name=knob | min=-96 | max=12 | res=1 | default=0
+  2 inch                   FUN_1800ca340  statement=knob: %f | name=knob | min=1 | max=2 | res=1 | default=1
+  3 c_subtract1            FUN_1800dcdc0  in1=inch-out | in2=1
+  4 live                   FUN_1800d4b70  statement=Live Mode %s | nchoices=2 | default=0 | choices1=off | choices2=on
+  5 live mode delay comp   FUN_1800cb200  value=40
+  6 c_switch               FUN_1800d6940  ninputs=2 | select=live-out | in1=live mode delay comp-out | in2=0
+  7 mfbk                   FUN_1800ca340  statement=feedback: %f % | name=percent | min=0 | max=100 | res=1 | default=0
+  8 fbkd                   FUN_1800ca340  statement=fback dly: %f ms | name=knob | min=0 | max=5000 | res=1 | default=0
+  9 c_minmax               FUN_1800d15d0  ninputs=2 | in1=fbkd-out | in2=50
+ 10 rdep                   FUN_18013ab90  statement=rnd dpth: %f | name=knob | min=0 | max=200 | res=1 | default=50
+ 11 c_divide26             FUN_18013a110  in1=rdep-out | in2=2400
+ 12 c_fltr_a36             FUN_18013aac0  time_constant=20 | in=c_divide26-out
+ 13 keys                   FUN_18013ad00  statement=key  :   %s | nchoices=17 | default=0 | choices1= C | choices2=C# | choices3=Db | choices4= D | choices5=D# | choices6=Eb | choices7= E | choices8= F | choices9=F# | choices10=Gb | choices11= G | choices12=G# | choices13=Ab | choices14= A | choices15=A# | choices16=Bb | choices17= B
+ 14 scal                   FUN_18013ad00  statement=scale: %s | nchoices=16 | default=0 | choices1=ionian (maj) | choices2=dorian | choices3=phrygian | choices4=lydian | choices5=mixolydian | choices6=relative minor | choices7=locrian | choices8=harmonic min | choices9=melodic min | choices10=chromatic | choices11=whole tone | choices12=penta maj | choices13=penta min | choices14=enigmatic | choices15=neapolitan | choices16=hungarian
+ 15 ptrk                   FUN_18013ab90  statement=Pitch Track | name=0 | min=0 | max=1 | res=1 | default=1
+ 16 scal table             FUN_18013a8d0  nentries=15 | select=scal-out | in1=1 | in2=2 | in3=3 | in4=4 | in5=5 | in6=6 | in7=7 | in8=10 | in9=11 | in10=14 | in11=15 | in12=16 | in13=17 | in14=18 | in15=13
+ 17 c_cmp2                 FUN_18013a760  in1=scal table-out | in2=14
+ 18 c_cmp3                 FUN_18013a760  in1=scal table-out | in2=15
+ 19 c_or                   FUN_18013a110  in1=c_cmp2-eq | in2=c_cmp3-eq
+ 20 minp                   FUN_18013ad00  statement=minpitch: %s | nchoices=48 | default=24 | choices1= C0 | choices2=C#0 | choices3= D0 | choices4=D#0 | choices5= E0 | choices6= F0 | choices7=F#0 | choices8= G0 | choices9=G#0 | choices10= A0 | choices11=A#0 | choices12= B0 | choices13= C1 | choices14=C#1 | choices15= D1 | choices16=D#1 | choices17= E1
+ 21 xfad                   FUN_18013ab90  statement=xfade   : %3.0f ms | min=0 | max=100 | res=1 | default=10
+ 22 tune                   FUN_18013ab90  statement=tune: %3.0f | name=knob | min=392 | max=494 | res=1 | default=440
+ 23 fbk1                   FUN_18013ab90  statement=fback: %f | name=knob | min=-100 | max=0 | res=1 | default=-100
+ 24 msw1                   FUN_18013ad00  statement=voice 1: %s | name=mute | nchoices=2 | default=0 | choices1=off | choices2=on
+ 25 m switch 1             FUN_18013abd0  ninputs=2 | select=msw1-out | in1=-100 | in2=ogn1-out
+ 26 ogn1                   FUN_18013ab90  statement=level: %f dB | name=knob | min=-100 | max=0 | res=0.1 | default=-3
+ 27 fback switch 1         FUN_18013abd0  ninputs=2 | select=msw1-out | in1=-100 | in2=fbk1-out
+ 28 pan1                   FUN_18013ab90  statement=pan: %f | name=knob | min=-1 | max=1 | res=0.01 | default=0
+ 29 dly1                   FUN_18013ab90  statement=delay: %f ms | name=knob | min=0 | max=1250 | res=1 | default=0
+ 30 c_adder8               FUN_18013a510  ninputs=2 | in1=dly1-out | in2=c_switch-out
+ 31 int1                   FUN_18013ad00  statement=pitch1: %s | nchoices=29 | default=14 | choices1=-2 oct | choices2=-14th | choices3=-13th | choices4=-12th | choices5=-11th | choices6=-10th | choices7=-9th | choices8=-1 oct | choices9=-7th | choices10=-6th | choices11=-5th | choices12=-4th | choices13=-3rd | choices14=-2nd | choices15=unison | choices16=+2nd | choices17=+3rd
+ 32 int table 1            FUN_18013a8d0  nentries=29 | select=int1-out | in1=0 | in2=1 | in3=3 | in4=3 | in5=4 | in6=5 | in7=7 | in8=7 | in9=8 | in10=10 | in11=10 | in12=11 | in13=12 | in14=14 | in15=14 | in16=15 | in17=17 | in18=17
+ 33 int table switch 1     FUN_18013abd0  ninputs=2 | select=c_or-out | in1=int1-out | in2=int table 1-out
+ 34 int sub 1              FUN_18013a110  in1=int table switch 1-out | in2=14
+ 35 c_multiply 1           FUN_18013a390  in1=int sub 1-out | in2=-1
+ 36 sht1                   FUN_18013ab90  statement=fshift: %f | name=knob | min=-2400 | max=2400 | res=1 | default=0
+ 37 fbk2                   FUN_18013ab90  statement=fback: %f | name=knob | min=-100 | max=0 | res=1 | default=-100
+ 38 msw2                   FUN_18013ad00  statement=voice 2: %s | name=mute | nchoices=2 | default=0 | choices1=off | choices2=on
+ 39 m switch 2             FUN_18013abd0  ninputs=2 | select=msw2-out | in1=-100 | in2=ogn2-out
+ 40 ogn2                   FUN_18013ab90  statement=level: %f dB | name=knob | min=-100 | max=0 | res=0.1 | default=-3
+ 41 fback switch 2         FUN_18013abd0  ninputs=2 | select=msw2-out | in1=-100 | in2=fbk2-out
+ 42 pan2                   FUN_18013ab90  statement=pan: %f | name=knob | min=-1 | max=1 | res=0.01 | default=0
+ 43 dly2                   FUN_18013ab90  statement=delay: %f ms | name=knob | min=0 | max=1250 | res=1 | default=0
+ 44 c_adder9               FUN_18013a510  ninputs=2 | in1=dly2-out | in2=c_switch-out
+ 45 int2                   FUN_18013ad00  statement=pitch1: %s | nchoices=29 | default=14 | choices1=-2 oct | choices2=-14th | choices3=-13th | choices4=-12th | choices5=-11th | choices6=-10th | choices7=-9th | choices8=-1 oct | choices9=-7th | choices10=-6th | choices11=-5th | choices12=-4th | choices13=-3rd | choices14=-2nd | choices15=unison | choices16=+2nd | choices17=+3rd
+ 46 int table 2            FUN_18013a8d0  nentries=29 | select=int2-out | in1=0 | in2=1 | in3=3 | in4=3 | in5=4 | in6=5 | in7=7 | in8=7 | in9=8 | in10=10 | in11=10 | in12=11 | in13=12 | in14=14 | in15=14 | in16=15 | in17=17 | in18=17
+ 47 int table switch 2     FUN_18013abd0  ninputs=2 | select=c_or-out | in1=int2-out | in2=int table 2-out
+ 48 int sub 2              FUN_18013a110  in1=int table switch 2-out | in2=14
+ 49 c_multiply 2           FUN_18013a390  in1=int sub 2-out | in2=-1
+ 50 sht2                   FUN_18013ab90  statement=fshift: %f | name=knob | min=-1 | max=1 | res=0.001 | default=0
+ 51 fbk3                   FUN_18013ab90  statement=fback: %f | name=knob | min=-100 | max=0 | res=1 | default=-100
+ 52 msw3                   FUN_18013ad00  statement=voice 3: %s | name=mute | nchoices=2 | default=0 | choices1=off | choices2=on
+ 53 m switch 3             FUN_18013abd0  ninputs=2 | select=msw3-out | in1=-100 | in2=ogn3-out
+ 54 ogn3                   FUN_18013ab90  statement=level: %f dB | name=knob | min=-100 | max=0 | res=0.1 | default=-3
+ 55 fback switch 3         FUN_18013abd0  ninputs=2 | select=msw3-out | in1=-100 | in2=fbk3-out
+ 56 pan3                   FUN_18013ab90  statement=pan: %f | name=knob | min=-1 | max=1 | res=0.01 | default=0
+ 57 dly3                   FUN_18013ab90  statement=delay: %f ms | name=knob | min=0 | max=1250 | res=1 | default=0
+ 58 c_adder10              FUN_18013a510  ninputs=2 | in1=dly3-out | in2=c_switch-out
+ 59 int3                   FUN_18013ad00  statement=pitch1: %s | nchoices=29 | default=14 | choices1=-2 oct | choices2=-14th | choices3=-13th | choices4=-12th | choices5=-11th | choices6=-10th | choices7=-9th | choices8=-1 oct | choices9=-7th | choices10=-6th | choices11=-5th | choices12=-4th | choices13=-3rd | choices14=-2nd | choices15=unison | choices16=+2nd | choices17=+3rd
+ 60 int table 3            FUN_18013a8d0  nentries=29 | select=int3-out | in1=0 | in2=1 | in3=3 | in4=3 | in5=4 | in6=5 | in7=7 | in8=7 | in9=8 | in10=10 | in11=10 | in12=11 | in13=12 | in14=14 | in15=14 | in16=15 | in17=17 | in18=17
+ 61 int table switch 3     FUN_18013abd0  ninputs=2 | select=c_or-out | in1=int3-out | in2=int table 3-out
+ 62 int sub 3              FUN_18013a110  in1=int table switch 3-out | in2=14
+ 63 c_multiply 3           FUN_18013a390  in1=int sub 3-out | in2=-1
+ 64 sht3                   FUN_18013ab90  statement=fshift: %f | name=knob | min=-1 | max=1 | res=0.001 | default=0
+ 65 fbk4                   FUN_18013ab90  statement=fback: %f | name=knob | min=-100 | max=0 | res=1 | default=-100
+ 66 msw4                   FUN_18013ad00  statement=voice 4: %s | name=mute | nchoices=2 | default=0 | choices1=off | choices2=on
+ 67 m switch 4             FUN_18013abd0  ninputs=2 | select=msw4-out | in1=-100 | in2=ogn4-out
+ 68 ogn4                   FUN_18013ab90  statement=level: %f dB | name=knob | min=-100 | max=0 | res=0.1 | default=-3
+ 69 fback switch 4         FUN_18013abd0  ninputs=2 | select=msw4-out | in1=-100 | in2=fbk4-out
+ 70 pan4                   FUN_18013ab90  statement=pan: %f | name=knob | min=-1 | max=1 | res=0.01 | default=0
+ 71 dly4                   FUN_18013ab90  statement=delay: %f ms | name=knob | min=0 | max=1250 | res=1 | default=0
+ 72 c_adder11              FUN_18013a510  ninputs=2 | in1=dly4-out | in2=c_switch-out
+ 73 int4                   FUN_18013ad00  statement=pitch1: %s | nchoices=29 | default=14 | choices1=-2 oct | choices2=-14th | choices3=-13th | choices4=-12th | choices5=-11th | choices6=-10th | choices7=-9th | choices8=-1 oct | choices9=-7th | choices10=-6th | choices11=-5th | choices12=-4th | choices13=-3rd | choices14=-2nd | choices15=unison | choices16=+2nd | choices17=+3rd
+ 74 int table 4            FUN_18013a8d0  nentries=29 | select=int4-out | in1=0 | in2=1 | in3=3 | in4=3 | in5=4 | in6=5 | in7=7 | in8=7 | in9=8 | in10=10 | in11=10 | in12=11 | in13=12 | in14=14 | in15=14 | in16=15 | in17=17 | in18=17
+ 75 int table switch 4     FUN_18013abd0  ninputs=2 | select=c_or-out | in1=int4-out | in2=int table 4-out
+ 76 int sub 4              FUN_18013a110  in1=int table switch 4-out | in2=14
+ 77 c_multiply 4           FUN_18013a390  in1=int sub 4-out | in2=-1
+ 78 sht4                   FUN_18013ab90  statement=fshift: %f | name=knob | min=-1 | max=1 | res=0.001 | default=0
+ 79 fbk5                   FUN_18013ab90  statement=fback: %f | name=knob | min=-100 | max=0 | res=1 | default=-100
+ 80 msw5                   FUN_18013ad00  statement=voice 5: %s | name=mute | nchoices=2 | default=0 | choices1=off | choices2=on
+ 81 m switch 5             FUN_18013abd0  ninputs=2 | select=msw5-out | in1=-100 | in2=ogn5-out
+ 82 ogn5                   FUN_18013ab90  statement=level: %f dB | name=knob | min=-100 | max=0 | res=0.1 | default=-3
+ 83 fback switch 5         FUN_18013abd0  ninputs=2 | select=msw5-out | in1=-100 | in2=fbk5-out
+ 84 pan5                   FUN_18013ab90  statement=pan: %f | name=knob | min=-1 | max=1 | res=0.01 | default=0
+ 85 dly5                   FUN_18013ab90  statement=delay: %f ms | name=knob | min=0 | max=1250 | res=1 | default=0
+ 86 c_adder12              FUN_18013a510  ninputs=2 | in1=dly5-out | in2=c_switch-out
+ 87 int5                   FUN_18013ad00  statement=pitch1: %s | nchoices=29 | default=14 | choices1=-2 oct | choices2=-14th | choices3=-13th | choices4=-12th | choices5=-11th | choices6=-10th | choices7=-9th | choices8=-1 oct | choices9=-7th | choices10=-6th | choices11=-5th | choices12=-4th | choices13=-3rd | choices14=-2nd | choices15=unison | choices16=+2nd | choices17=+3rd
+ 88 int table 5            FUN_18013a8d0  nentries=29 | select=int5-out | in1=0 | in2=1 | in3=3 | in4=3 | in5=4 | in6=5 | in7=7 | in8=7 | in9=8 | in10=10 | in11=10 | in12=11 | in13=12 | in14=14 | in15=14 | in16=15 | in17=17 | in18=17
+ 89 int table switch 5     FUN_18013abd0  ninputs=2 | select=c_or-out | in1=int5-out | in2=int table 5-out
+ 90 int sub 5              FUN_18013a110  in1=int table switch 5-out | in2=14
+ 91 c_multiply 5           FUN_18013a390  in1=int sub 5-out | in2=-1
+ 92 sht5                   FUN_18013ab90  statement=fshift: %f | name=knob | min=-1 | max=1 | res=0.001 | default=0
+ 93 fbk6                   FUN_18013ab90  statement=fback: %f | name=knob | min=-100 | max=0 | res=1 | default=-100
+ 94 msw6                   FUN_18013ad00  statement=voice 6: %s | name=mute | nchoices=2 | default=0 | choices1=off | choices2=on
+ 95 m switch 6             FUN_18013abd0  ninputs=2 | select=msw6-out | in1=-100 | in2=ogn6-out
+ 96 ogn6                   FUN_18013ab90  statement=level: %f dB | name=knob | min=-100 | max=0 | res=0.1 | default=-3
+ 97 fback switch 6         FUN_18013abd0  ninputs=2 | select=msw6-out | in1=-100 | in2=fbk6-out
+ 98 pan6                   FUN_18013ab90  statement=pan: %f | name=knob | min=-1 | max=1 | res=0.01 | default=0
+ 99 dly6                   FUN_18013ab90  statement=delay: %f ms | name=knob | min=0 | max=1250 | res=1 | default=0
+100 c_adder13              FUN_18013a510  ninputs=2 | in1=dly6-out | in2=c_switch-out
+101 int6                   FUN_18013ad00  statement=pitch1: %s | nchoices=29 | default=14 | choices1=-2 oct | choices2=-14th | choices3=-13th | choices4=-12th | choices5=-11th | choices6=-10th | choices7=-9th | choices8=-1 oct | choices9=-7th | choices10=-6th | choices11=-5th | choices12=-4th | choices13=-3rd | choices14=-2nd | choices15=unison | choices16=+2nd | choices17=+3rd
+102 int table 6            FUN_18013a8d0  nentries=29 | select=int6-out | in1=0 | in2=1 | in3=3 | in4=3 | in5=4 | in6=5 | in7=7 | in8=7 | in9=8 | in10=10 | in11=10 | in12=11 | in13=12 | in14=14 | in15=14 | in16=15 | in17=17 | in18=17
+103 int table switch 6     FUN_18013abd0  ninputs=2 | select=c_or-out | in1=int6-out | in2=int table 6-out
+104 int sub 6              FUN_18013a110  in1=int table switch 6-out | in2=14
+105 c_multiply 6           FUN_18013a390  in1=int sub 6-out | in2=-1
+106 sht6                   FUN_18013ab90  statement=fshift: %f | name=knob | min=-1 | max=1 | res=0.001 | default=0
+107 fbk7                   FUN_18013ab90  statement=fback: %f | name=knob | min=-100 | max=0 | res=1 | default=-100
+108 msw7                   FUN_18013ad00  statement=voice 7: %s | name=mute | nchoices=2 | default=0 | choices1=off | choices2=on
+109 m switch 7             FUN_18013abd0  ninputs=2 | select=msw7-out | in1=-100 | in2=ogn7-out
+110 ogn7                   FUN_18013ab90  statement=level: %f dB | name=knob | min=-100 | max=0 | res=0.1 | default=-3
+111 fback switch 7         FUN_18013abd0  ninputs=2 | select=msw7-out | in1=-100 | in2=fbk7-out
+112 pan7                   FUN_18013ab90  statement=pan: %f | name=knob | min=-1 | max=1 | res=0.01 | default=0
+113 dly7                   FUN_18013ab90  statement=delay: %f ms | name=knob | min=0 | max=1250 | res=1 | default=0
+114 c_adder14              FUN_18013a510  ninputs=2 | in1=dly7-out | in2=c_switch-out
+115 int7                   FUN_18013ad00  statement=pitch1: %s | nchoices=29 | default=14 | choices1=-2 oct | choices2=-14th | choices3=-13th | choices4=-12th | choices5=-11th | choices6=-10th | choices7=-9th | choices8=-1 oct | choices9=-7th | choices10=-6th | choices11=-5th | choices12=-4th | choices13=-3rd | choices14=-2nd | choices15=unison | choices16=+2nd | choices17=+3rd
+116 int table 7            FUN_18013a8d0  nentries=29 | select=int7-out | in1=0 | in2=1 | in3=3 | in4=3 | in5=4 | in6=5 | in7=7 | in8=7 | in9=8 | in10=10 | in11=10 | in12=11 | in13=12 | in14=14 | in15=14 | in16=15 | in17=17 | in18=17
+117 int table switch 7     FUN_18013abd0  ninputs=2 | select=c_or-out | in1=int7-out | in2=int table 7-out
+118 int sub 7              FUN_18013a110  in1=int table switch 7-out | in2=14
+119 c_multiply 7           FUN_18013a390  in1=int sub 7-out | in2=-1
+120 sht7                   FUN_18013ab90  statement=fshift: %f | name=knob | min=-1 | max=1 | res=0.001 | default=0
+121 fbk8                   FUN_18013ab90  statement=fback: %f | name=knob | min=-100 | max=0 | res=1 | default=-100
+122 msw8                   FUN_18013ad00  statement=voice 8: %s | name=mute | nchoices=2 | default=0 | choices1=off | choices2=on
+123 m switch 8             FUN_18013abd0  ninputs=2 | select=msw8-out | in1=-100 | in2=ogn8-out
+124 ogn8                   FUN_18013ab90  statement=level: %f dB | name=knob | min=-100 | max=0 | res=0.1 | default=-3
+125 fback switch 8         FUN_18013abd0  ninputs=2 | select=msw8-out | in1=-100 | in2=fbk8-out
+126 c_divide18             FUN_18013a110  in1=fback switch 1-out | in2=20
+127 c_power9               FUN_18013a110  in1=10 | in2=c_divide18-out
+128 c_divide19             FUN_18013a110  in1=fback switch 2-out | in2=20
+129 c_power10              FUN_18013a110  in1=10 | in2=c_divide19-out
+130 c_divide20             FUN_18013a110  in1=fback switch 3-out | in2=20
+131 c_power11              FUN_18013a110  in1=10 | in2=c_divide20-out
+132 c_divide21             FUN_18013a110  in1=fback switch 4-out | in2=20
+133 c_power12              FUN_18013a110  in1=10 | in2=c_divide21-out
+134 c_divide22             FUN_18013a110  in1=fback switch 5-out | in2=20
+135 c_power13              FUN_18013a110  in1=10 | in2=c_divide22-out
+136 c_divide23             FUN_18013a110  in1=fback switch 6-out | in2=20
+137 c_power14              FUN_18013a110  in1=10 | in2=c_divide23-out
+138 c_divide24             FUN_18013a110  in1=fback switch 7-out | in2=20
+139 c_power15              FUN_18013a110  in1=10 | in2=c_divide24-out
+140 c_divide25             FUN_18013a110  in1=fback switch 8-out | in2=20
+141 c_power16              FUN_18013a110  in1=10 | in2=c_divide25-out
+142 pan8                   FUN_18013ab90  statement=pan: %f | name=knob | min=-1 | max=1 | res=0.01 | default=0
+143 dly8                   FUN_18013ab90  statement=delay: %f ms | name=knob | min=0 | max=1250 | res=1 | default=0
+144 c_adder15              FUN_18013a510  ninputs=2 | in1=dly8-out | in2=c_switch-out
+145 int8                   FUN_18013ad00  statement=pitch1: %s | nchoices=29 | default=14 | choices1=-2 oct | choices2=-14th | choices3=-13th | choices4=-12th | choices5=-11th | choices6=-10th | choices7=-9th | choices8=-1 oct | choices9=-7th | choices10=-6th | choices11=-5th | choices12=-4th | choices13=-3rd | choices14=-2nd | choices15=unison | choices16=+2nd | choices17=+3rd
+146 int table 8            FUN_18013a8d0  nentries=29 | select=int8-out | in1=0 | in2=1 | in3=3 | in4=3 | in5=4 | in6=5 | in7=7 | in8=7 | in9=8 | in10=10 | in11=10 | in12=11 | in13=12 | in14=14 | in15=14 | in16=15 | in17=17 | in18=17
+147 int table switch 8     FUN_18013abd0  ninputs=2 | select=c_or-out | in1=int8-out | in2=int table 8-out
+148 int sub 8              FUN_18013a110  in1=int table switch 8-out | in2=14
+149 c_multiply 8           FUN_18013a390  in1=int sub 8-out | in2=-1
+150 sht8                   FUN_18013ab90  statement=fshift: %f | name=knob | min=-1 | max=1 | res=0.001 | default=0
+151 c_abs                  FUN_180139ec0  input=sht1-out
+152 c_abs1                 FUN_180139ec0  input=sht2-out
+153 c_abs2                 FUN_180139ec0  input=sht3-out
+154 c_abs3                 FUN_180139ec0  input=sht4-out
+155 c_abs4                 FUN_180139ec0  input=sht5-out
+156 c_abs5                 FUN_180139ec0  input=sht6-out
+157 c_abs6                 FUN_180139ec0  input=sht7-out
+158 c_abs7                 FUN_180139ec0  input=sht8-out
+159 c_adder                FUN_18013a510  ninputs=2 | in1=c_abs-output | in2=200
+160 c_adder1               FUN_18013a510  ninputs=2 | in1=c_abs1-output | in2=200
+161 c_adder2               FUN_18013a510  ninputs=2 | in1=c_abs2-output | in2=200
+162 c_adder3               FUN_18013a510  ninputs=2 | in1=c_abs3-output | in2=200
+163 c_adder4               FUN_18013a510  ninputs=2 | in1=c_abs4-output | in2=200
+164 c_adder5               FUN_18013a510  ninputs=2 | in1=c_abs5-output | in2=200
+165 c_adder6               FUN_18013a510  ninputs=2 | in1=c_abs6-output | in2=200
+166 c_adder7               FUN_18013a510  ninputs=2 | in1=c_abs7-output | in2=200
+167 c_divide3              FUN_18013a110  in1=sht1-out | in2=c_adder-out
+168 c_fltr_a13             FUN_18013aac0  time_constant=0 | in=c_divide3-out
+169 c_divide4              FUN_18013a110  in1=sht2-out | in2=c_adder1-out
+170 c_fltr_a15             FUN_18013aac0  time_constant=0 | in=c_divide4-out
+171 c_divide5              FUN_18013a110  in1=sht3-out | in2=c_adder2-out
+172 c_fltr_a16             FUN_18013aac0  time_constant=0 | in=c_divide5-out
+173 c_divide6              FUN_18013a110  in1=sht4-out | in2=c_adder3-out
+174 c_fltr_a17             FUN_18013aac0  time_constant=0 | in=c_divide6-out
+175 c_divide7              FUN_18013a110  in1=sht5-out | in2=c_adder4-out
+176 c_fltr_a18             FUN_18013aac0  time_constant=0 | in=c_divide7-out
+177 c_divide8              FUN_18013a110  in1=sht6-out | in2=c_adder5-out
+178 c_fltr_a19             FUN_18013aac0  time_constant=0 | in=c_divide8-out
+179 c_divide9              FUN_18013a110  in1=sht7-out | in2=c_adder6-out
+180 c_fltr_a20             FUN_18013aac0  time_constant=0 | in=c_divide9-out
+181 c_divide10             FUN_18013a110  in1=sht8-out | in2=c_adder7-out
+182 c_fltr_a21             FUN_18013aac0  time_constant=0 | in=c_divide10-out
+183 rdm div 1              FUN_18013a110  in1=rdm a-c 1-out | in2=1.5
+184 rdm add 1              FUN_18013a510  ninputs=2 | in1=rdm div 1-out | in2=0.5
+185 rdm mult 2             FUN_18013a390  in1=2000 | in2=rdm add 1-out
+186 rdm div 2              FUN_18013a110  in1=rdm a-c 2-out | in2=1.5
+187 rdm add 2              FUN_18013a510  ninputs=2 | in1=rdm div 2-out | in2=0.5
+188 rdm mult 3             FUN_18013a390  in1=2000 | in2=rdm add 2-out
+189 rdm div 3              FUN_18013a110  in1=rdm a-c 3-out | in2=1.5
+190 rdm add 3              FUN_18013a510  ninputs=2 | in1=rdm div 3-out | in2=0.5
+191 rdm mult 4             FUN_18013a390  in1=2000 | in2=rdm add 3-out
+192 rdm div 4              FUN_18013a110  in1=rdm a-c 4-out | in2=1.5
+193 rdm add 4              FUN_18013a510  ninputs=2 | in1=rdm div 4-out | in2=0.5
+194 rdm mult 5             FUN_18013a390  in1=2000 | in2=rdm add 4-out
+195 rdm div 5              FUN_18013a110  in1=rdm a-c 5-out | in2=1.5
+196 rdm add 5              FUN_18013a510  ninputs=2 | in1=rdm div 5-out | in2=0.5
+197 rdm mult 6             FUN_18013a390  in1=2000 | in2=rdm add 5-out
+198 rdm div 6              FUN_18013a110  in1=rdm a-c 6-out | in2=1.5
+199 rdm add 6              FUN_18013a510  ninputs=2 | in1=rdm div 6-out | in2=0.5
+200 rdm mult 7             FUN_18013a390  in1=2000 | in2=rdm add 6-out
+201 rdm div 7              FUN_18013a110  in1=rdm a-c 7-out | in2=1.5
+202 rdm add 7              FUN_18013a510  ninputs=2 | in1=rdm div 7-out | in2=0.5
+203 rdm mult 8             FUN_18013a390  in1=2000 | in2=rdm add 7-out
+204 rdm div 8              FUN_18013a110  in1=rdm a-c 8-out | in2=1.5
+205 rdm add 8              FUN_18013a510  ninputs=2 | in1=rdm div 8-out | in2=0.5
+206 rdm mult 1             FUN_18013a390  in1=2000 | in2=rdm add 8-out
+207 mmix                   FUN_18013ab90  statement=mix:%3.0f %% | name=mix | min=0 | max=100 | res=1 | default=100
+208 ouch                   FUN_18013ab90  statement=knob: %f | name=knob | min=1 | max=2 | res=1 | default=1
+209 c_subtract3            FUN_18013a110  in1=ouch-out | in2=1
+210 ogan                   FUN_18013ab90  statement=Out Gain:%3.0f dB | name=knob | min=-96 | max=24 | res=1 | default=0
+211 bypa                   FUN_18013ad00  statement=input: %s | nchoices=2 | default=0 | choices1=normal | choices2=bypass
+212 rdm noise              FUN_180139c50  
+213 rdm abs                FUN_180139a30  in=rdm noise-out
+214 rdm sh 1               FUN_1801390d0  in=rdm abs-out | newsamp=rdm comp 1-out
+215 rdm slew 1             FUN_1801398e0  in=rdm sh 1-out | pslew=rdm mult 1-out | nslew=rdm mult 1-out
+216 rdm comp 1             FUN_1801395f0  in1=rdm slew 1-out | in2=rdm sh 1-out | inspread=0 | constval=0 | outspread=0
+217 rdm a-c 1              FUN_180139270  in=rdm slew 1-out
+218 rdm sh 2               FUN_1801390d0  in=rdm abs-out | newsamp=rdm comp 2-out
+219 rdm slew 2             FUN_1801398e0  in=rdm sh 2-out | pslew=rdm mult 2-out | nslew=rdm mult 2-out
+220 rdm comp 2             FUN_1801395f0  in1=rdm slew 2-out | in2=rdm sh 2-out | inspread=0 | constval=0 | outspread=0
+221 rdm a-c 2              FUN_180139270  in=rdm slew 2-out
+222 rdm sh 3               FUN_1801390d0  in=rdm abs-out | newsamp=rdm comp 3-out
+223 rdm slew 3             FUN_1801398e0  in=rdm sh 3-out | pslew=rdm mult 3-out | nslew=rdm mult 3-out
+224 rdm comp 3             FUN_1801395f0  in1=rdm slew 3-out | in2=rdm sh 3-out | inspread=0 | constval=0 | outspread=0
+225 rdm a-c 3              FUN_180139270  in=rdm slew 3-out
+226 rdm sh 4               FUN_1801390d0  in=rdm abs-out | newsamp=rdm comp 4-out
+227 rdm slew 4             FUN_1801398e0  in=rdm sh 4-out | pslew=rdm mult 4-out | nslew=rdm mult 4-out
+228 rdm comp 4             FUN_1801395f0  in1=rdm slew 4-out | in2=rdm sh 4-out | inspread=0 | constval=0 | outspread=0
+229 rdm a-c 4              FUN_180139270  in=rdm slew 4-out
+230 rdm sh 5               FUN_1801390d0  in=rdm abs-out | newsamp=rdm comp 5-out
+231 rdm slew 5             FUN_1801398e0  in=rdm sh 5-out | pslew=rdm mult 5-out | nslew=rdm mult 5-out
+232 rdm comp 5             FUN_1801395f0  in1=rdm slew 5-out | in2=rdm sh 5-out | inspread=0 | constval=0 | outspread=0
+233 rdm a-c 5              FUN_180139270  in=rdm slew 5-out
+234 rdm sh 6               FUN_1801390d0  in=rdm abs-out | newsamp=rdm comp 6-out
+235 rdm slew 6             FUN_1801398e0  in=rdm sh 6-out | pslew=rdm mult 6-out | nslew=rdm mult 6-out
+236 rdm comp 6             FUN_1801395f0  in1=rdm slew 6-out | in2=rdm sh 6-out | inspread=0 | constval=0 | outspread=0
+237 rdm a-c 6              FUN_180139270  in=rdm slew 6-out
+238 rdm sh 7               FUN_1801390d0  in=rdm abs-out | newsamp=rdm comp 7-out
+239 rdm slew 7             FUN_1801398e0  in=rdm sh 7-out | pslew=rdm mult 7-out | nslew=rdm mult 7-out
+240 rdm comp 7             FUN_1801395f0  in1=rdm slew 7-out | in2=rdm sh 7-out | inspread=0 | constval=0 | outspread=0
+241 rdm a-c 7              FUN_180139270  in=rdm slew 7-out
+242 rdm sh 8               FUN_1801390d0  in=rdm abs-out | newsamp=rdm comp 8-out
+243 rdm slew 8             FUN_1801398e0  in=rdm sh 8-out | pslew=rdm mult 8-out | nslew=rdm mult 8-out
+244 multiply12             FUN_1801390d0  in1=c_fltr_a36-out | in2=rdm slew 1-out
+245 rdm comp 8             FUN_1801395f0  in1=rdm slew 8-out | in2=rdm sh 8-out | inspread=0 | constval=0 | outspread=0
+246 rdm a-c 8              FUN_180139270  in=rdm slew 8-out
+247 left in                FUN_180139050  in=adc-in1 | gain=igan-out
+248 delay comp 1           FUN_180138d30  maxdelay=51 | in=left in-out | delayamt=live mode delay comp-out
+249 iswitch6               FUN_1801389c0  numins=2 | select=live-out | in1=delay comp 1-out | in2=left in-out
+250 right in               FUN_180139050  in=adc-in2 | gain=igan-out
+251 delay comp 2           FUN_180138d30  maxdelay=51 | in=right in-out | delayamt=live mode delay comp-out
+252 iswitch7               FUN_1801389c0  numins=2 | select=live-out | in1=delay comp 2-out | in2=right in-out
+253 mix                    FUN_180138710  time_constant=20 | in1=left in-out | in2=right in-out | amp1=0.5 | amp2=0.5
+254 iswitch4               FUN_1801389c0  numins=2 | select=c_subtract1-out | in1=left in-out | in2=mix-out
+255 iswitch5               FUN_1801389c0  numins=2 | select=c_subtract1-out | in1=iswitch6-out | in2=iswitch7-out
+256 peak4                  FUN_180138570  type=0 | in=iswitch6-out | attackcntl=0.05 | decaycntl=0.1
+257 LevMetrAtoC3           FUN_180139270  in=peak4-out
+258 inst                   FUN_18013ab90  statement=knob: %f | name=knob | min=0 | max=12 | res=1 | default=0
+259 MaxCut                 FUN_18013a8d0  nentries=16 | select=inst-out | in1=0 | in2=0 | in3=-14 | in4=-14 | in5=-14 | in6=-14 | in7=-14 | in8=-18 | in9=-14 | in10=-7 | in11=-14 | in12=-14 | in13=-7 | in14=-18 | in15=-7 | in16=-7
+260 CutFreq                FUN_18013a8d0  nentries=16 | select=inst-out | in1=20000 | in2=20000 | in3=8000 | in4=8000 | in5=8000 | in6=8000 | in7=8000 | in8=2000 | in9=3500 | in10=12000 | in11=8000 | in12=8000 | in13=3500 | in14=1200 | in15=4000 | in16=10000
+261 CutMultiplier          FUN_18013a8d0  nentries=16 | select=inst-out | in1=0 | in2=0 | in3=-1 | in4=-1 | in5=-1 | in6=-1 | in7=-1 | in8=-1.2857 | in9=-1 | in10=-0.5 | in11=-1 | in12=-1 | in13=-0.5 | in14=-1.2857 | in15=-0.5 | in16=-0.5
+262 AntiAliasOnOff         FUN_18013a8d0  nentries=16 | select=inst-out | in1=0 | in2=0 | in3=1 | in4=1 | in5=1 | in6=1 | in7=1 | in8=1 | in9=1 | in10=0 | in11=1 | in12=1 | in13=0 | in14=1 | in15=0 | in16=0
+263 c_minmax2              FUN_18013ab50  ninputs=9 | in1=c_multiply 1-out | in2=c_multiply 2-out | in3=c_multiply 3-out | in4=c_multiply 4-out | in5=c_multiply 5-out | in6=c_multiply 6-out | in7=c_multiply 7-out | in8=c_multiply 8-out | in9=0
+264 c_divide2              FUN_18013a110  in1=c_minmax2-maximum | in2=7
+265 c_multiply6            FUN_18013a390  in1=c_divide2-out | in2=-1
+266 c_power1               FUN_18013a110  in1=2 | in2=c_multiply6-out
+267 c_fltr_a14             FUN_18013aac0  time_constant=20 | in=c_power1-out
+268 bound1                 FUN_1801384b0  in=c_fltr_a14-out | minimum=0 | maximum=1
+269 c_fltr_a12             FUN_18013aac0  time_constant=20 | in=c_power9-out
+270 multiply4              FUN_1801390d0  in1=moddelay7-out | in2=c_fltr_a12-out
+271 modiirq                FUN_180138200  in=iswitch4-out | modfreq=bound1-out | n_sections=2 | qfactor=0.7 | type=0 | sections=2 | processoff=0
+272 iswitch8               FUN_1801389c0  numins=2 | select=AntiAliasOnOff-out | in1=iswitch4-out | in2=modiirq-out
+273 softclip               FUN_1801380c0  in=iswitch8-out | select=1 | drive=0 | order=1 | processoff=0
+274 add8                   FUN_180137f40  in1=c_fltr_a13-out | in2=multiply12-out
+275 dtonicii9              FUN_180137e20  maxdelay=2400 | nvoices=8 | steps=12 | in=softclip-out | scale=scal table-out | key=keys-out | pitchtracking=ptrk-out | hysteresis=10 | correctrate=1 | mincorrect=0 | intervalglide=1 | tuning=0 | tune=tune-out | quantization=0 | minpitch=minp-out | gatelevel=-55 | xfadetime=xfad-out | mod1=rdm slew 1-out | mod2=rdm slew 2-out | mod3=rdm slew 3-out
+276 modfilter8             FUN_180137c30  in=dtonicii9-out1 | fmod=adc-null | qmod=adc-null | freq=20 | freqmodamt=0 | q=1 | qmodamt=0 | processoff=0
+277 eqn                    FUN_180137ac0  neqs=1 | in=modfilter8-high | freq1=CutFreq-out | qfactor1=0.7 | boost1=c_bound2-out | type1=2
+278 add                    FUN_180137f40  in1=eqn-out | in2=multiply4-out
+279 moddelay7              FUN_180137930  maxdelay=2000 | declick=1 | in=add-out | mod=adc-null | delayamt=dly1-out | modamt=0 | glidespeed=0
+280 c_multiply8            FUN_18013a390  in1=c_multiply 1-out | in2=CutMultiplier-out
+281 c_bound2               FUN_1801377a0  input=c_multiply8-out | minimum=MaxCut-out | maximum=0
+282 c_fltr_a23             FUN_18013aac0  time_constant=20 | in=c_power10-out
+283 multiply5              FUN_1801390d0  in1=moddelay6-out | in2=c_fltr_a23-out
+284 modfilter9             FUN_180137c30  in=dtonicii9-out2 | fmod=adc-null | qmod=adc-null | freq=20 | freqmodamt=0 | q=1 | qmodamt=0 | processoff=0
+285 eqn1                   FUN_180137ac0  neqs=1 | in=modfilter9-high | freq1=CutFreq-out | qfactor1=0.7 | boost1=c_bound3-out | type1=2
+286 add1                   FUN_180137f40  in1=eqn1-out | in2=multiply5-out
+287 moddelay6              FUN_180137930  maxdelay=2000 | declick=1 | in=add1-out | mod=adc-null | delayamt=dly2-out | modamt=0 | glidespeed=0
+288 c_multiply9            FUN_18013a390  in1=c_multiply 2-out | in2=CutMultiplier-out
+289 c_bound3               FUN_1801377a0  input=c_multiply9-out | minimum=MaxCut-out | maximum=0
+290 c_fltr_a25             FUN_18013aac0  time_constant=20 | in=c_power11-out
+291 multiply6              FUN_1801390d0  in1=moddelay5-out | in2=c_fltr_a25-out
+292 modfilter10            FUN_180137c30  in=dtonicii9-out3 | fmod=adc-null | qmod=adc-null | freq=20 | freqmodamt=0 | q=1 | qmodamt=0 | processoff=0
+293 eqn2                   FUN_180137ac0  neqs=1 | in=modfilter10-high | freq1=CutFreq-out | qfactor1=0.7 | boost1=c_bound4-out | type1=2
+294 add2                   FUN_180137f40  in1=eqn2-out | in2=multiply6-out
+295 moddelay5              FUN_180137930  maxdelay=2000 | declick=1 | in=add2-out | mod=adc-null | delayamt=dly3-out | modamt=0 | glidespeed=0
+296 c_multiply11           FUN_18013a390  in1=c_multiply 3-out | in2=CutMultiplier-out
+297 c_bound4               FUN_1801377a0  input=c_multiply11-out | minimum=MaxCut-out | maximum=0
+298 c_fltr_a27             FUN_18013aac0  time_constant=20 | in=c_power12-out
+299 multiply7              FUN_1801390d0  in1=moddelay4-out | in2=c_fltr_a27-out
+300 modfilter11            FUN_180137c30  in=dtonicii9-out4 | fmod=adc-null | qmod=adc-null | freq=20 | freqmodamt=0 | q=1 | qmodamt=0 | processoff=0
+301 eqn3                   FUN_180137ac0  neqs=1 | in=modfilter11-high | freq1=CutFreq-out | qfactor1=0.7 | boost1=c_bound5-out | type1=2
+302 add3                   FUN_180137f40  in1=eqn3-out | in2=multiply7-out
+303 moddelay4              FUN_180137930  maxdelay=2000 | declick=1 | in=add3-out | mod=adc-null | delayamt=dly4-out | modamt=0 | glidespeed=0
+304 c_multiply13           FUN_18013a390  in1=c_multiply 4-out | in2=CutMultiplier-out
+305 c_bound5               FUN_1801377a0  input=c_multiply13-out | minimum=MaxCut-out | maximum=0
+306 c_fltr_a29             FUN_18013aac0  time_constant=20 | in=c_power13-out
+307 multiply8              FUN_1801390d0  in1=moddelay3-out | in2=c_fltr_a29-out
+308 modfilter12            FUN_180137c30  in=dtonicii9-out5 | fmod=adc-null | qmod=adc-null | freq=20 | freqmodamt=0 | q=1 | qmodamt=0 | processoff=0
+309 eqn4                   FUN_180137ac0  neqs=1 | in=modfilter12-high | freq1=CutFreq-out | qfactor1=0.7 | boost1=c_bound6-out | type1=2
+310 add4                   FUN_180137f40  in1=eqn4-out | in2=multiply8-out
+311 moddelay3              FUN_180137930  maxdelay=2000 | declick=1 | in=add4-out | mod=adc-null | delayamt=dly5-out | modamt=0 | glidespeed=0
+312 c_multiply15           FUN_18013a390  in1=c_multiply 5-out | in2=CutMultiplier-out
+313 c_bound6               FUN_1801377a0  input=c_multiply15-out | minimum=MaxCut-out | maximum=0
+314 c_fltr_a31             FUN_18013aac0  time_constant=20 | in=c_power14-out
+315 multiply9              FUN_1801390d0  in1=moddelay2-out | in2=c_fltr_a31-out
+316 modfilter13            FUN_180137c30  in=dtonicii9-out6 | fmod=adc-null | qmod=adc-null | freq=20 | freqmodamt=0 | q=1 | qmodamt=0 | processoff=0
+317 eqn5                   FUN_180137ac0  neqs=1 | in=modfilter13-high | freq1=CutFreq-out | qfactor1=0.7 | boost1=c_bound7-out | type1=2
+318 add5                   FUN_180137f40  in1=eqn5-out | in2=multiply9-out
+319 moddelay2              FUN_180137930  maxdelay=2000 | declick=1 | in=add5-out | mod=adc-null | delayamt=dly6-out | modamt=0 | glidespeed=0
+320 c_multiply17           FUN_18013a390  in1=c_multiply 6-out | in2=CutMultiplier-out
+321 c_bound7               FUN_1801377a0  input=c_multiply17-out | minimum=MaxCut-out | maximum=0
+322 c_fltr_a33             FUN_18013aac0  time_constant=20 | in=c_power15-out
+323 multiply10             FUN_1801390d0  in1=moddelay1-out | in2=c_fltr_a33-out
+324 modfilter14            FUN_180137c30  in=dtonicii9-out7 | fmod=adc-null | qmod=adc-null | freq=20 | freqmodamt=0 | q=1 | qmodamt=0 | processoff=0
+325 eqn6                   FUN_180137ac0  neqs=1 | in=modfilter14-high | freq1=CutFreq-out | qfactor1=0.7 | boost1=c_bound8-out | type1=2
+326 add6                   FUN_180137f40  in1=eqn6-out | in2=multiply10-out
+327 moddelay1              FUN_180137930  maxdelay=2000 | declick=1 | in=add6-out | mod=adc-null | delayamt=dly7-out | modamt=0 | glidespeed=0
+328 c_multiply19           FUN_18013a390  in1=c_multiply 7-out | in2=CutMultiplier-out
+329 c_bound8               FUN_1801377a0  input=c_multiply19-out | minimum=MaxCut-out | maximum=0
+330 c_fltr_a35             FUN_18013aac0  time_constant=20 | in=c_power16-out
+331 multiply11             FUN_1801390d0  in1=moddelay-out | in2=c_fltr_a35-out
+332 modfilter15            FUN_180137c30  in=dtonicii9-out8 | fmod=adc-null | qmod=adc-null | freq=20 | freqmodamt=0 | q=1 | qmodamt=0 | processoff=0
+333 eqn7                   FUN_180137ac0  neqs=1 | in=modfilter15-high | freq1=CutFreq-out | qfactor1=0.7 | boost1=c_bound9-out | type1=2
+334 add7                   FUN_180137f40  in1=eqn7-out | in2=multiply11-out
+335 moddelay               FUN_180137930  maxdelay=2000 | declick=1 | in=add7-out | mod=adc-null | delayamt=dly8-out | modamt=0 | glidespeed=0
+336 c_multiply21           FUN_18013a390  in1=c_multiply 8-out | in2=CutMultiplier-out
+337 c_bound9               FUN_1801377a0  input=c_multiply21-out | minimum=MaxCut-out | maximum=0
+338 stereomixer3           FUN_180137720  ninputs=8 | time_constant=25 | in1=add-out | in2=add1-out | in3=add2-out | in4=add3-out | in5=add4-out | in6=add5-out | in7=add6-out | in8=add7-out | gain1=m switch 1-out | gain2=m switch 2-out | gain3=m switch 3-out | gain4=m switch 4-out | gain5=m switch 5-out | gain6=m switch 6-out | gain7=m switch 7-out | gain8=m switch 8-out | pan1=pan1-out | pan2=pan2-out
+339 feedback1              FUN_180138710  time_constant=20 | in1=stereomixer3-right | in2=subtract1-out | amp1=1 | amp2=mfbk-out
+340 softclip2              FUN_1801380c0  in=feedback1-out | select=1 | drive=0 | order=1 | processoff=0
+341 delay_xf1              FUN_180137630  maxdelay=2400 | noutputs=1 | in=softclip2-out | xfadetime=20 | mod1=adc-null | modamt1=0 | tapdls1=c_minmax-maximum | gain1=0
+342 just for the filter2   FUN_1801374d0  maxdelay=1 | in=delay_xf1-out1 | mod=adc-null | delayamt=0 | modamt=0
+343 highcut1               FUN_180137260  in=just for the filter2-out | freq=5
+344 subtract1              FUN_180136fa0  in1=just for the filter2-out | in2=highcut1-out
+345 feedback               FUN_180138710  time_constant=20 | in1=stereomixer3-left | in2=subtract-out | amp1=1 | amp2=mfbk-out
+346 softclip1              FUN_1801380c0  in=feedback-out | select=1 | drive=0 | order=1 | processoff=0
+347 delay_xf               FUN_180137630  maxdelay=2400 | noutputs=1 | in=softclip1-out | xfadetime=20 | mod1=adc-null | modamt1=0 | tapdls1=c_minmax-maximum | gain1=0
+348 just for the filter    FUN_1801374d0  maxdelay=1 | in=delay_xf-out1 | mod=adc-null | delayamt=0 | modamt=0
+349 highcut                FUN_180137260  in=just for the filter-out | freq=5
+350 subtract               FUN_180136fa0  in1=just for the filter-out | in2=highcut-out
+351 c_subtract2            FUN_18013a110  in1=1 | in2=mmix-out
+352 c_fltr_a1              FUN_18013aac0  time_constant=10 | in=mmix-out
+353 c_fltr_a               FUN_18013aac0  time_constant=10 | in=c_subtract2-out
+354 c_fltr_a2              FUN_18013aac0  time_constant=10 | in=mmix-out
+355 c_fltr_a3              FUN_18013aac0  time_constant=10 | in=c_subtract2-out
+356 multiply               FUN_1801390d0  in1=iswitch6-out | in2=c_fltr_a-out
+357 monoSumWetChans        FUN_180138710  time_constant=20 | in1=feedback-out | in2=feedback1-out | amp1=0.707 | amp2=0.707
+358 iswitch3               FUN_1801389c0  numins=2 | select=c_subtract1-out | in1=iswitch6-out | in2=iswitch7-out
+359 multiply3              FUN_1801390d0  in1=iswitch3-out | in2=c_fltr_a3-out
+360 iswitch9               FUN_1801389c0  numins=2 | select=c_subtract3-out | in1=monoSumWetChans-out | in2=feedback1-out
+361 multiply2              FUN_1801390d0  in1=iswitch9-out | in2=c_fltr_a2-out
+362 iswitch11              FUN_1801389c0  numins=2 | select=c_subtract3-out | in1=monoSumWetChans-out | in2=feedback-out
+363 multiply1              FUN_1801390d0  in1=iswitch11-out | in2=c_fltr_a1-out
+364 LWetDryMix             FUN_180137f40  in1=multiply-out | in2=multiply1-out
+365 RWetDryMix             FUN_180137f40  in1=multiply3-out | in2=multiply2-out
+366 left out               FUN_180139050  in=LWetDryMix-out | gain=ogan-out
+367 right out              FUN_180139050  in=RWetDryMix-out | gain=ogan-out
+368 iswitch2               FUN_1801389c0  numins=2 | select=c_subtract1-out | in1=adc-in1 | in2=adc-in2
+369 iswitch                FUN_1801389c0  numins=2 | select=bypa-out | in1=left out-out | in2=adc-in1
+370 iswitch1               FUN_1801389c0  numins=2 | select=bypa-out | in1=right out-out | in2=iswitch2-out
+371 peak1                  FUN_180138570  type=0 | in=left out-out | attackcntl=0.05 | decaycntl=0.1
+372 peak2                  FUN_180138570  type=0 | in=right out-out | attackcntl=0.05 | decaycntl=0.1
+373 LevLintodB3            FUN_180136dc0  linvalue=LevMetrAtoC3-out
+374 peak5                  FUN_180138570  type=0 | in=iswitch5-out | attackcntl=0.05 | decaycntl=0.1
+375 LevMetrAtoC4           FUN_180139270  in=peak5-out
+376 LevLintodB4            FUN_180136dc0  linvalue=LevMetrAtoC4-out
+377 lipD                   FUN_180136c20  in=LevLintodB3-dbvalue | minimum=-90 | maximum=0 | tag=ganred:
+378 ripD                   FUN_180136c20  in=LevLintodB4-dbvalue | minimum=-90 | maximum=0 | tag=ganred:
+379 LevMetrAtoC            FUN_180139270  in=peak1-out
+380 LevMetrAtoC1           FUN_180139270  in=peak2-out
+381 LevLintodB             FUN_180136dc0  linvalue=LevMetrAtoC-out
+382 LevLintodB1            FUN_180136dc0  linvalue=LevMetrAtoC1-out
+383 lopD                   FUN_180136c20  in=LevLintodB-dbvalue | minimum=-90 | maximum=0 | tag=ganred:
+384 ropD                   FUN_180136c20  in=LevLintodB1-dbvalue | minimum=-90 | maximum=0 | tag=ganred:
+385 overload1              FUN_180136980  in=left out-out | thresh=-0.1
+386 overload3              FUN_180136980  in=right out-out | thresh=-0.1
+387 overload               FUN_180136980  in=iswitch6-out | thresh=-0.1
+388 overload2              FUN_180136980  in=iswitch7-out | thresh=-0.1
+389 c_switch7              FUN_18013abd0  ninputs=2 | select=c_subtract1-out | in1=overload-ol | in2=overload2-ol
+390 c_switch8              FUN_18013abd0  ninputs=2 | select=c_subtract3-out | in1=overload1-ol | in2=overload3-ol
+391 lopL                   FUN_180136750  in=overload1-ol | statement=monitor:%f | tag=monitor
+392 ropL                   FUN_180136750  in=c_switch8-out | statement=monitor:%f | tag=monitor
+393 lipL                   FUN_180136750  in=overload-ol | statement=monitor:%f | tag=monitor
+394 ripL                   FUN_180136750  in=c_switch7-out | statement=monitor:%f | tag=monitor
+395 pitM                   FUN_180136750  in=dtonicii9-pitch | statement=pitch detect | tag=pitM
+396 tonM                   FUN_180136750  in=dtonicii9-tonality | statement=tonality detect | tag=tonM
+397 djg                    FUN_180011a40  

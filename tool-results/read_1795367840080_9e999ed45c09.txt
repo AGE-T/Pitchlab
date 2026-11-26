@@ -1,0 +1,610 @@
+     1→     1→# AZ EREDETI OCTAVOX VST3 BELSŐ DSP-LÁNCÁNAK TELJES TÉRKÉPE
+     2→     2→
+     3→     3→**Kör:** 25 (2026) · **Tárgy:** az eredeti Eventide Octavox VST3 belső működése
+     4→     4→**Célbináris:** `Ox.vst3` — PE32+ x86-64 DLL, image base `0x180000000`,
+     5→     5→SHA-256 `7bb260f66bb9c1b21b27f64f29e6fdd2865c34f8a31ad1c0ef21a1db7f32f1f2`
+     6→     6→(5 307 392 bájt; a futtatásig sosem módosított, végleges fájl).
+     7→     7→
+     8→     8→**Módszer:** tisztán statikus visszavezetés (Ghidra 12.1.4 + REA a korábbi
+     9→     9→körökben; capstone 5.0.7 közvetlen PE-olvasás R25-ben). **Az eredeti binárist
+    10→    10→soha nem futtattuk** — minden állítás kód/bájtokból származik. Bizonyíték-
+    11→    11→osztályok: **OBS** (kódban/bájtban megfigyelt) · **DER** (megfigyelt
+    12→    12→szerkezettől levezetett) · **UNK** (nem megállapított) · **CONFLICT**
+    13→    13→(két megfigyelés eltér — minden ismert eset dokumentált és feloldva).
+    14→    14→
+    15→    15→**R25-ben lezárt korábbi hézagok** (a lánc utolsó megválaszolható
+    16→    16→hiányzó elemei):
+    17→    17→* a tracker decimáló **FIR-együtthatók tényleges értékei** — kinyerve
+    18→    18→  (3 sebesség-osztály, l. §6.2),
+    19→    19→* a **stereomixer3 pan-törvénye** — lineáris konstans-összegű
+    20→    20→  (L = 0.5·(1−p)·g, R = 0.5·(1+p)·g), l. §10.2.
+    21→    21→
+    22→    22→E dokumentum az **eredetiről** szól; a saját, tiszta újraimplementációnk
+    23→    23→(PitchLab) csak ott említjük, ahol az explicit elválasztás szükséges.
+    24→    24→
+    25→    25→---
+    26→    26→
+    27→    27→## 0. A lánc egy oldalban (OBS/DER vegyes — részletek a szakaszokban)
+    28→    28→
+    29→    29→```
+    30→    30→VST3 host
+    31→    31→  └─ JuceVST3Component → JuceAudioProcessor (delegált +0x38)
+    32→    32→       → VoxAudioProcessor  (vtable 0x1803F05D0; getName "Octavox")
+    33→    33→            │  profilválasztás futásidőben: FUN_18030C6A0(in, out ch)
+    34→    34→            │    (1,1)→mimo(395 modul) · (1,2)→miso(394) · (2,2)→siso(394) · más→Null
+    35→    35→            ▼
+    36→    36→   [395 modulos graph: input gain → mono fold → anti-alias IIR → soft clip]
+    37→    37→   ┌─────────────────────────────────────────────────────────────────┐
+    38→    38→   │ dtonicii9 motor  (modpp::modules::dtonicii_t::dsp_t, module+0x430)│
+    39→    39→   │  1) bemenet-előzmény gyűrű (4 minta/blokk, 2^17 @44.1k)          │
+    40→    40→   │  2) PERIODICITÁS-TRACKER (engine+0x4518, ~12 kHz decimálva):      │
+    41→    41→   │     21-tapos szimmetrikus FIR → adaptív gate → AGC →             │
+    42→    42→   │     243 lag · 48 mintás ablak · 10-állapotú gép →                │
+    43→    43→   │     {correction, i4, i5, 2·period} rekordok (4096 float gyűrű)   │
+    44→    44→   │  3) DIATONIKUS HARMÓNIA-TÉRKÉP (kulcs/skála/temperamentum/       │
+    45→    45→   │     intervallum → 8 soros ratio-tábla → per-voice "page")       │
+    46→    46→   │  4) 8 HANGMAG: változó sebességű olvasás a work-gyűrűből         │
+    47→    47→   │     step = 4·P(f)·ratio·correction (kvartikus P) ·               │
+    48→    48→   │     256×6-os statikus interpolációs kernel (0x1803B6170) ·      │
+    49→    49→   │     settled (1 tap) / crossfade (2 tap) út · re-arm ugrás       │
+    50→    50→   └─────────────────────────────────────────────────────────────────┘
+    51→    51→   → per-hang: 20 Hz HP → EQ (instrument cutoff) → de-click delay (dlyN)
+    52→    52→   → fbkN visszacsatolás (10^(dB/20))
+    53→    53→   → stereomixer3: 8→sztereó (gain dB→lin; pan lineáris; 25 ms simítás)
+    54→    54→   → globális visszacsatolás (softclip · delay_xf · 5 Hz DC-blokkoló)
+    55→    55→   → wet/dry (mmix; live 40 minta kompenzáció) → ogan erősítés
+    56→    56→   → kimeneti frakcionális-olvasók (ugyanaz a 6-tapos kernel)
+    57→    57→   → hard bypass (iswitch) → kimenet
+    58→    58→```
+    59→    59→
+    60→    60→---
+    61→    61→
+    62→    62→## 1. VST3 burkolat és belépés (OBS)
+    63→    63→
+    64→    64→* Host-út: `JuceVST3Component` → `+0x38` delegált (`JuceAudioProcessor`,
+    65→    65→  COL `0x180418300`, vtable `0x1803EF950`, 16 slot) → **`VoxAudioProcessor`**
+    66→    66→  (elsődleges vtable `0x1803F05D0`, COL `0x18041ACF8`): slot[1] `getName` →
+    67→    67→  `"Octavox"`, slot[2] rövid név `"Ocxv"`, slot[3] `prepareToPlay(double,int)`,
+    68→    68→  slot[4] `releaseResources`.
+    69→    69→* A motor-modul neve **`dtonicii9`**; az osztály
+    70→    70→  **`modpp::modules::dtonicii_t::dsp_t`**, a modul-wrapper **+0x430**-ba
+    71→    71→  ágyazva (gyár `FUN_180137E20`; alap-ctor `FUN_1800E2C00`, motor-ctor
+    72→    72→  `FUN_1800E0360`).
+    73→    73→* Motor-vtable `0x180409F60`: `[+0]` dtor `0x1800E7DB0` · `[+8]` **m01**
+    74→    74→  setparam `FUN_1800E10B0` · `[+0x10]` **m02** getparam `FUN_1800E1520` ·
+    75→    75→  `[+0x18]/[+0x20]` alaposztály-fallthrough (`0x1800C5730/0x1800C5770`).
+    76→    76→* A vezérlés **zár-mentes "pull" gráf**: minden vezérlő-csomópont
+    77→    77→  piszkos-bitet állít `LOCK OR`-ral, a fogyasztó `LOCK CMPXCHG`-gel törli —
+    78→    78→  az audio-szál sosem vesz zárat (OBS, `FUN_180139650`/`FUN_18013A250`).
+    79→    79→* A motor a mintavételi frekvenciát a host-felület `vtbl[0x30]` hívásán
+    80→    80→  keresztül szerzi (`engine+0xA524`).
+    81→    81→* A képben **1273 MSVC COL** azonosított (host-osztály-azonosítási módszer).
+    82→    82→
+    83→    83→## 2. Profilválasztás és busszok (OBS)
+    84→    84→
+    85→    85→`FUN_18030C6A0(parent, cfg, inCh, outCh)` a konstrukció ELŐTT választ:
+    86→    86→
+    87→    87→| bemenet→kimenet | profil | modul-szám | allok méret |
+    88→    88→|---|---|---|---|
+    89→    89→| (1,1) | **mimo** (mono-in/mono-out) | 395 | 0x20C30 |
+    90→    90→| (1,2) | **miso** | 394 | 0x20B10 |
+    91→    91→| (2,2) | **siso** | 394 | 0x20B10 |
+    92→    92→| más | NullAlgorithm | — | — |
+    93→    93→
+    94→    94→A `mimo` egy extra modult hordoz (`iswitch9`), ezért minden ≥357-es modul-index
+    95→    95→+1-gyel eltér a profilok közt. A `worker`-fák (audio: `FUN_180103A10` /
+    96→    96→`FUN_18011D5F0`; vezérlés: `FUN_1801061A0` / `FUN_18011FD60`) ugyanazon
+    97→    97→gráf-végrehajtó **profilonkénti klónjai** — nem csatorna-ágak (kör-2
+    98→    98→bizonyítás: a fapárok diffje csak operandus-rend + báziseltérés, és a
+    99→    99→`monoSumWetChans`-ra hivatkozás csak a `mimo`-profilban él).
+   100→   100→Az `inch`/`ouch` kapcsolók a már megépített patch-en BELÜL vezérlik a
+   101→   101→mono/sztereó hajtást (a patch-választó kulcs maga a csatornaszám-pár).
+   102→   102→
+   103→   103→## 3. A 395-modulos gráf teljes topológiája (OBS)
+   104→   104→
+   105→   105→A graph fő ága (mindhárom profilban azonos, kivéve a jelölt eltéréseket):
+   106→   106→
+   107→   107→```
+   108→   108→input gain (igan, dB→lin) → mono fold → anti-alias IIR "modiirq"
+   109→   109→   (n_sections=2, q=0.7, LP; cutoff = 2^(−c_minmax2/7), ahol
+   110→   110→    c_minmax2 = max(c_multiply 1..8) — a legnagyobb lefelé-intervallum
+   111→   111→    pontos frekvenciaaránya) → soft clip → dtonicii9 (8 hang)
+   112→   112→per hang v: modfilterN (20 Hz HP) → eqnN (neqs=1, freq1=CutFreq,
+   113→   113→   q=0.7, boost1=c_boundN dB, type=2) → moddelay (de-click, raw dlyN)
+   114→   114→   + fbkN visszacsatolási gain
+   115→   115→stereomixer3 (8→L/R, gain1..8 + pan1..8, tc=25 ms)
+   116→   116→globális visszacsatolás: fb_in = stereomixer3 L|R (post-pan!)
+   117→   117→   → feedback/feedback1 (amp2 = mfbk 0..100 %) → softclip/softclip2
+   118→   118→   → delay_xf/delay_xf1 (maxdelay 2400, xfadetime 20 ms,
+   119→   119→     tapdls1 = max(fbkd,50) ms) → "just for the filter" frakcionális
+   120→   120→     olvasók → highcut (5 Hz) → subtract → visszazáródik feedback.in2
+   121→   121→wet/dry: dry = iswitch6/7 (live-kompenzált bemenet, +40 minta)
+   122→   122→   wet = (ouch==1) ? monoSumWetChans : feedback1|feedback
+   123→   123→   (monoSumWetChans = 0.707·(feedback+feedback1) — equal-power mono fold)
+   124→   124→   Lout = slew10(dry·(1−mmix)) + slew10(wet·mmix) · Rout szimmetrikusan
+   125→   125→output: ogan (−96..+24 dB) → hard bypass választó (iswitch/iswitch1)
+   126→   126→   → kimenet (+ műszer/LED tapok — olvasatlan végpontok)
+   127→   127→```
+   128→   128→
+   129→   129→* Nyolc **random-modulációs lánc** (a `rdep` knobból, l. §8.4) és
+   130→   130→  méter/LED sink-ek egészítik ki.
+   131→   131→* **Halott netszek** (mindhárom profilban azonos): `add8`,
+   132→   132→  `c_fltr_a15…a21`, `bound`, legfelső `iswitch`/`iswitch1` kimenetek,
+   133→   133→  méter/LED sink-ek. Minden más él — pl. `c_minmax` → `delay_xf.tapdls1`
+   134→   134→  és `c_minmax2` → `c_divide2` (anti-alias cutoff) is.
+   135→   135→* Két egymásba ágyazott visszacsatolási rendszer van (per-hang + globális),
+   136→   136→  mindkettő explicit DC-blokkolással/soft-clippel.
+   137→   137→* A mód-láncok: egyetlen `rdep` → `modamt1..8` (per-hang random-mélyseg);
+   138→   138→
+   139→   139→## 4. Paraméterfelület (OBS)
+   140→   140→
+   141→   141→**73 host-paraméter = 17 globális + 8×7 per-hang** (JUCE-regisztráció:
+   142→   142→sűrű sztring-klaszter `0x18038EB88..0x18038EEA8`; a regisztrációs sorrend
+   143→   143→30 család). A JUCE-oldali, DSP-modullal NEM rendelkező paraméterek (MIDI
+   144→   144→Control, Voice Select, Tempo/Meter/Beat család, Local Snapshots) a
+   145→   145→keretrendszer oldalán élnek — MIDI/tempo-üzenetfeldolgozás nincs a DSP-records
+   146→   146→közt (negatív eredmény, mindhárom profilban ellenőrizve).
+   147→   147→
+   148→   148→### 4.1 Globális (17)
+   149→   149→
+   150→   150→| host-név | tartomány | default | cél |
+   151→   151→|---|---|---|---|
+   152→   152→| Input Level (`igan`) | −96…+12 dB | 0 | `left/right in.gain` |
+   153→   153→| `inch` | 1..2 | 1 | sztereó-flag (`inch−1`) |
+   154→   154→| Live Mode (`live`) | ki/be | 0 | `iswitch6/7` + `c_switch` (⇒ 40 minta komp.) |
+   155→   155→| feedback (`mfbk`) | 0…100 % | 0 | `feedback/feedback1.amp2` |
+   156→   156→| fback dly (`fbkd`) | 0…5000 ms | 0 | `c_minmax` → `delay_xf.tapdls1` |
+   157→   157→| rnd dpth (`rdep`) | 0…200 | 50 | `dtonicii9.modamt1..8` (+ egy halott ág) |
+   158→   158→| key (`keys`) | 17 választás | 0 | `scal table`, `dtonicii9.key` |
+   159→   159→| scale (`scal`) | 16 választás | 0 (ionian) | `scal table`, `dtonicii9.scale` |
+   160→   160→| Pitch Track (`ptrk`) | 0..1 | 1 | port 30 (`engine+0x4510`) |
+   161→   161→| Minimum Pitch (`minp`) | 48 (C0…B3) | 24 (C2) | `m01` id 1 → `T+0x5F70/x+2` |
+   162→   162→| Crossfade (`xfad`) | 0…100 ms | 10 | `dtonicii9.xfadetime` |
+   163→   163→| tune (`tune`) | 392…494 | 440 | `dtonicii9.tune` (A4 Hz) |
+   164→   164→| mix (`mmix`) | 0…100 % | 100 | wet/dry |
+   165→   165→| `ouch` | 1..2 | 1 | kimenet-szélesség flag |
+   166→   166→| Out Gain (`ogan`) | −96…+24 dB | 0 | `left/right out.gain` |
+   167→   167→| bypass (`bypa`) | normál/bypass | 0 | `iswitch/iswitch1` |
+   168→   168→| Instrument (`inst`) | 0..12 | 0 | MaxCut/CutFreq/CutMultiplier/AntiAlias |
+   169→   169→
+   170→   170→### 4.2 Per-hang (8×7)
+   171→   171→
+   172→   172→| host-név | tartomány | default | cél |
+   173→   173→|---|---|---|---|
+   174→   174→| Voice N (`mswN`) | ki/be | 0 | `m switch N`, `fback switch N` |
+   175→   175→| level N (`ognN`) | −100…0 dB | −3 | `stereomixer3.gainN` (mute-gate) |
+   176→   176→| pan N (`panN`) | −1…+1 | 0 | `stereomixer3.panN` |
+   177→   177→| delay N (`dlyN`) | 0…1250 ms | 0 | echo `moddelay.delayamt` = nyers dlyN; ÉS `c_adderN = dlyN+(live?40:0)` → `dtonicii9.delayamtN` |
+   178→   178→| fback N (`fbkN`) | −100…0 dB | −100 | `fback switch N` → ÷20 → 10^x → lin. fb gain |
+   179→   179→| pitch N (`intN`) | 29 választás | 14 (unison) | `int table N` → switch → −14 → `c_multiply N` → `shiftN` (+ `c_minmax2`) |
+   180→   180→| fshift N (`shtN`) | N=1: −2400…+2400 (res 1) · N=2..8: −1…+1 (res 0.001) | 0 | `pcentN` (cent) — **az 1-es tartomány szerzői ütközés (Q-10)** |
+   181→   181→
+   182→   182→**Motor-belső, fix (nem host-állítható) konstansok a recordból:**
+   183→   183→`maxdelay=2400 ms`, `nvoices=8`, `steps=12`, `hysteresis=10`,
+   184→   184→`correctrate=1`, `mincorrect=0`, `intervalglide=1`, `quantization=0`,
+   185→   185→`gatelevel=−55`, `tuning=0`, `userscale1..12=0`.
+   186→   186→
+   187→   187→## 5. Bemeneti kondicionálás (OBS)
+   188→   188→
+   189→   189→* `igan` dB→lineáris erősítés (a `gain` modul belső konverziója).
+   190→   190→* Mono-összefésülés a profil szerint (2 bemenetnél mindkét csatorna).
+   191→   191→* **Anti-alias IIR (`modiirq`)**: 2 szekció, q=0.7, LP; a cutoff
+   192→   192→  `bound1 = clamp(slew20(2^(−c_minmax2/7)),0,1)` — vagyis az aktuális
+   193→   193→  hangolás **legnagyobb lefelé-intervallumának** pontos
+   194→   194→  frekvenciaarányához igazodik (pl. −1 oktáv → 0.5 → a Nyquist fele).
+   195→   195→* **Instrument-táblák** (16 bejegyzés, 13 elérhető; `in14..in16` halott):
+   196→   196→
+   197→   197→| inst | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+   198→   198→|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+   199→   199→| MaxCut (dB) | 0 | 0 | −14 | −14 | −14 | −14 | −14 | −18 | −14 | −7 | −14 | −14 | −7 |
+   200→   200→| CutFreq (Hz) | 20000 | 20000 | 8000 | 8000 | 8000 | 8000 | 8000 | 2000 | 3500 | 12000 | 8000 | 8000 | 3500 |
+   201→   201→| CutMult | 0 | 0 | −1 | −1 | −1 | −1 | −1 | −1.2857 | −1 | −0.5 | −1 | −1 | −0.5 |
+   202→   202→| AntiAlias | 0 | 0 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0 | 1 | 1 | 0 |
+   203→   203→
+   204→   204→  (per-hang `eqnN`: `boost1 = clamp(c_multiplyN · CutMultiplier, MaxCut, 0)`)
+   205→   205→* **Soft clip** a motor előtt és a visszacsatolásban (`softclip`:
+   206→   206→  select=1, drive=0, order=1).
+   207→   207→
+   208→   208→## 6. A periodicitás-tracker (`engine+0x4518`, `FUN_18013BBC0`) (OBS)
+   209→   209→
+   210→   210→**Egy** tracker analizál, és **oszt** nyolc hang közt: 4096-float
+   211→   211→rekord-gyűrűn (`engine+0x98`, mask `0xFFF`) keresztül, per-hang olvasási
+   212→   212→offsettel (port 24).
+   213→   213→
+   214→   214→### 6.1 Front-end
+   215→   215→
+   216→   216→* A blokk 4 mintájából kettőt fogyaszt (`p[1]`, `p[3]` — a deklimált
+   217→   217→  utolsó két minta), a maradék ráta a kadencia-osztóból jön.
+   218→   218→* **64-float nyers gyűrű** (`T+0x5DB0`, mask 0x3F).
+   219→   219→* **Szimmetrikus FIR decimáló** (együtthatók `T+0x5EB0`, legfeljebb 21);
+   220→   220→  a tapszám és az együtthatók az SR-osztály szerinti (setparam **m01 id 5**,
+   221→   221→  küszöbök 50 000/100 000 a `T+0x600C`-en lévő rátán).
+   222→   222→
+   223→   223→### 6.2 R25: a FIR-együtthatók tényleges értékei (OBS — inline float32
+   224→   224→immmediánsok az m01 case-5 kódban, nem .rdata)
+   225→   225→
+   226→   226→| osztály | SR | kadencia | taps (elő/hátra) | együtthatók |
+   227→   227→|---|---|---|---|---|
+   228→   228→| A | <50 kHz | 2 | 5/6 | `0.015604496, 0.0480358601, 0.0866985321, 0.122535944, 0.147476673, 0.156473994` (6 db, `0x1800E1196..C8`) |
+   229→   229→| B | [50k,100k) | 4 | 10/11 | `0.007802248, 0.0152180493, 0.02401793, 0.0335703902, 0.0433492661, 0.0527741052, 0.061267972, 0.0683709159, 0.0737383366, 0.0770936236, 0.0782369971` (11 db, `0x1800E1222..86`) |
+   230→   230→| C | ≥100 kHz | 8 | 20/21 | `0.003901124, 0.00564423203, 0.00760902464, 0.00974481367, 0.012008965, 0.0143663222, 0.0167851951, 0.0192331076, 0.021674633, 0.0240719188, 0.0263870526, 0.0285847355, 0.030633986, 0.0325084254, 0.034185458, 0.0356451012, 0.0368691683, 0.0378411636, 0.0385468118, 0.0389749631, 0.0391184986` (21 db, `0x1800E12B9..81`) |
+   231→   231→
+   232→   232→**DER:** a B[2k]=A[k]/2 és C[2k]=B[k]/2 **bit-exakt** (kitevő−1) — egy
+   233→   233→windowed-sinc prototípus 1×/2×/4× tapsűrűséggel; DC-gain
+   234→   234→0.9972/0.9926/0.9896; −6 dB kb. 2.2–2.3 kHz-nél abszolút Hz-ben (48/96/192
+   235→   235→kHz reprezentatívakra). Az osztályválasztó azonos küszöbbökkel
+   236→   236→választja a work-gyűrű stride-ot (§8.1) is.
+   237→   237→
+   238→   238→### 6.3 Adaptív gate + AGC
+   239→   239→
+   240→   240→* **Gate a decimált mintán:** `if (|x| < |T+0x5F28 · peak|) x = 0`, ahol
+   241→   241→  `peak` (`T+0x5F24`) lecsengési faktora `0.99219` per hívás;
+   242→   242→  `T+0x5F28` = gate×peak szorzó (m01 id 4).
+   243→   243→* **Detektálási gyűrű:** 512 float (`T+0x800`, mask 0x1FF), a kadencia-osztó
+   244→   244→  (`T+0x5F10`, reload `T+0x5F14` ∈ {2,4,8}) tick-enként léptetve → a
+   245→   245→  **≈12 kHz-es** periodicitási folyam.
+   246→   246→* **AGC (állapot 9):** `e = meter[1]` (e_raw); `f = 0.99; if (|e| >
+   247→   247→  |AGC_level|+ε) f = 0.7`; `level = (AGC_level−e)·f + e; level =
+   248→   248→  min(level,1)`; `gain = min((1/128)/√level, 1)`; `AGC_gain = gain·32 →
+   249→   249→  T+0x5FF0` — a korrelátor bemenet szintfüggetlen.
+   250→   250→
+   251→   251→### 6.4 Korrelációs mag
+   252→   252→
+   253→   253→* **243 lag**, 48 mintás ablakú, ablakozott lag-különbség akkumuláció:
+   254→   254→  per lag `analysis[j] += (x_new − prev[j])·(1/v)` (állapot 1,
+   255→   255→  `0x18013BBC0` L277–480), ahol `v` szivárgási tényező (`T+0x5F34 = 1/v`,
+   256→   256→  `T+0x5F38 = v·243` — m01 id 6 állítja; a ctor-immediánsok
+   257→   257→  `T+0x5F18 = 0.9921875`, `T+0x5F1C = 1/128` — R25 OBS-módosítás: a korábbi
+   258→   258→  0.99182129-os bejegyzést felülírja a ctor-ból bizonyított
+   259→   259→  `0.9921875 = 0x3F7E0000`).
+   260→   260→* Előző-érték tömb `v×243` float (`T+0x11C0`); 48 mintás history-gyűrű.
+   261→   261→* Lag-tartomány DER: 243/12000 s ≈ 20.3 ms ≈ 49 Hz padló a teljes
+   262→   262→  korrelációs tartományra (a tényleges keresést a `minp` állítja szűkebbre).
+   263→   263→
+   264→   264→### 6.5 A 10-állapotú gép (`T+0x5FF8`; countdown `T+0x5FFC`)
+   265→   265→
+   266→   266→| áll. | művelet | kilépés |
+   267→   267→|---|---|---|
+   268→   268→| 0 | pillanatkép + felfegyverzés (countdown `0x51`=81) | →1 |
+   269→   269→| 1 | korreláció-akkumuláció (48 mintás ablak) | lejárt →2/3 |
+   270→   270→| 2 | csúcskeresés adaptív küszöbbökkel + **parabolás finomítás** (countdown 7) | →3 |
+   271→   271→| 3 | verifikáció / második menet | →3/4 |
+   272→   272→| 4 | jelölt elfogadás/elutasítás (`+0x5F74` max index vs. minp) | →5 |
+   273→   273→| 5 | periódus véglegesítés: konfidencia `0.203125`-küszöb, 5-számolás, `210`-teszt | →6 |
+   274→   274→| 6 | periódus-skálázás ×2/×4 (oktáv-összefésülés, 2048·50-s clamp), hold 18 | →7 |
+   275→   275→| 7 | ω/stabilitás/hiszterezis/score (FUN_1800DFE80) | →8 |
+   276→   276→| 8 | **rekord-író** (FUN_1800E0190): {correction, i4, i5, 2·period} | →9 |
+   277→   277→| 9 | AGC frissítés | →0 |
+   278→   278→
+   279→   279→* Parabola-interpolátor `FUN_18013E160` (verbatim): `den = p0−2p1+p2;
+   280→   280→  if (|den|<7.1054e-15) return 0; f = ((p0−p2)·0.5)/den; clamp f∈[−1,1];
+   281→   281→  f *= 8.0; if (T+0x6008>1.0) return (float)(int)(f·2048.0);`
+   282→   282→* **Hold-track:** a konfidencia lecsengésekor az utolsó jó periódus
+   283→   283→  életben marad (hold 18 tick); teljes újravizsgálat ≥81 tick
+   284→   284→  (≈7.3 ms @44.1 kHz) — azonnali detektálási út nincs.
+   285→   285→* **Korrekciós séta** (record-író): effektív cél = `T+0x6074`, de CSAK az
+   286→   286→  `[T+0x6050, T+0x604C]` ablakon belül (különben 1.0; pitch-tracking ki
+   287→   287→  → 1.0 és intervallum 0 — minden hang unity rátán fut); per-lépés arány
+   288→   288→  clamp `2^(±1/(12·correctrate))`; `T+0x6070 ← clamp·T+0x6070` (futó
+   289→   289→  korrekciós gain); a rekord 4. mezője = a futó `T+0x6070`.
+   290→   290→* A rekord-írás gate-elve: a scale-mask (`int[12]`, port 27) bitje
+   291→   291→  `((i4+1)&0x1f)` engedélyezi az intervallum-jelölt kibocsátását.
+   292→   292→
+   293→   293→### 6.6 A m02 read-outok (OBS; az id-7 radix 261.6256 Hz = középső C)
+   294→   294→
+   295→   295→* id 7: hang centben (`ln((sr·2048/period)·0.003822256433)·1731.234049`),
+   296→   296→  sentinel −65535 ha `period ≤ 7.1e-15`;
+   297→   297→* id 8: frekvencia Hz; id 9: voicing-ráta 0..1; id 10: amplitúdó
+   298→   298→  `√e_raw`; id 0xb: tonalitás/timbre (periodicitás-mérték);
+   299→   299→* id 12/13 (a korrekció olvasatai): `±1731.234·ln(...)` = 1200·log2(...)
+   300→   300→  cent — de a gate-konverzió **kettős hiba** (10^(x/20) egy már lineáris
+   301→   301→  teljesítménymezőre) → DER-előrejelzés: normalizált jelnél kimenet 0
+   302→   302→  (nem futásidején ellenőrzött — UNK marad); a 12/13 páros előjele
+   303→   303→  egymással ellentétes, a cél- és futó-korrekciót olvassa.
+   304→   304→
+   305→   305→## 7. A diatonikus harmonia-térképezés (OBS)
+   306→   306→
+   307→   307→### 7.1 Táblák (.rdata)
+   308→   308→
+   309→   309→* **5 temperamentum-centtábla** `0x1803BB690` (stride 0x30, 12 cent soronként):
+   310→   310→  12-TET `0,100,…,1100`; just dúr `0,112,204,316,386,498,590,702,814,884,996,1088`;
+   311→   311→  just moll `0,71,182,316,386,498,590,702,814,884,996,1088`;
+   312→   312→  püthagorási `0,90,204,294,408,498,612,702,792,906,996,1110`;
+   313→   313→  ¼-komma meantone `0,76,193,310,386,503,580,697,772,890,1007,1083`
+   314→   314→  (a sorrend = a choices-string `0x1803BBF60`: Equal/Just_Major/Just_Minor/
+   315→   315→  Pythagorean/Meantone).
+   316→   316→* **19 soros skála-mintázat** `0x1803BB780` (ionian…hungarian; pl. ionian
+   317→   317→  `1,0,2,0,3,4,0,5,0,6,0,7`; chromatic `1,99,2,99,3,4,99,5,99,6,99,7` —
+   318→   318→  99 = kitöltő).
+   319→   319→* **17 elemes kulcs-térkép** `0x1803BB610`: a 17 hangzó írás 12
+   320→   320→  hangosztályra esik össze; **A = 9** referencia; a kulcs-ráció szimmetrikus
+   321→   321→  `±temperamentum[|key−9|]` cent (a korábbi "aszimmetria" leolvasási
+   322→   322→  artefakt volt — kör-18 kijavította).
+   323→   323→* **29 elemes intervallum-mux** (a `intN` választásaihoz): értékek
+   324→   324→  `{0,1,3,3,4,5,7,7,8,10,10,11,12,14,14,15,17,17,18,19,21,21,22,24,24,25,26,28,28}`;
+   325→   325→  a mux-szabály `v = 14+s+δ`, `δ=1` ha `s mod 7 ∈ {2,6}` — vagyis a
+   326→   326→  2. és 6. skálapozíció SOHA nem célpont; összeolvadt címkék:
+   327→   327→  (+3.,+4.)→17, (+7.,+8.)→21, (+10.,+11.)→24, (+14.,+2 okt)→28,
+   328→   328→  (−2.,unison)→14, (−5.,−6.)→10, (−9.,−1 okt)→7, (−12.,−13.)→3.
+   329→   329→  A realizált szókészlet felfelé `{P1, M3, P4, P5, M7, P8}` + tükrös
+   330→   330→  inverziók lefelé.
+   331→   331→* **15 elemes scal-mux**: `{1,2,3,4,5,6,7,10,11,14,15,16,17,18,13}` —
+   332→   332→  az utolsó hat választás +2-rel eltolt (szerzői) sorrá fut (chromatic→
+   333→   333→  penta-dúr minta stb. — a hatás hangzásban UNK).
+   334→   334→
+   335→   335→### 7.2 Zóna-futtás és a séta (a walk)
+   336→   336→
+   337→   337→A mintázat + centtábla → fok-rács (gap-duplázással, 99-kitöltővel; méret
+   338→   338→6/7/12). A séta (`0x1800E6ED5..0x1800E7120`, kör-21 utasításonként
+   339→   339→újraellenőrizve):
+   340→   340→
+   341→   341→* előjel: `sel = 14 − v` (a `shiftN`); "+" címkék → `sel<0` (LE ág),
+   342→   342→  "−" → fel (a címke/irány inverzió szerzői konvenció);
+   343→   343→* UP (`sel≥0`): `start = min(sel mod 7, méret−1)`; `row0 =
+   344→   344→  grid[start mod méret] + 1200·q + pcent`; `row_{j+1} =
+   345→   345→  int(wrapUp(grid[(start+j) mod méret]) + pcent) − grid[j] + 1200·q`;
+   346→   346→* DOWN (`sel<0`): tükrös `wrapDown`-aritmetikával;
+   347→   347→* az **8 soros tábla a per-hang rációtábla**: hang 1 = row0 (tonika-
+   348→   348→  relatív), hang v≥2 = row v−1 — **a hangok egymást követő skálafokokon
+   349→   349→  ülnek** (diatonikus stack, DER).
+   350→   350→* Összetétel: `ratio_v = keyRatio · exp((voiceCents_v + tune)·ln2/1200)`,
+   351→   351→  `page[0] = ratio_v · 0.0625` (a 0.0625 belső reprezentációs skála,
+   352→   352→  a `64.0` szorzóval együtt pontosan kioltódik — §8.2).
+   353→   353→* `pcent` cent-doménben adódik hozzá (a `shtN`), a transzcendens konstans
+   354→   354→  a lekerekített `0.00057762265` (≈ln2/1200, ≤1 ulp eltérés).
+   355→   355→
+   356→   356→## 8. A hangmotor — 8 hang (OBS)
+   357→   357→
+   358→   358→### 8.1 Gyűrűk és state
+   359→   359→
+   360→   360→* Work-gyűrű per hang: **stride SR-osztály szerint** (<50 kHz: 0x1000,
+   361→   361→  50–100 kHz: 0x2000, ≥100 kHz: 0x4000 float) — ugyanazok a küszöbbök,
+   362→   362→  mint a tracker FIR-nél (DER: azonos 48/96/192 kHz-osztályozás).
+   363→   363→* Bemenet-előzmény gyűrű: méret `SR·0.001·maxdelay` felfelé kerekítve
+   364→   364→  2 hatványra (44.1 kHz-en 131 072 = 2^17 minta); index az életkorral NÖ,
+   365→   365→  `ring[(W+d)&M]` = d mintával ezelőtti minta.
+   366→   366→* Per-hang state: `pos_v` (double, `+0x4188+8v`), integer delay
+   367→   367→  `+0x4140[v]` (init **280**), crossfade-állapot `+0x4158[v]` (init 0,
+   368→   368→  −1 = settled), rekord-olvasó index `+0x42f8[v]`, és a három privát
+   369→   369→  vektorslot (§8.2).
+   370→   370→* **Blokkfeldolgozás 4 mintás alblokkokban** (SSE-szélességű írások);
+   371→   371→  a motor minden hívásban 4 bemenetet fogad és hangonként 4 kimenetet ír.
+   372→   372→
+   373→   373→### 8.2 A ráta-törvény (Q-7 — kör-9/10-ben lezárva)
+   374→   374→
+   375→   375→```
+   376→   376→f    = F · page[10]              (F = a hang random-séta értéke, ∈[0,1];
+   377→   377→                                  page[10] = clamp(rdep)/2400)
+   378→   378→P(f) = 0.25 + 0.346058071·f + 0.24391453·f² + 0.119830653·f³ + 0.034867637·f⁴
+   379→   379→       (immmediánsok 0x1800E1F82..AA; P double-ben értékelődik, majd
+   380→   380→        cvtpd2ps @0x1800E2408 → float32)
+   381→   381→step = P(f) · slot_4128[v] · 64.0   ,  slot_4128[v] = page[0] · rekord[4. mező]
+   382→   382→     = 4 · P(f) · ratio · correction
+   383→   383→```
+   384→   384→
+   385→   385→* `4·P(f)` a `2^(cents/1200)` kvartikus approximációja
+   386→   386→  (`1 + 1.3842323f + 0.9756581f² + 0.4793226f³ + 0.1394705f⁴`);
+   387→   387→  illesztési hiba ≤ **0.101 cent** a teljes szállított tartományon
+   388→   388→  (belső maximum f≈0.0561-nél).
+   389→   389→* **Egység pontosan f = 0-nál** (P(0)=0.25 bit-exakt; a 64.0 (0x180412490)
+   390→   390→  és az 1/16-os page-skála (0x1804121B0) pontosan kioltódnak) — nincs
+   391→   391→  kalibrációs lokusz, NEM létezik a régi R8-féle "−9.25 cent" kérdés.
+   392→   392→* A kimeneti ráta tehát három független faktor szorzata:
+   393→   393→  **konfigurált ráció** (temperamentum/skála/kulcs/pcent) × **tracker-
+   394→   394→  korrekció** (a futó multiplicative walk, T+0x6070) × **random
+   395→   395→  moduláció** `4·P(f) ≥ 1`.
+   396→   396→* **Randomize polaritás: egyoldalúan felfelé** — cent ∈ [0, +200] soha
+   397→   397→  negatív; szállított csúcsok +49.939¢ (mélység 50) és +199.923¢ (200).
+   398→   398→  Az olvasási pozíció **csökken** a step-pel (a visszafelé olvasás a
+   399→   399→  fázist fordítja, a hangmagasságot nem).
+   400→   400→
+   401→   401→### 8.3 Az RNG és a random-lánc (OBS)
+   402→   402→
+   403→   403→`rdm noise [212]` (a megosztott forrás, üres record): késleltetett-
+   404→   404→Fibonacci additív generátor, állapotpár `[+0x20]/[+0x24]`, seedek
+   405→   405→`0xD00/0x1100`, maszk `0xFFFFFF00`, `(state>>8)·2^-23·(1+2^-23)` —
+   406→   406→aritmetikai tartomány [−(1+2^-23), +1.0], orbitén pontosan [−1,+1];
+   407→   407→a léptető mátrix `[[17,12],[24,17]]` rendje 2^22 (4 kimenet hívásonként).
+   408→   408→Lánc: |noise| (`andps 0x7FFFFFFF`) → S&H (`rdm sh N`) → korlátozott séta
+   409→   409→(`rdm slew N` — átlépéskor a célra pattint) → `mod<N>` → F. A 8 slew
+   410→   410→sebességét a `FUN_180139650` applier-k `clamp(1/(sr·ms·0.001))` értékei
+   411→   411→adják. (Szerzői duplikáció: a `c_divide26 = rdep/2400 → c_fltr_a36 →
+   412→   412→multiply12` ág ugyanezt tükrözi kívülről — halott.)
+   413→   413→
+   414→   414→### 8.4 Olvasó-motor: settled és crossfade út (utasításszintű OBS)
+   415→   415→
+   416→   416→* Pozíció-törvény: `pos += 4.0` blokkonként (`0x1800E224D`,
+   417→   417→  konstans `0x1804123E8`); per kimeneti minta `pos −= step`, guard
+   418→   418→  `pos ≥ 0`.
+   419→   419→* **Settled út** (`(int)state[v] == −1`; `0x1800E2490..0x1800E25D5`):
+   420→   420→  kimeneti mintánként **EGY** 6-tapos interpolált olvasás a work-gyűrűből:
+   421→   421→  `fázis = floor(frac(pos)·256)`; `coefs = tábla[0x1803B6170] + 0x18·fázis`;
+   422→   422→  `out = Σ_{j=0..5} coefs[j]·work[(base + (int)pos + j) & mask]`
+   423→   423→  (akkumuláció double-ben). **Nincs második tap, nincs keverés.**
+   424→   424→* **Crossfade út** (újrafelfegyverzés után): két 6-tapos olvasás —
+   425→   425→  `tapA` a `ringbase − intervallum` (a rekord intervalluma,
+   426→   426→  `ring[recidx+1]`), `tapB` a `ringbase`-en;
+   427→   427→  `out = tapA + (tapA − tapB)·state`, `state ∈ (−1, 0]`, per kimeneti
+   428→   428→  minta `state −= page[12+idx]·2^-23` (slot `+0x4110`, init 0.06249988),
+   429→   429→  −1-nél lecsapódik → visszaáll a settled út. **Periódus-igazított
+   430→   430→  átadás** — a hosszabb periódushoz hosszabb crossfade (a `corr` a
+   431→   431→  page[col+12] oszlopból, a periódus 32 oszlopa: `col =
+   432→   432→  clamp((period−48)/16, 0, 31)`).
+   433→   433→* **Re-arm** (blokkonként, settled útban): trigger
+   434→   434→  `pos − delay[v] < 8.000000000000007` (`0x180412428`); ugrás
+   435→   435→  `floor(2^((int)page[12+idx] & 0xF)·v + 0.5)`, felezve ha
+   436→   436→  `≥ mask − page[11]`; végrehajtáskor `delay[v] = pos ∓ ugrás`,
+   437→   437→  `state[v] = 0`.
+   438→   438→* **Unity-nál nincs két-tapos fésű** (Q-14 statikusan lezárva): egység-
+   439→   439→  rátánál `step = 1.0` bit-exakt, `pos` megfagy, a re-arm sosem lő — a
+   440→   440→  motor véglegesen a settled single-tap útban pihen (fix frakcionális
+   441→   441→  késleltetés). (A hallható viselkedés futásidejű UNK marad.)
+   442→   442→* A hang-gain ramp: `g = clamp(current−target, −1, 0)`, frissítés
+   443→   443→  4 mintás blokkonként → lineáris ramp ≤0.25 mintánként, teljes fade-in
+   444→   444→  ≥4 minta.
+   445→   445→
+   446→   446→### 8.5 Az interpolációs kernel (OBS; generátor UNK)
+   447→   447→
+   448→   448→* **Statikus 256×6 float tábla a .rdata-ban: `0x1803B6170`** (6144 bájt),
+   449→   449→  a binder `FUN_1800E18B0` telepíti `engine+0x40F0`-be. **NEM Lagrange**
+   450→   450→  (legjobb L2 eltérés 0.11–0.19 rms/sor — a korábbi "Lagrange" címkét a
+   451→   451→  kör-12 visszavonta).
+   452→   452→* Karakterizáció (OBS/DER): pontszimmetrikus `row[i][k] == row[255−i][5−k]`
+   453→   453→  (max diff 0.0); sorsummák 1.000000–1.000122 (DC-egység); a fázistörvény
+   454→   454→  **row r ↔ delay 2 + r/256** (centroid-bizonyított); −3 dB sáv
+   455→   455→  0.60–0.77·Nyquist; cutoff ≈0.82–0.84·Nyquist.
+   456→   456→* Elutasított tervezőcsaládok: Lagrange, Farrow, windowed-sinc/RRC/Kaiser
+   457→   457→  zárt alakok, equiripple/Remez, flat-passband LS — **a pontos generáló
+   458→   458→  algoritmus nem rekonstruálható** (build-time adat).
+   459→   459→* **Ez az egyetlen 6-tapos kernel a binárisban, két fogyasztóval**:
+   460→   460→  a hangmotor (fázis `floor(frac·256)` — mind a 256 sor) és a kimeneti
+   461→   461→  frakcionális-olvasók (fázis `int(frac·255)` — 0..254 sor).
+   462→   462→
+   463→   463→### 8.6 Strukturális késleltetés (DER)
+   464→   464→
+   465→   465→`int_delay` (init 280) + work-gyűrű írási mélység (3) + kernel csoport-
+   466→   466→késleltetés (≤5) ≈ **288 minta ≈ 6.5 ms** @44.1 kHz — a host-oldalilag
+   467→   467→jelzett késleltetéstől függetlenül. (A host-facing érték UNK: a
+   468→   468→`LatencySamples` író halott kód; a getter nem található a .text-ben —
+   469→   469→negatív eredmény, kör-8 óta áll.)
+   470→   470→
+   471→   471→## 9. Per-hang utófeldolgozás (OBS)
+   472→   472→
+   473→   473→* **20 Hz magaspass** (`modfilterN`: freq=20, q=1) — DC-védelem;
+   474→   474→* **EQ** (`eqnN`): `neqs=1`, freq1=CutFreq(inst), qfactor1=0.7,
+   475→   475→  boost1 = `clamp(c_multiplyN · CutMultiplier, MaxCut, 0)` dB, type=2
+   476→   476→  (vágó) — az instrumentum-függő anti-alias vágás;
+   477→   477→* **De-clicking delay** (`moddelay`): `delayamt` = a NYERS `dlyN`
+   478→   478→  (0…1250 ms; a `c_adderN = dlyN+40` verzió a MOTOR delayamtN-jét
+   479→   479→  táplálja, az echo modul a nyerset kapja — kör-4 kijavítva),
+   480→   480→  maxdelay=2000, declick=1;
+   481→   481→* **Per-hang visszacsatolás**: `fbkN` → `fback switch N` (mute-gate:
+   482→   482→  a `mswN` választ −100 vagy fbkN) → ÷20 → `10^x` → tc=20 ms simított
+   483→   483→  lineáris gain (`c_fltr_a*`) — a hang visszacsatolása.
+   484→   484→
+   485→   485→## 10. A keverés és a kimenet (OBS + R25)
+   486→   486→
+   487→   487→### 10.1 stereomixer3 — a 8→sztereó keverő
+   488→   488→
+   489→   489→* A kompozit wrapper konstrukciója `0x180137720` (a graf-építő hook);
+   490→   490→  a sub-objektum `wrapper+0xF0`-nél, vtable `0x180409E20`;
+   491→   491→  `[obj+0x50]` = ninputs, `[obj+0x54]` = clipvalue (a ctor
+   492→   492→  paraméter-keresésekből `0x1800D7400`).
+   493→   493→* **Az audio PROCESS: `FUN_1800D7F10`** (`0x1800D7F10..0x1800D8222`) —
+   494→   494→  a worker `FUN_180103A10`-ből hívva `0x180104CBD`-en, azonnal a motor
+   495→   495→  prepare (`0x1801043DB`) és a 8 hanglánc után (R25-ben bizonyítva).
+   496→   496→  Per kimeneti minta: per-bemenet L/R gain-ek egy-pólusú rampja
+   497→   497→  (`val += (target−val)·coef`), minta×gain akkumuláció **double-ben**,
+   498→   498→  az összegek `±clipvalue`-re clampolva és de-click fade-del a
+   499→   499→  `"left"/"right"` portokra írva (`[this+0x80]/[this+0x98]`).
+   500→   500→* **A simítási együttható** `FUN_1800D8380`-ban: `coef = 10^(−1/(f·c)) − 1`
+   501→   501→  (c = tc·0.001, clamp ≥0.001 — a 25 ms a record "sr" paraméterén át).
+   502→   502→
+   503→   503→### 10.2 R25: a PAN-TÖRVÉNY (FUN_1800D9B20, `0x1800D9B20..0x1800D9E80`)
+   504→   504→
+   505→   505→```
+   506→   506→g = 10^(dB/20)                    (dB→lin: ×0.11512925465 = ln10/20,
+   507→   507→                                   VA 0x1804121F8; powf10 @0x180352350)
+   508→   508→L = 0.5·(1 − p)·g                 (0x1800D9C56: ×0.5; 0x1800D9C5A: (0.5−0.5p); ×g)
+   509→   509→R = 0.5·(1 + p)·g                 (p ≥ −1 clamp 0x18041280C; (p+1)·0.5; ×g @0x1800D9CCA..DE)
+   510→   510→```
+   511→   511→
+   512→   512→**LINEÁROS, konstans-összegű (−6 dB-középpontú) pan** — határozottan
+   513→   513→NEM equal-power sin/cos (nincs π/4-referencia a plugin kódban), NEM
+   514→   514→√((1±p)/2) (nincs sqrt/1/√2), NEM táblás (a korábbi jelölt
+   515→   515→`0x180416360` — 16 monoton float 0.3408..0.4209 — **nulla hivatkozással**
+   516→   516→hivatatlan blob). Az L/R céltömbök a `[[engine]+0xA0](engine, id, ch,
+   517→   517→val)` port-push-on át mennek, ≤1 clamp. (Megjegyzés: a
+   518→   518→`monoSumWetChans` 0.707/0.707 equal-power mono-összefésülése KÜLÖN
+   519→   519→modul — a kimenet-szélesség kapcsolóra, nem a pan-törvény.)
+   520→   520→
+   521→   521→### 10.3 Globális visszacsatolás (post-pan sztereó wet tapokon)
+   522→   522→
+   523→   523→```
+   524→   524→stereomixer3 L|R → feedback/feedback1 (amp2 = mfbk; tc=20)
+   525→   525→  → softclip/softclip2 → delay_xf/delay_xf1 (maxdelay 2400,
+   526→   526→     xfadetime 20 ms, tapdls1 = max(fbkd,50) ms)
+   527→   527→  → "just for the filter" frakcionális olvasók → highcut (5 Hz)
+   528→   528→  → subtract/subtract1 → visszazáródik feedback.in2
+   529→   529→```
+   530→   530→
+   531→   531→* A `highcut`+`subtract` pár **5 Hz DC-blokkolót** alkot a hurokban
+   532→   532→  (`H(z) ≈ (1−z⁻¹)/(1−a·z⁻¹)`-szerű).
+   533→   533→
+   534→   534→### 10.4 Kimenet-összeállítás
+   535→   535→
+   536→   536→* `dry` = `iswitch6/7` (live-mód esetén 40 mintával kompenzált bemenet);
+   537→   537→  `wet` = (ouch==1) ? `monoSumWetChans` : `feedback1|feedback`
+   538→   538→  (a kimenet-szélesség választás);
+   539→   539→* `Lout = slew10(dry·(1−mmix)) + slew10(wet·mmix)` és tükröse (tc=10
+   540→   540→  de-zipper);
+   541→   541→* a kimeneti frakcionális-olvasók ("just for the filter"/"…2",
+   542→   542→  `FUN_1800DC430..761`) a delay_xf és highcut KÖZÖTT ülnek, a
+   543→   543→  `LWetDryMix/RWetDryMix`-et táplálva — a motor kernelét használó,
+   544→   544→  kernel-interpolált változó frakcionális késleltetés (fázis `int(frac·255)`);
+   545→   545→* `ogan` erősítés → hard bypass választó (`iswitch/iswitch1`) → kimenet.
+   546→   546→
+   547→   547→## 11. Állapot, blokk-feldolgozás, késleltetés-riport
+   548→   548→
+   549→   549→* 4 mintás alblokkok (motor + mixer); a tracker a 2:4 minta + kadencia
+   550→   550→  osztó révén fut ≈12 kHz-en.
+   551→   551→* A plugin-állapot JUCE-oldali, taggelt chunk-bankban él
+   552→   552→  (`snap/pastate/pluginID/pluginVer/MAP_END_KEY/Ocvx` — 16-slotos
+   553→   553→  snapshot-rendszer; a szemantika UNK).
+   554→   554→* **Host-latencia: nem jelzett érték** — a `LatencySamples` író
+   555→   555→  (`FUN_180310F20`) a teljes képben nulla hivatkozással (halott kód);
+   556→   556→  a getter nem található — nem állítunk értéket (negatív eredmény).
+   557→   557→
+   558→   558→## 12. Őszinte hézagok (ami statikusan nem zárható)
+   559→   559→
+   560→   560→1. **A kernel generáló algoritmusa** — a tábla karakterizálva, de a
+   561→   561→   pontos tervező rekonstruálhatatlan (build-time adat).
+   562→   562→2. **Minden futásidejű viselkedés** — az eredetit sosem futtattuk;
+   563→   563→   a m02 12/13 dupla-konverziós előrejelzés, a unity-comb hallhatósága,
+   564→   564→   a walk-statisztikák, a korrekció-konvergencia futásidejű UNK.
+   565→   565→3. **`xfadetime → page[col+12]` belső felépítése** (Q-9): mindkét vég
+   566→   566→   OBS (a knob 0..100 ms → `xfadetime`; a fogyasztás
+   567→   567→   `page[12+idx]·2^-23` per minta), a köztes konverzió DER.
+   568→   568→4. A **Minimum Pitch → lag-domén pontos átváltási aritmetikája**
+   569→   569→   (a választás→keresőbázis `T+0x5F70/x+2` mezők OBS, az egységátszámítás
+   570→   570→   nem vezetve le).
+   571→   571→5. **`sht1` (±2400) vs `sht2..8` (±1) tartományütközés** — szerzői hiba
+   572→   572→   vagy kijelzési egység-különbség; a motor maga cent-konzisztens.
+   573→   573→6. **MIDI-útvonal, tempo/meter→delay átváltás** — JUCE-side, a DSP-ben
+   574→   574→   nincs (negatív eredmény); **snapshot-bank szemantikája** UNK.
+   575→   575→7. Az intervallum-címkék **hallható iránya** (a "+" lefelé sétál a walk
+   576→   576→   előjel-törvénye szerint — a végrehajtó jelkonvenciója nem megfigyelt).
+   577→   577→8. A record `i4` mező (`ring[wp+2]`) a motoron KÍVÜLRÍST fogyasztó —
+   578→   578→   a képben sehol nem olvassa senki (dead field, kör-15).
+   579→   579→9. Kisebb azonosítatlanok: a stereomixer3 vtable +8 (ráta-forrás) és
+   580→   580→  +0xA0 (push-fogyasztó) metódusainak pontos azonosítása; az m01 id 0
+   581→   581→  scan-base és a 4-es id írója (host-oldal) UNK.
+   582→   582→
+   583→   583→## 13. R25-ös változásjegyzék a korábbi dokumentumokhoz
+   584→   584→
+   585→   585→* **FIR-együtthatók**: a "nem dumpolt" állapot lezárva (§6.2; három
+   586→   586→  osztály, bit-exakt felezőlánc). A korábbi
+   587→   587→  "dsp+0xA3CC..0xA41C-os .rdata forrástáblák" olvasatot javítjuk: a
+   588→   588→  forrás **inline kód-immmediáns**, a címkék a céltár-mezőket nevezték.
+   589→   589→* **Pan-törvény**: lezárva (§10.2) — a "stereomixer3 L/R törvénye UNK"
+   590→   590→  bejegyzés érvénytelen; a `monoSumWetChans`-as equal-power közelségi
+   591→   591→  bizonyíték a pan-ra nézve megcáfolva (külön modul).
+   592→   592→* **`T+0x5F18`** = ctor-immmediáns **0.9921875** (R25 OBS) — felülírja a
+   593→   593→  korábbi 0.99182129-os bejegyzést (leolvasási eltérés).
+   594→   594→* Minden egyéb, korábbi körökben CONFLICT-ként kezelt tétel a
+   595→   595→  helyén kezelt (a javított olvasatot mindenhol mi tükrözzük).
+   596→   596→
+   597→   597→## 14. Provenancia
+   598→   598→
+   599→   599→* Minden itt szereplő állítás a 8-as, 21-es, 22-es és 24-es kézbesítési
+   600→   600→  bizonyítékfák + a 9–22. körök megállapításaiból és az R25-ös közvetlen
+   601→   601→  capstone-olvasásokból származik; a célbináris SHA-256-át minden
+   602→   602→  elemzés előtt és után ellenőriztük. Az eredeti binárist a projekt
+   603→   603→  teljes történetében **egyszer sem futtattuk**, nem is módosítottuk.
+   604→   604→* A saját újraimplementáció (PitchLab, `octavox-native`) származéktalanul
+   605→   605→  elkülönítve: minden PoC/benchmark számítás a MI implementációnk
+   606→   606→  tulajdonsága, nem az eredeté.
+   607→   607→* R25-es elemzési artifactok: `octavox-work/analysis_r25/`
+   608→   608→  (`fir_coefficients.md`, `pan_law.md` + a nyers szkriptek/kimenetek),
+   609→   609→  és ez a dokumentum: `octavox-work/r25/OCTAVOX_ORIGINAL_DSP_CHAIN.md`.
+   610→   610→

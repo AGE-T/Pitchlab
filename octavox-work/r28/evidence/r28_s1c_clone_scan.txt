@@ -1,0 +1,7 @@
+=== slot+0x10 2-field dispatch: 1 hit(s) ===
+  pattern at 0x1800C2D23  in fn 0x1800C2CE0..0x1800C2D3F
+
+=== slot+0x18 3-field dispatch: 1 hit(s) ===
+  pattern at 0x1800C2D83  in fn 0x1800C2D40..0x1800C2DA3
+
+post-pass hash OK

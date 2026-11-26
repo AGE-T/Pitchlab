@@ -1,0 +1,98 @@
+=== GetPluginFactory 0x180194B70 ===
+0x180194B70  mov      al, 1                                       
+0x180194B72  ret                                                  
+0x180194B73  int3                                                 
+0x180194B74  int3                                                 
+0x180194B75  int3                                                 
+0x180194B76  int3                                                 
+0x180194B77  int3                                                 
+0x180194B78  int3                                                 
+0x180194B79  int3                                                 
+0x180194B7A  int3                                                 
+0x180194B7B  int3                                                 
+0x180194B7C  int3                                                 
+0x180194B7D  int3                                                 
+0x180194B7E  int3                                                 
+0x180194B7F  int3                                                 
+0x180194B80  mov      al, 1                                       
+0x180194B82  ret                                                  
+0x180194B83  int3                                                 
+0x180194B84  int3                                                 
+0x180194B85  int3                                                 
+0x180194B86  int3                                                 
+0x180194B87  int3                                                 
+0x180194B88  int3                                                 
+0x180194B89  int3                                                 
+0x180194B8A  int3                                                 
+0x180194B8B  int3                                                 
+0x180194B8C  int3                                                 
+0x180194B8D  int3                                                 
+0x180194B8E  int3                                                 
+0x180194B8F  int3                                                 
+0x180194B90  mov      al, 1                                       
+0x180194B92  ret                                                  
+0x180194B93  int3                                                 
+0x180194B94  int3                                                 
+0x180194B95  int3                                                 
+0x180194B96  int3                                                 
+0x180194B97  int3                                                 
+0x180194B98  int3                                                 
+0x180194B99  int3                                                 
+0x180194B9A  int3                                                 
+0x180194B9B  int3                                                 
+0x180194B9C  int3                                                 
+0x180194B9D  int3                                                 
+0x180194B9E  int3                                                 
+0x180194B9F  int3                                                 
+0x180194BA0  mov      al, 1                                       
+0x180194BA2  ret                                                  
+0x180194BA3  int3                                                 
+0x180194BA4  int3                                                 
+0x180194BA5  int3                                                 
+0x180194BA6  int3                                                 
+0x180194BA7  int3                                                 
+0x180194BA8  int3                                                 
+0x180194BA9  int3                                                 
+0x180194BAA  int3                                                 
+0x180194BAB  int3                                                 
+0x180194BAC  int3                                                 
+0x180194BAD  int3                                                 
+0x180194BAE  int3                                                 
+0x180194BAF  int3                                                 
+0x180194BB0  push     rbx                                         
+0x180194BB2  sub      rsp, 0x40                                   
+0x180194BB6  mov      rax, qword ptr [rip + 0x310483]               ; "2��-�+"
+0x180194BBD  xor      rax, rsp                                    
+0x180194BC0  mov      qword ptr [rsp + 0x30], rax                 
+0x180194BC5  movzx    r8d, dl                                     
+0x180194BC9  mov      rbx, rcx                                    
+0x180194BCC  movzx    ecx, r8b                                    
+0x180194BD0  lea      rdx, [rsp + 0x20]                           
+0x180194BD5  call     0x18030a010                                 
+0x180194BDA  movups   xmm0, xmmword ptr [rsp + 0x20]              
+0x180194BDF  lea      rax, [rip + 0x25a3b2]                         ; q=0x180003A90
+0x180194BE6  mov      qword ptr [rbx], rax                        
+0x180194BE9  mov      rax, rbx                                    
+0x180194BEC  movups   xmmword ptr [rbx + 8], xmm0                 
+0x180194BF0  mov      rcx, qword ptr [rsp + 0x30]                 
+0x180194BF5  xor      rcx, rsp                                    
+0x180194BF8  call     0x18015e0e0                                 
+0x180194BFD  add      rsp, 0x40                                   
+0x180194C01  pop      rbx                                         
+0x180194C02  ret                                                  
+0x180194C03  int3                                                 
+0x180194C04  int3                                                 
+0x180194C05  int3                                                 
+0x180194C06  int3                                                 
+0x180194C07  int3                                                 
+0x180194C08  int3                                                 
+0x180194C09  int3                                                 
+0x180194C0A  int3                                                 
+0x180194C0B  int3                                                 
+0x180194C0C  int3                                                 
+0x180194C0D  int3                                                 
+0x180194C0E  int3                                                 
+0x180194C0F  int3                                                 
+
+
+post-pass hash OK

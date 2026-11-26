@@ -1,0 +1,5 @@
+export dir @0x1804A27A0, 3 names
+  ExitDll -> 0x1804A2818
+  GetPluginFactory -> 0x180194B70
+  InitDll -> 0x180194440
+post-pass hash OK

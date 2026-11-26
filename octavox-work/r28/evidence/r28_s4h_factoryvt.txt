@@ -1,0 +1,58 @@
+=== factory vtable 0x180003A90 ===
+  +0x00 queryInterface     = 0x8D4820EC83485340
+  +0x08 addRef             = 0xD98B48003EB4FB05
+  +0x10 release            = 0xA7401C2F6018948
+  +0x18 getFactoryInfo     = 0xA64EE800000018BA
+  +0x20 countClasses       = 0xC48348C38B480015
+  +0x28 getClassInfo       = 0xCCCCCCCCCCC35B20
+  +0x30 createInstance     = 0x48098B4828EC8348
+  +0x38 getClassInfo2      = 0xFF018B480774C985
+  +0x40 getClassInfoUnicode = 0xC328C48348901050
+
+=== 0x180003B30 (candidate createInstance/factory fn) ===
+0x180003B30  ret      0                                           
+0x180003B33  int3                                                 
+0x180003B34  int3                                                 
+0x180003B35  int3                                                 
+0x180003B36  int3                                                 
+0x180003B37  int3                                                 
+0x180003B38  int3                                                 
+0x180003B39  int3                                                 
+0x180003B3A  int3                                                 
+0x180003B3B  int3                                                 
+0x180003B3C  int3                                                 
+0x180003B3D  int3                                                 
+0x180003B3E  int3                                                 
+0x180003B3F  int3                                                 
+0x180003B40  cmp      rcx, rdx                                    
+0x180003B43  sete     al                                          
+0x180003B46  ret                                                  
+0x180003B47  int3                                                 
+0x180003B48  int3                                                 
+0x180003B49  int3                                                 
+0x180003B4A  int3                                                 
+0x180003B4B  int3                                                 
+0x180003B4C  int3                                                 
+0x180003B4D  int3                                                 
+0x180003B4E  int3                                                 
+0x180003B4F  int3                                                 
+0x180003B50  push     rbx                                         
+0x180003B52  sub      rsp, 0x20                                   
+0x180003B56  lea      rax, [rip + 0x3eaf13]                         ; q=0x1801A0140
+0x180003B5D  mov      rbx, rcx                                    
+0x180003B60  mov      qword ptr [rcx], rax                        
+0x180003B63  test     dl, 1                                       
+0x180003B66  je       0x180003b72                                 
+0x180003B68  mov      edx, 0x10                                   
+0x180003B6D  call     0x18015e100                                 
+0x180003B72  mov      rax, rbx                                    
+0x180003B75  add      rsp, 0x20                                   
+0x180003B79  pop      rbx                                         
+0x180003B7A  ret                                                  
+0x180003B7B  int3                                                 
+0x180003B7C  int3                                                 
+0x180003B7D  int3                                                 
+0x180003B7E  int3                                                 
+0x180003B7F  int3                                                 
+
+post-pass hash OK

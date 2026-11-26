@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Octavox Research — Round 24 Findings",
+  title: "PitchLab Research — Round 27: Residual UNK Closure (Static)",
   description:
-    "Round 24 (SIMD capability layer): the YIN difference-function and window-peak kernels in per-TU ISA units (AVX2 / AVX2+FMA), the order-preserving lag-axis AVX2 kernel bit-identical to the scalar reference (4.8-6.3x kernel, FullRate 96 kHz det_estimate 5.9x, 8-voice stereo wall 1144 -> 368 ms/s), Config::simd with the bit-exact Scalar default, the 110/110 suite (Release + ASan/UBSan) with the R24 bit-exactness battery, the rebuilt VST3 chain (21/21 + 12/12 + 47/47) and the measured decision record — Eventide Octavox reverse engineering, round 24.",
+    "Round 27 (residual UNK closure, user-directed static continuation of the R26 audit): the LIVE pan law recovered — LINEAR 0.5·(1∓p)·G with G = 10^(gain_dB/20) in the stereomixer3 wrapper update (the R26 trigonometric verdict described real but unreachable framework-library code); the mix audio runs on a framework-wide 4-sample cadence with double-precision index-order accumulation and one-pole-smoothed gains; the softclip is a tanh mean-value clipper (ln-cosh divided difference + tanh midpoint, DC transfer b·tanh(a·x)); Live-Mode 40 = 40 ms with the conversion site traced (int(sr·ms·0.001+0.5), cap 1921532); the hungarian scale choice is index-clamped to the neapolitan row (no out-of-bounds ever); the m01 id0 field has a reader (the correlate scan-base at 0x18013C868); m02 is reached through an event-router subscriber multicast (event-in vtable slots 2/3); and the 256×6 kernel is numerically pinned as a fractional-delay bank (DC group delay = 2 + r/256 exactly, mixed phase) — the binary was never executed (SHA-256 unchanged).",
   keywords: ["Octavox", "Eventide", "reverse engineering", "REA", "Ghidra", "DSP", "pitch shifting", "minimum pitch"],
   authors: [{ name: "Z.ai Team" }],
   icons: {

@@ -1,0 +1,14 @@
+[
+ {
+  "va": "0x1800c9a73",
+  "target": "0x1803bb5f0",
+  "insn": "lea rax, [rip + 0x2f1b76]",
+  "fn": "0x1800c9990"
+ },
+ {
+  "va": "0x1800c9f7c",
+  "target": "0x1803bb5f0",
+  "insn": "lea r12, [rip + 0x2f166d]",
+  "fn": "0x1800c9f10"
+ }
+]

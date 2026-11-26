@@ -1,0 +1,306 @@
+[
+ {
+  "slot": "0x20",
+  "call_va": "0x1800044b2",
+  "fn": "0x180004490",
+  "arg_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 1
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x18002bbe2",
+  "fn": "0x18002bbc4",
+  "arg_set": "mov r8d, 3",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 3
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x18002bc42",
+  "fn": "0x18002bc20",
+  "arg_set": "mov r8d, 1",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 1
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x18002bfa2",
+  "fn": "0x18002be53",
+  "arg_set": "mov r8d, 1",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 1
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1800aeb85",
+  "fn": "0x1800ae900",
+  "arg_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 1
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1800b2a27",
+  "fn": "0x1800b2a10",
+  "arg_set": "mov edx, 1",
+  "call": "call qword ptr [r8 + 0x20]",
+  "value": 1
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801a01f2",
+  "fn": "0x1801a01d0",
+  "arg_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 1
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801ba2f7",
+  "fn": "0x1801ba200",
+  "arg_set": "mov r8d, 5",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 5
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801ba30d",
+  "fn": "0x1801ba200",
+  "arg_set": "mov r8d, 3",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 3
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801ba822",
+  "fn": "0x1801ba707",
+  "arg_set": "mov r8d, 2",
+  "call": "call qword ptr [r9 + 0x20]",
+  "value": 2
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801ba98e",
+  "fn": "0x1801ba707",
+  "arg_set": "mov r8d, 2",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 2
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801bab45",
+  "fn": "0x1801baa40",
+  "arg_set": "mov r8d, 5",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 5
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801bab60",
+  "fn": "0x1801baa40",
+  "arg_set": "mov r8d, 6",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 6
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801bab7b",
+  "fn": "0x1801baa40",
+  "arg_set": "mov r8d, 4",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 4
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801bab96",
+  "fn": "0x1801baa40",
+  "arg_set": "mov r8d, 4",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 4
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801babc8",
+  "fn": "0x1801baa40",
+  "arg_set": "mov r8d, 2",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 2
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801c7cf3",
+  "fn": "0x1801c7ccb",
+  "arg_set": "mov r8d, 2",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 2
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801c7e29",
+  "fn": "0x1801c7dbc",
+  "arg_set": "mov r8d, 2",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 2
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1801c81b6",
+  "fn": "0x1801c81a0",
+  "arg_set": "mov r8d, 1",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 1
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801d0541",
+  "fn": "0x1801d0520",
+  "arg_set": "mov r8d, 8",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 8
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801d05a1",
+  "fn": "0x1801d0580",
+  "arg_set": "mov r8d, 8",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 8
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801d0682",
+  "fn": "0x1801d0670",
+  "arg_set": "mov r8d, 4",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 4
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801d06d2",
+  "fn": "0x1801d06c0",
+  "arg_set": "mov r8d, 4",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 4
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801d0722",
+  "fn": "0x1801d0710",
+  "arg_set": "mov r8d, 2",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 2
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801d0762",
+  "fn": "0x1801d0750",
+  "arg_set": "mov r8d, 2",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 2
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801d07c7",
+  "fn": "0x1801d07b0",
+  "arg_set": "mov r8d, 1",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 1
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801e22b9",
+  "fn": "0x1801e2240",
+  "arg_set": "mov r8d, 0x10",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 16
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801e23d3",
+  "fn": "0x1801e2380",
+  "arg_set": "mov r8d, 6",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 6
+ },
+ {
+  "slot": "0x18",
+  "call_va": "0x1801e240c",
+  "fn": "0x1801e2380",
+  "arg_set": "mov r8d, 0xc",
+  "call": "call qword ptr [rax + 0x18]",
+  "value": 12
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x18022c98b",
+  "fn": "0x18022c81c",
+  "arg_set": "mov r8d, 3",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 3
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x18022c9f1",
+  "fn": "0x18022c81c",
+  "arg_set": "mov r8d, 2",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 2
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x18022d021",
+  "fn": "0x18022cf40",
+  "arg_set": "mov r8d, 4",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 4
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x18022d04a",
+  "fn": "0x18022d036",
+  "arg_set": "mov r8d, 8",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 8
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x18028aa04",
+  "fn": "0x18028a780",
+  "arg_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 1
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1802973fc",
+  "fn": "0x180297310",
+  "arg_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 1
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1802d03b0",
+  "fn": "0x1802d01e0",
+  "arg_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 1
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x1802d4e79",
+  "fn": "0x1802d4ca0",
+  "arg_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 1
+ },
+ {
+  "slot": "0x20",
+  "call_va": "0x18030130b",
+  "fn": "0x1803012b0",
+  "arg_set": "mov edx, 1",
+  "call": "call qword ptr [rax + 0x20]",
+  "value": 1
+ }
+]

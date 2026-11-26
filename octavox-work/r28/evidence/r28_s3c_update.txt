@@ -1,0 +1,152 @@
+=== c_minmax UPDATE 0x1800D1D40 ===
+0x1800D1D40  push     rbp                                         
+0x1800D1D42  mov      rbp, rsp                                    
+0x1800D1D45  sub      rsp, 0x30                                   
+0x1800D1D49  mov      r9, rcx                                     
+0x1800D1D4C  prefetchw byte ptr [rcx + 8]                          
+0x1800D1D50  mov      rax, qword ptr [rcx + 8]                    
+0x1800D1D54  nop      dword ptr [rax]                             
+0x1800D1D58  nop      dword ptr [rax + rax]                       
+0x1800D1D60  mov      rdx, rax                                    
+0x1800D1D63  and      rdx, 0xfffffffffffffffe                     
+0x1800D1D67  lock cmpxchg qword ptr [rcx + 8], rdx                    
+0x1800D1D6D  jne      0x1800d1d60                                 
+0x1800D1D6F  test     al, 1                                       
+0x1800D1D71  je       0x1800d20fc                                 
+0x1800D1D77  movsxd   r8, dword ptr [rcx + 0x10]                  
+0x1800D1D7B  xor      r11d, r11d                                  
+0x1800D1D7E  movss    xmm3, dword ptr [rip + 0x340a22]              ; q=0x7F7FFFFF
+0x1800D1D86  movss    xmm2, dword ptr [rip + 0x340b5e]              ; q=0xFF7FFFFF
+0x1800D1D8E  mov      qword ptr [rsp + 0x28], rbx                 
+0x1800D1D93  cmp      r8, 4                                       
+0x1800D1D97  jl       0x1800d1fca                                 
+0x1800D1D9D  mov      rbx, qword ptr [rcx + 0x18]                 
+0x1800D1DA1  lea      r10, [r8 - 4]                               
+0x1800D1DA5  shr      r10, 2                                      
+0x1800D1DA9  inc      r10                                         
+0x1800D1DAC  mov      qword ptr [rsp + 0x20], rdi                 
+0x1800D1DB1  movaps   xmmword ptr [rsp + 0x10], xmm6              
+0x1800D1DB6  lea      rdx, [rbx + 0x58]                           
+0x1800D1DBA  lea      r11, [r10*4]                                
+0x1800D1DC2  mov      rcx, qword ptr [rdx - 0x38]                 
+0x1800D1DC6  test     rcx, rcx                                    
+0x1800D1DC9  je       0x1800d1dd1                                 
+0x1800D1DCB  movss    xmm0, dword ptr [rcx]                       
+0x1800D1DCF  jmp      0x1800d1dd6                                 
+0x1800D1DD1  movss    xmm0, dword ptr [rdx - 0x30]                
+0x1800D1DD6  movss    xmm1, dword ptr [rdx - 0x58]                
+0x1800D1DDB  lea      rax, [rbp + 0x10]                           
+0x1800D1DDF  movss    xmm5, dword ptr [rdx - 0x54]                
+0x1800D1DE4  lea      rdi, [rbp + 0x20]                           
+0x1800D1DE8  comiss   xmm0, xmm1                                  
+0x1800D1DEB  movss    dword ptr [rbp + 0x20], xmm1                
+0x1800D1DF0  movss    dword ptr [rbp + 0x10], xmm0                
+0x1800D1DF5  cmovbe   rax, rdi                                    
+0x1800D1DF9  movss    xmm4, dword ptr [rax]                       
+0x1800D1DFD  minss    xmm4, xmm5                                  
+0x1800D1E01  minss    xmm4, xmm3                                  
+0x1800D1E05  test     rcx, rcx                                    
+0x1800D1E08  je       0x1800d1e10                                 
+0x1800D1E0A  movss    xmm0, dword ptr [rcx]                       
+0x1800D1E0E  jmp      0x1800d1e15                                 
+0x1800D1E10  movss    xmm0, dword ptr [rdx - 0x30]                
+0x1800D1E15  comiss   xmm0, xmm1                                  
+0x1800D1E18  lea      rcx, [rbp - 0x30]                           
+0x1800D1E1C  lea      rax, [rbp + 0x28]                           
+0x1800D1E20  lea      rdi, [rbp + 0x20]                           
+0x1800D1E24  movss    dword ptr [rbp - 0x30], xmm1                
+0x1800D1E29  movss    xmm1, dword ptr [rdx - 0x28]                
+0x1800D1E2E  cmovbe   rax, rcx                                    
+0x1800D1E32  movss    dword ptr [rbp + 0x28], xmm0                
+0x1800D1E37  mov      rcx, qword ptr [rdx - 8]                    
+0x1800D1E3B  test     rcx, rcx                                    
+0x1800D1E3E  movss    xmm3, dword ptr [rax]                       
+0x1800D1E42  mov      rax, rdx                                    
+0x1800D1E45  cmovne   rax, rcx                                    
+0x1800D1E49  minss    xmm3, xmm5                                  
+0x1800D1E4D  movss    xmm5, dword ptr [rdx - 0x24]                
+0x1800D1E52  movss    xmm0, dword ptr [rax]                       
+0x1800D1E56  lea      rax, [rbp + 0x10]                           
+0x1800D1E5A  comiss   xmm0, xmm1                                  
+0x1800D1E5D  movss    dword ptr [rbp + 0x20], xmm1                
+0x1800D1E62  maxss    xmm3, xmm2                                  
+0x1800D1E66  movss    dword ptr [rbp + 0x10], xmm0                
+0x1800D1E6B  cmovbe   rax, rdi                                    
+0x1800D1E6F  test     rcx, rcx                                    
+0x1800D1E72  movss    xmm6, dword ptr [rax]                       
+0x1800D1E76  mov      rax, rdx                                    
+0x1800D1E79  cmovne   rax, rcx                                    
+0x1800D1E7D  minss    xmm6, xmm5                                  
+0x1800D1E81  lea      rcx, [rbp - 0x30]                           
+0x1800D1E85  movss    xmm0, dword ptr [rax]                       
+0x1800D1E89  lea      rax, [rbp + 0x28]                           
+0x1800D1E8D  comiss   xmm0, xmm1                                  
+0x1800D1E90  movss    dword ptr [rbp - 0x30], xmm1                
+0x1800D1E95  minss    xmm6, xmm4                                  
+0x1800D1E99  movss    dword ptr [rbp + 0x28], xmm0                
+0x1800D1E9E  cmovbe   rax, rcx                                    
+0x1800D1EA2  movss    xmm2, dword ptr [rax]                       
+0x1800D1EA6  comiss   xmm2, xmm5                                  
+0x1800D1EA9  jb       0x1800d1eae                                 
+0x1800D1EAB  movaps   xmm2, xmm5                                  
+0x1800D1EAE  mov      rcx, qword ptr [rdx + 0x28]                 
+0x1800D1EB2  maxss    xmm2, xmm3                                  
+0x1800D1EB6  test     rcx, rcx                                    
+0x1800D1EB9  je       0x1800d1ec1                                 
+0x1800D1EBB  movss    xmm1, dword ptr [rcx]                       
+0x1800D1EBF  jmp      0x1800d1ec6                                 
+0x1800D1EC1  movss    xmm1, dword ptr [rdx + 0x30]                
+0x1800D1EC6  movss    xmm0, dword ptr [rdx + 8]                   
+0x1800D1ECB  lea      rax, [rbp + 0x10]                           
+0x1800D1ECF  movss    xmm4, dword ptr [rdx + 0xc]                 
+0x1800D1ED4  lea      rdi, [rbp + 0x20]                           
+0x1800D1ED8  comiss   xmm1, xmm0                                  
+0x1800D1EDB  movss    dword ptr [rbp + 0x10], xmm1                
+0x1800D1EE0  movss    dword ptr [rbp + 0x20], xmm0                
+0x1800D1EE5  cmovbe   rax, rdi                                    
+0x1800D1EE9  movss    xmm1, dword ptr [rax]                       
+0x1800D1EED  minss    xmm1, xmm4                                  
+0x1800D1EF1  minss    xmm1, xmm6                                  
+0x1800D1EF5  test     rcx, rcx                                    
+0x1800D1EF8  je       0x1800d1f00                                 
+0x1800D1EFA  movss    xmm3, dword ptr [rcx]                       
+0x1800D1EFE  jmp      0x1800d1f05                                 
+0x1800D1F00  movss    xmm3, dword ptr [rdx + 0x30]                
+0x1800D1F05  comiss   xmm3, xmm0                                  
+0x1800D1F08  lea      rax, [rbp + 0x28]                           
+0x1800D1F0C  lea      rcx, [rbp - 0x30]                           
+0x1800D1F10  movss    dword ptr [rbp - 0x30], xmm0                
+0x1800D1F15  movss    dword ptr [rbp + 0x28], xmm3                
+0x1800D1F1A  cmovbe   rax, rcx                                    
+0x1800D1F1E  movss    xmm0, dword ptr [rax]                       
+0x1800D1F22  comiss   xmm0, xmm4                                  
+0x1800D1F25  jb       0x1800d1f2a                                 
+0x1800D1F27  movaps   xmm0, xmm4                                  
+0x1800D1F2A  mov      rcx, qword ptr [rdx + 0x58]                 
+0x1800D1F2E  maxss    xmm0, xmm2                                  
+0x1800D1F32  test     rcx, rcx                                    
+0x1800D1F35  je       0x1800d1f3d                                 
+0x1800D1F37  movss    xmm3, dword ptr [rcx]                       
+0x1800D1F3B  jmp      0x1800d1f42                                 
+0x1800D1F3D  movss    xmm3, dword ptr [rdx + 0x60]                
+0x1800D1F42  movss    xmm2, dword ptr [rdx + 0x38]                
+0x1800D1F47  lea      rax, [rbp + 0x10]                           
+0x1800D1F4B  movss    xmm4, dword ptr [rdx + 0x3c]                
+0x1800D1F50  lea      rdi, [rbp + 0x20]                           
+0x1800D1F54  comiss   xmm3, xmm2                                  
+0x1800D1F57  movss    dword ptr [rbp + 0x10], xmm3                
+0x1800D1F5C  movss    dword ptr [rbp + 0x20], xmm2                
+0x1800D1F61  cmovbe   rax, rdi                                    
+0x1800D1F65  movss    xmm3, dword ptr [rax]                       
+0x1800D1F69  minss    xmm3, xmm4                                  
+0x1800D1F6D  minss    xmm3, xmm1                                  
+0x1800D1F71  test     rcx, rcx                                    
+0x1800D1F74  je       0x1800d1f7c                                 
+0x1800D1F76  movss    xmm1, dword ptr [rcx]                       
+0x1800D1F7A  jmp      0x1800d1f81                                 
+0x1800D1F7C  .byte    0xf3                                        
+0x1800D1F7D  .byte    0x0f                                        
+0x1800D1F7E  .byte    0x10                                        
+0x1800D1F7F  .byte    0x4a                                        
+
+post-pass hash OK

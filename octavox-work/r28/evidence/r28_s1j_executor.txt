@@ -1,0 +1,86 @@
+### executor site 1 (0x180104CB4) in fn 0x180103A10..0x18010523A
+0x180104C3C  mulps    xmm0, xmmword ptr [rcx + 8]                 
+0x180104C40  mov      rax, qword ptr [rbx + 0x1b988]              
+0x180104C47  movss    dword ptr [rax + 8], xmm0                   
+0x180104C4C  movss    xmm1, dword ptr [rdx + 0xc]                 
+0x180104C51  mulss    xmm1, dword ptr [rcx + 0xc]                 
+0x180104C56  lea      rcx, [rbx + 0x1ba98]                        
+0x180104C5D  mov      rax, qword ptr [rbx + 0x1b988]              
+0x180104C64  movss    dword ptr [rax + 0xc], xmm1                 
+0x180104C69  cmp      dword ptr [rcx + 0x170], 0                  
+0x180104C70  je       0x180104c7b                                 
+0x180104C72  comiss   xmm6, dword ptr [rcx + 0x190]               
+0x180104C79  jae      0x180104c80                                 
+0x180104C7B  call     0x1800e8b50                                 
+0x180104C80  lea      rcx, [rbx + 0x1bcf0]                        
+0x180104C87  call     0x1800ea650                                 
+0x180104C8C  lea      rcx, [rbx + 0x1bf80]                        
+0x180104C93  call     0x180137e90                                 
+0x180104C98  lea      rcx, [rbx + 0x1c0a8]                        
+0x180104C9F  call     0x1800d38b0                                 
+0x180104CA4  cmp      dword ptr [rbx + 0x1c5f8], 0                
+0x180104CAB  lea      rcx, [rbx + 0x1c4b0]                        
+0x180104CB2  je       0x180104cbd                                 
+0x180104CB4  comiss   xmm6, dword ptr [rcx + 0x168]               
+0x180104CBB  jae      0x180104cc2                                 
+0x180104CBD  call     0x1800d7f10                                 
+0x180104CC2  lea      rcx, [rbx + 0x1c6a0]                        
+0x180104CC9  call     0x1800d0d50                                 
+0x180104CCE  lea      rcx, [rbx + 0x1c780]                        
+0x180104CD5  call     0x180137f70                                 
+0x180104CDA  lea      rcx, [rbx + 0x1cdf8]                        
+0x180104CE1  call     0x1800cec80                                 
+0x180104CE6  lea      rcx, [rbx + 0x1d2b8]                        
+0x180104CED  .byte    0xe8                                        
+0x180104CEE  .byte    0x3e                                        
+0x180104CEF  .byte    0x77                                        
+
+### executor site 2 (0x18011E88E) in fn 0x18011D5F0..0x18011EE0E
+0x18011E816  movss    xmm0, dword ptr [rdx + 8]                   
+0x18011E81B  mulss    xmm0, dword ptr [rcx + 8]                   
+0x18011E820  mov      rax, qword ptr [rbx + 0x1b988]              
+0x18011E827  movss    dword ptr [rax + 8], xmm0                   
+0x18011E82C  movss    xmm1, dword ptr [rdx + 0xc]                 
+0x18011E831  mulss    xmm1, dword ptr [rcx + 0xc]                 
+0x18011E836  lea      rcx, [rbx + 0x1ba98]                        
+0x18011E83D  mov      rax, qword ptr [rbx + 0x1b988]              
+0x18011E844  movss    dword ptr [rax + 0xc], xmm1                 
+0x18011E849  cmp      dword ptr [rcx + 0x170], 0                  
+0x18011E850  je       0x18011e85b                                 
+0x18011E852  comiss   xmm6, dword ptr [rcx + 0x190]               
+0x18011E859  jae      0x18011e860                                 
+0x18011E85B  call     0x1800e8b50                                 
+0x18011E860  lea      rcx, [rbx + 0x1bcf0]                        
+0x18011E867  call     0x1800ea650                                 
+0x18011E86C  lea      rcx, [rbx + 0x1bf80]                        
+0x18011E873  call     0x180137e90                                 
+0x18011E878  lea      rcx, [rbx + 0x1c0a8]                        
+0x18011E87F  call     0x1800d38b0                                 
+0x18011E884  cmp      dword ptr [rbx + 0x1c5f8], 0                
+0x18011E88B  lea      rcx, [rbx + 0x1c4b0]                        
+0x18011E892  je       0x18011e89d                                 
+0x18011E894  comiss   xmm6, dword ptr [rcx + 0x168]               
+0x18011E89B  jae      0x18011e8a2                                 
+0x18011E89D  call     0x1800d7f10                                 
+0x18011E8A2  lea      rcx, [rbx + 0x1c6a0]                        
+0x18011E8A9  call     0x1800d0d50                                 
+0x18011E8AE  lea      rcx, [rbx + 0x1c780]                        
+0x18011E8B5  call     0x180137f70                                 
+0x18011E8BA  lea      rcx, [rbx + 0x1cdf8]                        
+0x18011E8C1  call     0x1800cec80                                 
+0x18011E8C6  .byte    0x48                                        
+0x18011E8C7  .byte    0x8d                                        
+0x18011E8C8  .byte    0x8b                                        
+0x18011E8C9  .byte    0xb8                                        
+
+### direct callers of m01 FUN_1800E10B0:
+### slot-1 [reg+8] calls with small-int rdx: 8
+    fn 0x18020ad80 at 0x18020ae4a: mov edx, 1 -> call qword ptr [rax + 8]
+    fn 0x180215ff0 at 0x1802160b3: mov edx, 4 -> call qword ptr [rax + 8]
+    fn 0x180216110 at 0x180216168: mov edx, 3 -> call qword ptr [rax + 8]
+    fn 0x180216eff at 0x180216f3d: mov edx, 1 -> call qword ptr [rax + 8]
+    fn 0x180216f90 at 0x1802171fb: mov edx, 1 -> call qword ptr [rax + 8]
+    fn 0x180217220 at 0x180217307: mov edx, 1 -> call qword ptr [rax + 8]
+    fn 0x18021cca0 at 0x18021cdbe: mov edx, 1 -> call qword ptr [rax + 8]
+    fn 0x1802214e0 at 0x18022159d: mov edx, 2 -> call qword ptr [rax + 8]
+post-pass hash OK

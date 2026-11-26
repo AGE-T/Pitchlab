@@ -544,3 +544,99 @@ declared, no CMake/engine/test/doc integration) and completed the round.
   cmake 4.4.4 reinstalled via pip; the Windows cross toolchain was NOT
   re-acquired this round -- the MinGW CMake paths are authored but
   unexecuted; recorded in the findings §5).
+
+---
+
+## ROUND 26 DELIVERY (2026-11-23) — OCTAVOX COMPLETE STATIC RECONSTRUCTION (audit)
+
+**Core:** octavox-native 16.3.0 · **Original binary: never executed (re-verified).**
+**Session note:** the R26 spec replaced the earlier planned SIMD round; a previous
+session had left untracked `octavox-work/r26/source/` + an R26 SIMD read-kernel zip
+(old plan) — diagnosed, documented as superseded, and left untouched (not part of
+this audit; no deletion of prior evidence).
+
+- **Evidence integrity first (spec §1):** Ox.vst3 SHA-256 verified before AND after
+  every analysis pass. **The R25 research package is MISSING from the sandbox** (no
+  zip, no r25 tree, no r25 branch — lost across the ≥6 recorded resets); its claims
+  were therefore never cited; everything below was re-derived from the raw binary +
+  the committed r22 corpus.
+- **Fresh toolchain this round:** self-contained PE parser + Capstone 5.0.9
+  (`octavox-work/r26/audit/scripts/`), `.pdata` function map (13,116 scopes), a
+  whole-`.text` cross-reference scan (1,065,880 instructions), targeted disassembly
+  and numpy table analysis. All evidence JSON/MD under `octavox-work/r26/audit/`.
+- **Canonical reproduction:** module extraction re-derives mimo 395 / miso 394 /
+  siso 394 modules + the identical 9 index-less globals; the full 55-entry
+  dtonicii9 record re-extracted (incl. userscale1..12 = 0 — declared, unwired);
+  temperament/scale-pattern/keymap tables byte-exact.
+- **Record ring CLOSED (both sides, instruction-exact):** writer
+  {correction, i4, i5, period} descending / consumer {period, interval, dead,
+  correction}; i4 = dead field reconfirmed; NEW: T+0x6058 identified as the port-26
+  table pointer (state-7 matched-row scan) ⇒ i4/i5 = matched harmony-row fields;
+  480 = the silent-record fallback (not an upper clamp).
+- **Pan law — LINEAR LAW REFUTED:** the mix family computes per-input gains
+  trigonometrically (1/√2 magic-static @0x1804120A4→0x1804CCD9C, 0.5/g, double
+  sqrt, atan2f ×2 @0x180180200, trig call @0x180350400, 1/(ninputs/2)) —
+  equal-power family (FUN_18013DD34..0x18013DEAB); monoSumWetChans 0.707/0.707
+  consistent. Exact closed form: DER-partial.
+- **Kernel 256×6 (R26 quantitative closure attempt):** bit-exact palindrome
+  (K[r][j] = K[255−r][5−j]; 608 distinct values); DC gain 1+ripple ≤ 1.22e-4;
+  Nyquist 0.0039→0.641; Farrow / LS-fractional-delay / windowed-sinc / Gaussian
+  generators numerically ELIMINATED ⇒ generator stays UNK (not guessed); third
+  table consumer found (accessor thunk 0x18032B720).
+- **Latency verdict CORRECTED:** FUN_180310F20 is NOT dead code — it is the
+  `<PluginEnvironment>` serialiser inside the DebugReport builder (1 call site
+  0x180347857; 2 callers); LatencySamples = a diagnostic attribute, NOT a host
+  report; host-reported latency remains UNK (Q-8 open-negative, new rationale).
+- **m01/m02 jump-table-exact:** ids 0..17 / 7..13 fully decoded (id1 = Minimum
+  Pitch pair; id5 = system sample rate + SR-class constant blocks; id6 = 243-lag
+  window; id17 clamp = 2^(±1/(12·correctrate)) with ln2/12 = 0.057762265 exact;
+  id0 → engine+0xA484 = UNK field; id4 → the adaptive-gate multiplier).
+  Live-Mode 40: +40 to engine delayamtN + dry-path delay comp (maxdelay 51);
+  unit = DER samples (medium confidence), formally UNK at the conversion site.
+- **Deliverables:** OCTAVOX_R26_COMPLETE_STATIC_AUDIT.md (root + audit dir),
+  6 appendices A–F (audit/docs), updated OCTAVOX_ORIGINAL_DSP_CHAIN.md (R26
+  revision, rebuilt — the R25 revision was lost), claim ledger + fresh-findings
+  notes + machine evidence + reproducible scripts.
+- **Validation:** lint clean; page rebuilt R26-first and browser-verified
+  (desktop 1920 + mobile 390: banner, audit, chain doc, R24/R23 archives,
+  delivery cards + SHA-256 copy buttons; zero page errors after fix of a JSX
+  brace literal; footer sticky pattern intact).
+
+---
+
+## ROUND 27 DELIVERY (2026-11-24) — RESIDUAL UNK CLOSURE (static, user-directed continuation)
+
+**Core:** static continuation of the R26 audit — attacking the standing UNK items.
+**Original binary: never executed (re-verified; hash constant across all passes).**
+
+- **PAN LAW — R26's CENTRAL REFUTATION CORRECTED:** the live stereomixer3 pan is
+  **LINEAR: L = 0.5(1−p)·G, R = 0.5(1+p)·G, G = 10^(gain_dB/20)** (FUN_1800D9B20, per-input
+  median/clamp-smoothed m-switch/ogn gain + panN; ln10/20 = 0.11512925465 at the exp). The R26
+  "trigonometric equal-power" verdict described REAL but UNREACHABLE framework-library code
+  (FUN_18013DD34: acosf 0x180350400 self-identified, atan2f, linspace π/8..7π/8 — behind the
+  34-mode mix-family dispatcher whose only caller produces modes 4/8/11 = default case).
+  monoSumWetChans 0.707/0.707 = the ogn −3 dB default (10^(−3/20) = 0.70795).
+- **MIX AUDIO:** FUN_1800D7F10 — **4 samples per call** (framework-wide cadence, matches the
+  engine prepare), per-input one-pole gain smoothing in double, **double-precision index-order
+  accumulation** out = ramp·Σ(double)in·g, output floor-guard + block-fade ramp.
+- **SOFTCLIP (closed):** tanh **mean-value clipper** — ln(cosh) divided difference for |Δ|≥0.01,
+  b·tanh(a·midpoint) below; = mean of b·tanh(a·t) per inter-sample interval; DC = b·tanh(a·x);
+  4-sample blocks with carry; coshf 0x180351B90 self-identified.
+- **LIVE-MODE 40 (closed):** **40 ms** — D = int(40·sr/1000 + 0.5), cap 1921532
+  (FUN_180138A20); delay-comp audio = descending-write ring, D samples behind; maxdelay 51 ms →
+  pow2 ring via the engine's own FUN_18013E200 helper. R26 "samples" corrected.
+- **m01 id0 (closed):** T+0x5F6C read at 0x18013C868 as scan_len = value+35 (correlate
+  threshold search; fractions 0.1015625/0.84375) — the "scan base" confirmed.
+- **HUNGARIAN (closed):** mux FUN_18013A790 clamps the 0-based select (≥ n−1 → last entry;
+  neg → first; else fractional interpolation) — choice 16 → in15 = 13 ⇒ **hungarian ≡
+  neapolitan**; no OOB ever. Choice modules output 0-based (msw "off" → −100 dB = voice off).
+- **m02 MECHANISM:** event-router subscriber multicast (FUN_1800C27E0 publisher with
+  hierarchical routers + dedup + nested fan-out → call [vtable+0x10] per subscriber; twin
+  channel for slot 3) — m01/m02 are event-in methods, not polled. ids-12/13 publisher residual.
+- **KERNEL:** DC group delay = **2 + r/256 exactly** (monotone, slope 1/256/row) — fractional-
+  delay bank pinned; mixed phase (0 min-phase rows); row diffs not constant; row 128 DC
+  1.00009 / Nyquist 0.0039 / −3 dB @ 0.60·Nyq; palindrome + 608 distinct reconfirmed;
+  generator stays UNK.
+- **Process:** sandbox output sanitizer strips "[h" from displayed text — documented; all
+  affected results re-verified via base64/octal dumps. Deliverables: R27 report (root) +
+  F1..F8 findings + scripts + kernel JSON; R26 artifacts byte-intact; web page R27 section.

@@ -1,0 +1,70 @@
+=== factory createInstance 0x180016EA0 ===
+0x180016EA0  sub      rcx, 0x20                                   
+0x180016EA4  jmp      0x18019c2d0                                 
+0x180016EA9  int3                                                 
+0x180016EAA  int3                                                 
+0x180016EAB  int3                                                 
+0x180016EAC  sub      rcx, 0xd8                                   
+0x180016EB3  jmp      0x18000fb70                                 
+0x180016EB8  sub      rcx, 0x68                                   
+0x180016EBC  jmp      0x180004f60                                 
+0x180016EC1  int3                                                 
+0x180016EC2  int3                                                 
+0x180016EC3  int3                                                 
+0x180016EC4  sub      rcx, 0x10                                   
+0x180016EC8  jmp      0x1800074b0                                 
+0x180016ECD  int3                                                 
+0x180016ECE  int3                                                 
+0x180016ECF  int3                                                 
+0x180016ED0  sub      rcx, 8                                      
+0x180016ED4  jmp      0x18000c230                                 
+0x180016ED9  int3                                                 
+0x180016EDA  int3                                                 
+0x180016EDB  int3                                                 
+0x180016EDC  sub      rcx, 0x18                                   
+0x180016EE0  jmp      0x1800048e0                                 
+0x180016EE5  int3                                                 
+0x180016EE6  int3                                                 
+0x180016EE7  int3                                                 
+0x180016EE8  sub      rcx, 0x30                                   
+0x180016EEC  jmp      0x1800074b0                                 
+0x180016EF1  int3                                                 
+0x180016EF2  int3                                                 
+0x180016EF3  int3                                                 
+0x180016EF4  sub      rcx, 0x78                                   
+0x180016EF8  jmp      0x180004480                                 
+0x180016EFD  int3                                                 
+0x180016EFE  int3                                                 
+0x180016EFF  int3                                                 
+0x180016F00  sub      rcx, 0x10                                   
+0x180016F04  jmp      0x18000c1f0                                 
+0x180016F09  int3                                                 
+0x180016F0A  int3                                                 
+0x180016F0B  int3                                                 
+0x180016F0C  sub      rcx, 8                                      
+0x180016F10  jmp      0x18000c200                                 
+0x180016F15  int3                                                 
+0x180016F16  int3                                                 
+0x180016F17  int3                                                 
+0x180016F18  sub      rcx, 0x70                                   
+0x180016F1C  jmp      0x1800074b0                                 
+0x180016F21  int3                                                 
+0x180016F22  int3                                                 
+0x180016F23  int3                                                 
+0x180016F24  sub      rcx, 0x90                                   
+0x180016F2B  jmp      0x1800074b0                                 
+0x180016F30  sub      rcx, 0x10                                   
+0x180016F34  jmp      0x180004f60                                 
+0x180016F39  int3                                                 
+0x180016F3A  int3                                                 
+0x180016F3B  int3                                                 
+0x180016F3C  sub      rcx, 0x40                                   
+0x180016F40  jmp      0x180004480                                 
+0x180016F45  int3                                                 
+0x180016F46  int3                                                 
+0x180016F47  int3                                                 
+0x180016F48  sub      rcx, 0x30                                   
+0x180016F4C  .byte    0xe9                                        
+0x180016F4D  pavgb    mm7, mm6                                    
+
+post-pass hash OK

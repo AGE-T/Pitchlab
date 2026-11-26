@@ -1,0 +1,349 @@
+=== fn 0x1801D0520 (slot-3 r8d=8) ===
+0x1801D0520  sub      rsp, 0x38                                   
+0x1801D0524  mov      rax, qword ptr [rip + 0x2d4b15]               ; "2��-�+"
+0x1801D052B  xor      rax, rsp                                    
+0x1801D052E  mov      qword ptr [rsp + 0x28], rax                 
+0x1801D0533  mov      rax, qword ptr [rcx]                        
+0x1801D0536  lea      rdx, [rsp + 0x20]                           
+0x1801D053B  mov      r8d, 8                                      
+0x1801D0541  call     qword ptr [rax + 0x18]                      
+0x1801D0544  cmp      eax, 8                                      
+0x1801D0547  jne      0x1801d0563                                 
+0x1801D0549  mov      rax, qword ptr [rsp + 0x20]                 
+0x1801D054E  bswap    rax                                         
+0x1801D0551  mov      rcx, qword ptr [rsp + 0x28]                 
+0x1801D0556  xor      rcx, rsp                                    
+0x1801D0559  call     0x18015e0e0                                 
+0x1801D055E  add      rsp, 0x38                                   
+0x1801D0562  ret                                                  
+0x1801D0563  xor      eax, eax                                    
+0x1801D0565  mov      rcx, qword ptr [rsp + 0x28]                 
+0x1801D056A  xor      rcx, rsp                                    
+0x1801D056D  call     0x18015e0e0                                 
+0x1801D0572  add      rsp, 0x38                                   
+0x1801D0576  ret                                                  
+0x1801D0577  int3                                                 
+0x1801D0578  int3                                                 
+0x1801D0579  int3                                                 
+0x1801D057A  int3                                                 
+0x1801D057B  int3                                                 
+0x1801D057C  int3                                                 
+0x1801D057D  int3                                                 
+0x1801D057E  int3                                                 
+0x1801D057F  int3                                                 
+
+=== fn 0x1801D0580 (slot-3 r8d=8) + gap ===
+0x1801D0580  sub      rsp, 0x38                                   
+0x1801D0584  mov      rax, qword ptr [rip + 0x2d4ab5]               ; "2��-�+"
+0x1801D058B  xor      rax, rsp                                    
+0x1801D058E  mov      qword ptr [rsp + 0x28], rax                 
+0x1801D0593  mov      rax, qword ptr [rcx]                        
+0x1801D0596  lea      rdx, [rsp + 0x20]                           
+0x1801D059B  mov      r8d, 8                                      
+0x1801D05A1  call     qword ptr [rax + 0x18]                      
+0x1801D05A4  xor      ecx, ecx                                    
+0x1801D05A6  cmp      eax, 8                                      
+0x1801D05A9  cmove    rcx, qword ptr [rsp + 0x20]                 
+0x1801D05AF  mov      rax, rcx                                    
+0x1801D05B2  mov      rcx, qword ptr [rsp + 0x28]                 
+0x1801D05B7  xor      rcx, rsp                                    
+0x1801D05BA  call     0x18015e0e0                                 
+0x1801D05BF  add      rsp, 0x38                                   
+0x1801D05C3  ret                                                  
+0x1801D05C4  int3                                                 
+0x1801D05C5  int3                                                 
+0x1801D05C6  int3                                                 
+0x1801D05C7  int3                                                 
+0x1801D05C8  int3                                                 
+0x1801D05C9  int3                                                 
+0x1801D05CA  int3                                                 
+0x1801D05CB  int3                                                 
+0x1801D05CC  int3                                                 
+0x1801D05CD  int3                                                 
+0x1801D05CE  int3                                                 
+0x1801D05CF  int3                                                 
+0x1801D05D0  mov      qword ptr [rsp + 0x10], rbx                 
+0x1801D05D5  mov      qword ptr [rsp + 0x18], rsi                 
+0x1801D05DA  push     rdi                                         
+0x1801D05DB  sub      rsp, 0x20                                   
+0x1801D05DF  mov      rax, qword ptr [rcx]                        
+0x1801D05E2  mov      rdi, rcx                                    
+0x1801D05E5  call     qword ptr [rax + 0x20]                      
+0x1801D05E8  movzx    esi, al                                     
+0x1801D05EB  test     al, al                                      
+0x1801D05ED  je       0x1801d0656                                 
+0x1801D05EF  mov      ebx, esi                                    
+0x1801D05F1  and      ebx, 0x7f                                   
+0x1801D05F4  cmp      ebx, 4                                      
+0x1801D05F7  ja       0x1801d0656                                 
+0x1801D05F9  mov      rcx, qword ptr [rdi]                        
+0x1801D05FC  lea      rdx, [rsp + 0x30]                           
+0x1801D0601  mov      r8d, ebx                                    
+0x1801D0604  mov      dword ptr [rsp + 0x30], 0                   
+0x1801D060C  mov      r9, qword ptr [rcx + 0x18]                  
+0x1801D0610  mov      rcx, rdi                                    
+0x1801D0613  call     r9                                          
+0x1801D0616  cmp      eax, ebx                                    
+0x1801D0618  jne      0x1801d0656                                 
+0x1801D061A  movzx    eax, byte ptr [rsp + 0x32]                  
+0x1801D061F  movzx    ecx, byte ptr [rsp + 0x33]                  
+0x1801D0624  shl      ecx, 8                                      
+0x1801D0627  or       ecx, eax                                    
+0x1801D0629  movzx    eax, byte ptr [rsp + 0x31]                  
+0x1801D062E  shl      ecx, 8                                      
+0x1801D0631  or       ecx, eax                                    
+0x1801D0633  movzx    eax, byte ptr [rsp + 0x30]                  
+0x1801D0638  shl      ecx, 8                                      
+0x1801D063B  or       ecx, eax                                    
+0x1801D063D  test     sil, sil                                    
+0x1801D0640  jns      0x1801d0644                                 
+0x1801D0642  neg      ecx                                         
+0x1801D0644  mov      eax, ecx                                    
+0x1801D0646  mov      rbx, qword ptr [rsp + 0x38]                 
+0x1801D064B  mov      rsi, qword ptr [rsp + 0x40]                 
+0x1801D0650  add      rsp, 0x20                                   
+0x1801D0654  pop      rdi                                         
+0x1801D0655  ret                                                  
+0x1801D0656  mov      rbx, qword ptr [rsp + 0x38]                 
+0x1801D065B  xor      eax, eax                                    
+0x1801D065D  mov      rsi, qword ptr [rsp + 0x40]                 
+0x1801D0662  add      rsp, 0x20                                   
+0x1801D0666  pop      rdi                                         
+0x1801D0667  ret                                                  
+0x1801D0668  int3                                                 
+0x1801D0669  int3                                                 
+0x1801D066A  int3                                                 
+0x1801D066B  int3                                                 
+0x1801D066C  int3                                                 
+0x1801D066D  int3                                                 
+0x1801D066E  int3                                                 
+0x1801D066F  int3                                                 
+
+=== fn 0x1801D0670 (slot-3 r8d=4) ===
+0x1801D0670  sub      rsp, 0x28                                   
+0x1801D0674  mov      rax, qword ptr [rcx]                        
+0x1801D0677  lea      rdx, [rsp + 0x30]                           
+0x1801D067C  mov      r8d, 4                                      
+0x1801D0682  call     qword ptr [rax + 0x18]                      
+0x1801D0685  cmp      eax, 4                                      
+0x1801D0688  jne      0x1801d06b2                                 
+0x1801D068A  movzx    ecx, byte ptr [rsp + 0x31]                  
+0x1801D068F  movzx    eax, byte ptr [rsp + 0x30]                  
+0x1801D0694  shl      eax, 8                                      
+0x1801D0697  or       eax, ecx                                    
+0x1801D0699  movzx    ecx, byte ptr [rsp + 0x32]                  
+0x1801D069E  shl      eax, 8                                      
+0x1801D06A1  or       eax, ecx                                    
+0x1801D06A3  movzx    ecx, byte ptr [rsp + 0x33]                  
+0x1801D06A8  shl      eax, 8                                      
+0x1801D06AB  or       eax, ecx                                    
+0x1801D06AD  add      rsp, 0x28                                   
+0x1801D06B1  ret                                                  
+0x1801D06B2  xor      eax, eax                                    
+0x1801D06B4  add      rsp, 0x28                                   
+0x1801D06B8  ret                                                  
+0x1801D06B9  int3                                                 
+0x1801D06BA  int3                                                 
+0x1801D06BB  int3                                                 
+0x1801D06BC  int3                                                 
+0x1801D06BD  int3                                                 
+0x1801D06BE  int3                                                 
+0x1801D06BF  int3                                                 
+0x1801D06C0  sub      rsp, 0x28                                   
+0x1801D06C4  mov      rax, qword ptr [rcx]                        
+0x1801D06C7  lea      rdx, [rsp + 0x30]                           
+0x1801D06CC  mov      r8d, 4                                      
+0x1801D06D2  call     qword ptr [rax + 0x18]                      
+0x1801D06D5  cmp      eax, 4                                      
+0x1801D06D8  jne      0x1801d0702                                 
+0x1801D06DA  movzx    ecx, byte ptr [rsp + 0x32]                  
+0x1801D06DF  movzx    eax, byte ptr [rsp + 0x33]                  
+0x1801D06E4  shl      eax, 8                                      
+0x1801D06E7  or       eax, ecx                                    
+0x1801D06E9  movzx    ecx, byte ptr [rsp + 0x31]                  
+0x1801D06EE  shl      eax, 8                                      
+0x1801D06F1  or       eax, ecx                                    
+0x1801D06F3  movzx    ecx, byte ptr [rsp + 0x30]                  
+0x1801D06F8  shl      eax, 8                                      
+0x1801D06FB  or       eax, ecx                                    
+0x1801D06FD  add      rsp, 0x28                                   
+0x1801D0701  ret                                                  
+0x1801D0702  xor      eax, eax                                    
+0x1801D0704  add      rsp, 0x28                                   
+0x1801D0708  ret                                                  
+0x1801D0709  int3                                                 
+0x1801D070A  int3                                                 
+0x1801D070B  int3                                                 
+0x1801D070C  int3                                                 
+0x1801D070D  int3                                                 
+0x1801D070E  int3                                                 
+0x1801D070F  int3                                                 
+
+=== fn 0x1801D0710 (slot-3 r8d=2) / 0x1801D0750 ===
+0x1801D0710  sub      rsp, 0x28                                   
+0x1801D0714  mov      rax, qword ptr [rcx]                        
+0x1801D0717  lea      rdx, [rsp + 0x30]                           
+0x1801D071C  mov      r8d, 2                                      
+0x1801D0722  call     qword ptr [rax + 0x18]                      
+0x1801D0725  cmp      eax, 2                                      
+0x1801D0728  jne      0x1801d0740                                 
+0x1801D072A  movzx    eax, byte ptr [rsp + 0x30]                  
+0x1801D072F  movzx    ecx, byte ptr [rsp + 0x31]                  
+0x1801D0734  shl      ax, 8                                       
+0x1801D0738  or       ax, cx                                      
+0x1801D073B  add      rsp, 0x28                                   
+0x1801D073F  ret                                                  
+0x1801D0740  xor      eax, eax                                    
+0x1801D0742  add      rsp, 0x28                                   
+0x1801D0746  ret                                                  
+0x1801D0747  int3                                                 
+0x1801D0748  int3                                                 
+0x1801D0749  int3                                                 
+0x1801D074A  int3                                                 
+0x1801D074B  int3                                                 
+0x1801D074C  int3                                                 
+0x1801D074D  int3                                                 
+0x1801D074E  int3                                                 
+0x1801D074F  int3                                                 
+0x1801D0750  sub      rsp, 0x28                                   
+0x1801D0754  mov      rax, qword ptr [rcx]                        
+0x1801D0757  lea      rdx, [rsp + 0x30]                           
+0x1801D075C  mov      r8d, 2                                      
+0x1801D0762  call     qword ptr [rax + 0x18]                      
+0x1801D0765  cmp      eax, 2                                      
+0x1801D0768  jne      0x1801d0780                                 
+0x1801D076A  movzx    eax, byte ptr [rsp + 0x31]                  
+0x1801D076F  movzx    ecx, byte ptr [rsp + 0x30]                  
+0x1801D0774  shl      ax, 8                                       
+0x1801D0778  or       ax, cx                                      
+0x1801D077B  add      rsp, 0x28                                   
+0x1801D077F  ret                                                  
+0x1801D0780  xor      eax, eax                                    
+0x1801D0782  add      rsp, 0x28                                   
+0x1801D0786  ret                                                  
+0x1801D0787  int3                                                 
+0x1801D0788  int3                                                 
+0x1801D0789  int3                                                 
+0x1801D078A  int3                                                 
+0x1801D078B  int3                                                 
+0x1801D078C  int3                                                 
+0x1801D078D  int3                                                 
+0x1801D078E  int3                                                 
+0x1801D078F  int3                                                 
+0x1801D0790  sub      rsp, 0x28                                   
+0x1801D0794  mov      rax, qword ptr [rcx]                        
+0x1801D0797  call     qword ptr [rax + 0x20]                      
+0x1801D079A  test     al, al                                      
+0x1801D079C  setne    al                                          
+0x1801D079F  add      rsp, 0x28                                   
+0x1801D07A3  ret                                                  
+0x1801D07A4  int3                                                 
+0x1801D07A5  int3                                                 
+0x1801D07A6  int3                                                 
+0x1801D07A7  int3                                                 
+0x1801D07A8  int3                                                 
+0x1801D07A9  int3                                                 
+0x1801D07AA  int3                                                 
+0x1801D07AB  int3                                                 
+0x1801D07AC  int3                                                 
+0x1801D07AD  int3                                                 
+0x1801D07AE  int3                                                 
+0x1801D07AF  int3                                                 
+
+=== fn 0x1801D07B0 (slot-3 r8d=1) ===
+0x1801D07B0  sub      rsp, 0x28                                   
+0x1801D07B4  mov      rax, qword ptr [rcx]                        
+0x1801D07B7  lea      rdx, [rsp + 0x30]                           
+0x1801D07BC  mov      r8d, 1                                      
+0x1801D07C2  mov      byte ptr [rsp + 0x30], 0                    
+0x1801D07C7  call     qword ptr [rax + 0x18]                      
+0x1801D07CA  movzx    eax, byte ptr [rsp + 0x30]                  
+0x1801D07CF  add      rsp, 0x28                                   
+0x1801D07D3  ret                                                  
+0x1801D07D4  int3                                                 
+0x1801D07D5  int3                                                 
+0x1801D07D6  int3                                                 
+0x1801D07D7  int3                                                 
+0x1801D07D8  int3                                                 
+0x1801D07D9  int3                                                 
+0x1801D07DA  int3                                                 
+0x1801D07DB  int3                                                 
+0x1801D07DC  int3                                                 
+0x1801D07DD  int3                                                 
+0x1801D07DE  int3                                                 
+0x1801D07DF  int3                                                 
+0x1801D07E0  mov      qword ptr [rsp + 8], rbx                    
+0x1801D07E5  mov      qword ptr [rsp + 0x10], rbp                 
+0x1801D07EA  mov      qword ptr [rsp + 0x18], rsi                 
+0x1801D07EF  mov      qword ptr [rsp + 0x20], rdi                 
+0x1801D07F4  push     r14                                         
+0x1801D07F6  sub      rsp, 0x20                                   
+0x1801D07FA  xor      edi, edi                                    
+0x1801D07FC  mov      rbx, r8                                     
+0x1801D07FF  mov      rbp, rdx                                    
+0x1801D0802  mov      rsi, rcx                                    
+0x1801D0805  test     r8, r8                                      
+0x1801D0808  je       0x1801d0837                                 
+0x1801D080A  mov      r14d, 0x70000000                            
+
+=== fn 0x18002BBC4 (slot-3 r8d=3) ===
+0x18002BBC4  mov      qword ptr [rsp + 0x30], rbx                 
+0x18002BBC9  lea      rbx, [rcx + 0x116]                          
+0x18002BBD0  mov      rcx, qword ptr [rsi + 8]                    
+0x18002BBD4  lea      rdx, [rsp + 0x38]                           
+0x18002BBD9  mov      r8d, 3                                      
+0x18002BBDF  mov      rax, qword ptr [rcx]                        
+0x18002BBE2  call     qword ptr [rax + 0x18]                      
+0x18002BBE5  movzx    eax, byte ptr [rsp + 0x3a]                  
+0x18002BBEA  mov      byte ptr [rbx - 2], al                      
+0x18002BBED  movzx    eax, byte ptr [rsp + 0x39]                  
+0x18002BBF2  mov      byte ptr [rbx - 1], al                      
+0x18002BBF5  movzx    eax, byte ptr [rsp + 0x38]                  
+0x18002BBFA  mov      byte ptr [rbx], al                          
+0x18002BBFC  mov      byte ptr [rbx + 1], 0xff                    
+0x18002BC00  lea      rbx, [rbx + 4]                              
+0x18002BC04  sub      rdi, 1                                      
+0x18002BC08  jne      0x18002bbd0                                 
+0x18002BC0A  mov      rbx, qword ptr [rsp + 0x30]                 
+0x18002BC0F  mov      rsi, qword ptr [rsp + 0x40]                 
+0x18002BC14  mov      al, 1                                       
+0x18002BC16  add      rsp, 0x20                                   
+0x18002BC1A  pop      rdi                                         
+0x18002BC1B  ret                                                  
+0x18002BC1C  int3                                                 
+0x18002BC1D  int3                                                 
+0x18002BC1E  int3                                                 
+0x18002BC1F  int3                                                 
+
+=== fn 0x18002BC20 (slot-3 r8d=1) ===
+0x18002BC20  mov      qword ptr [rsp + 0x10], rbx                 
+0x18002BC25  push     rdi                                         
+0x18002BC26  sub      rsp, 0x20                                   
+0x18002BC2A  mov      rbx, rcx                                    
+0x18002BC2D  mov      rdi, rdx                                    
+0x18002BC30  mov      rcx, qword ptr [rcx + 8]                    
+0x18002BC34  lea      rdx, [rsp + 0x30]                           
+0x18002BC39  mov      r8d, 1                                      
+0x18002BC3F  mov      rax, qword ptr [rcx]                        
+0x18002BC42  call     qword ptr [rax + 0x18]                      
+0x18002BC45  cmp      eax, 1                                      
+0x18002BC48  jne      0x18002bc85                                 
+0x18002BC4A  movzx    edx, byte ptr [rsp + 0x30]                  
+0x18002BC4F  test     dl, dl                                      
+0x18002BC51  sete     al                                          
+0x18002BC54  mov      byte ptr [rbx + 0x514], al                  
+0x18002BC5A  test     dl, dl                                      
+0x18002BC5C  je       0x18002bc77                                 
+0x18002BC5E  mov      rcx, qword ptr [rbx + 8]                    
+0x18002BC62  mov      r8d, edx                                    
+0x18002BC65  mov      rdx, rdi                                    
+0x18002BC68  mov      rax, qword ptr [rcx]                        
+0x18002BC6B  call     qword ptr [rax + 0x18]                      
+0x18002BC6E  movzx    edx, byte ptr [rsp + 0x30]                  
+0x18002BC73  cmp      eax, edx                                    
+0x18002BC75  jne      0x18002bc85                                 
+0x18002BC77  movzx    eax, dl                                     
+0x18002BC7A  mov      rbx, qword ptr [rsp + 0x38]                 
+0x18002BC7F  .byte    0x48                                        
+
+post-pass hash OK

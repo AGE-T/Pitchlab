@@ -1,0 +1,11 @@
+=== factory vtable @0x1803EEF98 ===
+  +0x00 queryInterface       = 0x180003A90  (.text)
+  +0x08 addRef               = 0x18041A070  (.rdata)
+  +0x10 release              = 0x180016F48  (.text)
+  +0x18 getFactoryInfo       = 0x180016D24  (.text)
+  +0x20 countClasses         = 0x180016DA8  (.text)
+  +0x28 getClassInfo         = 0x180016F6C  (.text)
+  +0x30 createInstance       = 0x180016EA0  (.text)
+  +0x38 getClassInfo2        = 0x18019CA70  (.text)
+  +0x40 getClassInfoUnicode  = 0x18019CA60  (.text)
+post-pass hash OK

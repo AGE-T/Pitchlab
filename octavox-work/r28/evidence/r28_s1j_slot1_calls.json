@@ -1,0 +1,50 @@
+[
+ {
+  "call_va": "0x18020ae4a",
+  "fn": "0x18020ad80",
+  "set": "mov edx, 1",
+  "call": "call qword ptr [rax + 8]"
+ },
+ {
+  "call_va": "0x1802160b3",
+  "fn": "0x180215ff0",
+  "set": "mov edx, 4",
+  "call": "call qword ptr [rax + 8]"
+ },
+ {
+  "call_va": "0x180216168",
+  "fn": "0x180216110",
+  "set": "mov edx, 3",
+  "call": "call qword ptr [rax + 8]"
+ },
+ {
+  "call_va": "0x180216f3d",
+  "fn": "0x180216eff",
+  "set": "mov edx, 1",
+  "call": "call qword ptr [rax + 8]"
+ },
+ {
+  "call_va": "0x1802171fb",
+  "fn": "0x180216f90",
+  "set": "mov edx, 1",
+  "call": "call qword ptr [rax + 8]"
+ },
+ {
+  "call_va": "0x180217307",
+  "fn": "0x180217220",
+  "set": "mov edx, 1",
+  "call": "call qword ptr [rax + 8]"
+ },
+ {
+  "call_va": "0x18021cdbe",
+  "fn": "0x18021cca0",
+  "set": "mov edx, 1",
+  "call": "call qword ptr [rax + 8]"
+ },
+ {
+  "call_va": "0x18022159d",
+  "fn": "0x1802214e0",
+  "set": "mov edx, 2",
+  "call": "call qword ptr [rax + 8]"
+ }
+]

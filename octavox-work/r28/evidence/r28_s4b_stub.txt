@@ -1,0 +1,112 @@
+=== shared default stub 0x1800055F0 (raw bytes) ===
+0x1800055F0  xor      al, al                                      
+0x1800055F2  ret                                                  
+0x1800055F3  int3                                                 
+0x1800055F4  int3                                                 
+0x1800055F5  int3                                                 
+0x1800055F6  int3                                                 
+0x1800055F7  int3                                                 
+0x1800055F8  int3                                                 
+0x1800055F9  int3                                                 
+0x1800055FA  int3                                                 
+0x1800055FB  int3                                                 
+0x1800055FC  int3                                                 
+0x1800055FD  int3                                                 
+0x1800055FE  int3                                                 
+0x1800055FF  int3                                                 
+0x180005600  mov      rcx, qword ptr [rcx]                        
+0x180005603  jmp      0x180174d2c                                 
+0x180005608  int3                                                 
+0x180005609  int3                                                 
+0x18000560A  int3                                                 
+0x18000560B  int3                                                 
+0x18000560C  int3                                                 
+0x18000560D  int3                                                 
+0x18000560E  int3                                                 
+0x18000560F  int3                                                 
+0x180005610  sub      rsp, 0x28                                   
+0x180005614  mov      ecx, dword ptr [rip + 0x4c5c96]             
+0x18000561A  mov      rax, qword ptr gs:[0x58]                    
+0x180005623  mov      edx, 4                                      
+0x180005628  mov      rcx, qword ptr [rax + rcx*8]                
+0x18000562C  mov      eax, dword ptr [rdx + rcx]                  
+0x18000562F  cmp      dword ptr [rip + 0x4c697b], eax             
+0x180005635  jg       0x180005643                                 
+0x180005637  lea      rax, [rip + 0x4c6976]                       
+0x18000563E  add      rsp, 0x28                                   
+0x180005642  ret                                                  
+0x180005643  lea      rcx, [rip + 0x4c6966]                       
+0x18000564A  call     0x18015e290                                 
+0x18000564F  .byte    0x83                                        
+
+raw bytes at 0x1800055F0: 32c0c3cccccccccccccccccccccccccc
+=== process slot +0xA0 target 0x180260210 (head) ===
+0x180260210  xchg     byte ptr [rcx + 0x41], dl                   
+0x180260213  ret                                                  
+0x180260214  int3                                                 
+0x180260215  int3                                                 
+0x180260216  int3                                                 
+0x180260217  int3                                                 
+0x180260218  int3                                                 
+0x180260219  int3                                                 
+0x18026021A  int3                                                 
+0x18026021B  int3                                                 
+0x18026021C  int3                                                 
+0x18026021D  int3                                                 
+0x18026021E  int3                                                 
+0x18026021F  int3                                                 
+0x180260220  sub      rsp, 0x28                                   
+0x180260224  cmp      dword ptr [rcx + 0x3c], edx                 
+0x180260227  je       0x18026024b                                 
+0x180260229  mov      dword ptr [rsp + 0x38], 0                   
+0x180260231  mov      eax, dword ptr [rsp + 0x38]                 
+0x180260235  mov      dword ptr [rcx + 0x3c], edx                 
+0x180260238  lea      rdx, [rsp + 0x38]                           
+0x18026023D  mov      dword ptr [rsp + 0x38], eax                 
+0x180260241  mov      byte ptr [rsp + 0x38], 1                    
+0x180260246  call     0x18025da50                                 
+0x18026024B  add      rsp, 0x28                                   
+0x18026024F  ret                                                  
+0x180260250  int3                                                 
+0x180260251  int3                                                 
+0x180260252  int3                                                 
+0x180260253  int3                                                 
+0x180260254  int3                                                 
+0x180260255  int3                                                 
+0x180260256  int3                                                 
+0x180260257  int3                                                 
+0x180260258  int3                                                 
+0x180260259  int3                                                 
+0x18026025A  int3                                                 
+0x18026025B  int3                                                 
+0x18026025C  int3                                                 
+0x18026025D  int3                                                 
+0x18026025E  int3                                                 
+0x18026025F  int3                                                 
+
+=== setupProcessing slot +0x90 target 0x180313BD0 ===
+0x180313BD0  mov      qword ptr [rsp + 0x18], rbp                 
+0x180313BD5  mov      qword ptr [rsp + 0x20], rsi                 
+0x180313BDA  push     rdi                                         
+0x180313BDB  sub      rsp, 0x20                                   
+0x180313BDF  xor      ebp, ebp                                    
+0x180313BE1  mov      rdi, rcx                                    
+0x180313BE4  mov      ecx, ebp                                    
+0x180313BE6  mov      esi, 2                                      
+0x180313BEB  nop      dword ptr [rax + rax]                       
+0x180313BF0  xor      eax, eax                                    
+0x180313BF2  lock cmpxchg dword ptr [rdi + 0x2540], esi               
+0x180313BFA  je       0x180313c08                                 
+0x180313BFC  cmp      ecx, 0x3e8                                  
+0x180313C02  jge      0x180313c08                                 
+0x180313C04  inc      ecx                                         
+0x180313C06  jmp      0x180313bf0                                 
+0x180313C08  movzx    ecx, byte ptr [rdi + 0x25c1]                
+0x180313C0F  mov      qword ptr [rsp + 0x38], rbx                 
+0x180313C14  test     cl, cl                                      
+0x180313C16  jne      0x180313c59                                 
+0x180313C18  mov      rbx, qword ptr [rdi + 0x22e8]               
+0x180313C1F  .byte    0x48                                        
+
+vtable 0x1803F05D0 installed at: []
+post-pass hash OK

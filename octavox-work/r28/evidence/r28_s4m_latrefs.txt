@@ -1,0 +1,45 @@
+refs to LatencySamples string 0x1803B5BF0: [('0x180311a4d', '0x180310f20')]
+
+=== context in fn 0x180310F20 ===
+0x1803119ED  push     qword ptr [rbp + 6]                         
+0x1803119F0  call     0x18015e100                                 
+0x1803119F5  nop                                                  
+0x1803119F6  mov      rax, qword ptr [rbp + 0x140]                
+0x1803119FD  mov      rdx, qword ptr [rax + 0x58]                 
+0x180311A01  cmp      rdx, r13                                    
+0x180311A04  je       0x180311a10                                 
+0x180311A06  lea      rcx, [rbp + 0x148]                          
+0x180311A0D  call     rdx                                         
+0x180311A0F  nop                                                  
+0x180311A10  mov      eax, dword ptr [r15 + 0x24]                 
+0x180311A14  lea      rcx, [rip + 0xdfb45]                          ; q=0x10000
+0x180311A1B  mov      qword ptr [rbp + 0x150], rcx                
+0x180311A22  mov      dword ptr [rbp + 0x158], eax                
+0x180311A28  call     0x1801c5a40                                 
+0x180311A2D  mov      rbx, rax                                    
+0x180311A30  lea      rdi, [rax + 0x10]                           
+0x180311A34  mov      qword ptr [rbp + 0x90], rdi                 
+0x180311A3B  mov      rcx, rdi                                    
+0x180311A3E  call     qword ptr [rip + 0x6bb84]                     ; "*5J"
+0x180311A44  nop                                                  
+0x180311A45  mov      rcx, rbx                                    
+0x180311A48  call     0x1801c5bd0                                 
+0x180311A4D  lea      rax, [rip + 0xa419c]                          ; "LatencySamples"
+0x180311A54  mov      qword ptr [rbp + 0x18], rax                 
+0x180311A58  lea      r8, [rbp + 0x18]                            
+0x180311A5C  mov      rdx, rbx                                    
+0x180311A5F  lea      rcx, [rbp - 0x70]                           
+0x180311A63  call     0x1801a8800                                 
+0x180311A68  mov      dword ptr [rsp + 0x30], 0x7fed7             
+0x180311A70  mov      rcx, rdi                                    
+0x180311A73  call     qword ptr [rip + 0x6bb47]                     ; "B5J"
+0x180311A79  nop                                                  
+0x180311A7A  mov      rcx, qword ptr [r14]                        
+0x180311A7D  test     rcx, rcx                                    
+0x180311A80  je       0x180311a9b                                 
+0x180311A82  mov      qword ptr [rsp + 0x20], r12                 
+0x180311A87  xor      r9d, r9d                                    
+0x180311A8A  .byte    0x4c                                        
+0x180311A8B  .byte    0x8d                                        
+0x180311A8C  .byte    0x85                                        
+post-pass hash OK

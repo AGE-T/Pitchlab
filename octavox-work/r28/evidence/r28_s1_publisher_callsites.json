@@ -1,0 +1,26 @@
+{
+ "publisher_A_0x1800C27E0": [
+  {
+   "call_va": "0x1800c162a",
+   "fn_lo": "0x1800c14c0",
+   "fn_hi": "0x1800c16a4"
+  }
+ ],
+ "publisher_B_0x1800C2960": [
+  {
+   "call_va": "0x1800c1771",
+   "fn_lo": "0x1800c16b0",
+   "fn_hi": "0x1800c1805"
+  }
+ ],
+ "dispatcher_0x1800C2CE0": [
+  {
+   "call_va": "0x1800c282d",
+   "fn_lo": "0x1800c27e0",
+   "fn_hi": "0x1800c2956"
+  }
+ ],
+ "thunk_0x1800C5730": [],
+ "thunk_0x1800C5740": [],
+ "thunk_0x1800C5750": []
+}

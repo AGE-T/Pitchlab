@@ -1,0 +1,102 @@
+=== real createInstance 0x18019C2D0 ===
+0x18019C2D0  mov      qword ptr [rsp + 8], rbx                    
+0x18019C2D5  mov      qword ptr [rsp + 0x10], rbp                 
+0x18019C2DA  mov      qword ptr [rsp + 0x18], rsi                 
+0x18019C2DF  mov      qword ptr [rsp + 0x20], rdi                 
+0x18019C2E4  push     r14                                         
+0x18019C2E6  sub      rsp, 0x20                                   
+0x18019C2EA  mov      rdi, rcx                                    
+0x18019C2ED  mov      rsi, qword ptr [rcx + 0x68]                 
+0x18019C2F1  mov      rbx, qword ptr [rcx + 0x60]                 
+0x18019C2F5  xor      ebp, ebp                                    
+0x18019C2F7  cmp      rbx, rsi                                    
+0x18019C2FA  je       0x18019c31e                                 
+0x18019C2FC  nop      dword ptr [rax]                             
+0x18019C300  mov      rcx, qword ptr [rbx]                        
+0x18019C303  test     rcx, rcx                                    
+0x18019C306  je       0x18019c311                                 
+0x18019C308  mov      rax, qword ptr [rcx]                        
+0x18019C30B  call     qword ptr [rax + 0x10]                      
+0x18019C30E  mov      qword ptr [rbx], rbp                        
+0x18019C311  add      rbx, 8                                      
+0x18019C315  cmp      rbx, rsi                                    
+0x18019C318  jne      0x18019c300                                 
+0x18019C31A  mov      rbx, qword ptr [rdi + 0x60]                 
+0x18019C31E  mov      qword ptr [rdi + 0x68], rbx                 
+0x18019C322  mov      rsi, qword ptr [rdi + 0x80]                 
+0x18019C329  mov      rbx, qword ptr [rdi + 0x78]                 
+0x18019C32D  cmp      rbx, rsi                                    
+0x18019C330  je       0x18019c34d                                 
+0x18019C332  mov      rcx, qword ptr [rbx]                        
+0x18019C335  test     rcx, rcx                                    
+0x18019C338  je       0x18019c344                                 
+0x18019C33A  mov      rax, qword ptr [rcx]                        
+0x18019C33D  lea      rdx, [rdi - 0x10]                           
+0x18019C341  call     qword ptr [rax + 0x48]                      
+0x18019C344  add      rbx, 8                                      
+0x18019C348  cmp      rbx, rsi                                    
+0x18019C34B  jne      0x18019c332                                 
+0x18019C34D  mov      rsi, qword ptr [rdi + 0x80]                 
+0x18019C354  mov      rbx, qword ptr [rdi + 0x78]                 
+0x18019C358  cmp      rbx, rsi                                    
+0x18019C35B  je       0x18019c37e                                 
+0x18019C35D  nop      dword ptr [rax]                             
+0x18019C360  mov      rcx, qword ptr [rbx]                        
+0x18019C363  test     rcx, rcx                                    
+0x18019C366  je       0x18019c371                                 
+0x18019C368  mov      rax, qword ptr [rcx]                        
+0x18019C36B  call     qword ptr [rax + 0x10]                      
+0x18019C36E  mov      qword ptr [rbx], rbp                        
+0x18019C371  add      rbx, 8                                      
+0x18019C375  cmp      rbx, rsi                                    
+0x18019C378  jne      0x18019c360                                 
+0x18019C37A  mov      rbx, qword ptr [rdi + 0x78]                 
+0x18019C37E  mov      qword ptr [rdi + 0x80], rbx                 
+0x18019C385  mov      rsi, qword ptr [rdi + 0x90]                 
+0x18019C38C  mov      rbx, qword ptr [rsi + 8]                    
+0x18019C390  cmp      byte ptr [rbx + 0x19], 0                    
+0x18019C394  jne      0x18019c3cd                                 
+0x18019C396  nop      word ptr [rax + rax]                        
+0x18019C3A0  mov      r8, qword ptr [rbx + 0x10]                  
+0x18019C3A4  lea      rdx, [rdi + 0x90]                           
+0x18019C3AB  lea      rcx, [rdi + 0x90]                           
+0x18019C3B2  call     0x180014170                                 
+0x18019C3B7  mov      rcx, rbx                                    
+0x18019C3BA  mov      rbx, qword ptr [rbx]                        
+0x18019C3BD  mov      edx, 0x30                                   
+0x18019C3C2  call     0x18015e100                                 
+0x18019C3C7  cmp      byte ptr [rbx + 0x19], 0                    
+0x18019C3CB  je       0x18019c3a0                                 
+0x18019C3CD  mov      qword ptr [rsi + 8], rsi                    
+0x18019C3D1  mov      qword ptr [rsi], rsi                        
+0x18019C3D4  mov      qword ptr [rsi + 0x10], rsi                 
+0x18019C3D8  mov      qword ptr [rdi + 0x98], rbp                 
+0x18019C3DF  mov      rcx, rdi                                    
+0x18019C3E2  mov      rbx, qword ptr [rsp + 0x30]                 
+0x18019C3E7  mov      rbp, qword ptr [rsp + 0x38]                 
+0x18019C3EC  mov      rsi, qword ptr [rsp + 0x40]                 
+0x18019C3F1  mov      rdi, qword ptr [rsp + 0x48]                 
+0x18019C3F6  add      rsp, 0x20                                   
+0x18019C3FA  pop      r14                                         
+0x18019C3FC  jmp      0x18019ca80                                 
+0x18019C401  int3                                                 
+0x18019C402  int3                                                 
+0x18019C403  int3                                                 
+0x18019C404  int3                                                 
+0x18019C405  int3                                                 
+0x18019C406  int3                                                 
+0x18019C407  int3                                                 
+0x18019C408  int3                                                 
+0x18019C409  int3                                                 
+0x18019C40A  int3                                                 
+0x18019C40B  int3                                                 
+0x18019C40C  int3                                                 
+0x18019C40D  int3                                                 
+0x18019C40E  int3                                                 
+0x18019C40F  int3                                                 
+0x18019C410  push     rbx                                         
+0x18019C412  sub      rsp, 0x20                                   
+0x18019C416  lea      rax, [rip + 0x252a63]                         ; q=0x180004F60
+0x18019C41D  mov      rbx, rcx                                    
+
+post-pass hash OK

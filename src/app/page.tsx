@@ -2,9 +2,25 @@ import fs from "node:fs";
 import path from "node:path";
 import { ReportViewer } from "../components/report-viewer";
 
-// R24 (current round): the SIMD capability-layer findings + the measured
-// decision record (engine-level round -- no new archive zip; the delivery
-// cards below remain the R23/R22/R21 evidence packages).
+// R27 (current round): RESIDUAL UNK CLOSURE — the user-directed static continuation of the
+// R26 audit: the live pan law recovered (LINEAR 0.5·(1∓p)·G — R26's trig verdict corrected as
+// unreachable library code), the mix audio (4-sample cadence, double accumulation), the softclip
+// (tanh mean-value clipper), Live-Mode 40 = ms, hungarian = index-clamped, m01 id0 reader found,
+// m02 = event-system consumer, kernel = fractional-delay bank (delay 2+r/256).
+// R26 (previous round): OCTAVOX COMPLETE STATIC RECONSTRUCTION — the deepest
+// static audit of the original binary (record ring resolved, kernel generator
+// eliminations, host-latency verdict corrected). No new archive zip this round
+// (static-audit round); the delivery cards below remain the R23/R22/R21
+// evidence packages.
+const R27_REPORT =
+  "/home/z/my-project/OCTAVOX_R27_RESIDUAL_UNK_CLOSURE.md";
+const R27_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R27_RESIDUAL_UNK_CLOSURE.md");
+const R26_AUDIT =
+  "/home/z/my-project/OCTAVOX_R26_COMPLETE_STATIC_AUDIT.md";
+const R26_AUDIT_LOCAL = path.join(process.cwd(), "OCTAVOX_R26_COMPLETE_STATIC_AUDIT.md");
+const R26_CHAIN =
+  "/home/z/my-project/OCTAVOX_ORIGINAL_DSP_CHAIN.md";
+const R26_CHAIN_LOCAL = path.join(process.cwd(), "OCTAVOX_ORIGINAL_DSP_CHAIN.md");
 const ROUND24_FINDINGS =
   "/home/z/my-project/PITCHLAB_ROUND24_FINDINGS.md";
 const ROUND24_BENCH =
@@ -31,6 +47,9 @@ function readFirstExisting(paths: string[]): string | null {
 }
 
 function readMarkdown(): string {
+  const r27Report = readFirstExisting([R27_REPORT, R27_REPORT_LOCAL]);
+  const r26Audit = readFirstExisting([R26_AUDIT, R26_AUDIT_LOCAL]);
+  const r26Chain = readFirstExisting([R26_CHAIN, R26_CHAIN_LOCAL]);
   const r24Findings = readFirstExisting([
     ROUND24_FINDINGS,
     path.join(process.cwd(), "PITCHLAB_ROUND24_FINDINGS.md"),
@@ -41,21 +60,38 @@ function readMarkdown(): string {
   ]);
   const r23 = readFirstExisting([ROUND23_PATH, ROUND23_ALT, LOCAL_FALLBACK]);
   const parts: string[] = [];
-  if (r24Findings) parts.push(r24Findings.trim());
+  if (r27Report)
+    parts.push(r27Report.trim()); // R27 first (current round) — keeps the page H1
+  if (r26Audit)
+    parts.push(
+      (parts.length ? "\n\n---\n\n" : "") +
+        r26Audit
+          .replace(/^# /m, "## ") // demote the R26 H1 (one page, one H1)
+          .trim(),
+    );
+  if (r26Chain)
+    parts.push(
+      "\n\n---\n\n" +
+        r26Chain.replace(/^# /m, "## ") // demote the chain doc H1 (one page, one H1)
+          .trim(),
+    );
+  if (r24Findings)
+    parts.push(
+      "\n\n---\n\n" +
+        r24Findings.replace(/^# /m, "## ").trim(),
+    );
   if (r24Bench)
     parts.push(
       "\n\n---\n\n" +
-        r24Bench.replace(/^# /m, "## ") // demote the doc H1 (one page, one H1)
-          .trim(),
+        r24Bench.replace(/^# /m, "## ").trim(),
     );
   if (r23)
     parts.push(
       "\n\n---\n\n" +
-        r23.replace(/^# /m, "## ") // demote the R23 doc H1 likewise
-          .trim(),
+        r23.replace(/^# /m, "## ").trim(),
     );
   if (parts.length === 0)
-    return "# PITCHLAB\n\nAz R24/R23 kutatási dokumentumok nem találhatók.";
+    return "# PITCHLAB\n\nAz R27/R26/R24/R23 kutatási dokumentumok nem találhatók.";
   return parts.join("\n\n");
 }
 

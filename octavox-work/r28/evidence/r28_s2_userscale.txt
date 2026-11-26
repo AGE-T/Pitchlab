@@ -1,0 +1,137 @@
+=== userscale map region 0x1803BB580..0x1803BB700 (ints) ===
+0x1803BB580:    0    0    0    0
+0x1803BB590:    0    0    0    0
+0x1803BB5A0:    0    0    0    0
+0x1803BB5B0:    0    0    0    0
+0x1803BB5C0:    0    0    0    0
+0x1803BB5D0:    0    0    0    0
+0x1803BB5E0:    0    0    0    0
+0x1803BB5F0: -2143571124    1 -2143680204    1
+0x1803BB600:    6    0 -2143571072    1
+0x1803BB610:    0    1    1    2
+0x1803BB620:    3    3    4    5
+0x1803BB630:    6    6    7    8
+0x1803BB640:    8    9   10   10
+0x1803BB650:   11 808464434   48    0
+0x1803BB660:    1    0    2    0
+0x1803BB670:    3    4    0    5
+0x1803BB680:    0    6    0    7
+0x1803BB690:    0  100  200  300
+0x1803BB6A0:  400  500  600  700
+0x1803BB6B0:  800  900 1000 1100
+0x1803BB6C0:    0  112  204  316
+0x1803BB6D0:  386  498  590  702
+0x1803BB6E0:  814  884  996 1088
+0x1803BB6F0:    0   71  182  316
+
+=== .text references into 0x1803BB5C0..0x1803BB680: 2 ===
+  0x1800c9a73 -> 0x1803bb5f0  lea rax, [rip + 0x2f1b76]   (fn 0x1800c9990)
+  0x1800c9f7c -> 0x1803bb5f0  lea r12, [rip + 0x2f166d]   (fn 0x1800c9f10)
+=== userscale initializer site 0x1800E4A64 context ===
+0x1800E49C0  scasd    eax, dword ptr [rdi]                        
+0x1800E49C1  iretd                                                
+0x1800E49C2  cmp      r8, rcx                                     
+0x1800E49C5  jae      0x1800e49d4                                 
+0x1800E49C7  lea      rax, [r8 + r8*2]                            
+0x1800E49CB  shl      rax, 4                                      
+0x1800E49CF  add      rax, rdx                                    
+0x1800E49D2  jmp      0x1800e4a02                                 
+0x1800E49D4  jbe      0x1800e4a06                                 
+0x1800E49D6  mov      rax, qword ptr [r15 + 0x10]                 
+0x1800E49DA  sub      rax, rdx                                    
+0x1800E49DD  sar      rax, 4                                      
+0x1800E49E1  imul     rax, rdi                                    
+0x1800E49E5  cmp      r8, rax                                     
+0x1800E49E8  jbe      0x1800e49f7                                 
+0x1800E49EA  mov      rdx, r8                                     
+0x1800E49ED  mov      rcx, r15                                    
+0x1800E49F0  call     0x18013fcd0                                 
+0x1800E49F5  jmp      0x1800e4a06                                 
+0x1800E49F7  sub      r8, rcx                                     
+0x1800E49FA  mov      rdx, r9                                     
+0x1800E49FD  call     0x18013f320                                 
+0x1800E4A02  mov      qword ptr [r15 + 8], rax                    
+0x1800E4A06  mov      rdx, qword ptr [rsp + 0x70]                 
+0x1800E4A0B  cmp      rdx, 0x10                                   
+0x1800E4A0F  jb       0x1800e4a43                                 
+0x1800E4A11  inc      rdx                                         
+0x1800E4A14  mov      rcx, qword ptr [rsp + 0x58]                 
+0x1800E4A19  mov      rax, rcx                                    
+0x1800E4A1C  cmp      rdx, 0x1000                                 
+0x1800E4A23  jb       0x1800e4a3e                                 
+0x1800E4A25  add      rdx, 0x27                                   
+0x1800E4A29  mov      rcx, qword ptr [rcx - 8]                    
+0x1800E4A2D  sub      rax, rcx                                    
+0x1800E4A30  add      rax, -8                                     
+0x1800E4A34  cmp      rax, 0x1f                                   
+0x1800E4A38  ja       0x1800e513b                                 
+0x1800E4A3E  call     0x18015e100                                 
+0x1800E4A43  mov      r13d, ebx                                   
+0x1800E4A46  mov      rcx, qword ptr [r15]                        
+0x1800E4A49  mov      rax, qword ptr [r15 + 8]                    
+0x1800E4A4D  sub      rax, rcx                                    
+0x1800E4A50  sar      rax, 4                                      
+0x1800E4A54  imul     rax, rdi                                    
+0x1800E4A58  test     rax, rax                                    
+0x1800E4A5B  je       0x1800e4c44                                 
+0x1800E4A61  mov      rdx, rbx                                    
+0x1800E4A64  lea      rax, [rsi + 0x3e0]                          
+0x1800E4A6B  lea      rdi, [rdx + rdx*2]                          
+0x1800E4A6F  add      rdi, rdi                                    
+0x1800E4A72  mov      qword ptr [rcx + rdi*8 + 0x10], rax         
+0x1800E4A77  mov      dword ptr [rcx + rdi*8 + 0x18], r13d        
+0x1800E4A7C  mov      r14, qword ptr [r15]                        
+0x1800E4A7F  mov      qword ptr [rsp + 0x58], rbx                 
+0x1800E4A84  mov      qword ptr [rsp + 0x68], rbx                 
+0x1800E4A89  mov      qword ptr [rsp + 0x70], 0xf                 
+0x1800E4A92  mov      byte ptr [rsp + 0x58], 0                    
+0x1800E4A97  mov      r8d, 9                                      
+0x1800E4A9D  lea      rdx, [rip + 0x323a7c]                         ; "userscale"
+0x1800E4AA4  lea      rcx, [rsp + 0x58]                           
+0x1800E4AA9  call     0x180017b40                                 
+0x1800E4AAE  nop                                                  
+0x1800E4AAF  lea      rax, [rip + 0x2d85ca]                         ; q=0x1803BC370
+0x1800E4AB6  mov      qword ptr [rsp + 0x30], rax                 
+0x1800E4ABB  mov      rbx, qword ptr [rsi]                        
+0x1800E4ABE  mov      r8, r12                                     
+0x1800E4AC1  lea      rdx, [rsp + 0x58]                           
+0x1800E4AC6  lea      rcx, [rsp + 0x30]                           
+0x1800E4ACB  call     0x18032b520                                 
+0x1800E4AD0  movss    dword ptr [r14 + rdi*8], xmm0               
+0x1800E4AD6  mov      r8, r12                                     
+0x1800E4AD9  lea      rdx, [rsp + 0x58]                           
+0x1800E4ADE  lea      rcx, [rsp + 0x30]                           
+0x1800E4AE3  call     0x18032b420                                 
+0x1800E4AE8  movss    dword ptr [r14 + rdi*8 + 4], xmm0           
+0x1800E4AEF  mov      r8, r12                                     
+0x1800E4AF2  lea      rdx, [rsp + 0x58]                           
+0x1800E4AF7  lea      rcx, [rsp + 0x30]                           
+0x1800E4AFC  call     0x18032b320                                 
+0x1800E4B01  movss    dword ptr [r14 + rdi*8 + 8], xmm0           
+0x1800E4B08  inc      r13d                                        
+0x1800E4B0B  mov      r8, r12                                     
+0x1800E4B0E  lea      rdx, [rsp + 0x58]                           
+0x1800E4B13  lea      rcx, [rsp + 0x30]                           
+0x1800E4B18  call     0x18032b230                                 
+0x1800E4B1D  mov      dword ptr [rsp + 0x28], r13d                
+0x1800E4B22  movss    dword ptr [rsp + 0x20], xmm0                
+0x1800E4B28  lea      r9, [rsp + 0x58]                            
+0x1800E4B2D  mov      r8, r12                                     
+0x1800E4B30  lea      rdx, [rbp - 0x68]                           
+0x1800E4B34  mov      rcx, rbx                                    
+0x1800E4B37  call     0x1800c4930                                 
+0x1800E4B3C  mov      rcx, qword ptr [rax]                        
+0x1800E4B3F  mov      qword ptr [r14 + rdi*8 + 0x20], rcx         
+0x1800E4B44  test     rcx, rcx                                    
+0x1800E4B47  je       0x1800e4b89                                 
+0x1800E4B49  mov      rdx, qword ptr [r14 + rdi*8 + 0x10]         
+0x1800E4B4E  test     rdx, rdx                                    
+0x1800E4B51  je       0x1800e4b89                                 
+0x1800E4B53  mov      eax, dword ptr [r14 + rdi*8 + 0x18]         
+0x1800E4B58  add      rcx, 8                                      
+0x1800E4B5C  .byte    0x48                                        
+0x1800E4B5D  .byte    0x89                                        
+0x1800E4B5E  push     rsp                                         
+0x1800E4B5F  .byte    0x24                                        
+
+post-pass hash OK

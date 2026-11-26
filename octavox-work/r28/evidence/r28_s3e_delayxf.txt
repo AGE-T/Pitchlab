@@ -1,0 +1,133 @@
+=== delay_xf update/audio 0x180137560 (tap conversion) ===
+0x180137560  push     rbx                                         
+0x180137562  sub      rsp, 0x20                                   
+0x180137566  mov      rbx, rcx                                    
+0x180137569  xor      edx, edx                                    
+0x18013756B  mov      rcx, qword ptr [rcx + 0x140]                
+0x180137572  mov      r8, qword ptr [rbx + 0x148]                 
+0x180137579  sub      r8, rcx                                     
+0x18013757C  and      r8, 0xfffffffffffffffc                      
+0x180137580  call     0x180161700                                 
+0x180137585  mov      r8, qword ptr [rbx + 0x128]                 
+0x18013758C  movabs   r10, 0xaaaaaaaaaaaaaaab                     
+0x180137596  mov      rax, qword ptr [rbx + 0x130]                
+0x18013759D  xor      r9d, r9d                                    
+0x1801375A0  sub      rax, r8                                     
+0x1801375A3  sar      rax, 3                                      
+0x1801375A7  imul     rax, r10                                    
+0x1801375AB  test     rax, rax                                    
+0x1801375AE  je       0x1801375eb                                 
+0x1801375B0  mov      edx, r9d                                    
+0x1801375B3  mov      rax, qword ptr [rdx + r8 + 0x10]            
+0x1801375B8  test     rax, rax                                    
+0x1801375BB  je       0x1801375c3                                 
+0x1801375BD  xorps    xmm0, xmm0                                  
+0x1801375C0  movups   xmmword ptr [rax], xmm0                     
+0x1801375C3  mov      r8, qword ptr [rbx + 0x128]                 
+0x1801375CA  inc      r9d                                         
+0x1801375CD  mov      rcx, qword ptr [rbx + 0x130]                
+0x1801375D4  add      rdx, 0x18                                   
+0x1801375D8  sub      rcx, r8                                     
+0x1801375DB  movsxd   rax, r9d                                    
+0x1801375DE  sar      rcx, 3                                      
+0x1801375E2  imul     rcx, r10                                    
+0x1801375E6  cmp      rax, rcx                                    
+0x1801375E9  jb       0x1801375b3                                 
+0x1801375EB  add      rsp, 0x20                                   
+0x1801375EF  pop      rbx                                         
+0x1801375F0  ret                                                  
+0x1801375F1  int3                                                 
+0x1801375F2  int3                                                 
+0x1801375F3  int3                                                 
+0x1801375F4  int3                                                 
+0x1801375F5  int3                                                 
+0x1801375F6  int3                                                 
+0x1801375F7  int3                                                 
+0x1801375F8  int3                                                 
+0x1801375F9  int3                                                 
+0x1801375FA  int3                                                 
+0x1801375FB  int3                                                 
+0x1801375FC  int3                                                 
+0x1801375FD  int3                                                 
+0x1801375FE  int3                                                 
+0x1801375FF  int3                                                 
+0x180137600  mov      qword ptr [rsp + 8], rbx                    
+0x180137605  push     rdi                                         
+0x180137606  sub      rsp, 0x20                                   
+0x18013760A  mov      rdi, rdx                                    
+0x18013760D  mov      rbx, rcx                                    
+0x180137610  call     0x1800cf080                                 
+0x180137615  lea      rcx, [rbx + 0xa8]                           
+0x18013761C  mov      rdx, rdi                                    
+0x18013761F  mov      rbx, qword ptr [rsp + 0x30]                 
+0x180137624  add      rsp, 0x20                                   
+0x180137628  pop      rdi                                         
+0x180137629  jmp      0x1800ce790                                 
+0x18013762E  int3                                                 
+0x18013762F  int3                                                 
+0x180137630  mov      qword ptr [rsp + 8], rcx                    
+0x180137635  push     rbx                                         
+0x180137636  sub      rsp, 0x30                                   
+0x18013763A  mov      rbx, rcx                                    
+0x18013763D  lea      rax, [rdx + 0x260]                          
+0x180137644  xor      ecx, ecx                                    
+0x180137646  test     rdx, rdx                                    
+0x180137649  cmove    rax, rcx                                    
+0x18013764D  mov      qword ptr [rbx], rax                        
+0x180137650  mov      dword ptr [rbx + 8], r9d                    
+0x180137654  mov      qword ptr [rbx + 0x10], 0xffffffffffffffff  
+0x18013765C  mov      qword ptr [rbx + 0x18], 0xffffffffffffffff  
+0x180137664  mov      qword ptr [rbx + 0x20], 0xffffffffffffffff  
+0x18013766C  mov      qword ptr [rbx + 0x30], rcx                 
+0x180137670  mov      qword ptr [rbx + 0x38], rcx                 
+0x180137674  mov      qword ptr [rbx + 0x40], rcx                 
+0x180137678  mov      dword ptr [rbx + 0x48], 0xc7000000          
+0x18013767F  mov      dword ptr [rbx + 0x4c], 0x46fffe00          
+0x180137686  mov      dword ptr [rbx + 0x50], 0x3f800000          
+0x18013768D  mov      qword ptr [rbx + 0x58], rcx                 
+0x180137691  mov      dword ptr [rbx + 0x60], ecx                 
+0x180137694  mov      qword ptr [rbx + 0x68], rcx                 
+0x180137698  mov      qword ptr [rbx + 0x78], rcx                 
+0x18013769C  mov      qword ptr [rbx + 0x80], rcx                 
+0x1801376A3  mov      qword ptr [rbx + 0x88], rcx                 
+0x1801376AA  mov      qword ptr [rbx + 0x90], rcx                 
+0x1801376B1  mov      qword ptr [rbx + 0x98], rcx                 
+0x1801376B8  mov      qword ptr [rbx + 0xa0], rcx                 
+0x1801376BF  lea      rcx, [rbx + 0xa8]                           
+0x1801376C6  mov      rax, qword ptr [rsp + 0x60]                 
+0x1801376CB  mov      qword ptr [rsp + 0x20], rax                 
+0x1801376D0  call     0x1800ce0f0                                 
+0x1801376D5  nop                                                  
+0x1801376D6  mov      rax, rbx                                    
+0x1801376D9  add      rsp, 0x30                                   
+0x1801376DD  pop      rbx                                         
+0x1801376DE  ret                                                  
+0x1801376DF  int3                                                 
+0x1801376E0  jmp      0x1800d8fc0                                 
+0x1801376E5  int3                                                 
+0x1801376E6  int3                                                 
+0x1801376E7  int3                                                 
+0x1801376E8  int3                                                 
+0x1801376E9  int3                                                 
+0x1801376EA  int3                                                 
+0x1801376EB  int3                                                 
+0x1801376EC  int3                                                 
+0x1801376ED  int3                                                 
+0x1801376EE  int3                                                 
+0x1801376EF  int3                                                 
+0x1801376F0  mov      qword ptr [rsp + 8], rbx                    
+0x1801376F5  push     rdi                                         
+0x1801376F6  sub      rsp, 0x20                                   
+0x1801376FA  mov      rdi, rdx                                    
+0x1801376FD  mov      rbx, rcx                                    
+0x180137700  call     0x1800d8380                                 
+0x180137705  lea      rcx, [rbx + 0xf0]                           
+0x18013770C  mov      rdx, rdi                                    
+0x18013770F  mov      rbx, qword ptr [rsp + 0x30]                 
+0x180137714  add      rsp, 0x20                                   
+0x180137718  pop      rdi                                         
+0x180137719  jmp      0x1800d7c40                                 
+0x18013771E  int3                                                 
+0x18013771F  int3                                                 
+
+post-pass hash OK

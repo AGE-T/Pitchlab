@@ -1,0 +1,88 @@
+LatencySamples string at 0x1803B5BF0
+=== PluginEnvironment serialiser 0x180310F20 ===
+0x180310F20  mov      qword ptr [rsp + 0x18], rbx                 
+0x180310F25  push     rbp                                         
+0x180310F26  push     rsi                                         
+0x180310F27  push     rdi                                         
+0x180310F28  push     r12                                         
+0x180310F2A  push     r13                                         
+0x180310F2C  push     r14                                         
+0x180310F2E  push     r15                                         
+0x180310F30  lea      rbp, [rsp - 0x180]                          
+0x180310F38  sub      rsp, 0x280                                  
+0x180310F3F  mov      rax, qword ptr [rip + 0x1940fa]               ; "2��-�+"
+0x180310F46  xor      rax, rsp                                    
+0x180310F49  mov      qword ptr [rbp + 0x170], rax                
+0x180310F50  mov      r14, rdx                                    
+0x180310F53  mov      r15, rcx                                    
+0x180310F56  mov      qword ptr [rbp + 0x28], rdx                 
+0x180310F5A  xor      r12d, r12d                                  
+0x180310F5D  mov      dword ptr [rsp + 0x30], r12d                
+0x180310F62  call     0x1801c5a40                                 
+0x180310F67  mov      rbx, rax                                    
+0x180310F6A  lea      rdi, [rax + 0x10]                           
+0x180310F6E  mov      qword ptr [rbp + 0x30], rdi                 
+0x180310F72  mov      rcx, rdi                                    
+0x180310F75  call     qword ptr [rip + 0x6c64d]                     ; "*5J"
+0x180310F7B  nop                                                  
+0x180310F7C  mov      rcx, rbx                                    
+0x180310F7F  call     0x1801c5bd0                                 
+0x180310F84  lea      rax, [rip + 0xa4b4d]                          ; "PluginEnvironment"
+0x180310F8B  mov      qword ptr [rbp - 0x48], rax                 
+0x180310F8F  lea      r8, [rbp - 0x48]                            
+0x180310F93  mov      rdx, rbx                                    
+0x180310F96  lea      rcx, [rbp - 0x60]                           
+0x180310F9A  call     0x1801a8800                                 
+0x180310F9F  mov      dword ptr [rsp + 0x30], 2                   
+0x180310FA7  mov      rcx, rdi                                    
+0x180310FAA  call     qword ptr [rip + 0x6c610]                     ; "B5J"
+0x180310FB0  nop                                                  
+0x180310FB1  lea      ecx, [r12 + 0x50]                           
+0x180310FB6  call     0x18015e63c                                 
+0x180310FBB  mov      rcx, rax                                    
+0x180310FBE  mov      dword ptr [rax + 8], r12d                   
+0x180310FC2  lea      rax, [rip + 0xf704f]                          ; q=0x1800C1DB0
+0x180310FC9  mov      qword ptr [rcx], rax                        
+0x180310FCC  mov      rax, qword ptr [rbp - 0x60]                 
+0x180310FD0  mov      qword ptr [rcx + 0x10], rax                 
+0x180310FD4  lea      rdx, [rax - 0x10]                           
+0x180310FD8  mov      eax, dword ptr [rdx]                        
+0x180310FDA  nop                                                  
+0x180310FDB  test     eax, 0x30000000                             
+0x180310FE0  jne      0x180310fe5                                 
+0x180310FE2  lock inc dword ptr [rdx]                             
+0x180310FE5  mov      qword ptr [rcx + 0x18], r12                 
+0x180310FE9  mov      qword ptr [rcx + 0x20], r12                 
+0x180310FED  mov      qword ptr [rcx + 0x28], r12                 
+0x180310FF1  mov      qword ptr [rcx + 0x30], r12                 
+0x180310FF5  mov      qword ptr [rcx + 0x38], r12                 
+0x180310FF9  mov      qword ptr [rcx + 0x40], r12                 
+0x180310FFD  mov      qword ptr [rcx + 0x48], r12                 
+0x180311001  mov      qword ptr [r14], rcx                        
+0x180311004  lock inc dword ptr [rcx + 8]                         
+0x180311008  mov      qword ptr [r14 + 8], r12                    
+0x18031100C  mov      qword ptr [r14 + 0x10], r12                 
+0x180311010  mov      dword ptr [rsp + 0x30], 3                   
+0x180311018  mov      eax, dword ptr [rdx]                        
+0x18031101A  nop                                                  
+0x18031101B  mov      esi, 0xffffffff                             
+0x180311020  test     eax, 0x30000000                             
+0x180311025  jne      0x18031103b                                 
+0x180311027  mov      eax, esi                                    
+0x180311029  lock xadd dword ptr [rdx], eax                        
+0x18031102D  dec      eax                                         
+0x18031102F  cmp      eax, esi                                    
+0x180311031  jne      0x18031103b                                 
+0x180311033  mov      rcx, rdx                                    
+0x180311036  call     0x18015e100                                 
+0x18031103B  cmp      byte ptr [r15 + 0x2a], 0                    
+0x180311040  je       0x180311ba8                                 
+0x180311046  lea      rax, [rip + 0xe0393]                          ; q=0x1000000000000
+0x18031104D  mov      qword ptr [rbp + 0xa0], rax                 
+0x180311054  lea      rdx, [rip + 0xa4a4d]                          ; "Octavox"
+0x18031105B  .byte    0x48                                        
+0x18031105C  .byte    0x8d                                        
+0x18031105D  .byte    0x8d                                        
+0x18031105E  test     al, 0                                       
+
+post-pass hash OK

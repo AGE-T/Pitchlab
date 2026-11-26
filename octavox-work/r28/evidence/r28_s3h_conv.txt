@@ -1,0 +1,172 @@
+=== delay_xf prepare 0x1800CF080 @0xCFD17 ===
+0x1800CFC97  .byte    0xfe                                        
+0x1800CFC98  sub      byte ptr [rax - 0x75], cl                   
+0x1800CFC9B  push     rbp                                         
+0x1800CFC9C  cwde                                                 
+0x1800CFC9D  cmp      rdx, 0x10                                   
+0x1800CFCA1  jb       0x1800cfcd4                                 
+0x1800CFCA3  inc      rdx                                         
+0x1800CFCA6  mov      rcx, qword ptr [rbp - 0x80]                 
+0x1800CFCAA  mov      rax, rcx                                    
+0x1800CFCAD  cmp      rdx, 0x1000                                 
+0x1800CFCB4  jb       0x1800cfccf                                 
+0x1800CFCB6  add      rdx, 0x27                                   
+0x1800CFCBA  mov      rcx, qword ptr [rcx - 8]                    
+0x1800CFCBE  sub      rax, rcx                                    
+0x1800CFCC1  add      rax, -8                                     
+0x1800CFCC5  cmp      rax, 0x1f                                   
+0x1800CFCC9  ja       0x1800cff0a                                 
+0x1800CFCCF  call     0x18015e100                                 
+0x1800CFCD4  mov      rcx, qword ptr [r12]                        
+0x1800CFCD8  mov      r8d, dword ptr [rsp + 0x30]                 
+0x1800CFCDD  mov      edx, r8d                                    
+0x1800CFCE0  mov      rax, qword ptr [r12 + 8]                    
+0x1800CFCE5  sub      rax, rcx                                    
+0x1800CFCE8  sar      rax, 4                                      
+0x1800CFCEC  movabs   r9, 0xaaaaaaaaaaaaaaab                      
+0x1800CFCF6  imul     rax, r9                                     
+0x1800CFCFA  xor      ebx, ebx                                    
+0x1800CFCFC  cmp      r8, rax                                     
+0x1800CFCFF  jb       0x1800cfb32                                 
+0x1800CFD05  mov      esi, ebx                                    
+0x1800CFD07  cmp      dword ptr [r15 + 0x2c], 0                   
+0x1800CFD0C  jle      0x1800cfed4                                 
+0x1800CFD12  mov      edi, 2                                      
+0x1800CFD17  movss    xmm8, dword ptr [rip + 0x342194]              ; f32=0.0010000000474974513
+0x1800CFD20  movsxd   rax, esi                                    
+0x1800CFD23  lea      rcx, [rax + rax*2]                          
+0x1800CFD27  shl      rcx, 4                                      
+0x1800CFD2B  add      rcx, qword ptr [r15 + 0x78]                 
+0x1800CFD2F  call     0x1800c5560                                 
+0x1800CFD34  movaps   xmm6, xmm0                                  
+0x1800CFD37  mov      rcx, qword ptr [r15]                        
+0x1800CFD3A  mov      rax, qword ptr [rcx]                        
+0x1800CFD3D  call     qword ptr [rax + 8]                         
+0x1800CFD40  movaps   xmm7, xmm0                                  
+0x1800CFD43  mulss    xmm7, xmm6                                  
+0x1800CFD47  mulss    xmm7, xmm8                                  
+0x1800CFD4C  mov      rcx, qword ptr [r15]                        
+0x1800CFD4F  mov      rax, qword ptr [rcx]                        
+0x1800CFD52  lea      r9d, [rdi - 2]                              
+0x1800CFD56  mov      dword ptr [rsp + 0x20], ebx                 
+0x1800CFD5A  xor      r8d, r8d                                    
+0x1800CFD5D  mov      edx, dword ptr [r15 + 8]                    
+0x1800CFD61  call     qword ptr [rax + 0x98]                      
+0x1800CFD67  mov      rcx, qword ptr [r15]                        
+0x1800CFD6A  mov      rax, qword ptr [rcx]                        
+0x1800CFD6D  lea      r9d, [rdi - 1]                              
+0x1800CFD71  mov      dword ptr [rsp + 0x20], ebx                 
+0x1800CFD75  xor      r8d, r8d                                    
+0x1800CFD78  mov      edx, dword ptr [r15 + 8]                    
+0x1800CFD7C  call     qword ptr [rax + 0x98]                      
+0x1800CFD82  mov      rcx, qword ptr [r15]                        
+0x1800CFD85  mov      rax, qword ptr [rcx]                        
+0x1800CFD88  mov      dword ptr [rsp + 0x20], ebx                 
+0x1800CFD8C  mov      r9d, edi                                    
+0x1800CFD8F  xor      r8d, r8d                                    
+0x1800CFD92  mov      edx, dword ptr [r15 + 8]                    
+0x1800CFD96  call     qword ptr [rax + 0x98]                      
+0x1800CFD9C  mov      rcx, qword ptr [r15]                        
+0x1800CFD9F  mov      rax, qword ptr [rcx]                        
+0x1800CFDA2  lea      r9d, [rdi + 1]                              
+0x1800CFDA6  mov      dword ptr [rsp + 0x20], ebx                 
+0x1800CFDAA  xor      r8d, r8d                                    
+0x1800CFDAD  mov      edx, dword ptr [r15 + 8]                    
+0x1800CFDB1  call     qword ptr [rax + 0x98]                      
+0x1800CFDB7  mov      rcx, qword ptr [r15]                        
+0x1800CFDBA  mov      rax, qword ptr [rcx]                        
+0x1800CFDBD  lea      r9d, [rdi + 2]                              
+0x1800CFDC1  mov      dword ptr [rsp + 0x20], ebx                 
+0x1800CFDC5  xor      r8d, r8d                                    
+0x1800CFDC8  mov      edx, dword ptr [r15 + 8]                    
+0x1800CFDCC  call     qword ptr [rax + 0x98]                      
+0x1800CFDD2  mov      rcx, qword ptr [r15]                        
+0x1800CFDD5  .byte    0x48                                        
+0x1800CFDD6  .byte    0x8b                                        
+
+=== delay_xf fn 0x1800CFFB0 @0xCFFEF ===
+0x1800CFF6F  .byte    0xff                                        
+0x1800CFF70  call     qword ptr [rax + 0xa5499e8]                 
+0x1800CFF76  add      byte ptr [rax + 0xa5493e8], dl              
+0x1800CFF7C  add      byte ptr [rax + 0xa548de8], dl              
+0x1800CFF82  add      ah, cl                                      
+0x1800CFF84  call     0x180175410                                 
+0x1800CFF89  int3                                                 
+0x1800CFF8A  call     0x180175410                                 
+0x1800CFF8F  int3                                                 
+0x1800CFF90  call     0x180175410                                 
+0x1800CFF95  int3                                                 
+0x1800CFF96  call     0x180175410                                 
+0x1800CFF9B  int3                                                 
+0x1800CFF9C  call     0x180175410                                 
+0x1800CFFA1  int3                                                 
+0x1800CFFA2  call     0x180175410                                 
+0x1800CFFA7  int3                                                 
+0x1800CFFA8  int3                                                 
+0x1800CFFA9  int3                                                 
+0x1800CFFAA  int3                                                 
+0x1800CFFAB  int3                                                 
+0x1800CFFAC  int3                                                 
+0x1800CFFAD  int3                                                 
+0x1800CFFAE  int3                                                 
+0x1800CFFAF  int3                                                 
+0x1800CFFB0  mov      byte ptr [rsp + 0x10], dl                   
+0x1800CFFB4  push     rbx                                         
+0x1800CFFB5  push     rsi                                         
+0x1800CFFB6  push     rdi                                         
+0x1800CFFB7  push     r12                                         
+0x1800CFFB9  sub      rsp, 0x108                                  
+0x1800CFFC0  movaps   xmmword ptr [rsp + 0x90], xmm10             
+0x1800CFFC9  mov      rsi, rcx                                    
+0x1800CFFCC  prefetchw byte ptr [rcx + 0x10]                       
+0x1800CFFD0  mov      rax, qword ptr [rcx + 0x10]                 
+0x1800CFFD4  nop      dword ptr [rax]                             
+0x1800CFFD8  nop      dword ptr [rax + rax]                       
+0x1800CFFE0  mov      r8, rax                                     
+0x1800CFFE3  and      r8, 0xfffffffffffffffe                      
+0x1800CFFE7  lock cmpxchg qword ptr [rcx + 0x10], r8                  
+0x1800CFFED  jne      0x1800cffe0                                 
+0x1800CFFEF  movss    xmm10, dword ptr [rip + 0x341ebc]             ; f32=0.0010000000474974513
+0x1800CFFF8  mov      edi, 1                                      
+0x1800CFFFD  movaps   xmmword ptr [rsp + 0xd0], xmm6              
+0x1800D0005  movaps   xmmword ptr [rsp + 0xc0], xmm7              
+0x1800D000D  movaps   xmmword ptr [rsp + 0xb0], xmm8              
+0x1800D0016  test     dil, al                                     
+0x1800D0019  jne      0x1800d0023                                 
+0x1800D001B  test     dl, dl                                      
+0x1800D001D  je       0x1800d00a8                                 
+0x1800D0023  mov      rax, qword ptr [rcx + 0x68]                 
+0x1800D0027  test     rax, rax                                    
+0x1800D002A  je       0x1800d0033                                 
+0x1800D002C  movss    xmm8, dword ptr [rax]                       
+0x1800D0031  jmp      0x1800d0039                                 
+0x1800D0033  movss    xmm8, dword ptr [rcx + 0x70]                
+0x1800D0039  movss    xmm6, dword ptr [rcx + 0x48]                
+0x1800D003E  movss    xmm7, dword ptr [rcx + 0x4c]                
+0x1800D0043  mov      rcx, qword ptr [rcx]                        
+0x1800D0046  movss    dword ptr [rsp + 0x140], xmm6               
+0x1800D004F  movss    dword ptr [rsp + 0x130], xmm8               
+0x1800D0059  mov      rax, qword ptr [rcx]                        
+0x1800D005C  call     qword ptr [rax + 8]                         
+0x1800D005F  mov      edx, dword ptr [rsi + 8]                    
+0x1800D0062  lea      rcx, [rsp + 0x140]                          
+0x1800D006A  comiss   xmm8, xmm6                                  
+0x1800D006E  lea      rax, [rsp + 0x130]                          
+0x1800D0076  mov      r8d, edi                                    
+0x1800D0079  cmovbe   rax, rcx                                    
+0x1800D007D  mov      rcx, qword ptr [rsi]                        
+0x1800D0080  movss    xmm1, dword ptr [rax]                       
+0x1800D0084  mov      rax, qword ptr [rcx]                        
+0x1800D0087  minss    xmm1, xmm7                                  
+0x1800D008B  mulss    xmm1, xmm10                                 
+0x1800D0090  mulss    xmm0, xmm1                                  
+0x1800D0094  movss    xmm1, dword ptr [rip + 0x3426f4]              ; q=0x4B1896804B000000
+0x1800D009C  divss    xmm1, xmm0                                  
+0x1800D00A0  cvttss2si r9d, xmm1                                   
+0x1800D00A5  call     qword ptr [rax + 0x58]                      
+0x1800D00A8  xor      ebx, ebx                                    
+0x1800D00AA  xor      r12d, r12d                                  
+0x1800D00AD  .byte    0x39                                        
+0x1800D00AE  pop      rsi                                         
+
+post-pass hash OK

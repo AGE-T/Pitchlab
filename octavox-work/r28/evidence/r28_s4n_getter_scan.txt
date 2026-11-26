@@ -1,0 +1,4 @@
+=== getter pattern mov rax,[rcx+K]; mov eax,[rax+M]; ret (K in 0x20..0x28, M<=0x40) ===
+  (0 hits)
+
+=== wider scan (K 0..0x100, M 0..0x400), pdata-scoped tiny fns ===

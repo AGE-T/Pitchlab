@@ -67,11 +67,11 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 24 · SIMD képességréteg (YIN kernelek) + mért döntési rekord" },
-  { label: "Bit-exakt gyorsítás", value: "AVX2 lag-tengelyes kernel 4.8–6.3× · motor-bit-azonosság mindhárom detektor-módban" },
-  { label: "FullRate @96k", value: "det_estimate 5.9–6.0× · 8 hang sztereó falidő 1144 → 368 ms/s" },
-  { label: "Kapuk", value: "110/110 core (Release + ASan/UBSan) · hash-pinek bit-exakt · VST3 21/21 + 12/12 + 47/47 friss bundle-ön" },
-  { label: "R23-rés", value: "az R23 modul-szintű kapu elő-delta bundle-ön futott — lezárva, újraépítve, zöld" },
+  { label: "Kör", value: "Round 26 · OCTAVOX COMPLETE STATIC RECONSTRUCTION — mély statikus audit, ellentmondás-lezárás" },
+  { label: "Record ring", value: "mezőrend gépi úton lezárva: író {correction, i4, i5, period} csökkenő · fogyasztó {period, interval, dead, correction} · i4 = dead field" },
+  { label: "Pan law", value: "trigonometrikus/equal-power család (atan2f ×2 + 1/√2 + trig) · a lineáris 0.5·(1±p)·g CÁFOLVA" },
+  { label: "Kernel 256×6", value: "bit-exakt palindrom · 608 egyedi érték · DC-ripple ≤ 1.22e-4 · Farrow/LS/windowed-sinc/Gaussian eliminálva · generátor UNK" },
+  { label: "Bizonyíték", value: "1 065 880 utasítás xref-szken · hash előtte/utána ✓ · 395/394/394 modul reprodukálva · R25 archívum elveszett — minden állítás újralevezetve" },
 ];
 
 export function ReportViewer({
@@ -122,17 +122,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 24. kör
+                Octavox Research — 27. kör
               </h1>
               <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm sm:line-clamp-none">
-                SIMD képességréteg a YIN kernelekhez: per-TU ISA-egységek (AVX2 / AVX2+FMA, -ffp-contract=off), RT-biztos kernel-diszpécs prepare-időben, Config::simd (alapértelmezés Scalar = bit-exakt az R12–R23 rekorddal), a lag-tengelyes AVX2 kernel koncepció szerint bit-azonos a skalár referenciával (kemény exact-equality kapu) · 10 új r24 teszteset (100→110, Release + ASan) · a megszakadt előző session állapotának diagnosztikája és helyreállítása (hiányzó simd_fma.cpp, CMake/motor/teszt bekötés) · Eventide Octavox RE statikus reverzibilis projekt
+                R26 megmaradt UNK tételeinek statikus lezárása: az ÉLŐ pan-törvény visszanyerve — LINEÁRIS 0.5·(1∓p)·G, G = 10^(gain_dB/20) (FUN_1800D9B20; az R26 „trigonometrikus/equal-power” ítélete valós, de a szállított patch-ben elérhetetlen keretrendszer-kódra vonatkozott) — a mix-audio 4-mintás kadenenciája kettős pontosságú index-sorrendű akkumulációval, a softclip tanh átlagérték-clipper (ln cosh osztott differencia + tanh midpoint), a Live-Mode 40 = 40 ms (konverziós hely utasításszinten), a „hungarian” skála index-clip miatt a neapolitannal azonos (nincs OOB), az m01 id0 mező olvasója megtalálva (0x18013C868, korrelát-scan bázis), az m02 esemény-router feliratkoztatási rendszeren át érkezik, a 256×6 kernel frakcionális késleltetés-bank (DC csoportkésleltetés = 2 + r/256 pontosan) · Eventide Octavox RE statikus reverzibilis projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 24 · KÉSZ
+              ROUND 26 · KÉSZ
             </Badge>
           </div>
           <div

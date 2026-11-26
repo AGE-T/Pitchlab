@@ -1,0 +1,93 @@
+=== dsp_shared thunk family 0x1800C5730..0x1800C57D0 ===
+0x1800C5730  mov      rax, qword ptr [rcx]                        
+0x1800C5733  mov      r9, r8                                      
+0x1800C5736  xor      r8d, r8d                                    
+0x1800C5739  jmp      qword ptr [rax + 0x18]                      
+0x1800C573D  int3                                                 
+0x1800C573E  int3                                                 
+0x1800C573F  int3                                                 
+0x1800C5740  mov      rax, qword ptr [rcx]                        
+0x1800C5743  mov      r9, r8                                      
+0x1800C5746  xor      r8d, r8d                                    
+0x1800C5749  jmp      qword ptr [rax + 0x20]                      
+0x1800C574D  int3                                                 
+0x1800C574E  int3                                                 
+0x1800C574F  int3                                                 
+0x1800C5750  mov      rax, qword ptr [rcx + 0x10]                 
+0x1800C5754  mov      r10d, r8d                                   
+0x1800C5757  mov      edx, edx                                    
+0x1800C5759  mov      r8, r9                                      
+0x1800C575C  mov      rcx, qword ptr [rax + rdx*8]                
+0x1800C5760  mov      edx, r10d                                   
+0x1800C5763  mov      rax, qword ptr [rcx]                        
+0x1800C5766  jmp      qword ptr [rax + 8]                         
+0x1800C576A  int3                                                 
+0x1800C576B  int3                                                 
+0x1800C576C  int3                                                 
+0x1800C576D  int3                                                 
+0x1800C576E  int3                                                 
+0x1800C576F  int3                                                 
+0x1800C5770  mov      rax, qword ptr [rcx + 0x10]                 
+0x1800C5774  mov      r10d, r8d                                   
+0x1800C5777  mov      edx, edx                                    
+0x1800C5779  mov      r8, r9                                      
+0x1800C577C  mov      rcx, qword ptr [rax + rdx*8]                
+0x1800C5780  mov      edx, r10d                                   
+0x1800C5783  mov      rax, qword ptr [rcx]                        
+0x1800C5786  jmp      qword ptr [rax + 0x10]                      
+0x1800C578A  int3                                                 
+0x1800C578B  int3                                                 
+0x1800C578C  int3                                                 
+0x1800C578D  int3                                                 
+0x1800C578E  int3                                                 
+0x1800C578F  int3                                                 
+0x1800C5790  mov      rax, qword ptr [rcx + 0x10]                 
+0x1800C5794  mov      ecx, edx                                    
+0x1800C5796  mov      rcx, qword ptr [rax + rcx*8]                
+0x1800C579A  mov      eax, dword ptr [rcx + 8]                    
+0x1800C579D  add      eax, r8d                                    
+0x1800C57A0  ret                                                  
+0x1800C57A1  int3                                                 
+0x1800C57A2  int3                                                 
+0x1800C57A3  int3                                                 
+0x1800C57A4  int3                                                 
+0x1800C57A5  int3                                                 
+0x1800C57A6  int3                                                 
+0x1800C57A7  int3                                                 
+0x1800C57A8  int3                                                 
+0x1800C57A9  int3                                                 
+0x1800C57AA  int3                                                 
+0x1800C57AB  int3                                                 
+0x1800C57AC  int3                                                 
+0x1800C57AD  int3                                                 
+0x1800C57AE  int3                                                 
+0x1800C57AF  int3                                                 
+0x1800C57B0  mov      eax, dword ptr [rcx + 8]                    
+0x1800C57B3  ret                                                  
+0x1800C57B4  int3                                                 
+0x1800C57B5  int3                                                 
+0x1800C57B6  int3                                                 
+0x1800C57B7  int3                                                 
+0x1800C57B8  int3                                                 
+0x1800C57B9  int3                                                 
+0x1800C57BA  int3                                                 
+0x1800C57BB  int3                                                 
+0x1800C57BC  int3                                                 
+0x1800C57BD  int3                                                 
+0x1800C57BE  int3                                                 
+0x1800C57BF  int3                                                 
+0x1800C57C0  mov      qword ptr [rsp + 8], rbx                    
+0x1800C57C5  mov      qword ptr [rsp + 0x10], rbp                 
+0x1800C57CA  mov      qword ptr [rsp + 0x18], rsi                 
+0x1800C57CF  .byte    0x48                                        
+
+=== [reg+0x10] calls with small-int rdx within 12 insns: 8 ===
+  fn 0x18000f810: at 0x18000f898  mov edx, 1   ->  call qword ptr [rax + 0x10]
+  fn 0x18000faa0: at 0x18000fb12  mov edx, 1   ->  call qword ptr [rax + 0x10]
+  fn 0x18014de60: at 0x18014dea4  mov edx, 1   ->  call qword ptr [rax + 0x10]
+  fn 0x18014de60: at 0x18014deae  mov edx, 1   ->  call qword ptr [rax + 0x10]
+  fn 0x18014de60: at 0x18014deb8  mov edx, 1   ->  call qword ptr [rax + 0x10]
+  fn 0x1802214e0: at 0x1802215aa  mov edx, 2   ->  call qword ptr [rax + 0x10]
+  fn 0x180276480: at 0x180276579  mov edx, 2   ->  call qword ptr [rax + 0x10]
+  fn 0x180276480: at 0x1802765ae  mov edx, 4   ->  call qword ptr [rax + 0x10]
+post-pass hash OK
