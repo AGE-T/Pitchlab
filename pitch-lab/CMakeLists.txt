@@ -125,6 +125,9 @@ target_include_directories(pitchlab_signalsmith SYSTEM INTERFACE
 # 2026-11 (A/B candidates): Bungee (MPL-2.0; Parabola Research) with its
 # PFFFT (BSD-like) and Eigen (MPL-2.0, header-only) dependencies, and
 # stftPitchShift (MIT; header-only core). Vendored verbatim, see ORIGIN.toml.
+# PFFFT is C: the project declares CXX only, so C is enabled here (the
+# MSVC generator enabled it implicitly; Ninja/GCC does not).
+enable_language(C)
 add_library(pitchlab_pffft STATIC
   external/bungee/pffft/pffft.c
   external/bungee/pffft/fftpack.c
