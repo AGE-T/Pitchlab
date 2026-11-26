@@ -81,6 +81,11 @@ class StreamingPitchTracker {
     int64_t center = 0;   // the evidence-center tag (the batch convention)
     bool voiced = false;
     double f0Hz = 0.0;    // valid when voiced (the sub-bin refined estimate)
+    // 2026-11: the observation probability of the decoded pitch bin at this
+    // frame (the pYIN threshold-prior mass, 0..1; 0 when unvoiced) — the
+    // per-frame voicing CONFIDENCE a consumer may gate on. Not used by the
+    // Viterbi decode itself (the decode is unchanged).
+    double confidence = 0.0;
   };
 
   /// The number of decoded frames not yet consumed by the caller.

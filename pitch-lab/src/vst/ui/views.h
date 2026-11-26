@@ -19,12 +19,14 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 #include <string>
 #include <vector>
 
 #include "vstgui/lib/cdrawcontext.h"
 #include "vstgui/lib/cfont.h"
 #include "vstgui/lib/controls/ccontrol.h"
+#include "vstgui/lib/controls/ctextedit.h"
 #include "vstgui/lib/controls/icontrollistener.h"
 #include "vstgui/lib/cview.h"
 #include "vstgui/lib/cviewcontainer.h"
@@ -425,7 +427,7 @@ class PLSlider : public CControl {
   void draw(CDrawContext* ctx) override {
     ctx->setDrawMode(kAliasing);
     const CRect r = px::snap(getViewSize());
-    const double norm = getValueNormalized();
+    const double norm = toView(getValueNormalized());
     const double h = 8.0;
     const double top = std::floor(r.top + (r.getHeight() - h) * 0.5);
     const CRect groove(r.left + kThumbPad - 2, top, r.right - kThumbPad + 2, top + h);
@@ -511,6 +513,20 @@ class PLSlider : public CControl {
     invalid();
   }
 
+  /// Restrict the slider's travel to the normalized sub-range [lo, hi] of
+  /// its parameter (2026-11: the pitch slider shows the selected engine's
+  /// usable range, e.g. +-24 st of the +-48 st parameter). The full range
+  /// is [0, 1]; values outside the view are drawn at the nearest end.
+  void setViewRange(double lo, double hi) {
+    viewLo_ = std::clamp(std::min(lo, hi), 0.0, 1.0);
+    viewHi_ = std::clamp(std::max(lo, hi), 0.0, 1.0);
+    if (viewHi_ - viewLo_ < 1e-9) {
+      viewLo_ = 0.0;
+      viewHi_ = 1.0;
+    }
+    invalid();
+  }
+
   PL_CONTROL_COPY(PLSlider)
 
  protected:
@@ -522,7 +538,7 @@ class PLSlider : public CControl {
     double u = (where.x - x0) / std::max(1.0, x1 - x0);
     if (u < 0.0) u = 0.0;
     if (u > 1.0) u = 1.0;
-    setValueNormalized(u);
+    setValueNormalized(fromView(u));
     // A parameter interaction must NOT depend on the redraw dirty flag.
     // The previous `if (isDirty()) valueChanged()` gate: VSTGUI's
     // CControl::setValue only calls setDirty() when the value CHANGES, so
@@ -548,7 +564,14 @@ class PLSlider : public CControl {
 
   [[nodiscard]] bool isActiveAccent() const { return accent_; }
 
+  [[nodiscard]] double toView(double norm) const {
+    return std::clamp((norm - viewLo_) / (viewHi_ - viewLo_), 0.0, 1.0);
+  }
+  [[nodiscard]] double fromView(double u) const { return viewLo_ + u * (viewHi_ - viewLo_); }
+
   static constexpr double kThumbPad = 7.0;
+  double viewLo_ = 0.0;
+  double viewHi_ = 1.0;
   const ParamMeta* meta_ = nullptr;
   int32_t style_ = 0;
   bool tracking = false;
@@ -637,6 +660,188 @@ class PLSegmented : public CControl {
 
   std::vector<std::string> labels_;
   bool vertical_ = false;
+};
+
+// ---------------------------------------------------------------------------
+// PLSwitch — a hardware-style selector for DISCRETE parameters (2..5
+// positions): a recessed black rail holding pixel keys; the engaged key is
+// lit (accent, pressed in) with a glowing LED pip above its label, the
+// others sit raised and dark. Click a key to select; arrow keys / wheel
+// step through the positions. Replaces the slider for stepped values (a
+// slider has no meaningful "between" for a mode, a window or an FFT size).
+// ---------------------------------------------------------------------------
+
+class PLSwitch : public CControl {
+ public:
+  PLSwitch(const CRect& size, IControlListener* listener, int32_t tag,
+           const std::vector<std::string>& labels)
+      : CControl(size, listener, tag), labels_(labels) {
+    setWantsFocus(true);
+  }
+
+  void draw(CDrawContext* ctx) override {
+    ctx->setDrawMode(kAliasing);
+    const CRect r = px::snap(getViewSize());
+    const int n = static_cast<int>(labels_.size());
+    // the rail: black outline + a dark recessed bed
+    px::rect(ctx, r.left + 1, r.top, r.right - 1, r.bottom, Palette::outline());
+    px::rect(ctx, r.left, r.top + 1, r.right, r.bottom - 1, Palette::outline());
+    px::rect(ctx, r.left + 1, r.top + 1, r.right - 1, r.bottom - 1, Palette::bg());
+    const int sel = selectedIndex();
+    for (int i = 0; i < n; ++i) {
+      const CRect k = px::snap(keyRect(i));
+      const bool on = i == sel;
+      const double cx = std::floor((k.left + k.right) * 0.5);
+      if (on) {
+        px::bevelBox(ctx, k, Palette::accentDeep(), Palette::accent(), Palette::panelLo(), true);
+        // the lit LED pip (top-centre) with a white hot-spot
+        px::rect(ctx, cx - 3, k.top + 2, cx + 3, k.top + 4, Palette::yellow());
+        px::rect(ctx, cx - 1, k.top + 2, cx + 1, k.top + 3, Palette::text());
+      } else {
+        px::bevelBox(ctx, k, Palette::panelLo(), Palette::panel(), Palette::outline());
+        px::rect(ctx, cx - 3, k.top + 2, cx + 3, k.top + 4, Palette::accentDim());  // dark pip
+      }
+      const CRect labelBox(k.left + 2, k.top + 4, k.right - 2, k.bottom);
+      const CColor shadow = Palette::outline();
+      px::text(ctx, fit(labels_[static_cast<std::size_t>(i)], labelBox.getWidth()), labelBox, 1,
+               on ? Palette::text() : Palette::textFaint(), true, on ? &shadow : nullptr);
+    }
+    setDirty(false);
+  }
+
+  CMouseEventResult onMouseDown(CPoint& where, const CButtonState& buttons) override {
+    if (!buttons.isLeftButton()) return kMouseEventNotHandled;
+    const int n = static_cast<int>(labels_.size());
+    for (int i = 0; i < n; ++i) {
+      if (slotRect(i).pointInside(where)) {
+        select(i);
+        break;
+      }
+    }
+    return kMouseEventHandled;
+  }
+
+  void onKeyboardEvent(KeyboardEvent& event) override {
+    if (event.type != EventType::KeyDown) return;
+    if (event.virt == VirtualKey::Right || event.virt == VirtualKey::Up) {
+      select(std::min(selectedIndex() + 1, static_cast<int>(labels_.size()) - 1));
+      event.consumed = true;
+    } else if (event.virt == VirtualKey::Left || event.virt == VirtualKey::Down) {
+      select(std::max(selectedIndex() - 1, 0));
+      event.consumed = true;
+    }
+  }
+
+  void onMouseWheelEvent(MouseWheelEvent& event) override {
+    const double d = event.deltaY != 0. ? event.deltaY : event.deltaX;
+    if (d == 0.) return;
+    select(std::clamp(selectedIndex() + (d > 0 ? 1 : -1), 0,
+                      static_cast<int>(labels_.size()) - 1));
+    event.consumed = true;
+  }
+
+  [[nodiscard]] bool hitTest(const CPoint& where, const CButtonState& /*buttons*/) override {
+    return getViewSize().pointInside(where);
+  }
+
+  [[nodiscard]] int selectedIndex() const {
+    const int n = static_cast<int>(labels_.size());
+    if (n <= 1) return 0;
+    return static_cast<int>(std::lround(getValueNormalized() * (n - 1)));
+  }
+
+  PL_CONTROL_COPY(PLSwitch)
+
+ protected:
+  void select(int i) {
+    const int n = static_cast<int>(labels_.size());
+    if (n <= 1) return;
+    beginEdit();
+    setValueNormalized(static_cast<double>(i) / static_cast<double>(n - 1));
+    valueChanged();  // user intent is the event itself (see PLSlider)
+    endEdit();
+    invalid();
+  }
+
+  /// the click slot of key i (the full rail divided evenly — no dead gaps)
+  [[nodiscard]] CRect slotRect(int i) const {
+    const CRect r = getViewSize();
+    const int n = static_cast<int>(labels_.size());
+    const double w = r.getWidth() / n;
+    return CRect(r.left + w * i, r.top, r.left + w * (i + 1), r.bottom);
+  }
+  /// the drawn key (the slot inset into the rail, 1-px gaps)
+  [[nodiscard]] CRect keyRect(int i) const {
+    CRect k = slotRect(i);
+    k.left += (i == 0 ? 2 : 1);
+    k.right -= (i == static_cast<int>(labels_.size()) - 1 ? 2 : 1);
+    k.top += 2;
+    k.bottom -= 2;
+    return k;
+  }
+  /// whole glyphs that fit the key (the pixel font has no ellipsis glyph)
+  [[nodiscard]] static std::string fit(const std::string& s, double width) {
+    const std::size_t maxChars =
+        width >= 5 ? static_cast<std::size_t>((width + 1) / px::kAdvance) : 0;
+    return s.size() <= maxChars ? s : s.substr(0, maxChars);
+  }
+
+  std::vector<std::string> labels_;
+};
+
+// ---------------------------------------------------------------------------
+// PLNumberEdit — a value readout you can TYPE into: drawn in the 2x pixel
+// font (with a dotted "editable" underline) until clicked, then a native
+// text field takes the input; Enter commits through the string->value
+// function, Escape cancels. The control's value is the parameter's
+// NORMALIZED value (min 0, max 1), so the editor's valueChanged path
+// applies it like any other control.
+// ---------------------------------------------------------------------------
+
+class PLNumberEdit : public CTextEdit {
+ public:
+  PLNumberEdit(const CRect& size, IControlListener* listener, int32_t tag)
+      : CTextEdit(size, listener, tag) {
+    setMin(0.f);
+    setMax(1.f);
+    setFrameColor(kTransparentCColor);
+    setBackColor(Palette::panelLo());
+    setFontColor(Palette::text());
+    setHoriAlign(kCenterText);
+    setStyle(kNoFrame);
+  }
+
+  void draw(CDrawContext* ctx) override {
+    if (getPlatformTextEdit() != nullptr) {  // editing: the native field is on top
+      CTextEdit::draw(ctx);
+      return;
+    }
+    ctx->setDrawMode(kAliasing);
+    const CRect r = px::snap(getViewSize());
+    char buf[256] = {0};
+    if (valueToText_) valueToText_(getValue(), buf);
+    px::text(ctx, buf, r, 2, color_, true);
+    // the editable hint: a dotted underline (every other pixel)
+    for (double x = r.left + 8; x < r.right - 8; x += 2) {
+      px::rect(ctx, x, r.bottom - 2, x + 1, r.bottom - 1, Palette::textFaint());
+    }
+    setDirty(false);
+  }
+
+  void setValueText(std::function<void(float, char*)> fn) { valueToText_ = std::move(fn); }
+  void setColor(const CColor& c) {
+    if (c != color_) {
+      color_ = c;
+      invalid();
+    }
+  }
+  [[nodiscard]] bool isEditing() const { return getPlatformTextEdit() != nullptr; }
+
+  PL_CONTROL_COPY(PLNumberEdit)
+
+ private:
+  std::function<void(float, char*)> valueToText_;
+  CColor color_ = Palette::accent();
 };
 
 // ---------------------------------------------------------------------------

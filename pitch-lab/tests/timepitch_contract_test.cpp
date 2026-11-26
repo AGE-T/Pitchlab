@@ -368,6 +368,64 @@ TEST_CASE_FIXTURE(Fixture, "T-E11: Preserving output length exact") {
 }
 
 // ---------------------------------------------------------------------------
+// T-E11b (2026-11): the TUKEY window (the product's 4th shape, replacing
+// RECT) removes the rect OLA crackle — the TASK G class: a rect window
+// passes every grain-boundary content step at pitch != 0. Measured here
+// on the same +7 st sine render: rect (still engine-facing for the frozen
+// OLA reference) steps, tukey does not.
+// ---------------------------------------------------------------------------
+TEST_CASE_FIXTURE(Fixture, "T-E11b: tukey window removes the rect grain-edge crackle") {
+  auto clicks = [](const std::vector<double>& x) {
+    // a step beyond 2x the +7 st sine's own maximum sample delta
+    // (sineFrames amplitude 0.25: 0.25 * 2*pi*659/48000 = 0.0216)
+    int n = 0;
+    for (std::size_t i = 4096; i + 1 < x.size() - 4096; ++i) {
+      if (std::fabs(x[i + 1] - x[i]) > 0.045) ++n;
+    }
+    return n;
+  };
+  const Rendered rect = render("mono-48k", "t-p7", 48000, 1, "window_shape = \"rect\"");
+  const Rendered tukey = render("mono-48k", "t-p7", 48000, 1, "window_shape = \"tukey\"");
+  const int cr = clicks(rect.master.channels[0]);
+  const int ct = clicks(tukey.master.channels[0]);
+  MESSAGE("+7 st sine, 48 kHz: rect clicks " << cr << ", tukey clicks " << ct);
+  CHECK(cr > 0);
+  CHECK(ct * 10 <= cr);
+  CHECK(ct <= 2);
+}
+
+// ---------------------------------------------------------------------------
+// T-E11c (2026-11): the Pitch-Synced VOICING GATE — 0 (the default) is the
+// tracker's own voicing decision, bit-identical to a render without the
+// key; a high gate demotes low-confidence frames to unvoiced, which
+// changes the PSOLA mark schedule on a noisy voiced input.
+// ---------------------------------------------------------------------------
+TEST_CASE_FIXTURE(Fixture, "T-E11c: pitch-synced voicing gate (0 = unchanged; high = fewer voiced frames)") {
+  std::vector<double> x = sineFrames(220.0, 48000, 48000);
+  uint32_t lcg = 12345u;
+  for (double& v : x) {
+    lcg = lcg * 1664525u + 1013904223u;
+    const double noise = (static_cast<double>(lcg >> 8) / 16777216.0) * 2.0 - 1.0;
+    v = 0.35 * v + 0.04 * noise;  // breathy: the tracker voices it with MIXED confidence
+  }
+  tr.makeAsset("noisy-48k", 48000, {x});
+  const Rendered base = render("noisy-48k", "t-p7", 48000, 1, "mode = \"pitch_synced\"");
+  const Rendered gate0 =
+      render("noisy-48k", "t-p7", 48000, 1, "mode = \"pitch_synced\", voicing_gate = 0.0");
+  const Rendered gateHi =
+      render("noisy-48k", "t-p7", 48000, 1, "mode = \"pitch_synced\", voicing_gate = 0.5");
+  REQUIRE(base.master.channels[0].size() == gate0.master.channels[0].size());
+  CHECK(base.master.channels[0] == gate0.master.channels[0]);  // the frozen default
+  const auto& a = base.master.channels[0];
+  const auto& b = gateHi.master.channels[0];
+  const std::size_t n = std::min(a.size(), b.size());
+  double diff = 0.0;
+  for (std::size_t i = 0; i < n; ++i) diff += std::fabs(a[i] - b[i]);
+  MESSAGE("voicing gate 0.5 vs off: sum |diff| " << diff << " over " << n << " frames");
+  CHECK(diff > 1.0);
+}
+
+// ---------------------------------------------------------------------------
 // T-E12: configuration validation (§6.6.1 item 14) — invalid domains and
 // unknown keys ⇒ CONFIG ERROR at configure().
 // ---------------------------------------------------------------------------

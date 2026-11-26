@@ -84,6 +84,7 @@ enum Tags : uint32_t {
   kTpShape = 25,         // timepitch: 0 hann / 1 hamming / 2 bartlett / 3 rect
   kTpTolerance = 26,     // timepitch: 0 .. 8192 frames (Adaptive)
   kTpFormant = 27,       // timepitch: 0.25 .. 4.0 (Pitch+Formant; reserved)
+  kTpVoicingGate = 28,   // timepitch: 0 .. 0.95 voicing gate (Pitch Synced; 2026-11)
   // --- native.world (2026-11: WORLD v1.0.1 vocoder) -------------------------
   kWoF0Method = 40,      // world: 0 dio / 1 harvest
   kWoFormant = 41,       // world: 0.5 .. 2.0 formant ratio
@@ -100,6 +101,19 @@ enum Tags : uint32_t {
 };
 
 }  // namespace param
+
+/// 2026-11 product pitch range: the pitch parameter keeps its +-48 st
+/// domain (state / automation compatibility), but the product applies at
+/// most +-24 st (the UI additionally narrows to the selected engine's
+/// support, e.g. +-12 st on native.vardelay). Snapshot values and host
+/// automation points beyond it are clamped.
+inline constexpr double kPitchProductLimitSt = 24.0;
+
+/// The formant-RATIO parameters (stored as a ratio; displayed and parsed
+/// in SEMITONES: 12 * log2(ratio), e.g. 2.0 -> "+12.00 st").
+[[nodiscard]] constexpr bool isFormantRatioParam(uint32_t tag) {
+  return tag == param::kTpFormant || tag == param::kWoFormant || tag == param::kSsFormant;
+}
 
 // ---------------------------------------------------------------------------
 // Metadata (drives registration + UI + tests; the ONE table).
@@ -228,6 +242,7 @@ struct ParamSnapshot {
   int tpShape = 0;             // choice index: 0 = hann
   int64_t tpTolerance = 768;   // Adaptive (WSOLA) search tolerance (frames)
   double tpFormantRatio = 1.0;  // Pitch+Formant envelope ratio (the final row)
+  double tpVoicingGate = 0.0;   // Pitch-Synced voicing gate (0 = off; 2026-11)
   // native.world (2026-11)
   int woF0Method = 0;          // choice index: 0 = dio
   double woFormantRatio = 1.0;
@@ -278,6 +293,7 @@ struct ParamSnapshot {
     int64_t tpTolerance;
     // Checkpoint 4: the Pitch + Formant envelope ratio (the final surface row).
     double tpFormantRatio;
+    double tpVoicingGate;
     // 2026-11: native.world / native.signalsmith configuration
     int woF0Method;
     double woFormantRatio;
@@ -300,7 +316,7 @@ struct ParamSnapshot {
                           pvpHop,               tpMode,
                           tpWindowFrames,       tpOverlap,
                           tpShape,              tpTolerance,
-                          tpFormantRatio,       woF0Method,
+                          tpFormantRatio,       tpVoicingGate,        woF0Method,
                           woFormantRatio,       woF0FloorHz,
                           woF0CeilHz,           ssPreset,
                           ssPreserveFormants,   ssFormantRatio};

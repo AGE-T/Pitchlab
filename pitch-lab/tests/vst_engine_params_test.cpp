@@ -83,6 +83,7 @@ const FrozenRow kFrozenSurface[] = {
     {param::kTpShape, 0, 3, 0, 3},
     {param::kTpTolerance, 0, 8192, 768, 8192},
     {param::kTpFormant, 0.25, 4.0, 1.0, -1},
+    {param::kTpVoicingGate, 0.0, 0.95, 0.0, -1},  // 2026-11
     // 2026-11: the external DSP integrations (new tags 40..46)
     {param::kWoF0Method, 0, 1, 0, 1},
     {param::kWoFormant, 0.5, 2.0, 1.0, -1},
@@ -243,8 +244,8 @@ TEST_CASE("state compatibility: the generated table is exactly the frozen surfac
   // Task 33: 19 shared/existing rows + 5 native.timepitch rows (the
   // Fixed+Adaptive checkpoint) = 24 (the amendment's final surface is 25
   // when the Pitch+Formant formant_ratio row lands; tag 27 is bound then).
-  REQUIRE(parameterCount() == 32);  // 2026-11: +7 (native.world 4, native.signalsmith 3)
-  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 32);
+  REQUIRE(parameterCount() == 33);  // 2026-11: +7 (native.world 4, native.signalsmith 3) +1 tp voicing gate
+  REQUIRE(sizeof(kFrozenSurface) / sizeof(kFrozenSurface[0]) == 33);
   for (const FrozenRow& row : kFrozenSurface) {
     const ParamMeta* m = metaOf(row.tag);
     REQUIRE(m != nullptr);
@@ -316,7 +317,7 @@ TEST_CASE("role split: shared realtime controls are explicit and complete") {
   for (uint32_t i = 0; i < parameterCount(); ++i) {
     if (parameterTable()[i].role == ParamRole::EngineConfiguration) ++engineOwned;
   }
-  CHECK(engineOwned == 25);  // 2026-11: +7 external-engine rows
+  CHECK(engineOwned == 26);  // 2026-11: +7 external-engine rows, +1 tp voicing gate
 }
 
 // ---------------------------------------------------------------------------

@@ -205,7 +205,7 @@ int main() {
     CHECK(tp->capabilities.channelMode == pitchlab::ChannelMode::MonoAndStereo);
     CHECK(tp->capabilities.maxChannels == 2);
     CHECK(tp->capabilities.supportedSampleRates.size() == 5);
-    CHECK(tp->parameterKeys.size() == 7);  // mode/window/overlap/shape/tolerance
+    CHECK(tp->parameterKeys.size() == 8  /* 2026-11: + voicing_gate */);  // mode/window/overlap/shape/tolerance
                                            // + formant_ratio (checkpoint 4, exposed)
                                            // + the HIDDEN puv_hz row (exposed=false)
     std::unique_ptr<pitchlab::PitchEngine> tengine = tp->factory();

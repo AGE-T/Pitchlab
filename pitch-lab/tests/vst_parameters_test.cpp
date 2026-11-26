@@ -39,7 +39,7 @@ TEST_CASE("table integrity: every meta is well-formed and unique") {
   const uint32_t n = parameterCount();
   // Task 33: 19 v0.1 rows + 6 native.timepitch rows (Fixed+Adaptive+
   // tolerance+formant; the amendment's FINAL surface) = 25
-  CHECK(n == 32);  // 2026-11: +7 external-engine rows
+  CHECK(n == 33);  // 2026-11: +7 external-engine rows, +1 timepitch voicing gate
   std::vector<uint32_t> tags;
   for (uint32_t i = 0; i < n; ++i) {
     const ParamMeta& m = table[i];

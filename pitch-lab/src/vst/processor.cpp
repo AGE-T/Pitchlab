@@ -1,5 +1,6 @@
 #include "vst/processor.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <vector>
@@ -610,10 +611,15 @@ void PitchLabProcessor::collectBlockAutomation(ProcessData& data, int32_t blockF
       const double plain = denormalise(tag, value);
       const AutomationPoint p{sampleOffset, plain};
       switch (tag) {
-        case param::kPitch:
+        case param::kPitch: {
+          // the product pitch range (kPitchProductLimitSt) also bounds host
+          // automation — the same clamp the snapshot path applies
+          const AutomationPoint pc{
+              p.frameOffset, std::clamp(p.value, -kPitchProductLimitSt, kPitchProductLimitSt)};
           appendPoint(blockAutomation_.pitch, blockAutomation_.pitchCount,
-                      blockAutomation_.droppedPoints, p);
+                      blockAutomation_.droppedPoints, pc);
           break;
+        }
         case param::kMix:
           appendPoint(blockAutomation_.mix, blockAutomation_.mixCount,
                       blockAutomation_.droppedPoints, p);

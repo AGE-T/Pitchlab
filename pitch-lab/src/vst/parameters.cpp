@@ -112,6 +112,7 @@ constexpr EngineParamBinding kEngineParamBindings[]{
     {"native.timepitch", "tolerance_frames", param::kTpTolerance, "tp_tolerance"},
     // Checkpoint 4: the FINAL surface row (the amendment's 25th row).
     {"native.timepitch", "formant_ratio", param::kTpFormant, "tp_formant"},
+    {"native.timepitch", "voicing_gate", param::kTpVoicingGate, "tp_voicing_gate"},
     // 2026-11: the external DSP integrations
     {"native.world", "f0_method", param::kWoF0Method, "wo_f0_method"},
     {"native.world", "formant_ratio", param::kWoFormant, "wo_formant"},
@@ -390,7 +391,9 @@ void applyNormalised(ParamSnapshot& snap, uint32_t tag, double norm) {
   const double p = denormalise(tag, norm);
   switch (tag) {
     case param::kEngine: snap.engineIndex = static_cast<int>(p); break;
-    case param::kPitch: snap.pitchSt = p; break;
+    case param::kPitch:
+      snap.pitchSt = std::clamp(p, -kPitchProductLimitSt, kPitchProductLimitSt);
+      break;
     case param::kLfoRate: snap.lfoRateHz = p; break;
     case param::kLfoDepth: snap.lfoDepthSt = p; break;
     case param::kVsQuality: snap.vsQuality = clampInt(p, 0, 2); break;
@@ -411,6 +414,7 @@ void applyNormalised(ParamSnapshot& snap, uint32_t tag, double norm) {
     case param::kTpShape: snap.tpShape = clampInt(p, 0, 3); break;
     case param::kTpTolerance: snap.tpTolerance = static_cast<int64_t>(std::llround(p)); break;
     case param::kTpFormant: snap.tpFormantRatio = p; break;
+    case param::kTpVoicingGate: snap.tpVoicingGate = p; break;
     case param::kWoF0Method: snap.woF0Method = clampInt(p, 0, 1); break;
     case param::kWoFormant: snap.woFormantRatio = p; break;
     case param::kWoF0Floor: snap.woF0FloorHz = p; break;
@@ -496,6 +500,7 @@ double plainValue(const ParamSnapshot& snap, uint32_t tag) {
     case param::kTpShape: return static_cast<double>(snap.tpShape);
     case param::kTpTolerance: return static_cast<double>(snap.tpTolerance);
     case param::kTpFormant: return snap.tpFormantRatio;
+    case param::kTpVoicingGate: return snap.tpVoicingGate;
     case param::kWoF0Method: return static_cast<double>(snap.woF0Method);
     case param::kWoFormant: return snap.woFormantRatio;
     case param::kWoF0Floor: return snap.woF0FloorHz;
@@ -568,6 +573,12 @@ void formatParamValue(uint32_t tag, double plain, char* buf, std::size_t bufSize
     default:
       break;
   }
+  // 2026-11: the formant ratios read in semitones (2.0 -> "+12.00 st")
+  if (isFormantRatioParam(tag)) {
+    const double st = plain > 0.0 ? 12.0 * std::log2(plain) : 0.0;
+    std::snprintf(buf, bufSize, "%+.2f st", std::fabs(st) < 0.005 ? 0.0 : st);
+    return;
+  }
   // discrete-choice parameters (engine-declared names): the choice text —
   // the USER-FACING label when the descriptor declares one (the Task-33
   // continuation's mode naming), the engine-facing identifier otherwise
@@ -626,6 +637,25 @@ bool parseParamPlain(uint32_t tag, const char* text, double& plainOut) {
       return false;  // invalid toggle text: rejected, never silently zero
     default:
       break;
+  }
+
+  // 2026-11: a formant ratio parses from semitones ("+12", "-3.5 st") —
+  // the display form; a bare "x"-suffixed value ("2x") is the ratio itself
+  if (isFormantRatioParam(tag)) {
+    std::string t(text);
+    const bool ratioForm = !t.empty() && (t.back() == 'x' || t.back() == 'X');
+    double v = 0.0;
+    if (ratioForm) t.pop_back();
+    // the display form's unit ("+12.00 st"): strip a trailing "st"
+    while (!t.empty() && std::isspace(static_cast<unsigned char>(t.back()))) t.pop_back();
+    if (!ratioForm && t.size() >= 2 &&
+        std::tolower(static_cast<unsigned char>(t[t.size() - 2])) == 's' &&
+        std::tolower(static_cast<unsigned char>(t.back())) == 't') {
+      t.resize(t.size() - 2);
+    }
+    if (!parseNumber(t.c_str(), v)) return false;
+    plainOut = ratioForm ? v : std::exp2(v / 12.0);
+    return true;
   }
 
   // Task 32: the LFO rate's canonical OFF text ("0.00" parses as a number

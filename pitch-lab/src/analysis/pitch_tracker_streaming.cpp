@@ -254,6 +254,7 @@ void StreamingPitchTracker::decodeLagged() {
       }
     }
     out.f0Hz = found ? bestF : fmin_ * std::exp2((static_cast<double>(b) * detail::kBinCents + 5.0) / 1200.0);
+    out.confidence = found ? bestMass : 0.0;
     if (out.f0Hz > 0.0) {
       const double tauHat = fs_ / out.f0Hz;
       out.center =

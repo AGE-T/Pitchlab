@@ -700,11 +700,27 @@ int main(int argc, char** argv) {
     // drive one engine-panel slider: write-through + re-prepare (the adapter
     // received it: every engine parameter is in the chain signature) + poll
     // stability. Returns the EXACT normalized value for persistence checks.
+    // 2026-11: a DISCRETE parameter with 2..5 positions is a PLSwitch (the
+    // editor's usesSwitch rule: stepCount 0..4) — its keys divide the same
+    // 172-px row evenly; the harness CLICKS the key nearest to u (the value
+    // is then exactly key/(positions-1)). Continuous rows are dragged.
     auto driveSlider = [&](const char* name, uint32_t tag, int y, double u) {
-      const int x = static_cast<int>(kBarX0 + u * (kBarX1 - kBarX0) + 0.5);
-      const double uExact = sliderU(x);
+      const ParamMeta* m = findParamMeta(tag);
+      const bool isSwitch = m != nullptr && m->stepCount >= 0 && m->stepCount <= 4;
+      int x = 0;
+      double uExact = 0.0;
       const uint64_t before = statusIface->getStatus().reprepares;
-      drag(484 + 20, x, y);
+      if (isSwitch) {
+        const int positions = std::max(2, m->stepCount + 1);
+        const int key = static_cast<int>(std::lround(u * (positions - 1)));
+        x = static_cast<int>(484.0 + 172.0 / positions * (key + 0.5));
+        uExact = static_cast<double>(key) / static_cast<double>(positions - 1);
+        click(x, y);
+      } else {
+        x = static_cast<int>(kBarX0 + u * (kBarX1 - kBarX0) + 0.5);
+        uExact = sliderU(x);
+        drag(484 + 20, x, y);
+      }
       char label[96];
       std::snprintf(label, sizeof(label), "%s: controller write-through", name);
       expectNear(label, edit->getParamNormalized(tag), uExact, kUiTol);
@@ -758,7 +774,9 @@ int main(int argc, char** argv) {
     if (selectEngine(3)) {
       expectStatusReality(3, false, "C pv-locked");
       pvpFftU = driveSlider("C pvp fft (discrete)", param::kPvpFft, kRow1, 0.75);
-      pvpHopU = driveSlider("C pvp hop (discrete)", param::kPvpHop, kRow2, 0.5);
+      // 0.0 = hop 128 (the switch key 0): 0.5 would land on the DEFAULT key
+      // (512), a no-op click that rebuilds nothing
+      pvpHopU = driveSlider("C pvp hop (discrete)", param::kPvpHop, kRow2, 0.0);
       // locking mode is FIXED IDENTITY (buildEngineConfig: "identity"; no
       // selectable lock-mode parameter exists in the model — verified: no
       // parameter id/title mentions lock)
@@ -799,9 +817,9 @@ int main(int argc, char** argv) {
     if (selectEngine(2)) {
       {
         const uint64_t before = statusIface->getStatus().reprepares;
-        drag(484 + 20, 484, kRow1);          // fft -> index 0 (1024)
+        click(484 + 172 / 6, kRow1);         // fft switch: key 0 of 3 (1024)
         frame.runFor(60);
-        drag(484 + 20, 656, kRow2);          // hop -> index 3 (1024 > fft/2)
+        click(484 + 172 * 7 / 8, kRow2);     // hop switch: key 3 of 4 (1024 > fft/2)
         frame.runFor(300);
         processBlocks(3);
         frame.runFor(200);

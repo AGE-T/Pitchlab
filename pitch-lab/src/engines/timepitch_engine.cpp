@@ -112,9 +112,10 @@ class TimePitchEngine final : public PitchEngine {
         }
       } else if (key == "window_shape") {
         if (const auto* s = std::get_if<std::string>(&value)) {
-          if (*s != "hann" && *s != "hamming" && *s != "bartlett" && *s != "rect") {
+          if (*s != "hann" && *s != "hamming" && *s != "bartlett" && *s != "rect" &&
+              *s != "tukey") {
             throw ConfigError("", "window_shape",
-                              "window_shape must be one of hann|hamming|bartlett|rect");
+                              "window_shape must be one of hann|hamming|bartlett|tukey|rect");
           }
           shape_ = *s;
         } else {
@@ -160,6 +161,19 @@ class TimePitchEngine final : public PitchEngine {
         } else {
           throw ConfigError("", "tolerance_frames",
                             "tolerance_frames must be an integer");
+        }
+      } else if (key == "voicing_gate") {
+        // 2026-11: the Pitch-Synced / Pitch + Formant voicing gate — a
+        // tracker frame counts as voiced only when its decoded pitch's
+        // observation confidence reaches the gate (0 = off: the tracker's
+        // own voicing decision, the frozen behaviour).
+        if (const auto* d = std::get_if<double>(&value)) {
+          if (!std::isfinite(*d) || *d < 0.0 || *d > 0.95) {
+            throw ConfigError("", "voicing_gate", "voicing_gate must be in [0, 0.95]");
+          }
+          voicingGate_ = *d;
+        } else {
+          throw ConfigError("", "voicing_gate", "voicing_gate must be a number");
         }
       } else {
         // The key set is the descriptor's parameterKeys (validated both
@@ -380,6 +394,7 @@ class TimePitchEngine final : public PitchEngine {
   int overlap_ = 2;
   std::string shape_ = "hann";
   int tolerance_ = 768;  // the Adaptive (WSOLA) search tolerance (frames)
+  double voicingGate_ = 0.0;  // Pitch-Synced voicing gate (0 = off, frozen default)
   double puvHz_ = 200.0;  // the Pitch-Synced unvoiced period source (hidden)
 
   // --- job state (all allocated in prepare()) -----------------------------
@@ -474,7 +489,21 @@ class TimePitchEngine final : public PitchEngine {
         v = 0.54 - 0.46 * std::cos(2.0 * kPi * u);  // periodic
       } else if (shape == "bartlett") {
         v = 1.0 - std::abs(2.0 * u - 1.0);
-      } else {  // rect
+      } else if (shape == "tukey") {
+        // 2026-11: the RECT replacement — a flat top (full-amplitude body,
+        // the transient punch rect was chosen for) with raised-cosine
+        // tapers over kTukeyAlpha of the window (half each side), so the
+        // grain edges no longer step: the rect crackle class is gone.
+        constexpr double kTukeyAlpha = 0.25;
+        constexpr double kHalf = kTukeyAlpha * 0.5;
+        if (u < kHalf) {
+          v = 0.5 * (1.0 - std::cos(kPi * u / kHalf));
+        } else if (u > 1.0 - kHalf) {
+          v = 0.5 * (1.0 - std::cos(kPi * (1.0 - u) / kHalf));
+        } else {
+          v = 1.0;
+        }
+      } else {  // rect (engine-facing only: the frozen OLA reference shape)
         v = 1.0;
       }
       w[static_cast<std::size_t>(i)] = v;
@@ -1008,7 +1037,7 @@ class TimePitchEngine final : public PitchEngine {
       }
     }
     const auto& fr = tracker_.decoded(bestIdx);
-    voiced = fr.voiced && fr.f0Hz > 0.0;
+    voiced = fr.voiced && fr.f0Hz > 0.0 && (voicingGate_ <= 0.0 || fr.confidence >= voicingGate_);
     f0Hz = fr.f0Hz;
     return true;
   }
@@ -1569,7 +1598,10 @@ const char* const kTimePitchModeDisplayNames[] = {
     "Fixed", "Adaptive", "Pitch Synced", "Pitch + Formant"};
 
 // Window shapes (§6.6 table, verbatim from candidate_ola.h).
-const char* const kTimePitchShapeChoices[] = {"hann", "hamming", "bartlett", "rect"};
+// 2026-11: choice index 3 is "tukey" (was "rect": the rect window's OLA
+// steps crackled at any non-zero pitch — the TASK G finding; the engine
+// still accepts "rect" engine-facing for the frozen OLA reference test).
+const char* const kTimePitchShapeChoices[] = {"hann", "hamming", "bartlett", "tukey"};
 
 // Overlap engine-facing values (candidate_ola.h: overlap ∈ {2,4,8}); the
 // choice names are the display text of the engine-facing values (the PV
@@ -1585,6 +1617,7 @@ const double kTimePitchOverlapValues[] = {2.0, 4.0, 8.0};
 constexpr double kTpVisibleFixedAdaptive[] = {0.0, 1.0};
 constexpr double kTpVisibleAdaptiveOnly[] = {1.0};
 constexpr double kTpVisibleFormantOnly[] = {3.0};
+constexpr double kTpVisiblePitchSynced[] = {2.0, 3.0};
 
 }  // namespace
 
@@ -1633,7 +1666,7 @@ EngineDescriptor timePitchEngineDescriptor() {
   // (landed per checkpoint; the key set grows with the mode implementations,
   // the tags are stable). Checkpoint 2 registers the Fixed + Adaptive rows.
   d.parameterKeys = {"mode", "window_frames", "overlap", "window_shape",
-                     "tolerance_frames", "formant_ratio", "puv_hz"};
+                     "tolerance_frames", "formant_ratio", "puv_hz", "voicing_gate"};
   d.parameters = {
       {
           .key = "mode",
@@ -1784,6 +1817,29 @@ EngineDescriptor timePitchEngineDescriptor() {
           .visibleWhenKey = "mode",
           .visibleWhenValues = kTpVisibleFormantOnly,
           .visibleWhenCount = 1,
+      },
+      {
+          // 2026-11: the Pitch-Synced / Pitch + Formant voicing gate
+          // (visible iff mode in {pitch_synced, pitch_formant}).
+          .key = "voicing_gate",
+          .displayName = "Voicing Gate",
+          .kind = EngineParamKind::Real,
+          .role = EngineParamRole::Configuration,
+          .exposed = true,
+          .min = 0.0,
+          .max = 0.95,
+          .defaultPlain = 0.0,  // off: the tracker's own voicing (frozen behaviour)
+          .unit = "",
+          .stepCount = -1,
+          .choiceNames = nullptr,
+          .choiceValues = nullptr,
+          .choiceCount = 0,
+          .automatable = false,
+          .rebuildsChain = true,
+          .dispFmt = "%.2f",
+          .visibleWhenKey = "mode",
+          .visibleWhenValues = kTpVisiblePitchSynced,
+          .visibleWhenCount = 2,
       },
   };
   d.factory = &makeTimePitchEngine;

@@ -1,5 +1,10 @@
 #include "vst/ui/editor.h"
 
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <string>
+
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/gui/iplugview.h"
 
@@ -179,6 +184,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     sliderByTag_.clear();
     varispeedNote_ = nullptr;
     lastEngineIndex_ = -1;
+    pitchRangeEngine_ = -2;
     enginePanelGuardTag_ = 0;
     enginePanelGuardValue_ = -1.0;
     enginePanel_ = nullptr;
@@ -316,8 +322,32 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
                                       ui_::Palette::accent(), 3);
     panel->addView(label);
 
-    pitchValue_ = new ui_::ValueLabel(CRect(150, 8, 276, 30), "+0.00 st",
-                                      ui_::Palette::accent());
+    // 2026-11: the readout is TYPEABLE — click, enter e.g. "-7" or "+3.5",
+    // Enter. Parsed as semitones, clamped to the selected engine's UI range
+    // (pitchUiLimitSt), applied through the normal parameter path.
+    pitchValue_ = new ui_::PLNumberEdit(CRect(132, 6, 278, 32), this,
+                                        static_cast<int32_t>(param::kPitch));
+    pitchValue_->setValueText([](float norm, char* out) {
+      std::snprintf(out, 256, "%+.2f ST", denormalise(param::kPitch, norm));
+    });
+    pitchValue_->setStringToValueFunction(
+        [this](UTF8StringPtr txt, float& result, CTextEdit*) -> bool {
+          double st = 0.0;
+          if (txt == nullptr || !parseSemitones(txt, st)) return false;
+          const double lim = pitchUiLimitSt(currentSnapshot().engineIndex);
+          st = std::clamp(st, -lim, lim);
+          result = static_cast<float>(normalise(param::kPitch, st));
+          return true;
+        });
+    pitchValue_->setValueToStringFunction2(
+        [](float value, std::string& result, CParamDisplay*) -> bool {
+          char buf[32];
+          std::snprintf(buf, sizeof(buf), "%.2f", denormalise(param::kPitch, value));
+          result = buf;
+          return true;
+        });
+    pitchValue_->setValueNormalized(
+        static_cast<float>(getController()->getParamNormalized(param::kPitch)));
     panel->addView(pitchValue_);
 
     pitchSlider_ = addSlider(panel, param::kPitch, CRect(12, 36, 265, 56), true);
@@ -523,7 +553,7 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     // removeView(view) FORGETS the view (withForget defaults true — the
     // VSTGUI contract): an explicit forget() here would double-release
     // (use-after-free; found by opening the real editor under Xvfb).
-    for (ui_::PLSlider* s : engineSliders_) {
+    for (CControl* s : engineSliders_) {
       // P0.3 (Task 24): the authoritative live-control collection must
       // contain ONLY live controls — the removed slider is FORGOTTEN
       // (freed) by removeView, so the stale entry in sliderByTag_ left
@@ -615,9 +645,17 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       engineValues_.push_back(value);
       engineParamTags_.push_back(pv.tag);
 
-      ui_::PLSlider* slider = addSliderTo(enginePanel_, pv.tag, CRect(12, y + 15, 184, y + 33));
-      if (slider != nullptr) {
-        engineSliders_.push_back(slider);
+      // 2026-11: a DISCRETE parameter (2..5 positions: modes, windows,
+      // FFT/hop sizes, on/off) gets a switch, a continuous one a slider —
+      // the choice is descriptor-derived (stepCount), never per engine.
+      CControl* control = nullptr;
+      if (usesSwitch(*pv.meta)) {
+        control = addSwitchTo(enginePanel_, pv.tag, CRect(12, y + 14, 184, y + 34));
+      } else {
+        control = addSliderTo(enginePanel_, pv.tag, CRect(12, y + 15, 184, y + 33));
+      }
+      if (control != nullptr) {
+        engineSliders_.push_back(control);
       }
       y += 40.0;
     }
@@ -679,6 +717,33 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     EditController* ec = const_cast<PitchLabEditor*>(this)->getController();
     if (ec == nullptr) return -1.0;
     return denormalise(param::kTpMode, ec->getParamNormalized(param::kTpMode));
+  }
+
+  /// 2..5 discrete positions (a toggle = stepCount 0 -> 2 positions).
+  [[nodiscard]] static bool usesSwitch(const ParamMeta& m) {
+    return m.stepCount >= 0 && m.stepCount <= 4;
+  }
+
+  /// A switch whose key labels are the parameter's OWN value formatting
+  /// (choice text, sizes, on/off) for each position — engine-agnostic.
+  ui_::PLSwitch* addSwitchTo(CViewContainer* parent, uint32_t tag, const CRect& r) {
+    const ParamMeta* meta = findMeta(tag);
+    if (meta == nullptr) return nullptr;
+    const int positions = meta->stepCount + 1 < 2 ? 2 : meta->stepCount + 1;
+    std::vector<std::string> labels;
+    for (int i = 0; i < positions; ++i) {
+      const double plain = denormalise(tag, static_cast<double>(i) / (positions - 1));
+      char buf[48];
+      formatParamValue(tag, plain, buf, sizeof(buf));
+      std::string l(buf);
+      for (char& c : l) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+      labels.push_back(l);
+    }
+    auto* sw = new ui_::PLSwitch(r, this, static_cast<int32_t>(tag), labels);
+    sw->setValueNormalized(getController()->getParamNormalized(tag));
+    parent->addView(sw);
+    sliderByTag_[tag] = sw;
+    return sw;
   }
 
   ui_::PLSlider* addSliderTo(CViewContainer* parent, uint32_t tag, const CRect& r) {
@@ -861,8 +926,20 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   void updateValueLabels() {
     const ParamSnapshot snap = currentSnapshot();
     char buf[48];
-    std::snprintf(buf, sizeof(buf), "%+.2f st", snap.pitchSt);
-    pitchValue_->set(buf, ui_::Palette::accent());
+    // the typed-entry readout: mirror the authoritative value (never while
+    // the user is typing into it); amber when the value sits outside the
+    // selected engine's range (e.g. an old preset at -36 st on a +-24 engine)
+    if (pitchValue_ != nullptr && !pitchValue_->isEditing()) {
+      const double norm = getController()->getParamNormalized(param::kPitch);
+      if (std::fabs(norm - pitchValue_->getValueNormalized()) > 1e-9) {
+        pitchValue_->setValueNormalized(static_cast<float>(norm));
+        pitchValue_->invalid();
+      }
+      const double lim = pitchUiLimitSt(snap.engineIndex);
+      pitchValue_->setColor(std::fabs(snap.pitchSt) > lim + 1e-9 ? ui_::Palette::amber()
+                                                                  : ui_::Palette::accent());
+    }
+    applyPitchViewRange(snap.engineIndex);
     // Phase 5: the capability-derived support line (the selected engine's
     // declared ratio range in semitones). Recomputed on every tick; the
     // cached-string guard keeps the label quiet when nothing changed.
@@ -898,6 +975,42 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     }
   }
 
+  /// 2026-11 product range: the pitch control spans +-min(24, engine
+  /// support) semitones — +-24 for every engine that reaches two octaves,
+  /// +-12 for an engine whose declared ratio range is one octave
+  /// (native.vardelay). Capability-derived, never per engine id.
+  [[nodiscard]] static double pitchUiLimitSt(int engineIndex) {
+    const EngineRegistry& reg = engineRegistry();
+    double lim = kPitchProductLimitSt;
+    if (engineIndex >= 0 && engineIndex < static_cast<int>(reg.size())) {
+      const auto& cap = reg.at(static_cast<std::size_t>(engineIndex)).capabilities;
+      if (cap.minRatio > 0.0) lim = std::min(lim, -12.0 * std::log2(cap.minRatio));
+      if (cap.maxRatio > 0.0) lim = std::min(lim, 12.0 * std::log2(cap.maxRatio));
+    }
+    return std::max(lim, 1.0);
+  }
+
+  /// The pitch slider's travel = the selected engine's UI range.
+  void applyPitchViewRange(int engineIndex) {
+    if (pitchSlider_ == nullptr || engineIndex == pitchRangeEngine_) return;
+    pitchRangeEngine_ = engineIndex;
+    const double lim = pitchUiLimitSt(engineIndex);
+    pitchSlider_->setViewRange(normalise(param::kPitch, -lim), normalise(param::kPitch, lim));
+  }
+
+  /// "-7", "+3.5", "-12 st", "3,5" -> semitones
+  [[nodiscard]] static bool parseSemitones(const char* txt, double& st) {
+    std::string t(txt);
+    for (char& c : t) {
+      if (c == ',') c = '.';
+    }
+    char* end = nullptr;
+    const double v = std::strtod(t.c_str(), &end);
+    if (end == t.c_str() || !std::isfinite(v)) return false;
+    st = v;
+    return true;
+  }
+
   /// Phase 5: the selected engine's pitch support, capability-derived from
   /// the registry descriptor (minRatio/maxRatio -> semitones). The Time
   /// Pitch capability is engine-scoped (all four modes share the declared
@@ -914,7 +1027,9 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     const auto& cap = reg.at(static_cast<std::size_t>(idx)).capabilities;
     const double lo = cap.minRatio > 0.0 ? 12.0 * std::log2(cap.minRatio) : 0.0;
     const double hi = cap.maxRatio > 0.0 ? 12.0 * std::log2(cap.maxRatio) : 0.0;
-    std::snprintf(buf, bufSize, "supported: %+.0f ... %+.0f st", lo, hi);
+    const double lim = pitchUiLimitSt(idx);
+    std::snprintf(buf, bufSize, "range %+.0f ... %+.0f st  (engine %+.0f ... %+.0f)", -lim, lim,
+                  lo, hi);
   }
 
   /// One engine parameter's value display: the model's formatting + the
@@ -925,7 +1040,8 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
     char buf[48];
     formatParamValue(tag, plainValue(snap, tag), buf, sizeof(buf));
     std::string text(buf);
-    if (meta->units != nullptr && meta->units[0] != '\0' && text[0] != '\0') {
+    if (!isFormantRatioParam(tag) && meta->units != nullptr && meta->units[0] != '\0' &&
+        text[0] != '\0') {
       text += " ";
       text += meta->units;
     }
@@ -948,11 +1064,12 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   }
 
   // ---- members ------------------------------------------------------------
-  std::vector<ui_::PLSlider*> engineSliders_;
+  std::vector<CControl*> engineSliders_;  // the engine panel's live controls
+                                          // (sliders AND switches, 2026-11)
   std::vector<ui_::MicroLabel*> engineValues_;
   std::vector<ui_::MicroLabel*> engineTitles_;  // Task 29: per-row titles
   std::vector<uint32_t> engineParamTags_;       // Task 29: value-label binding
-  std::map<uint32_t, ui_::PLSlider*> sliderByTag_;  // AUTHORITATIVE live-control
+  std::map<uint32_t, CControl*> sliderByTag_;  // AUTHORITATIVE live-control
                                                     // collection (P0.3: only live
                                                     // controls, ever)
   ui_::MicroLabel* varispeedNote_ = nullptr;  // lifecycle-managed (P2.2)
@@ -976,9 +1093,10 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
   ui_::MicroLabel* format_ = nullptr;
   ui_::MicroLabel* latency_ = nullptr;
   ui_::MicroLabel* panelTitle_ = nullptr;
-  ui_::MicroLabel* pitchValue_ = nullptr;
+  ui_::PLNumberEdit* pitchValue_ = nullptr;
   ui_::MicroLabel* pitchSupported_ = nullptr;
   std::string lastSupported_;
+  int pitchRangeEngine_ = -2;  // the engine the pitch slider range was set for
   ui_::MicroLabel* lfoRateValue_ = nullptr;
   ui_::MicroLabel* lfoDepthValue_ = nullptr;
   ui_::MicroLabel* statusLine1_ = nullptr;
