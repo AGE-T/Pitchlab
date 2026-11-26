@@ -130,3 +130,12 @@ CI state at 19a5c1b (VST3 job attempt 2) and 66e00cd (UI capture check PASS, the
 
 Remaining open items: the intermittent UI-lane engine-switch stall (1 of 3 runs; the diagnostics will localise it on recurrence); the realtime timepitch render-determinism flake (1 of 6 runs); F7 callback budget (granular, timepitch adaptive); the engine-portfolio decision (granular removal, timepitch A/B against Bungee / stftPitchShift).
 
+## 14. Follow-up (2026-11-26): product feedback round
+| Commit | Change | Evidence |
+|---|---|---|
+| 80aa22f | UI: pixel-art switches for discrete parameters, typed pitch entry, +-24 st product range (+-12 on vardelay), formant ratios in semitones; timepitch window choice 3 = Tukey (RECT crackled), Voicing Gate for the pitch-synced modes | rect 66 -> tukey 0 clicks (+7 st sine); gate 0 bit-identical to the frozen behaviour; ui-binding lane ALL CHECKS PASS |
+| c976dd7, 5d0a279 | native.bungee (Bungee Basic, MPL-2.0) and native.stft (stftPitchShift core, MIT) as A/B candidates; state PLV4 | alignment lag 0 @44.1/48/96 kHz; 0 callback allocations; worst callback 0.77 / 0.72 ms |
+| 2ecd343 | shared resampler 4.6x faster (tabulated Kaiser factor + sinc rotation) | worst |fast - exact| 7.4e-13; granular @96k/-12st/grain 0.5 RTF 1.35-2.8 -> 0.43; timepitch adaptive worst callback 14.8 -> 7.6 ms |
+| b785138 | CI evidence steps run past a failed gate; regenerated examples uploaded | |
+| (this) | audio-path golden 228 -> 272 records (GCC, run 45825336190) | 227 identities unchanged, 44 new (all PASS), 1 phase-G switch target now native.bungee; 2 informational wobbles (transient-burst zero-cross pitch 699.7 -> 700.5 Hz, granular stereo diagnostic 441.6 -> 441.7 Hz); the 11 example WAVs byte-identical |
+
