@@ -509,7 +509,7 @@ TEST_CASE("T-RT3: the measurement window FOLLOWS the active chain (engine switch
   adapter.deactivate();
 }
 
-TEST_CASE("T-RT3: granular @ 96 kHz / -12 st / grain 0.5 classifies NOT SUSTAINABLE (the real warning)") {
+TEST_CASE("T-RT3: granular @ 96 kHz / -12 st / grain 0.5 — the measured verdict matches the measured RTF") {
   initEngineRegistryOnce();
   // The task-30 evidence family: the windowed-splice granular cost at the
   // double rate measured RTF > 1 (reference machine AND the canonical CI
@@ -534,18 +534,29 @@ TEST_CASE("T-RT3: granular @ 96 kHz / -12 st / grain 0.5 classifies NOT SUSTAINA
   const StatusSnapshot st = pacedDrive(snap, 96000.0, 128, 1.5);
   REQUIRE(st.chainReady);
   REQUIRE(st.faults == 0);  // the task-29/30 finding: fault-free but CPU-bound
+  // 2026-11: the shared resampler's hot path (tabulated Kaiser factor +
+  // sinc rotation, 4.6x faster at the Reference preset) took this former
+  // NOT SUSTAINABLE configuration to a measured RTF of ~0.43 on the
+  // reference machine. The verdict stays MEASURED (never pinned): the
+  // end-to-end check is that the classification the editor shows agrees
+  // with the measurement on whatever machine runs it (a sanitizer build is
+  // 5-15x slower and may still be NOT SUSTAINABLE). The level/text matrix
+  // itself is covered by T-RT1/T-RT2 with synthetic snapshots.
   const RtClassification c = classifyRealtimeStatus(st);
   CHECK(c.basis == RtBasis::Measured);
-  CHECK(c.level == RtLevel::NotSustainable);
-  CHECK(c.measuredRtf > kRtfSustainableMax);
   MESSAGE("granular@96k/-12st/grain0.5 measured rtf " << c.measuredRtf);
-  // the warning the editor renders for this state (the exact texts)
   char line[160];
   formatRealtimeStatusLine(c, line, sizeof(line));
-  CHECK(std::strstr(line, "REALTIME NOT SUSTAINABLE") != nullptr);
   char detail[160];
   formatRealtimeDetailLine(c, detail, sizeof(detail));
-  CHECK(std::strstr(detail, "USE OFFLINE RENDER") != nullptr);
+  if (c.measuredRtf > kRtfSustainableMax) {
+    CHECK(c.level == RtLevel::NotSustainable);
+    CHECK(std::strstr(line, "REALTIME NOT SUSTAINABLE") != nullptr);
+    CHECK(std::strstr(detail, "USE OFFLINE RENDER") != nullptr);
+  } else {
+    CHECK(c.level != RtLevel::NotSustainable);
+    CHECK(std::strstr(line, "REALTIME NOT SUSTAINABLE") == nullptr);
+  }
 }
 
 TEST_CASE("T-RT3: the LFO rate never touches the chain lifecycle (OFF/ON mid-stream)") {

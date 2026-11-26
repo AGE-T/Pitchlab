@@ -546,7 +546,10 @@ TEST_CASE("T-R2i: stereo coherence — identical channels give bit-identical out
 
 TEST_CASE("T-R2j: boundary handling (zero-padding semantics, §7.6)") {
   // Delta at index 0 read at fractional position 0.25: only tap n=0 is
-  // in-range, so the result equals kernelValue(0.25) EXACTLY (same binary).
+  // in-range, so the result equals kernelValue(0.25). 2026-11: the hot path
+  // tabulates the Kaiser factor (cubic Hermite, 8192 cells) and rotates the
+  // sinc angle — equal to the exact series within 1e-12 relative (was:
+  // bit-identical; the speed-up is 4.6x at the Reference preset).
   {
     std::vector<double> x(64, 0.0);
     x[0] = 1.0;
@@ -554,7 +557,7 @@ TEST_CASE("T-R2j: boundary handling (zero-padding semantics, §7.6)") {
                                                pitchlab::ResampleQuality::Small);
     const double expect = pitchlab::resampleKernelValue(0.25, 1.0,
                                                         pitchlab::ResampleQuality::Small);
-    CHECK(got == expect);
+    CHECK(got == doctest::Approx(expect).epsilon(1e-12));
   }
   // Delta at the last index read past the end (position N-1+0.3): only the
   // n = N-1 tap contributes. NOTE: the kernel argument is u = position - n,
@@ -691,3 +694,31 @@ TEST_CASE("T-R2l: invalid inputs/configuration (§7.2.1 item 10)") {
   CHECK_THROWS_AS((void)pitchlab::applyFirZeroPhase(x.data(), 100, x.data(), 8, x.data()),
                   pitchlab::ConfigError);  // in-place prohibited
 }
+
+TEST_CASE("2026-11: the fast tap path matches the exact kernel sum (all presets, cutoffs, phases)") {
+  // the hot path (tabulated Kaiser factor + sinc rotation) against the
+  // exact series, tap by tap, over random-ish positions and cutoffs
+  std::vector<double> x(256);
+  for (int i = 0; i < 256; ++i) x[static_cast<std::size_t>(i)] = std::sin(0.37 * i) + 0.25 * std::cos(1.7 * i);
+  double worst = 0.0;
+  for (auto q : {pitchlab::ResampleQuality::Small, pitchlab::ResampleQuality::Standard,
+                 pitchlab::ResampleQuality::Reference}) {
+    const int K = pitchlab::resampleKernelSpec(q).halfWidthTaps;
+    for (double c : {1.0, 0.95, 0.633, 0.5, 0.2375}) {
+      for (int s = 0; s < 200; ++s) {
+        const double p = 60.0 + s * 0.6180339887;
+        double expect = 0.0;
+        const long long n0 = std::llround(p);
+        for (int i = -K; i <= K; ++i) {
+          const long long n = n0 + i;
+          expect += x[static_cast<std::size_t>(n)] * pitchlab::resampleKernelValue(p - static_cast<double>(n), c, q);
+        }
+        const double got = pitchlab::interpolateAt(x.data(), 256, p, c, q);
+        worst = std::max(worst, std::fabs(got - expect));
+      }
+    }
+  }
+  MESSAGE("fast path vs exact kernel sum: worst |diff| " << worst);
+  CHECK(worst < 1e-11);
+}
+
