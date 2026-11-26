@@ -1,0 +1,133 @@
+===== (a3) m02 case constants =====
+
+--- id7  0x1800E1568.. ---
+  0x1800E155F  comiss   xmm1, dword ptr [rip + 0x3308de]         -> 0x180411E44  f32=7.105427357601002e-15  f64=1.2994288927940336e-113
+  0x1800E157F  mulsd    xmm0, qword ptr [rip + 0x330b89]         -> 0x180412110  f32=37120576.0  f64=0.003822256433
+  0x1800E158C  mulsd    xmm0, qword ptr [rip + 0x330fb4]         -> 0x180412548  f32=-2.46043772378704e-13  f64=1731.234049
+  0x1800E15AF  movss    xmm1, dword ptr [rip + 0x331329]         -> 0x1804128E0  f32=-65535.0  f64=-3.533696755781841e+72
+
+--- id8  0x1800E15CB.. ---
+  0x1800E15D6  comiss   xmm1, dword ptr [rip + 0x330867]         -> 0x180411E44  f32=7.105427357601002e-15  f64=1.2994288927940336e-113
+
+--- id9  0x1800E161E.. ---
+  0x1800E1626  movss    xmm1, dword ptr [rip + 0x33115e]         -> 0x18041278C  f32=8388607.0  f64=1.915619961300245e+53
+
+--- id10 0x1800E16A5.. ---
+  0x1800E16B7  mulsd    xmm0, qword ptr [rip + 0x330c61]         -> 0x180412320  f32=-2.886646270751953  f64=0.9999998812035873
+
+--- id11 0x1800E16DB.. ---
+  0x1800E16EF  mulss    xmm0, dword ptr [rip + 0x331095]         -> 0x18041278C  f32=8388607.0  f64=1.915619961300245e+53
+  0x1800E16F7  mulss    xmm3, dword ptr [rip + 0x33108d]         -> 0x18041278C  f32=8388607.0  f64=1.915619961300245e+53
+  0x1800E1702  addss    xmm3, dword ptr [rip + 0x33073a]         -> 0x180411E44  f32=7.105427357601002e-15  f64=1.2994288927940336e-113
+  0x1800E1712  mulss    xmm0, dword ptr [rip + 0x33102e]         -> 0x180412748  f32=2048.0  f64=6.649093250873958e+24
+  0x1800E1731  mulsd    xmm0, qword ptr [rip + 0x3308ff]         -> 0x180412038  f32=-1.7416278750016048e-19  f64=1.06467459859e-05
+
+--- id12 0x1800E1751.. ---
+  0x1800E1768  mulsd    xmm0, qword ptr [rip + 0x330bb0]         -> 0x180412320  f32=-2.886646270751953  f64=0.9999998812035873
+  0x1800E1786  mulsd    xmm0, qword ptr [rip + 0x330a72]         -> 0x180412200  f32=-1.1635911654427853e+20  f64=0.11513000000000001
+  0x1800E17A9  comiss   xmm1, dword ptr [rip + 0x330694]         -> 0x180411E44  f32=7.105427357601002e-15  f64=1.2994288927940336e-113
+  0x1800E17C1  mulsd    xmm1, qword ptr [rip + 0x3310bf]         -> 0x180412888  f32=-4.716279314602625e-21  f64=-1731.234
+
+--- id13 0x1800E17E1.. ---
+  0x1800E17F8  mulsd    xmm0, qword ptr [rip + 0x330b20]         -> 0x180412320  f32=-2.886646270751953  f64=0.9999998812035873
+  0x1800E1816  mulsd    xmm0, qword ptr [rip + 0x3309e2]         -> 0x180412200  f32=-1.1635911654427853e+20  f64=0.11513000000000001
+  0x1800E1839  comiss   xmm1, dword ptr [rip + 0x330604]         -> 0x180411E44  f32=7.105427357601002e-15  f64=1.2994288927940336e-113
+  0x1800E1851  mulsd    xmm1, qword ptr [rip + 0x330ce7]         -> 0x180412540  f32=-4.716279314602625e-21  f64=1731.234
+
+===== (c3) DebugReport serialiser call site (fn 0x180347500) =====
+--- 0x180347820..0x180347880 ---
+0x180347820  xadd     dword ptr [rcx + 8], eax                    
+0x180347824  add      eax, -1                                     
+0x180347827  sete     al                                          
+0x18034782A  test     al, al                                      
+0x18034782C  je       0x180347838                                 
+0x18034782E  mov      rax, qword ptr [rcx]                        
+0x180347831  mov      edx, 1                                      
+0x180347836  call     qword ptr [rax]                             
+0x180347838  mov      rax, qword ptr [r15 + 0xe8]                 
+0x18034783F  test     rax, rax                                    
+0x180347842  je       0x180347940                                 
+0x180347848  lea      rbx, [rax + 0x25c8]                         
+0x18034784F  lea      rcx, [rbx + 8]                              
+0x180347853  lea      rdx, [rbp - 0x58]                           
+0x180347857  call     0x180310f20                                 
+0x18034785C  nop                                                  
+0x18034785D  mov      rcx, qword ptr [rsp + 0x30]                 
+0x180347862  test     rcx, rcx                                    
+0x180347865  je       0x180347873                                 
+0x180347867  mov      r8d, esi                                    
+0x18034786A  mov      rdx, qword ptr [rax]                        
+0x18034786D  call     0x1800c14c0                                 
+0x180347872  nop                                                  
+0x180347873  cmp      dword ptr [rbp - 0x44], 0                   
+0x180347877  je       0x180347897                                 
+0x180347879  mov      rcx, qword ptr [rbp - 0x58]                 
+0x18034787D  test     rcx, rcx                                    
+
+--- serialiser head FUN_180310F20 0x180310F20..0x180310FA0 ---
+0x180310F20  mov      qword ptr [rsp + 0x18], rbx                 
+0x180310F25  push     rbp                                         
+0x180310F26  push     rsi                                         
+0x180310F27  push     rdi                                         
+0x180310F28  push     r12                                         
+0x180310F2A  push     r13                                         
+0x180310F2C  push     r14                                         
+0x180310F2E  push     r15                                         
+0x180310F30  lea      rbp, [rsp - 0x180]                          
+0x180310F38  sub      rsp, 0x280                                  
+0x180310F3F  mov      rax, qword ptr [rip + 0x1940fa]               ; "2��-�+"
+0x180310F46  xor      rax, rsp                                    
+0x180310F49  mov      qword ptr [rbp + 0x170], rax                
+0x180310F50  mov      r14, rdx                                    
+0x180310F53  mov      r15, rcx                                    
+0x180310F56  mov      qword ptr [rbp + 0x28], rdx                 
+0x180310F5A  xor      r12d, r12d                                  
+0x180310F5D  mov      dword ptr [rsp + 0x30], r12d                
+0x180310F62  call     0x1801c5a40                                 
+0x180310F67  mov      rbx, rax                                    
+0x180310F6A  lea      rdi, [rax + 0x10]                           
+0x180310F6E  mov      qword ptr [rbp + 0x30], rdi                 
+0x180310F72  mov      rcx, rdi                                    
+0x180310F75  call     qword ptr [rip + 0x6c64d]                     ; "*5J"
+0x180310F7B  nop                                                  
+0x180310F7C  mov      rcx, rbx                                    
+0x180310F7F  call     0x1801c5bd0                                 
+0x180310F84  lea      rax, [rip + 0xa4b4d]                          ; "PluginEnvironment"
+0x180310F8B  mov      qword ptr [rbp - 0x48], rax                 
+0x180310F8F  lea      r8, [rbp - 0x48]                            
+0x180310F93  mov      rdx, rbx                                    
+0x180310F96  lea      rcx, [rbp - 0x60]                           
+0x180310F9A  call     0x1801a8800                                 
+0x180310F9F  .byte    0xc7                                        
+
+--- LatencySamples read at 0x180311A10 (context) ---
+0x1803119E0  xor      byte ptr [rbp + 0x13], dh                   
+0x1803119E3  mov      eax, esi                                    
+0x1803119E5  lock xadd dword ptr [rcx], eax                        
+0x1803119E9  dec      eax                                         
+0x1803119EB  cmp      eax, -1                                     
+0x1803119EE  jne      0x1803119f6                                 
+0x1803119F0  call     0x18015e100                                 
+0x1803119F5  nop                                                  
+0x1803119F6  mov      rax, qword ptr [rbp + 0x140]                
+0x1803119FD  mov      rdx, qword ptr [rax + 0x58]                 
+0x180311A01  cmp      rdx, r13                                    
+0x180311A04  je       0x180311a10                                 
+0x180311A06  lea      rcx, [rbp + 0x148]                          
+0x180311A0D  call     rdx                                         
+0x180311A0F  nop                                                  
+0x180311A10  mov      eax, dword ptr [r15 + 0x24]                 
+0x180311A14  lea      rcx, [rip + 0xdfb45]                          ; q=0x10000
+0x180311A1B  mov      qword ptr [rbp + 0x150], rcx                
+0x180311A22  mov      dword ptr [rbp + 0x158], eax                
+0x180311A28  call     0x1801c5a40                                 
+0x180311A2D  mov      rbx, rax                                    
+0x180311A30  lea      rdi, [rax + 0x10]                           
+0x180311A34  mov      qword ptr [rbp + 0x90], rdi                 
+0x180311A3B  mov      rcx, rdi                                    
+0x180311A3E  .byte    0xff                                        
+0x180311A3F  .byte    0x15                                        
+
+===== (c3b) ctor fn 0x180312670: stores to +0x25C0..+0x2600 =====
+
+post-pass hash OK

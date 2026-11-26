@@ -1,0 +1,547 @@
+     1→# Project Worklog
+     2→
+     3→---
+     4→Task ID: 1
+     5→Agent: Z.ai Code (main agent)
+     6→Task: Octavox RE handover acceptance test — clean-room environment setup, REA validation, package verification, result reproduction, research recovery, acceptance report
+     7→
+     8→Work Log:
+     9→- Assessed environment: Debian 13 trixie, x86_64, 2 cores, 4 GiB cgroup RAM, 8 GB free disk, user `z` without sudo; network to github/npm/pypi/nodejs/adoptium OK; Node 24.21.0, npm 11.19, Python 3.12.15 + numpy 2.1.3, git 2.47.3, gcc 14.2; system JRE 21 without javac; cmake/clang/7z missing; procps ps 4.0.4 present.
+    10→- Read official REA docs (github.com/morluto/rea: README, docs/installation.md, docs/native-investigation.md). Installed `rea-agents@6.7.0` globally (user prefix /home/z/.npm-global). rea --version = 6.7.0.
+    11→- Downloaded Ghidra 12.1.4 (sha256 ddac49f9… verified against official release page) and Temurin JDK 21.0.13+9 (full JDK with javac) into /home/z/tools. Set GHIDRA_INSTALL_DIR + JAVA_HOME. `rea doctor --provider ghidra` → healthy, all 8 checks OK. `rea mcp doctor` → healthy, 207/207 MCP tools, 6/6 prompts, request-flow OK.
+    12→- Preserved originals read-only at /home/z/octavox/original (zip sha256 04fe8f94…, Ox.vst3 sha256 7bb260f6… matching the package-recorded target hash exactly). Extracted work copy to /home/z/octavox/work.
+    13→- Verified package: unzip -t clean; 191 entries; checksums.txt = 190 records (CRLF), sha256sum -c → 190/190 OK; disk/manifest coverage identical (0 missing, 0 extra). EVIDENCE_HASHES.md (368 entries): all 188 shipped files it references match hashes; 180 referenced previous-environment working files absent (non-blocking).
+    14→- Reproduction A: `rea decompile /home/z/octavox/analysis/Ox.vst3 0x1800E7960 --provider ghidra --json` → exit 0; pseudocode line-for-line identical to evidence/decompiles/rea6_1800E7960.txt.
+    15→- Reproduction B: `rea inspect-native-instruction` at 0x1800E1F82/8C/96/A0/AA → five MOV immediates 0x3E800000, 0x3EB12E86, 0x3E79C4BB, 0x3DF569C6, 0x3D0ED15E in procedure 0x1800e18b0 — byte-exact match with evidence/records/rea8_rate_constants.txt.
+    16→- Capability proofs: `rea inspect` (12,906 procedures, 11,359 strings, image base 0x180000000), `rea search` strings ("Octavox" found) and procedures (FUN_1800e7960 found).
+    17→- Reproduction C (DSP PoC): copied poc to /home/z/octavox/poc-run, ran `python3 octavox_offline.py --compare` → exit 0; field-by-field comparison with recorded offline_measurements.json → 105/105 deterministic fields equal, 12 wall-clock fields skipped by design, 0 mismatches.
+    18→- Recovered research state from README + canonical docs (rounds 1–8, retractions tracked). Identified residual open questions: Q-7 rate-map slot binding, Q-8 latency value (negative), Q-15/C5 m02 double conversion, Q-14 runtime comb.
+    19→- Wrote acceptance report OCTAVOX_AGENT_HANDOVER_REPORT.md at /home/z/my-project/ and copy at /home/z/octavox/.
+    20→- Built a report viewer web UI (src/app/page.tsx server component reads the report file; src/components/report-viewer.tsx client component renders it with react-markdown + remark-gfm, shadcn/ui Badge/Card/ScrollArea, sticky header with meta chips, desktop TOC sidebar with IntersectionObserver active-section highlighting, sticky footer). Fixed a missing brace in the IntersectionObserver callback, inline-code break-all and article-level break-words to eliminate mobile horizontal overflow. Browser-verified: 200 OK, zero console errors, no overflow at 390px/1920px, TOC anchor navigation works (scrollY 5492 to section 8), footer at document bottom, lint clean.
+    21→
+    22→Stage Summary:
+    23→- Status: **GO** — environment ready, REA 6.7.0 + Ghidra 12.1.4 provider fully operational (open/analyse/search/decompile/instruction ops verified on the real target), three independent reproductions achieved (decompile identical, rate-map constants byte-exact, PoC 105/105).
+    24→- Key environmental constraints discovered: background processes are killed at command-session end (all REA queries run foreground ~2.5 min each); 4 GiB cgroup memory limit (GHIDRA_MAXMEM=1500m used); Windows PE target cannot be executed on this Linux host (runtime questions stay open, same as previous environment).
+    25→- Key artifacts: /home/z/octavox/{original,work,analysis,poc-run}/, /home/z/my-project/OCTAVOX_AGENT_HANDOVER_REPORT.md, REA JSON evidence outputs in /home/z/octavox/analysis/.
+    26→- Next recommended research step (round 9): graph-side derivation of the two rate-map slot bindings (offsets installed at 0x1800E7EF6/0x1800E7F0E) using voice_chain_map.txt + full_records.txt plus fresh REA xrefs runs.
+    27→
+    28→---
+    29→Task ID: 2
+    30→Agent: Z.ai Code (main agent)
+    31→Task: Octavox Round 9 — resolve Q7: the pitch rate map bindings (+0x4128/+0x40F8), verify the R hypothesis, derive the read-rate→pitch law, update the four canonical docs and create OCTAVOX_ROUND9_FINDINGS.md
+    32→
+    33→Work Log:
+    34→- Read the round-8 state (open questions, control-flow matrix, DSP architecture, evidence matrix, README) and the transferred decompile evidence for prepare/update/record-writer/pitch-config.
+    35→- Wrote a read-only PE+capstone scanner (/home/z/octavox/analysis/r9_scan.py) and ran exhaustive .text displacement scans for +0x4128/+0x40F8/+0x4110/+0x4140/+0x40F0: exactly four engine functions touch the two fields (ctor FUN_1800E0360, destructor FUN_1800E7DF0, prepare FUN_1800E2030 read+write); profile-ctor hits are coincidental module-registration offsets (verified against module indices 0x147/0x148), raw hits 0x180035BAxx are data bytes.
+    36→- Parsed .pdata for exact function extents; disassembled the ctor vector constructions (zero fill; +0x4110 filled 0x3D7FFFE0), the destructor tail (FUN_180010E30 = std::vector<float> dtor; base vtable 0x180409F20), the prepare rate computation (F load chain via the +0x68 port table; f = F·slot_40F8; quartic in double; P rounded float32 at 0x1800E2408; ×slot_4128; ×64.0) and the slot write sites.
+    37→- Traced the page publisher (update FUN_1800E5160 tail): page[0..9] = ratio·0.0625 (double 0.0625 at 0x1804121B0, mulsd after each exp) and page[10] = clamp(modamt,lo,hi)·(1/2400) (double 1/2400 at 0x1804120B0); identified the modamt entry list at wrapper+0x2B0 via the "modamt" string at 0x180408420 inside the pitch-config initializer FUN_1800E3350 (delayamt binds at +0x2C8).
+    38→- Traced the F graph binding: FUN_1800E18B0 binds the +0x68 port-table entries to the record's "mod<N>" entries; full record: mod1..8 ← rdm slew 1..8-out. Decoded the whole random-modulation chain: noise generator = module [212] "rdm noise" (add_fn 0x180139C50, missing from the round-4 dump; process FUN_180139B40 = lagged-Fibonacci additive generator, mask 0xFFFFFF00, shift 8, scale 0x34000001 = 2^-23, seeds 0xD00/0x1100 ⇒ noise ∈ [−1,1) signed), inline |·| (andps 0x7FFFFFFF) in the audio worker, S&H (FUN_180139970), bounded slew (FUN_180139790) ⇒ F ∈ [0,1); the dead c_divide26 = rdep/2400 → multiply12 branch mirrors the internal f product exactly.
+    39→- RESOLVED THE ROUND-8 PARADOX: the page scale is ratio/16 (0.0625 = 1/16, NOT 1/64), so step = P(f)·(ratio/16)·correction·64 = 4·P(f)·ratio·correction — unity EXACTLY at f=0; 4·P(f) ≈ 2^(2f) = 2^(cents/1200), i.e. the quartic is the cents→ratio curve with f = deviation/2400 (50.13 ¢ at walk 1/depth 50; 201.68 ¢ at depth 200 — the modulation is walk·depth cents, one-sided upward). The round-8 R = ratio/64 hypothesis is REFUTED (×4 scale error).
+    40→- Ran one REA/Ghidra verification decompile of FUN_1800E7DF0 (evidence ev_122b5d1c…, exit 0): confirms the destructor structure, FUN_180010E30(param_1+0x825/+0x81f) = the +0x4128/+0x40F8 vector destruction, and the class chain modpp::dsp_shared_t (0x180409F20) ← dtonicii_t::dsp_t (0x180409F60).
+    41→- Verified evidence preservation: Ox.vst3 = 7bb260f6… and the round-8 zip = 04fe8f94… unchanged; recorded the round-8 doc hashes before editing.
+    42→- Wrote OCTAVOX_ROUND9_FINDINGS.md (docs/); updated OCTAVOX_OPEN_QUESTIONS.md (Q-7 CLOSED), OCTAVOX_CONTROL_FLOW_MATRIX.md (§11 addendum), OCTAVOX_DSP_ARCHITECTURE.md (field table, S5, §8 addendum), OCTAVOX_RESEARCH_EVIDENCE_MATRIX.md (§13, rows R-43–R-50 + correction log) and the package README (round-9 section, title bumped to round 9).
+    43→- Updated the web viewer (src/app/page.tsx reads OCTAVOX_ROUND9_FINDINGS.md; report-viewer.tsx header/meta/footer/badge for round 9; layout.tsx metadata). Browser-verified with agent-browser: title correct, zero console errors, TOC anchor navigation works (scrollY 5017), no horizontal overflow at 390px or 1920px, footer at document bottom, a11y tree fully rendered. bun run lint clean.
+    44→
+    45→Stage Summary:
+    46→- Q-7 CLOSED: +0x4128/+0x40F8 are private zero-filled std::vector<float> members of the dsp_t (at wrapper+0x430) written/read only by the prepare; slot_4128 = (ratio/16)·tracker-correction, slot_40F8 = modamt/2400; f = walk·modamt/2400 with F = the rdm slew walk ∈ [0,1); pitch = 4·P(f)·ratio·correction·f_in, unity at f=0, 4·P ≈ 2^(cents/1200).
+    47→- Key corrections: round-8 "in-place-constructed objects" = actually the vector<float> DESTRUCTOR in FUN_1800E7DF0; R = ratio/64 REFUTED → R = ratio/16; D2 record field order fixed (consumer: period, i5=interval, i4=unused, correction); module [212] rdm noise recovered into the inventory.
+    48→- Runtime questions retained as UNK (walk statistics, correction convergence, one-sided-modulation audibility, modamt class-metadata bounds, unread ring[wp+2]); no PoC substitution.
+    49→- Artifacts: /home/z/octavox/work/Octavox_RE_evidence/docs/OCTAVOX_ROUND9_FINDINGS.md + updated canonical docs/README; round-9 raw evidence in /home/z/octavox/analysis/r9_*.txt + decompile_1800E7DF0.json; originals untouched (hashes verified pre/post).
+    50→
+    51→---
+    52→Task ID: 3
+    53→Agent: Z.ai Code (main agent)
+    54→Task: Package all round-9 result products into a single delivery ZIP and make it downloadable from the web app
+    55→
+    56→Work Log:
+    57→- Read worklog + inspected the research tree: confirmed round 9 was completed (Q-7 CLOSED, docs updated); verified originals unchanged (Ox.vst3 7bb260f6…, round-8 zip 04fe8f94…).
+    58→- Staged the 33 raw round-9 analysis artifacts (r9_scan.py, 30 x r9_*.txt, decompile_1800E7DF0.json + .err) from /home/z/octavox/analysis/ into the package at evidence/analysis_round9/ (docs cite them by bare file name, so names are preserved); copied OCTAVOX_AGENT_HANDOVER_REPORT.md (f1235d97…) to the package root.
+    59→- Wrote DELIVERY_ROUND9.md (courier doc: contents, manifest delta, verification instructions, not-included list, provenance).
+    60→- Regenerated checksums.txt for the round-9 edition (sha256sum format, CRLF, case-insensitive path order, excludes itself): 226 records, 226/226 OK via sha256sum -c. Diffed against the round-8 manifest: 185 unchanged / 5 updated (README + 4 canonical docs) / 0 removed / 36 new — exactly as documented in DELIVERY_ROUND9.md.
+    61→- Built Octavox_RE_evidence_round9.zip with `zip -r -X -D` (no directory entries, matching the round-8 convention: 227 entries = 226 files + checksums.txt). Verified: unzip -t clean; independent extraction + sha256sum -c = 226/226 OK; zip SHA-256 cf76ae6021075f587b212aaf8a6c74d48163866bf52e9a48dd49a95b64bbac35; size 1 416 832 B.
+    62→- Published: public/Octavox_RE_evidence_round9.zip + sidecar .sha256; mirrored both to download/ and rewrote download/README.md with the delivery table.
+    63→- Updated the web UI: page.tsx now computes delivery metadata server-side (zip size + sha256 from the sidecar) and passes it to ReportViewer; report-viewer.tsx gained a delivery card (emerald-accented, FileArchive icon, file name/size/manifest badges, full SHA-256 with copy-to-clipboard button, .sha256 sidecar link, primary Download button with download attribute); footer now names the package. Fixed two self-introduced defects: a dropped `@/` in the Badge import (module-not-found in dev.log) and a stray `n` character in the button label.
+    64→- Browser-verified with agent-browser: delivery card renders (a11y refs for button/links), hrefs = /Octavox_RE_evidence_round9.zip and .sha256 sidecar, full hash displayed, copy button toggles to check state, download click does not navigate away, TOC anchor jump works (scrollY 6829), no horizontal overflow at 390px/1920px, footer at document bottom, zero console/page errors. End-to-end: curl-downloaded the zip over HTTP and re-hashed it = cf76ae60… byte-identical. bun run lint clean; dev.log clean.
+    65→
+    66→Stage Summary:
+    67→- Delivered Octavox_RE_evidence_round9.zip (1.35 MB, 227 entries, 226 files + manifest, SHA-256 cf76ae6021075f587b212aaf8a6c74d48163866bf52e9a48dd49a95b64bbac35) = the complete round-9 evidence package: updated README + 4 canonical docs + OCTAVOX_ROUND9_FINDINGS.md, unchanged round-8 evidence/poc (185 files byte-identical), 33 new raw round-9 artifacts, the round-8 acceptance report, DELIVERY_ROUND9.md, and a regenerated self-verifying manifest.
+    68→- Download channel: the app's / page carries a delivery card (Letöltés · ZIP button + hash copy + .sha256 sidecar); the zip is served from public/ and mirrored in download/.
+    69→- The target binary is intentionally NOT in the zip (documented in DELIVERY_ROUND9.md); originals remain untouched and were re-verified at delivery time.
+    70→
+    71→---
+    72→Task ID: 4
+    73→Agent: Z.ai Code (main agent)
+    74→Task: Octavox Round 10 — validate the round-9 mathematics (the 50.13/201.68 cent inconsistency), correct the evidence, and continue with the tracker read-outs 12/13 data path (m02 params 0xc/0xd)
+    75→
+    76→Work Log:
+    77→- Restored state: read OCTAVOX_ROUND9_FINDINGS.md fully; located the disputed values in the docs only (grep: no evidence artifact contains 50.13/201.68/100.55/2386.6).
+    78→- Wrote a fresh capstone decoder (r10_decode.py): independently re-derived the five coefficient bit patterns, the double-precision quartic with its exact operation order, the CVTPD2PS float32 rounding of P at 0x1800E2408 (proving round-8's rea8_rate_constants.txt "no CVTPD2PS" note wrong), the noise generator process/defaults, the slew clamp semantics, and the rdata doubles (1/2400, 0.0625, 64.0).
+    79→- Wrote the independent numerical verification script (r10_verify.py) with constants decoded from the target's bit patterns and target-exact arithmetic: the round-9 example cents 25.02/50.13/100.55/201.68/1204.0/2386.6 are CALCULATION ERRORS — exact values 24.97/49.94/99.91/199.92/1204.03/2390.75; two 4P cells were mistyped. Proved the errors are not from any evidence, measurement, or candidate formula (round-6 transcribed coefficients, 2400f(1+f/10), ln2 typos, the doc's own 4P column — none reproduces them; internal inconsistency demonstrated). Quantified the law |cents − walk·depth| ≤ 0.101 cents over the shipped range; P(0)=0.25 exactly.
+    80→- Range verification: the noise scale 0x34000001 = 2^-23·(1+2^-23) (NOT 2^-23) — arithmetic noise range [−(1+2^-23), +1.0] (+1.0 attained via float32 round-up); computed the FULL-PERIOD orbit of the decoded recurrence (matrix order 2^22, seeds 13/17): emitted noise spans exactly [−1.0, +1.0] (the −2^23 extreme never visited) ⇒ orbit-actual F ∈ [0,1] with 1.0 attainable; the 2^-23 excess is absorbed by the CVTPD2PS rounding of P (bit-exact cents equality at F=1 and F=1+2^-23).
+    81→- Tracker read-outs 12/13 investigation: r10_m02.py read the jump table 0x1800E1890 (12→0x1800E1751, 13→0x1800E17E1), the constants as doubles (K1=0.9999998812035873, K2=0.11513, K3(12)=−1731.234 @0x180412888, K3(13)=+1731.234 @0x180412540, guard 2^-47, logf 0x180352DC0); r10_scan2.py raw-byte displacement scan enumerated every toucher of T+0x6070/T+0x6074 (writers: FUN_1800DFE80 target/reset, FUN_1800E0190 window+step-bounded walk, tracker-init reset 0x1800E0E94; readers: the walk + the two m02 handlers only); decoded the tracker-init region; r10_wrapper.py/r10_dispatch.py established the consumer surface (m02 = engine vtable 0x180409F60+0x10, single .rdata occurrence, zero direct E8/E9 callers — virtual-only) and the module-class vtable layout. One REA/Ghidra verification decompile of FUN_1800E1520 (evidence ev_d6c81933…, exit 0) confirms the handlers instruction-for-instruction. The read-outs are sign-inverted twins reporting the pitch engine's live correction (12 = 1200·log2(1/target), 13 = 1200·log2(running)); the double-conversion defect stays DER.
+    82→- Wrote OCTAVOX_ROUND10_FINDINGS.md; updated the five canonical docs (ROUND9_FINDINGS §3 table + ranges, DSP_ARCHITECTURE field-map/law, CONTROL_FLOW_MATRIX new §12 addendum, EVIDENCE_MATRIX rows R-51–R-58 + round-10 correction log, OPEN_QUESTIONS Q-7/Q-15 + residuals) and the package README (round-10 section, title bump). Stated the three-factor output ratio ratio·correction·4·P(f) everywhere.
+    83→- Staged the 16 r10 artifacts into evidence/analysis_round10/, wrote DELIVERY_ROUND10.md, regenerated the CRLF manifest (243/243 OK), built Octavox_RE_evidence_round10.zip (244 entries, SHA-256 e7f9067ababaa033493b7a08730ffbc279ca2aa5295b246831daab6bf2237d9a, 1461184 B) — manifest delta vs round 9: 219 unchanged / 6 updated / 18 new / 1 removed. Published to public/ + sidecar + download/ mirror (round-9 zip preserved in /home/z/octavox/delivery/).
+    84→- Updated the web viewer to round 10 (page.tsx reads OCTAVOX_ROUND10_FINDINGS.md; header/META/footer/badges). FIXED two pre-existing viewer defects found during verification: (1) heading ids were derived from String(children), corrupting headings containing inline code into "[object Object]" slugs and silently breaking their TOC anchors since round 8 — replaced with a recursive childText extractor; (2) the Radix ScrollArea display:table content wrapper let TOC links overflow the sidebar column (583px box under the article) — constrained with a [&_[data-radix-scroll-area-viewport]>div]:block! override so links truncate properly.
+    85→- Browser-verified with agent-browser: round-10 title/delivery card/sections render; download href + full SHA-256 displayed; copy button toggles; TOC clicks work for plain AND code-containing headings (sections 2 and 5: scrollY 1624/5315, h2 lands at the 128px scroll-mt offset); no overflow at 390px/1920px; footer at document bottom (8622/8622); zero console/page errors; bun run lint clean; the zip downloads byte-identical over HTTP (e7f9067a…).
+    86→
+    87→Stage Summary:
+    88→- Round-9 mathematics validated and made self-consistent: the 50.13/201.68¢ examples were calculation errors (exact: 49.939¢/199.923¢); the walk·depth law holds to ≤0.101¢ one-sided upward; the ratio/16 conclusion unchanged. Proven ranges: noise arithmetic [−(1+2^-23), +1.0], orbit-actual [−1.0,+1.0], F ∈ [0,1] (1.0 attainable), scale 2^-23·(1+2^-23).
+    89→- Tracker outputs 12/13 data path CLOSED at the static level (upstream writers incl. the window+step-bounded walk, verified conversions with the sign-inverted K3 pair, virtual-only consumer surface, one REA verification decompile ev_d6c81933…); the double-conversion defect retained as DER (runtime-unverified) — no PoC substitution.
+    90→- Delivered Octavox_RE_evidence_round10.zip (243 files + manifest, e7f9067a…) with the updated canonical docs and 16 new raw artifacts; originals untouched (Ox.vst3 7bb260f6…, round-8 zip 04fe8f94… re-verified).
+    91→- Two genuine pre-existing web-viewer defects found and fixed (heading-id derivation, ScrollArea TOC overflow).
+    92→
+    93→---
+    94→Task ID: 5
+    95→Agent: Z.ai Code (main agent)
+    96→Task: Octavox Round 11 — numerical consistency audit of round 10 (Phase A) + independent validation of the WAV→WAV DSP demo with automated acceptance tests and the highest-value improvement (Phase B), new versioned ZIP delivery
+    97→
+    98→Work Log:
+    99→- Restored the research tree from the delivered round-10 zip (environment had been reset; /home/z/octavox gone): extracted to /home/z/octavox/work/Octavox_RE_evidence, verified sha256sum -c checksums.txt 243/243 OK and the zip hash e7f9067a… intact. Noted the target binary is absent this round — all numeric inputs taken from the recorded OBS bit patterns (rea8_rate_constants.txt, r10_decode.txt), verified byte-exact in rounds 8–10.
+   100→- Phase A1: reproduced r10_verify.py byte-identically (diff vs shipped results = none). Wrote the independent audit evidence/analysis_round11/r11_numeric_audit.py (5e-10-resolution sweep of the target-exact residual, orbit scan, depth sweep, machine-readable JSON, exit-code gated). Verified all six round-10 claims; corrected two: max |error| 0.10131 ¢ is INTERIOR at f ≈ 0.05606–0.05612 (F ≈ 0.673 @ depth 200; NOT the F=1/depth-200 corner which carries only 0.0769 ¢; the doc's "near F ≈ 0.75" and the script's "corner" labels were mutually inconsistent); the residual is NEGATIVE in the bulk (positive fringe ≤ half-P-ulp +1.03e-4 ¢ only for f < 2.9e-5; sign flips twice beyond the range) — "one-sided upward" is the modulation DIRECTION only. NEW finding: the 2^-23 excess is NOT universally bit-exact — 11/201 integer depths flip one P-ulp (2.04e-4 ¢).
+   101→- Phase A2: fixed r10_verify.py (docstring changelog + two output labels); regenerated r10_verify_results.txt (filtered diff proves only the two label lines changed); preserved the original as r10_verify_results_v1_superseded.txt with a banner. Corrected every canonical doc that repeated the wrong location/direction/bound: ROUND10_FINDINGS (§1/§2.2/§3.3/§4/§6/§7 + new §8 changelog), OPEN_QUESTIONS (Q-7 row + §4), DSP_ARCHITECTURE (S5 range + §8 law), CONTROL_FLOW_MATRIX (§11/§12), EVIDENCE_MATRIX (R-50/R-54 wording, R-49 superseded marker, new R-59–R-61 + round-11 correction log), ROUND9_FINDINGS (round-11 audit note in the correction box + slew-range qualification), README. Audit grep confirms no "one-sided upward"/"[0,1)"/"zero effect" statements remain outside clearly-marked correction contexts; no target-execution or PoC-as-target claims exist.
+   102→- Phase B1: baseline reproduction — all five shipped WAV artifacts byte-identical on this environment (input 30596b4c…); --compare metrics to ≤1e-10 (numpy FFT last-digit noise; costs machine-dependent); probes of silence/low-level/unison/24-32-bit/±shift/short-input/feedback. Found TWO documentation deviations: (1) DEFECT — the reference CLI processes stereo channels through ONE stateful delay-line engine → right-channel contamination −0.44 dB (the docs' "channels processed independently" was wrong for the delay line); (2) the vocoders drop inputs shorter than n_fft/2 (21 ms) to digital silence. Both corrected in OCTAVOX_DSP_DEMO_USAGE.md.
+   103→- Phase B2: wrote evidence/analysis_round11/r11_acceptance_tests.py — 45 gated cases (io 1, reference 28, v2 12, cli 4) covering pitch ±/unison/silence/−60 dB/chord/percussive/8-voice/impulse-latency/feedback-stability for all designs + tight pitch/mod gates + stereo integrity for v2 + CLI end-to-end (mono/stereo/44.1k-keep-rate/24-bit). Machine-readable JSON; exit 1 on failure; cost ungated. Official run from the package: 45/45 PASS, exit 0, ~2.5 min. (During calibration I found and fixed 4 of my own suite bugs: falsy-zero gate, wrong sr to the pitch meter, too-short signal, wrong expected frequency 275→277.18.)
+   104→- Phase B3: prototyped and validated period-aligned grain splicing (diagnosed that my first "modulation didn't improve" result was a METRIC artifact — the 1 ms RMS window phase-breathes 5.7 dB on a 275 Hz tone; a period-synchronous window shows the true crossfade modulation). Implemented poc/octavox_v2.py (separate from the untouched reference): AlignedDelayLineShifter (S = k·T̂ committed at wraps with continuity-preserving splice math frac_new=(frac_old±1)·S_old/S_new, hysteresis 0.5%, median-smoothed detector, fallback S=G) + process_multichannel (fresh engine per channel — the stereo defect fix) + v2 CLI. Measured before/after: pitch +3.27→+0.03 / −5.84→+0.00 / +9.13→+0.08 / −17.76→−0.02 ¢; mod(sync) 2.3→0.00 dB; stereo −0.44→−234 dB; latency/cost/causality/stability unchanged. Wrote evidence/analysis_round11/r11_dsp_improvement.md (design + trade-offs + data).
+   105→- Wrote docs/OCTAVOX_ROUND11_FINDINGS.md (verdict table, Phase A audit, Phase B validation, improvement, static-vs-runtime unknowns incl. the five controlled Windows-host tests that would close them, artifacts); updated README (round-11 section + reproduction commands) and OCTAVOX_DSP_DEMO_USAGE.md (defect corrections + v2 + suite).
+   106→- Phase A3/package: staged all round-11 artifacts (incl. poc/example_output_aligned.wav + example_aligned.json deterministic regression artifact); wrote DELIVERY_ROUND11.md (contents, manifest delta, verification, delivery report with test commands/pass-fail/unknowns); regenerated the CRLF manifest (255 files, 255/255 OK); built Octavox_RE_evidence_round11.zip (256 entries, no directory entries, Octavox_RE_evidence/ prefix preserved as in prior rounds) — SHA-256 6ff8173a9e98e41092d762f32862ad88dd399291a6019cc29e71582194cf215b, 1 672 425 B. Independent extraction: 255/255 OK + numeric audit exit 0 from the extracted copy. Manifest delta vs round 10: 232 unchanged / 10 updated / 13 new / 1 removed — exactly as documented. Fixed a robustness bug mid-delivery (the audit script wrote its JSON to CWD; now writes beside itself) and a stray root JSON from a CWD run (removed before final build).
+   107→- Published: public/Octavox_RE_evidence_round11.zip + .sha256 sidecar + download/ mirror + rewritten download/README.md; round-10 zip preserved in /home/z/octavox/delivery/ (hash re-verified e7f9067a…).
+   108→- Web viewer updated to round 11: page.tsx reads OCTAVOX_ROUND11_FINDINGS.md (+ project-root fallback copy), report-viewer header/subtitle/META chips/footer/255-file badge, layout.tsx metadata. Browser-verified with agent-browser: round-11 title + full content render; delivery card shows the file name/size/255-file badge/full SHA-256 (6ff8173a…); copy button toggles to the copied state; TOC anchor jumps (scrollY 4253); download click does not navigate; the zip downloads byte-identical over HTTP (curl re-hash = 6ff8173a…); no horizontal overflow at 390px/1920px; footer at document bottom on both; zero console/page errors; bun run lint clean; dev.log clean.
+   109→
+   110→Stage Summary:
+   111→- Phase A closed: all six round-10 numerical claims independently reproduced; the max-error location (interior f ≈ 0.0561, not the corner) and the residual direction (negative in the bulk; "upward" = modulation direction only) corrected in r10_verify.py (original output preserved) and every canonical doc, with explicit changelogs; NEW: the 2^-23 excess flips one P-ulp at 11/201 integer depths ("no audible effect", not "bit-exact").
+   112→- Phase B closed: the demo reproduces byte-identically; two documentation deviations found (stereo contamination −0.44 dB DEFECT, fixed in v2 with per-channel engines → −234 dB; vocoder short-input silence edge, documented); 45/45 gated acceptance cases pass (machine-readable); the chosen improvement (period-aligned grain splicing, measured justification) delivers pitch ±0.03 ¢ and 0.00 dB crossfade modulation with unchanged latency/cost/stability; reference implementation untouched and still reproducing.
+   113→- Delivered Octavox_RE_evidence_round11.zip (255 files + manifest, SHA-256 6ff8173a9e98e41092d762f32862ad88dd399291a6019cc29e71582194cf215b) downloadable from the app's / page; originals preserved (round-10 zip e7f9067a… re-verified; target digest 7bb260f6… on record — binary absent this environment, noted in findings/delivery).
+   114→- Runtime unknowns remain explicitly UNK; the five controlled Windows-host tests that would close them are documented in OCTAVOX_ROUND11_FINDINGS.md §6; no PoC-substitution claims anywhere.
+   115→
+   116→---
+   117→Task ID: 6
+   118→Agent: Z.ai Code (main agent)
+   119→Task: Octavox Round 12 — advance static DSP reconstruction, develop the independent native C++17 DSP core (delayline_aligned port), fix and regression-test the unity artefact, validate/benchmark, deliver the versioned ZIP
+   120→
+   121→Work Log:
+   122→- Restored the round-11 tree from download/Octavox_RE_evidence_round11.zip (hash verified 6ff8173a…; 255/255 manifest OK). The target binary IS present this round (upload/Ox.vst3, digest 7bb260f6… matches the record) — staged read-only at /home/z/octavox/original and re-verified before/after every scan.
+   123→- Toolchain: pip-installed cmake 4.4.4 + capstone (PE parsing, disassembly); verified GCC 14.2 ASan+UBSan support; zip/unzip/numpy present.
+   124→- STATIC (scripts+outputs staged as evidence/analysis_round12/): r12_scan_table.py (raw-byte displacement scan, round-9 method) proved engine+0x40f0 is written ONLY by FUN_1800E18B0 (0x1800E1FB4/BB) — a STATIC .rdata table at VA 0x1803B6170, 256×6 floats, 0x18 stride; r12_interp_table.py extracted it BIT-EXACTLY (r12_obs_kernel_table.h, hexfloat roundtrip verified): it is NOT 6-point Lagrange (designed symmetric lowpass, bin-centre phases (r+0.5)/256, row sums 1.0000-1.0001, mirror rows) — corrected the member-map label; r12_prepare_disasm.py produced the full annotated prepare listing proving (a) phase law floor(frac·256), (b) pos += 4.0/block vs −rate/sample (net 0 at unity), (c) the SETTLED PATH IS A SINGLE 6-TAP READ (one phase row, no second tap, no blend), (d) the crossfade is a one-shot linear fade (out = tapA + (tapA−tapB)·state, decrement page[12+idx]·2^-23 per output sample) settling back to single-tap, (e) re-arm mechanics (threshold 8.000000000000007; jump floor(2^(p12&0xF)·v + 0.5), v = clamp(ring[recidx]·2^-11, ≥48; 480 if ≈0), idx = clamp(int((v−48)/16),0,31), halved near ring limit; tapA at −record-interval) and (f) ring[recidx+3] = correction (confirms round 9). Q-14's premise ANSWERED statically: at exact unity the target rests on ONE fixed tap — no two-tap comb by construction (runtime audibility stays UNK). Full rip-constant map recorded. Found and fixed my own PE-parser COFF field-order bug that had desynced the first scan pass (a wrong intermediate table address 0x1803B4570 was discarded; everything regenerated with the corrected parser and cross-checked against the round-6/9 decompiles).
+   125→- NATIVE CORE (native/, C++17+CMake): AlignedDelayLine (mono, 1..8 voices; prepare/reset/parameter setters/planar process; v2-parity voice loop incl. geometric glide, wrap commits, hysteresis, median-smoothed period detector at stream-aligned control rate → block-size invariance) + MultichannelShifter (one engine per channel — structural channel isolation) + octavox_cli (WAV→WAV). UNITY FIX: engagement pair e/a per voice — at bit-exact ratio_t == 1.0 the two-tap blend morphs to single-tap A over 10 ms, then parks on the nearest INTEGER delay (readExact → bit-exact delayed copy); departure reverses and commits the period-aligned S when the read point is preserved (frac·S_old/S_new ∈ [0,1)) — re-aligning taps immediately. No bypass region (±1 cent fully processed). Interpolators: Lagrange6/6Q (Python parity), linear, and opt-in ObsKernel6 (the OBSERVED target kernel data, clearly labelled).
+   126→- DEBUGGING: fixed (1) a per-block heap allocation in the median path (broke the no-alloc guarantee), (2) harness off-by-one (reference ring semantics read(d) = sample d−1 ago — impulse proved it), (3) the modulation metric window (must be period-synchronous, r11's lesson) and transition exclusion, (4) a CLI interleaved-deinterleave bug caught by the cross-language stereo gate, (5) variable shadowing. Final: 51/51 native tests (release), 51/51 ASan+UBSan with ZERO sanitizer reports, cross-language metrics 15/15 gates: unity comb spread 0.0000 dB (native) vs 16.43 dB (Python v2 reference = BEFORE); pitch battery ≤ 0.50 ¢ worst; stereo isolation exact; benchmark 1346-1552 ns/frame mono 1-8 voices at ctrl 64 (15.5×/13.9× realtime), 410 ns/frame at ctrl 512 (50.9× — the YIN detector is ~73% of cost), stereo 6.7×; Python reference 0.42×/0.25× realtime → ≈35-55× speedup; zero steady-state allocations; RSS 8.6/12.7 MB.
+   127→- Re-ran the round-11 suites from the package (mandate): numeric audit exit 0 (all 14 verdicts PASS), acceptance 45/45 exit 0.
+   128→- DOCS: wrote docs/OCTAVOX_ROUND12_FINDINGS.md (verdict table, static findings, native core + unity design, validation, re-runs, UNK residue); updated OCTAVOX_DSP_ARCHITECTURE.md (S5/S6 rewritten from instruction-level evidence, member-map corrections, §9 addendum), OCTAVOX_CONTROL_FLOW_MATRIX.md (§13 addendum), OCTAVOX_OPEN_QUESTIONS.md (Q-14 → PARTIAL with the static answer; new residuals), OCTAVOX_RESEARCH_EVIDENCE_MATRIX.md (§16 rows R-62–R-70 + round-12 correction log incl. the desynced-first-pass process note), OCTAVOX_DSP_DEMO_USAGE.md (§9 native build/test), README.md (round-12 section + native reproduction commands). Pre-edit doc hashes recorded; historical evidence untouched.
+   129→- PACKAGE: DELIVERY_ROUND12.md (contents, manifest delta, verification, delivery report with commands/results/limitations/unknowns); manifest regenerated (285 records, CRLF, 285/285 OK); delta vs round 11: 247 unchanged / 7 updated (6 docs + the re-run r11 acceptance JSON — machine-dependent cost rows by design) / 31 new / 1 removed (superseded DELIVERY_ROUND11.md). Built Octavox_RE_evidence_round12.zip (286 entries, zip -r -X -D, manifest at zip root as in prior rounds) — SHA-256 a597546534c3f27bd941dea4a427ececbd9972e63b1fa183485eba509cdb0902, 1 776 634 B. Independent verification: fresh extraction 285/285 OK; FRESH cmake build from the extracted native/ sources → 51/51; r11 audit exit 0 from the extracted copy.
+   130→- PUBLISHED: public/Octavox_RE_evidence_round12.zip + .sha256 sidecar + download/ mirror + rewritten download/README.md; round-11 zip preserved in /home/z/octavox/delivery/ (hash re-verified).
+   131→- WEB: page.tsx → OCTAVOX_ROUND12_FINDINGS.md (+ project-root fallback), report-viewer header/subtitle/META/footer/285-file badge, layout.tsx metadata+title. Browser-verified with agent-browser: round-12 title and full content render; delivery card shows the file name/size/285-file badge/full SHA-256 (a5975465…); copy button toggles to the on-clipboard state; TOC anchor jumps (scrollY 3718); no horizontal overflow at 390px or 1920px; footer at document bottom (atBottom true); zero page errors; the zip downloads byte-identical over HTTP (curl re-hash = a5975465…); bun run lint clean; dev.log clean.
+   132→
+   133→Stage Summary:
+   134→- Static advance: +0x40f0 = static 256×6 .rdata kernel at 0x1803B6170 (NOT Lagrange; bit-exact extraction shipped); settled path = single interpolated tap (instruction-level proof); crossfade fully decoded (linear one-shot fade, page[12+idx]·2^-23 decrement, period-derived re-arm jump, interval-apart tap hand-off); Q-14's premise answered statically — no two-tap comb at unity in the target; record-ring first-field scaling and the kernel's exact design formula stay UNK; runtime audibility stays UNK (never executed).
+   135→- Native core delivered: C++17 library + 51-case suite + ASan/UBSan + benchmark + CLI + architecture note; unity artefact FIXED bit-exact (0.0000 dB comb spread vs 16.43 dB BEFORE; ±1 cent genuinely shifts; no bypass region); ≈35-55× the Python reference's speed; zero steady-state allocations; block-size invariant to exactly 0; channel isolation bit-identical.
+   136→- Delivered Octavox_RE_evidence_round12.zip (285 files + manifest, SHA-256 a597546534c3f27bd941dea4a427ececbd9972e63b1fa183485eba509cdb0902) downloadable from the app's / page; round-11 suites re-run clean (audit exit 0, acceptance 45/45); originals preserved (round-11 zip 6ff8173a… re-verified; target 7bb260f6… verified before/after every scan, never executed).
+   137→
+   138→---
+   139→Task ID: R15-P2P5
+   140→Agent: general-purpose (P2+P5)
+   141→Task: 13-category acceptance suite + P5 benchmarks + VST3 readiness note
+   142→
+   143→Work Log:
+   144→- Session start: verified the intact 15.0.0 tree (cmake build clean, 78/78 tests green in 28 s, release). Read the normative ROUND-15 header contract, src/dsp.cpp (full mechanisms: dry ring, gain ramps, bypass blend, block-start pending application), the 7 existing P1 cases, bench_main.cpp and the 14.0.0 baseline bench file BEFORE any edit.
+   145→- Designed the 7 r15acc_* acceptance cases (gates fixed before running, P1 style: measured values recorded, implementation-independent bounds where the literal form is undecidable): ratio_change_isolation (parallel muted-reference runs, bit-exact other-voices + 1.0-cent convergence), level_accuracy (expected = gain/voices from the header law, +/-0.1 dB), block_boundary_semantics (64 vs 150-sample splittings with the same stream-position setter event -> max|d|==0 + gradual-vs-jump gain identity), reset_reprepare_determinism (closed-loop scripted event sequence incl. setRatio-restore, 4-way hash/bit equality), stereo_surface (broadcast parity + exact isolation under the full surface), robustness_battery (silence==0 exactly, -60 dBFS spur floor -40 dB rel RMS with +-10-bin guards around dry+8 shifted fundamentals, bounded noise/chord/impulse-train energy window [-12,+6] dB with the literal value recorded), invalid_args (no-op rejection matrix bit-identical + setWetDry clamp identity + boundary base delay accepted).
+   146→- SECOND ENVIRONMENT RESET mid-edit (~20:54 UTC): /home/z/octavox wiped (same failure mode as R15-R0/R15-E1; the 78-test suite, dsp.cpp, round-13/14/15 evidence and the P1 capture tool are LOST). Salvaged from the session's reads + download/Octavox_RE_evidence_round12.zip: dsp.hpp restored VERBATIM (15.0.0 contract intact); obs_kernel_table.h / alloc_counter.cpp / wav_io / octavox_cli.cpp extracted byte-identical from the round-12 package; CMakeLists.txt restored (r14probe target lost); bench_main.cpp restored WITH the Task-B P5 extensions already applied (96 kHz variants mono_1v_b128_96k / mono_8v_b128_96k + active-surface case mono_8v_b128_surface: per-voice ratios, 2 mutes, wet 0.5, mid-run gain retargets inside the timed loop; JSON rows carry sample_rate/surface); the 7 designed r15acc_* cases preserved ready-to-merge at native/tests/r15_acceptance_cases.cpp.inc; r14_baseline_bench_stdout.txt restored verbatim (the P5 comparison baseline).
+   147→- Wrote native/VST3_READINESS.md (Task C): READY for process-cycle/buses/rate-change/allocations/threading/realtime margin; PARTIAL for parameter surface (block-boundary vs VST3 sample-accurate segments: host-side ramp today or a future core extension) and state persistence (deterministic reset/re-prepare, but the wrapper must snapshot Config + the live per-voice surface; no serialization API; mid-stream resume out of scope). Overall: wrapper-ready except sample-accurate automation + state serialization; NO wrapper built by design (later milestone, only after the acceptance battery is green).
+   148→- Wrote evidence/analysis_round15/NOTES_R15P2.md documenting the reset, the salvage inventory, and the honest per-task status. dsp.cpp is NOT recoverable verbatim (lines ~52-179 -- interpolator table ctor + most of the PitchDetector incl. the R13-b window law -- were never read into the session); recovery path = round-14-style test-first rebuild from the round-12 base against the restored header, verified by the default_neutrality hashes (0xc7179361b0a1ca4f / 0xa894e57671084f9f / 0x638ce760ed3cd10a).
+   149→
+   150→Stage Summary:
+   151→- Task A: 78 -> 85 NOT achieved (environment reset; no runnable engine). The 7 r15acc_* cases are fully designed and gate-fixed, preserved at native/tests/r15_acceptance_cases.cpp.inc; r15_acceptance_results.json NOT produced.
+   152→- Task B: bench extended in source (96 kHz + surface rows) but NOT run; r15_bench_15.json / r15_bench_comparison.md NOT produced; the 14.0.0 baseline is preserved/restored. Recorded 15.0.0 measurements stand from P1: unchanged vs baseline (15.47x/13.73x/50.66x RT, 0 allocs, +2 MiB/engine RSS for the dry ring).
+   153→- Task C: native/VST3_READINESS.md COMPLETE (honest: wrapper-ready except sample-accurate parameter automation and state serialization; no wrapper by design).
+   154→- Recovery state: native tree skeleton restored (dsp.hpp verbatim, build files, bench with P5 extensions, cli, harness utilities, obs table); MISSING: src/dsp.cpp, tests/test_main.cpp (78 cases), README.md, ARCHITECTURE.md, r14probe, r15p1_refcapture, most evidence/. Next round must recover the core test-first (round-14 pattern) before running the salvaged acceptance battery.
+   155→
+   156→---
+   157→Task ID: R15-R1
+   158→Agent: Z.ai Code (main agent)
+   159→Task: Second environment reset disaster recovery — move the working tree into the persistent project directory, restore + salvage + reconstruct
+   160→
+   161→Work Log:
+   162→- INCIDENT: a SECOND sandbox reset at ~2026-10-26 20:54 UTC wiped /home/z/octavox again (mid-P2P5-agent-run). Lost: src/dsp.cpp (15.0.0), tests/test_main.cpp (78 cases), native README/ARCHITECTURE updates, the r14probe + parity/interp harness sources and raw JSON outputs, the r15 static scan scripts/outputs, S2's canonical doc updates, the P1 reference-capture tool. Survived (P2P5 agent salvage + persistent stores): dsp.hpp 15.0.0 verbatim (integrity-diffed), bench_main.cpp with the 96k/surface extensions, tests/r15_acceptance_cases.cpp.inc (7 designed acceptance cases with fixed gates), native/VST3_READINESS.md, the patched CMakeLists (r14probe target removed, noted), the 14.0.0 baseline bench stdout, NOTES_R15P2.md incident record, worklog.md (complete record of every result), the round-12 ZIP, all delivery ZIPs + sidecars, upload/ originals.
+   163→- STRATEGIC FIX: the working tree now lives INSIDE the persistent project directory: /home/z/my-project/octavox-work/Octavox_RE_evidence/ (restored from the round-12 ZIP = docs/ + poc/ + evidence r9–r12 + native 12.0.0 base, then overlaid with the salvaged 15.0.0 files). Originals staged read-only at octavox-work/original/ (hashes re-verified: Ox.vst3 7bb260f6…, round8 zip 04fe8f94…).
+   164→- Reconstructed from the preserved record: evidence/analysis_round15/NOTES.md (full Q-A/Q-B/Q-C closure text with VAs + coverage statements + Q-D open-with-plan; provenance note documenting the loss) and evidence/analysis_round14_recovery/r14recovery_reconstructed.md (D1 parity table + D2 interpolation table + verdicts + D3 baseline, from the R15-EV1 worklog entry).
+   165→- REMAINING RECOVERY: src/dsp.cpp and tests/test_main.cpp must be re-implemented (12.0.0 base + the documented R13/R14/P1 deltas) against the normative salvaged dsp.hpp; verification = the round-12 51-test suite (bit-exact gates) + the reconstructed R13/P1 test designs; the original three default-neutrality FNV hashes (0xc7179361b0a1ca4f / 0xa894e57671084f9f / 0x638ce760ed3cd10a) are recorded but their capture harness is lost — the rebuilt core will be verified by the full test suite instead, documented honestly.
+   166→
+   167→Stage Summary:
+   168→- Working tree now persistent (my-project/octavox-work); originals verified; static-analysis verdicts (Q-A/Q-B/Q-C CLOSED, Q-D open) and R14-recovery evidence (parity/interp/baseline) fully reconstructed from the record.
+   169→- Critical path: re-implement native/src/dsp.cpp (15.0.0) + tests/test_main.cpp (78 + 7 acceptance cases), then the delivery chain (findings, docs, packaging, web).
+   170→
+   171→---
+   172→Task ID: R15-REB1
+   173→Agent: general-purpose (REB-1)
+   174→Task: re-implement native/src/dsp.cpp 12.0.0->15.0.0 against the salvaged normative header (second-reset recovery, test-first neutrality gate)
+   175→
+   176→Work Log:
+   177→- Read the normative salvaged header (include/octavox/dsp.hpp) fully: architecture, RT contract, cold-start alignment law, unity behaviour, ROUND-15 PARAMETER SURFACE contract. Read the 12.0.0 dsp.cpp (716 lines), the 51-test round-12 suite, bench_main.cpp (15.0.0 extensions), r15_acceptance_cases.cpp.inc (7 designed cases, NOT wired), CMakeLists.txt, NOTES_R15P2.md, worklog R15-P2P5/R15-R1.
+   178→- Environment: pip-installed cmake 4.4.4 (PATH=/home/z/.venv/bin). Built the 12.0.0 base: octavox_tests + octavox_cli link (bench does NOT link on 12.0.0 -- it needs the new MultichannelShifter surface); 51/51 green confirmed on the untouched 12.0.0 core.
+   179→- VERIFICATION STRATEGY (replaces the lost reference hashes): wrote native/cli/r15ref_capture.cpp (CMake target octavox_r15refcap) using ONLY the round-12 public API so the identical tool links against both cores. Four deterministic configs (N=2^18 at 48 kHz, fixed block cycles, shared-LCG/tone/chirp generators): (1) default unity + LCG noise seed 987654321, blocks 64/150/512; (2) ratio 2^(700/1200), 8 voices, spread on, fb 0.25, 220 Hz sine, blocks 150/512/64; (3) ratio 2^(-400/1200), 4 voices, spread off, chirp 200->800, blocks 64/512/150; (4) MultichannelShifter stereo 2ch, two different LCG inputs, 4 voices, unity->2^(400/1200) mid-stream, blocks 1024/64/512, hash over L-then-R bits. 12.0.0 hashes captured: 0x74318b06c182aacb / 0x46a091e98f2a413a / 0x9502cf8827e8782c / 0x6f7a2ce3ca310c25.
+   180→- probe96 on the 12.0.0 core (steady 110 Hz sine at 96 kHz, grain 8192/base 512): estimate_min/max/last = 0.000000 Hz -- the fixed-2048 detector is BLIND at 96 kHz (m < 32), concretely documenting the R13-b motivation on the round-12 base.
+   181→- Re-implemented src/dsp.cpp as 15.0.0 (~1050 lines) from the 12.0.0 base, all deltas per the header contract: (R13-a) cold-start law VERIFIED not changed -- the 12.0.0 core already satisfies every clause (frac=0.5 start, unity d_park=round(base+grain/2) with the read(d)=d-1 ring law, first non-zero at k=L-1, gliding ratio initialised AT target, shifted voices start fully engaged e=1/a=0 on pre-zeroed rings); the law is restated in the file header as a maintained invariant. (R13-b) detector window made sample-rate relative: win = max(2048, ceil(2.5*tau_max)) -> m = win/2-tau_max >= tau_max/4; 44.1/48 kHz arithmetic is step-for-step identical to round 12 (win==2048). (R13-c) zero-allocation re-prepare: prepare() whose buffer-determining fields (sample_rate, max_voices, f0_history, detection_interval) match reconfigures IN PLACE (validate -> pick up cfg/derived scalars -> resetParamSurface -> reset()); other prepares take the allocate-and-rebuild path (try/catch, no exception escapes); MultichannelShifter::prepare reuses the engine array when the channel count matches. (R14) VoiceStats::ratio filled in voiceStats(). (R15-P1) full per-voice surface: VoiceState ratio_override/ratio_ov, gain_t/gain/ramp_tgt/gain_rate, mute, base_delay_ov/base_pending; Impl dry_ring + pushDry()/readDry() (raw-input ring, dry tap at latencySamples() via the read(d)=d-1 law), wet, bypass_on/bypass_b/b_step, gain_ramp_n, dry_delay; applyPendingSurface() = the process() block-start stage (pending base-delay re-align with parked re-park + gain-ramp arming); slewGain() = linear-in-amplitude ramp with exact snap; retargetVoice() shared by setRatio/setSpread/setVoiceRatio (unity-exit spacing commit); resetParamSurface() (prepare=fresh defaults, reset preserves overrides and snaps ramps); setVoiceRatio/setVoiceGain/setVoiceMute/setVoiceBaseDelay/setWetDry/setBypass all validated (voice range, finite, ratio>0, gain>=0, delay>0 + d+3*grain+8<2^18, wet clamped [0,1], NaN wet no-op) and mirrored on MultichannelShifter; Config::gain_ramp_seconds/bypass_seconds validated; process(): per-voice gain multiplied after normalisation (gain==1 bit-neutral via x*1.0==x, gain==0 removes the voice exactly while its DSP state keeps running), feedback taps the PRE-MIX wet signal (wet-path-only), bypass blend slew (full range = bypass_seconds, exact snap), output stage special-cases wet==1 && bypass_b==0 as the BIT-EXACT legacy path (no dry read); versionString() -> "octavox-native 15.0.0".
+   182→- PRIMARY GATE: 15.0.0 capture = 0x74318b06c182aacb / 0x46a091e98f2a413a / 0x9502cf8827e8782c / 0x6f7a2ce3ca310c25 -- BIT-IDENTICAL to the 12.0.0 hashes, 4/4 (release AND ASan+UBSan builds). 51/51 tests green on 15.0.0 (frozen gates, with the old estimator) and the whole tree incl. octavox_bench now links.
+   183→- probe96 on the 15.0.0 core: estimate_min/max = 110.000030 / 110.000093 Hz (sub-milli-cent tracking; 12.0.0 was 0.000000) -- R13-b verified, no invented SR changes beyond the header law.
+   184→- TEST-SIDE FIX (the only one): meas::pitchFFT in tests/test_main.cpp corrected to the Hann-exact 3-point MAGNITUDE estimator delta = 2(c-a)/(a+2b+c) on the three bins around the peak (peak-pick stays on power, same argmax), N = largest power of two <= min(n, 65536), off = n-N >= 0 by construction (documented in the function comment). 51/51 still green; near-unity pitch errors improved to <= 0.175 cents worst (was up to ~0.5+ with the power-domain parabola), +/-1-cent cases measure 1.0229/-1.0229 cents, rate_44100 error 0.0021 cents, rate_96000 error 0.0006 cents (R13-b detector now locks at 96 kHz).
+   185→- ASan+UBSan build (build-asan): 51/51, zero sanitizer reports; capture + probe96 under sanitizers identical.
+   186→- Ran the extended 15.0.0 benchmark (all 11 cases incl. 96 kHz + surface): ZERO steady-state allocations everywhere; mono_1v_b128 1318.97 ns/frame (15.80x RT), mono_8v_b128 1509.75 (13.80x), ctrl512 417.57 (49.89x), mono_8v_b128_surface 1533.93 (13.58x, ~1.6% surface overhead), 96k cases 5002.73/5217.07 (2.08x/2.00x), RSS 16484 KB -- consistent with the recorded P1 measurements (unchanged vs the 14.0.0 baseline).
+   187→- Throwaway surface smoke test (kept OUTSIDE the tree, /home/z/r15reb1_smoke): wet=0 bit-exact delayed copy; setWetDry(1.7)==1.0 clamp; per-voice gain law normalisation*user_gain within 0.05 dB; bypass pre/post regions bit-identical (state transparency), fully-bypassed output = bit-exact dry, ramps active; muted voice's mid-stream ratio change leaves the mix bit-identical (fb=0); pending base delay applies and changes the output; invalid setters no-ops; reset() preserves the surface (replay identical), prepare() clears it (== fresh engine). All green (after fixing my own smoke-test block-boundary bug -- events must sit on true 1024 boundaries).
+   188→- Wrote native/r15_reference_hashes.txt: the four hashes (the new reference record), the probe96 record, the verification summary, reproduction commands.
+   189→
+   190→Stage Summary:
+   191→- Neutrality: 4/4 hashes BIT-IDENTICAL (12.0.0 == 15.0.0 under the default surface) -- the primary gate of this task, PASSED, recorded in native/r15_reference_hashes.txt with the capture tool kept in the tree (target octavox_r15refcap).
+   192→- Tests: 51/51 green throughout (12.0.0 base, 15.0.0 frozen, 15.0.0 with the corrected pitchFFT; release + ASan/UBSan). The corrected estimator only tightened measurements (worst near-unity pitch error 0.175 cents; 96 kHz pitch error 0.0006 cents).
+   193→- 96 kHz detector: 12.0.0 blind (0.000000 Hz on the probe), 15.0.0 tracks 110 Hz to 0.00009 Hz -- the R13-b window law is the only detector change; no invented SR changes (verified per the task's instruction to implement honestly per the header).
+   194→- Deviations from the mechanism map: none of substance. (a) The gain-ramp rate is armed at the process() block start rather than in the setter (the header's "setters only store targets" law; observationally identical, and multi-setter sequences between blocks never produce partial states). (b) prepare() hardening beyond the map: NaN-safe validation forms everywhere, sample_rate bounded to <= 1e6 (keeps the R13-b int casts defined), the two NEW Config fields additionally reject non-finite values, and the rebuild path is try/catch-guarded (no exception escapes any entry point). (c) Documented semantic reading: "bypass cycle bit-identical outside the two ramp regions" = state transparency (pre-enter and post-exit outputs bit-identical; while fully bypassed the output IS the bit-exact dry signal, which at unity equals the wet signal anyway) -- all designed r15acc gates are consistent with this reading. (d) setSpread() no longer early-returns when the flag is unchanged (the header law says it re-derives and clears overrides, like setRatio).
+   195→- Left incomplete (by design, next task R15-REB2): the 7 r15acc_* acceptance cases are still NOT wired into test_main.cpp (merge instructions are in the .inc header; needs #include <limits>); the round-13/14 test sections (cold_start_*, detector_96khz_*, rt_*, tracker-parity, the 7 P1 cases incl. default_neutrality) are still to be reconstructed (78-case suite); native/README.md + ARCHITECTURE.md updates, the delivery chain (findings/docs/packaging/web) untouched. The bench JSON was run ad hoc (numbers above) but not staged as evidence.
+   196→
+   197→---
+   198→Task ID: R15-REB2
+   199→Agent: general-purpose (REB-2) + Z.ai Code (main agent, completion)
+   200→Task: reconstruct the full acceptance test suite (85 cases), wire the r15acc cases, stage machine-readable evidence, ASan, native docs
+   201→
+   202→Work Log:
+   203→- REB-2 (deadline-killed at the finish line): reconstructed tests/test_main.cpp from the 51-case round-12 base + the recorded designs — 19 R13-scope cases (cold-start impulse alignment with independent analytic k0 re-derivation at block sizes 1/64/512 × 1/8 voices × 3 ratios; detector batteries at 96 kHz [110/220/440/880, grain 8192/base 512] and 44.1 kHz [440/880, rate-scaled] with 1.0-cent gates; estimate tracking at 3 rates ±5 cents; rt_reprepare/param-change/multichannel zero-allocation; rt_reset + setters/process zero-alloc incl. the new surface), 7 P1 cases (per_voice_ratios_independent, gain_ramp_and_mute with implementation-independent ramp bounds + literal values recorded, delay_isolation, wetdry_endpoints, bypass_clickfree_and_transparent, new_setters_no_allocation, default_neutrality vs r15_reference_hashes.txt), and wired the 7 r15acc_* acceptance cases from tests/r15_acceptance_cases.cpp.inc. STATE AT THE DEADLINE: 85/85 passing (release).
+   204→- Main agent completion: ./build/octavox_tests --json → evidence/analysis_round15/r15_acceptance_results.json (85/85 with per-case notes+values); ./build/octavox_bench → evidence/analysis_round15/r15_bench_15.txt (11 cases incl. 96 kHz + surface rows, 0 allocations); wrote evidence/analysis_round15/r15_bench_comparison.md (15.0.0 vs the 14.0.0 baseline: default-path cost ≈ 0 within noise, surface overhead ≈ 0–2 %, 96 kHz 2.0–2.1× RT margin from the R13-b window law, RSS +2–4 MB, 0 allocs); updated native/README.md (version-history recovery record) + native/ARCHITECTURE.md (round-15 parameter surface mechanisms + the detector window law).
+   205→- ASan+UBSan: full rebuild + run → 85/85, zero sanitizer reports.
+   206→
+   207→Stage Summary:
+   208→- Native library COMPLETE at 15.0.0: 85/85 release + ASan, bit-neutral default path (4/4 reference hashes), full parameter surface, machine-readable acceptance + bench evidence staged.
+   209→- Remaining for delivery: OCTAVOX_ROUND15_FINDINGS.md, canonical docs updates (S2's Q-16/Q-17 + R-71..R-74 re-application — lost in the second reset), package README round-15 section, DELIVERY_ROUND15.md, manifest + ZIP + publish + web viewer + browser verification.
+   210→
+   211→---
+   212→Task ID: R15-D
+   213→Agent: Z.ai Code (main agent)
+   214→Task: Round-15 delivery — findings document, canonical docs, packaging, publish, web viewer, browser verification
+   215→
+   216→Work Log:
+   217→- Docs: wrote docs/OCTAVOX_ROUND15_FINDINGS.md (verdict table, environment-incident disclosure, P1 surface contract+gates, P2 85-case composition, P3 closures Q-A/Q-B/Q-C + Q-D open, P5 regression, VST3 readiness, artifacts/reproduction, UNK residue; copy at the project root for the web fallback); re-applied the S2 canonical updates lost in reset #2 (OCTAVOX_OPEN_QUESTIONS.md: Q-16/Q-17 rows + round-15 closure list; OCTAVOX_RESEARCH_EVIDENCE_MATRIX.md: §17 rows R-71..R-74 + process note; OCTAVOX_DSP_ARCHITECTURE.md: S3 correction ring[(idx+3)] with the Q-A proof reference); package README.md → round 15 (title + "What is new in round 15" section in house style); wrote DELIVERY_ROUND15.md (contents delta, verification instructions, not-included list with reasons).
+   218→- Packaging: cleaned the tree (build dirs, superseded DELIVERY_ROUND12.md, intermediate test-insert file); regenerated checksums.txt (297 records, CRLF, case-insensitive order, sha256sum -c 297/297 OK); built Octavox_RE_evidence_round15.zip (zip -r -X -D, 298 entries = 297 files + manifest at zip root, 1 859 492 B) — SHA-256 990b1d48cff8aa69186cd6855d1512abacbfe829a2924a0d6a7934affc7208ec.
+   219→- Independent verification from a fresh extraction (/tmp/r15verify): manifest 297/297 OK; clean cmake Release build; octavox_tests 85/85; octavox_r15refcap → the four neutrality hashes match r15_reference_hashes.txt exactly (0x74318b06…, 0x46a091e9…, 0x9502cf88…, 0x6f7a2ce3…).
+   220→- Published: public/Octavox_RE_evidence_round15.zip + .sha256 sidecar + download/ mirror + rewritten download/README.md (delivery table with the round-15 entry; rounds 8/10/11/12 history preserved).
+   221→- Web viewer → round 15: page.tsx (ROUND15_PATH into the persistent octavox-work tree + local fallback + ZIP_NAME), report-viewer.tsx (heading "15. kör", delivery-card subtitle rewritten for the round-15 content, 297-file badge, footer/source names), layout.tsx (title + description). bun run lint clean.
+   222→- Browser-verified (agent-browser): title/heading correct; full content renders (verdict table + all 8 sections); delivery card shows the full SHA-256 (990b1d48…), .sha256 sidecar + ZIP download links; the zip downloads byte-identical over HTTP (curl re-hash = 990b1d48…); TOC anchor jump works (scrollY 4715 → §6); no horizontal overflow at 390px (390=390) or 1920px (1920=1920); footer at the document bottom (natural push on the long page); zero console/page errors; dev.log clean (GET / 200s); screenshots saved (analysis-round15-desktop.png / -mobile.png).
+   223→
+   224→Stage Summary:
+   225→- ROUND 15 DELIVERED: Octavox_RE_evidence_round15.zip (297 files + manifest, SHA-256 990b1d48cff8aa69186cd6855d1512abacbfe829a2924a0d6a7934affc7208ec) downloadable from the app's / page; native octavox-native 15.0.0 with the complete per-voice harmonizer parameter surface, 85/85 acceptance (release + ASan), bit-neutral default path (4/4 reference hashes verified independently); static Q-A/Q-B/Q-C closed with instruction-level evidence, Q-D open with a recorded plan; VST3 readiness assessed, no wrapper by design; P5 regression vs the captured 14.0.0 baseline: default-path cost ≈ 0, surface ≈ 0–2 %, 96 kHz 2.0–2.1× RT, 0 allocations.
+   226→- The round survived TWO sandbox resets with full documented recovery (working tree now persistent inside my-project/octavox-work); provenance disclosed in every affected artifact; originals preserved (Ox.vst3 7bb260f6… verified, never executed).
+   227→- All 10 task-book deliverables present; per-voice feedback routing documented as deferred-by-design; measurement discipline held (gates fixed before running, corrected pitch routine, no gate widened).
+   228→
+   229→---
+   230→Task ID: R16-R0
+   231→Agent: Z.ai Code (main agent)
+   232→Task: Round-16 environment baseline — verify the surviving tree before any edit
+   233→
+   234→Work Log:
+   235→- Environment state: the persistent working tree /home/z/my-project/octavox-work/Octavox_RE_evidence/ SURVIVED (the R15-R1 strategic fix worked; a third apparent reset wiped only /home/z/octavox + the toolchain, not my-project). cmake 4.4.4 reinstalled via pip (/home/z/.venv/bin). round15.zip re-verified: 990b1d48cff8aa69186cd6855d1512abacbfe829a2924a0d6a7934affc7208ec == sidecar. Network reachable (github.com HTTP 200) — the VST3 SDK acquisition for P4 is plausible; clone of the pinned tag v3.7.12_build_20 started.
+   236→- PRE-EDIT BASELINE (release build, tree untouched): cmake configure+build clean; octavox_tests 85/85 passed in 41.2 s (user 41.1 s) — this is the development-environment duration for the full default suite (the >5 min report refers to an independent verification environment, likely sanitizer or slower host; profiling comes in P2).
+   237→- The four default-neutrality reference hashes re-captured with octavox_r15refcap: 0x74318b06c182aacb / 0x46a091e98f2a413a / 0x9502cf8827e8782c / 0x6f7a2ce3ca310c25 — all four MATCH native/r15_reference_hashes.txt exactly (the 12.0.0==15.0.0 bit-identity regression holds on the current source, actually executed).
+   238→
+   239→Stage Summary:
+   240→- Round-16 starting state: 15.0.0 tree intact and verified (85/85 + 4/4 hashes), persistent storage holding. First P1 contradiction already spotted: r15_reference_hashes.txt ends with the obsolete "NEXT AGENT: the 7 r15acc_* cases are designed but NOT wired" — to be reconciled in P1 with the other 7 files from the task book.
+   241→
+   242→---
+   243→Task ID: R16-P1
+   244→Agent: Z.ai Code (main agent)
+   245→Task: Priority 1 — reconcile all Round-15 status contradictions
+   246→
+   247→Work Log:
+   248→- Audited the delivered package/tree against the actual current source: 85/85 release (41.2 s), 4/4 neutrality hashes, bench = 12 cases (NOT 11 as three docs claimed — an off-by-one carried from the worklog's "all 11 cases" phrasing; the delivered r15_bench_15.txt has 12 data rows).
+   249→- 16 corrections applied across 9 files, every superseded statement kept in place + tagged [R16-P1 CORRECTION/RECONCILIATION, 2026-10-28]: CMakeLists.txt (obsolete "dsp.cpp MISSING" salvage statement + round-12 title), native/README.md (title/intro/layout/results → 15.0.0, 85 cases, 12 bench rows, 96k + surface numbers), VST3_READINESS.md (context caveat → historical + final-state reconciliation block; §8 "pending re-measurement" → measured 2.08x/2.00x/13.70x; verdict "r15acc not yet run" → wired, 85/85, JSON shipped), r15_reference_hashes.txt ("NEXT AGENT: NOT wired" → superseded, regression instruction stands), NOTES_R15P2.md (FINAL STATUS addendum: what was lost at the intermediate stage vs what was restored+verified), dsp.hpp (title → 15.0.0; salvage note reframed HISTORICAL + final implementation status note; comment-only, contract text untouched), "11 cases"→"12 cases" in DELIVERY_ROUND15.md/findings/README.md, findings "≈30 s" → measured 41.2 s, PATH hard-code → environment-drift note, ARCHITECTURE.md "51/51" → 85/85.
+   250→- Correction history recorded: evidence/analysis_round16/R16_P1_RECONCILIATION_LOG.md (16-row table + consistency verification + what-was-NOT-changed).
+   251→- Post-edit re-verification: build clean, 85/85, 4/4 hashes — comment-only changes confirmed behaviour-neutral.
+   252→
+   253→Stage Summary:
+   254→- All top-level current-status statements now agree with the shipped files (15.0.0 / 85 cases / 12 bench rows / 4 hashes / provenance consistent). Historical evidence preserved with dated correction markers.
+   255→
+   256→---
+   257→Task ID: R16-P2
+   258→Agent: general-purpose (R16-P2 harness agent) + Z.ai Code (main agent, independent verification)
+   259→Task: Priority 2 — make the full validation workflow reproducible (per-test durations, filters/groups, progress output, named bench selection, machine-readable output with environment, category distinction, actual durations recorded)
+   260→
+   261→Work Log:
+   262→- Harness agent (context-exhausted at the finish line; work verified complete by the main agent): extended tests/test_main.cpp — per-case wall timing via a pushCase() interception of the 85 result pushes (harness overhead < 0.01% of wall), live progress lines ([i/85] name ok ms) + group headers, --durations optional table column, --list / --filter <substr> (repeatable, OR) / --group <id> (9 group ids, repeatable) / --category unit|long selection with AND-across-kinds, exit codes 0/1/2 (2 = usage error), JSON extended backward-compatibly (cases[].group/.category/.duration_ms; environment{timestamp_utc,compiler,build_type,sanitizers,os,cpu,cores}; summary.selected + wall_time_ms + per-group subtotals); compile definitions OCTAVOX_BUILD_TYPE/OCTAVOX_SANITIZERS passed from CMakeLists. Categories assigned by design intent: 18 long (stability long-runs, R13 cold-start + detector batteries + estimate tracking + 96k stability, r15acc robustness/replay) / 67 unit, borderline decisions recorded in the profile doc.
+   263→- bench_main.cpp extended — --case/--cases named selection (union; exit 2 unknown), --list, per-row wall_ms, environment block in --json; NEW 13th case mono_8v_b128_96k_ctrl512 (detection_interval 512 at 96 kHz — the R16-P3 detector-cost isolation row; the delivered round-15 bench had 12, this is a new R16 row, marked in the output note).
+   264→- MEASURED (this host: 2-core Xeon, GCC 14.2.0, -O2 release): full default release suite 85/85, TOTAL_WALL_MS 40998.6 (independently re-run by the main agent: 85/85, 41.1 s); ASan+UBSan full suite 85/85, 369541.7 ms = 6.16 min, ZERO sanitizer reports — the >5 min independent-verification report is consistent with the sanitizer leg (9.01x slowdown measured) or a ~7.5x slower host release run; the suite is dominated by real DSP work (top: detector_96000hz_sine_battery 5805.6 ms, longrun_60s_8voice_feedback 4468.7 ms, r15acc_robustness_battery 2186.7 ms), not harness overhead. Filter demos all pass (--group r15acc 7/7 in 7.2 s, --filter default_neutrality 1/1, --group r13 --category long 13/13).
+   265→- 96 kHz detector isolation (bench, 8v b128): ctrl64 5189.13 vs ctrl512 871.58 ns/frame at 96 kHz (direct detector share 83.2%); at 48 kHz 1562.51 vs 418.27 (73.2%). Linear-control model: detector invocation 83.7 us -> 315.8 us (3.77x — the R13-b window law), non-detector base 254.8 ns/frame IDENTICAL at both rates (consistency check 0.1 ns). No optimization proposed here (P3 separate).
+   266→- Gate integrity proven: 220 check(...) gate calls textually identical before/after (sha256 of extracted gate text ed57f594a8de6fa4ce8beff1123e3a16a9f3f62317d8c44fdaca62ab31ae35a9); pre-edit sources preserved (r16_test_main_preedit.cpp.txt / r16_bench_main_preedit.cpp.txt); END-table byte-identical to the pre-edit baseline run.
+   267→- Neutrality regression: octavox_r15refcap 4/4 hashes exact (r16_refcap_check.txt), exit 0.
+   268→- Evidence staged: evidence/analysis_round16/ r16_acceptance_results.json (+_asan), r16_suite_stdout_release.txt (+_asan), r16_bench.json + r16_bench_stdout.txt, r16_filter_demo.txt, r16_suite_profile.md (profile + reproducible workflow commands + category table + isolation analysis), gate-integrity files.
+   269→- MAIN AGENT VERIFICATION + incident: independent re-run of the full suite (85/85, 41.1 s) and all selection features confirmed working. Tree-vs-zip audit found poc/poc_run.log MISSING from the working tree (present in the delivered round-15 zip; cause unknown — likely lost after packaging). RESTORED byte-identical from the zip, SHA-256 24c10d0a0c9aa3bf3ad7d181028ef39aefba0f7cb57c96fb31d2f1c150bb5572 == manifest. All other poc/ + evidence/analysis_round{14_recovery,15}/ files verified byte-identical to the zip except the two intentional P1 corrections (NOTES_R15P2.md addendum, dsp.hpp comment-only notes).
+   270→
+   271→Stage Summary:
+   272→- The full validation workflow is now reproducible and profiled: exact commands + machine-readable outputs with environment records; release 41.0 s / ASan 6.16 min measured on this host; all 85 tests remain in the default run (no gate weakened — proven textually); bench selectable by name with a new 96k detector-isolation row; 4/4 neutrality hashes unchanged.
+   273→
+   274→---
+   275→Task ID: R16-P3
+   276→Agent: Z.ai Code (main agent)
+   277→Task: Priority 3 — 96 kHz path profiling + optimisation assessment (no core change)
+   278→
+   279→Work Log:
+   280→- Wrote evidence/analysis_round16/r16_96k_profiling.md from the R16-P2 measured isolation rows + a code-level cost analysis of the PitchDetector (read src/dsp.cpp lines 164-262): the main cost is the O(ntau*m) YIN difference loop — at 48 kHz 760 lags x 224 support = ~170K MACs/invocation (measured 83.7 us); at 96 kHz 1520 x 400 = ~608K MACs (measured 315.8 us, 3.77x; the +5% over the 3.57x work ratio is the window working set growing 16->32 KB past L1). The whole 96 kHz slowdown is detector-side; the non-detector base is 254.8 ns/frame at BOTH rates.
+   281→- Optimisation assessment: FFT/autocorrelation YIN, incremental running sums, -ffast-math/float/SIMD reductions — ALL rejected (arithmetic reordering breaks bit-neutrality vs the four reference hashes and the frozen gates' measured literals); default detection_interval scaling at high sr — rejected as a behaviour change (not an optimisation); cache-blocking — not taken (unit-stride already; <= 5 % upside not worth a core change). The already-shipped, tested optimisation is Config::detection_interval (96 kHz margin 11.90x at 512, measured, 0 allocs, estimate VALUES unchanged — only cadence). Lagrange6 default untouched; all quality/RT constraints re-verified by the 85-case suite this round.
+   282→- DECISION: no change to the default DSP path — the 2.0-2.1x 96 kHz margin is the documented price of the R13-b correctness fix (12.0.0 was blind at 96 kHz).
+   283→
+   284→Stage Summary:
+   285→- P3 closed with a measured analysis and a deliberate no-change decision; every candidate optimisation evaluated against bit-neutrality/behaviour criteria and documented.
+   286→
+   287→---
+   288→Task ID: R16-P4a
+   289→Agent: Z.ai Code (main agent)
+   290→Task: Priority 4 precondition — acquire the VST3 SDK and prove the toolchain
+   291→
+   292→Work Log:
+   293→- Network reachable; git clone of the pinned tag stalled twice at 116 KB (submodule fetch). SUCCESSFUL alternative: shallow clone of the main repo only (tag v3.7.12_build_20, commit cc2adc90382dded9e347caf74e4532f1458715db, 2024-07-26) + per-component codeload tarballs at the exact gitlink SHAs from .gitmodules (correct repo names use underscores): vst3_base @ f0998e7b8424b32ba275cf4218aa56beef29821c, vst3_cmake @ 2022b265cdbcd90b37294d3fb397f9766dbe4c06, vst3_pluginterfaces @ 151ecde4d6ee1c457dcce848342b162461944fe6, vst3_public_sdk @ 3fce096d6ee575479753f1aab23033d2e2ffdc6e (vstgui4 intentionally NOT acquired — no GUI wrapper; doc/tutorials not needed for builds). SDK at /home/z/my-project/octavox-work/vst3sdk (outside the evidence tree; not to be redistributed in the delivery — pinned-SHA acquisition instructions go in the wrapper docs).
+   294→- Toolchain proof: cmake configure with -DSMTG_ENABLE_VSTGUI_SUPPORT=OFF -DSMTG_ENABLE_VST3_HOSTING_EXAMPLES=OFF -DSMTG_ENABLE_VST3_PLUGIN_EXAMPLES=OFF (correct option names for 3.7.12; the editorhost sample needs gtk+-3.0 otherwise); built the vst-hosting/validator target successfully (its internal 43 tests: 0 failed). SDK samples studied: adelay (plugin target pattern: smtg_add_vst3plugin + smtg_target_setup_as_vst3_example), again_sampleaccurate (the sample-accurate segmentation reference), vstsinglecomponenteffect.h (minimal-plugin base).
+   295→
+   296→Stage Summary:
+   297→- P4 path confirmed: REAL wrapper is feasible (SDK acquired at pinned SHAs, toolchain builds it, validator available for conformance testing). P4b dispatched.
+   298→
+   299→---
+   300→Task ID: R16-P4b
+   301→Agent: Z.ai Code (main agent; a first general-purpose attempt wrote octavox_params.{h,cpp} before context-exhausting -- the rest was implemented directly)
+   302→Task: Priority 4 — implement a REAL minimal VST3 wrapper around the 15.0.0 core, build it, validate it
+   303→
+   304→Work Log:
+   305→- Implemented native/vst3/ (7 files): octavox_ids.h (fresh FUIDs {6F4E6258-...}); octavox_params.{h,cpp} (agent-authored, corrected: 38 parameters = 6 global + 4x8 per-voice, exact step-quantized normalized<->plain conversions, the OVR1 v1 state blob with IBStreamer, the OctavoxParameter VST3 class, units Global + Voice 1..8); octavox_native_processor.{h,cpp} (SingleComponentEffect subclass: initialize/terminate, symmetric mono/stereo buses with FCast bus updates, setupProcessing validating the core's (0,1e6] Hz domain BEFORE accepting, setActive prepare + applyFullSurface canonical order, process() with per-queue cursor segmentation at event sample offsets + chunked alias-safe scratch, in-place handling, state get/set + bus adaptation on restore + controller aliases, latency = engine latencySamples, tail = ring-range-law upper bound, setProcessing pure notification); factory.cpp (constexpr module factory); octavox_vst3_tests.cpp (8 in-process cases driving the ACTUAL VST3 interfaces with the SDK's hosting utilities; hand-driven core references; the project's alloc counter); CMakeLists.txt (SDK external-consumer pattern: add_subdirectory + include(SMTG_VST3_SDK) in-scope + platform setup; SDK v3.7.12_build_20; examples+VSTGUI off).
+   306→- Integration battle scars (all fixed, documented): ivsttypes.h -> vsttypes.h (3.7.12 name); the SingleComponentEffect setState/getState rename ordering (vstparameters.h pulls ivsteditcontroller.h -- the SCE include must come FIRST); unqualified int32/Steinberg::kLittleEndian-is-a-macro; ProcessSetup has no blockSize member; FCast is Steinberg::; PIC required for the core in a shared module (thread-local VoiceStats TPOFF32); vstsinglecomponenteffect.cpp must be compiled by consumers (not in the sdk lib); DECLARE_UID constexpr form for the constexpr factory; IParamValueQueue (not IParameterValueQueue).
+   307→- VALIDATOR (SDK's own, run automatically by the module build): first run 46/1 -- the "Process Format" test's 1234567.8 Hz leg (above the core's documented 1e6 bound) hit my then-current accept-then-fail-in-setActive behaviour; fixed by refusing out-of-domain setups in setupProcessing (the validator's tolerated path). FINAL: 47 tests passed, 0 failed; bundle Contents/x86_64-linux/OctavoxNative.so (375936 B) + Contents/Resources/moduleinfo.json (moduleinfotool-generated; copy staged).
+   308→- WRAPPER TESTS (in-process): first run exposed 4 failures -- all TEST bugs or expectation bugs, honestly diagnosed: (a) stereo-default processors driven with 1-channel buffers (process correctly REJECTED them -> zeros); (b) my idempotence probe re-normalized a normalized value (toEnginePlain applied twice); (c) the bypass reference reused an advanced engine (stream-position mismatch); (d) the reset-replay expectation ignored the core's cold-start law (a fresh engine starts its glide AT target, so the post-reset replay equals a fresh-surface-configured engine, not the original mid-stream-glide run). One PROCESSOR fix: setState now adapts the bus arrangement to the saved channel count (a restored mono session must come back mono). FINAL: 8/8 -- lifecycle ok; conversions exactly idempotent; voices 1-vs-8 differ (0.325); default run AND bypass path bit-identical to the hand-driven core (0/0); SEGMENTATION EQUIVALENCE maxdiff = 0 bit-identical (the required proof; also differs 0.509 from coarse block-boundary host timing -- the segmentation does something); state roundtrips 0/0/0 (live/same-instance/fresh, 428-byte blob, corrupt state rejected); split-invariance 0; reset-vs-fresh-surface 0; in-place 0; 0 allocations in 100 process calls with events; latency 2304 == 2304.
+   309→- Evidence: evidence/analysis_round16/r16_vst3_wrapper_tests.txt (8/8 + values), r16_vst3_validator.txt (47/0), r16_vst3_moduleinfo.json; docs native/vst3/VST3_WRAPPER.md (implementation table, SDK pinned-SHA acquisition record, build commands, design notes, measured results, honest limitations).
+   310→- Core-integrity check: native/{src,cli} byte-identical to the round-15 zip; only test_main.cpp/bench_main.cpp differ (the intentional R16-P2 harness extensions); the full 85-case suite still passes (40.97 s) and the four neutrality hashes still match.
+   311→
+   312→Stage Summary:
+   313→- P4 CLOSED with a genuinely implemented and validated wrapper: VST3 module OctavoxNative.vst3 (validator 47/47), sample-accurate automation proven bit-exact to the tested block-boundary implementation, full state save/restore proven bit-exact, 0 steady-state allocations, no core changes.
+   314→
+   315→---
+   316→Task ID: R16-D
+   317→Agent: Z.ai Code (main agent)
+   318→Task: Round-16 delivery — findings, readiness addendum, packaging, publish, web viewer, browser verification
+   319→
+   320→Work Log:
+   321→- Docs: docs/OCTAVOX_ROUND16_FINDINGS.md (verdict table + P1 reconciliation summary + P2 measured workflow/durations + P3 analysis + P4 wrapper + UNK residue + artifacts/reproduction; copy at the project root for the web fallback); native/VST3_READINESS.md round-16 addendum (the two PARTIAL dimensions closed by the wrapper itself: segmentation is exactly sample-accurate — no host-side ramp needed; state snapshot per the prescribed list); native/vst3/VST3_WRAPPER.md (implementation table, pinned-SHA SDK acquisition, build commands, design notes, measured results, honest limitations); native/VST3 wrapper suite documented in native/README.md (round-16 sections); package README.md -> round 16 (title + "What is new in round 16"); DELIVERY_ROUND16.md (contents delta, verification instructions, not-included with reasons; DELIVERY_ROUND15.md kept — it was explicitly reconciled by R16-P1).
+   322→- Packaging: cleaned the tree (native/build, build-asan, vst3/build removed); regenerated checksums.txt (326 records, CRLF, case-insensitive order); built Octavox_RE_evidence_round16.zip (zip -r -X -D, 327 entries = 326 files + manifest, 2 013 092 B) — SHA-256 c6a022ed7f19b9cc8dd56a98778c71583cad5d98b9a6801eaf722e145161d519.
+   323→- INDEPENDENT VERIFICATION FROM A FRESH EXTRACTION (/tmp/r16verify): manifest 326/326 OK; clean cmake Release build; octavox_tests 85/85 (40.95 s); octavox_r15refcap 4/4 hashes exact; bench runs; the VST3 wrapper: clean configure+build with -DVST3_SDK_ROOT (the SDK is outside the tree), module build exit 0 with the automatic validator hook — 47 tests passed, 0 failed; octavox_vst3_wrapper_tests 8/8.
+   324→- Published: public/Octavox_RE_evidence_round16.zip + .sha256 sidecar + download/ mirror + rewritten download/README.md (round-16 entry, rounds 8-15 history preserved).
+   325→- Web viewer -> round 16: page.tsx (ROUND16_PATH + fallback + ZIP_NAME), report-viewer.tsx (heading "16. kör", META chips shortened for 390px — an 8px mobile overflow from a long chip found and fixed during verification, delivery-card text, 326-file badge, footer/source names), layout.tsx (title + description). bun run lint clean.
+   326→- Browser-verified (agent-browser): title "Octavox Research — Round 16 Findings" + heading "16. kör"; full content renders (verdict table + all 7 sections); delivery card shows the full SHA-256 (c6a022ed…), the .sha256 sidecar + ZIP download links; the zip downloads byte-identical over HTTP (curl re-hash = c6a022ed…); TOC anchor jump works (scrollY 4150 -> §5); the copy button toggles to "SHA-256 a vágólapon"; no horizontal overflow at 390px (390=390) or 1920px (1920=1920); footer at the document bottom on the long page (natural push; the residual DOM gap below is Next.js's invisible route announcer); zero console/page errors (only the React DevTools info line + HMR); screenshots saved (analysis-round16-desktop.png / -mobile.png at the project root); dev.log clean (GET / 200s).
+   327→
+   328→Stage Summary:
+   329→- ROUND 16 DELIVERED: Octavox_RE_evidence_round16.zip (326 files + manifest, SHA-256 c6a022ed7f19b9cc8dd56a98778c71583cad5d98b9a6801eaf722e145161d519) downloadable from the app's / page. Completion criteria met: the current status and historical evidence are consistent (16 tagged corrections, history preserved), the acceptance workflow is reproducible (measured: release 85/85 in 41.0 s, ASan+UBSan 85/85 in 6.16 min, per-test durations/filters/groups/progress, machine-readable outputs with environment records, 4/4 neutrality hashes re-verified three times), and the VST3 wrapper is genuinely implemented and built (validator 47/47, wrapper tests 8/8, sample-accurate automation proven bit-exact vs the block-boundary implementation, state save/restore bit-exact, 0 allocations in process(), core untouched). The target binary was never executed; runtime questions stay UNK; Q-D remains open with its recorded plan.
+   330→
+   331→---
+   332→
+   333→## ROUND 17 DELIVERY (2026-10-29) — Reproducible VST3 Build, Validation Reliability and Remaining Static DSP Questions
+   334→
+   335→**Package:** `Octavox_RE_evidence_round17.zip` (2 179 193 B)
+   336→**SHA-256:** `9b91b8acb8d05fbd980b692b2d2dd29c888d3ad9c481dc4a7da7a59cdcc0c3be`
+   337→**Manifest:** 355 files, all verified from a fresh extraction (`checksums.txt` at the zip root).
+   338→
+   339→- P1: validation discrepancy explained quantitatively (uniform 8-9x toolchain/host
+   340→  slowdown vs a 300 s window; suite is 85/85 in release 43.1/41.1/42.8s-reversed,
+   341→  ASan 373.0s, -O0 352.4s; no stall/order-dependence/interaction/buffering defect;
+   342→  4/4 reference hashes re-verified — optimisation-level invariant).
+   343→- P2: native/tools/ — get_vst3_sdk.sh (pinned-SHA acquisition, executed in verify +
+   344→  fresh-install modes), build_and_test.sh (executed end-to-end: ALL GATES PASSED
+   345→  454 s; re-executed from the fresh zip extraction: 504 s, module byte-identical
+   346→  b293cecb...), get_vst3_sdk.ps1 + build_and_test.ps1 (Windows/MSVC — AUTHORED,
+   347→  NOT EXECUTED; no Windows runtime). MSVC portability guards (Linux-neutral, proven).
+   348→- P3: wrapper tests 8 -> 15 (15/15; validator 47/47): param metadata table + ID
+   349→  uniqueness + processor/controller agreement, boundary roundtrips, block
+   350→  start/middle/last/end events, simultaneous multi-voice events, clickless
+   351→  bypass+wet/dry automation (0 allocs), full-surface restore (38/38 exact),
+   352→  cross-rate/layout restore, invalid/truncated blobs (428 prefixes). Core
+   353→  byte-identical; hashes unchanged.
+   354→- P4: Q-D closed structurally (5 temperament tables 0x1803BB690 + NEW 19-row
+   355→  scale-pattern table 0x1803BB780 + key/user/ionian maps + 29-interval tables,
+   356→  mux/record-link delivery, engine composition with interval snapping);
+   357→  mode-1 phase trajectory closed (direct 4-float x rate; mode 0 K=0.25 glide);
+   358→  record-ring first-field scaling closed (tracker doubling floor >= 2048*50,
+   359→  [T+0x6008]=2048.0 @0x1800E0D5B); T+0x5F14 pre-setParam UNK by construction
+   360→  (full init-site proof); kernel generator UNK (DER characterisation: symmetric,
+   361→  DC ripple <= 2^-13, cutoff ~0.82-0.84 Ny, no closed form matches).
+   362→- P5: docs updated (findings/readiness/wrapper/README/open-questions with
+   363→  superseded tags); versioned zip + manifest + SHA256; fresh-extraction
+   364→  verification: manifest 355/355, full chain ALL GATES PASSED (release 82s leg,
+   365→  ASan 376s leg, wrapper 46s leg), module byte-identical.
+   366→- Third sandbox reset at round start; recovery documented (325/326 -> 326/326
+   367→  manifest after byte-identical poc_run.log restore; from-scratch rebuilds).
+   368→
+   369→---
+   370→
+   371→## ROUND 19 DELIVERY (2026-10-31) — Real-Time Performance, Click Investigation and Dual Interpolation Verification
+   372→
+   373→**Core:** octavox-native 16.0.0 (config-gated behavioural deltas; 15.0.0 reproduces BIT-EXACTLY under legacy pins)
+   374→**Windows delivery:** OctavoxRE_R19_Windows_x64_Dual_Build.zip (5 820 356 B, SHA-256 a0f02b994aa86ebfa9023207f206c03890940234007c747d57519a34e07eee73)
+   375→**Evidence archive:** Octavox_RE_evidence_round19.zip (see checksums.txt in the zip root)
+   376→
+   377→- P1: stage attribution proved the FullRate YIN detector was 96.8% of all CPU at 96k (100.6% CPU stereo 8v, 739/750 deadline misses — matching the user's "offline only" report). New DetectorMode::Decimated (Butterworth 6th-order anti-alias + ~24 kHz decimation, time-equivalent window, identical cadence, warmed normalisation + raw-d refinement: 0.19-cent worst battery error). **96 kHz stereo 8 voices: 13.2% CPU, 86.8% headroom** (target ≥30%); 192k: 22.0%. Full 212-row matrix (5 rates × mono/stereo × 1/2/4/8 voices × 5 blocks) with per-block deadline stats; 0 allocations; misses are only ~22 ms host scheduler stalls (labelled honestly). Active-voice scope verified structurally + empirically + a test case.
+   378→- P2: click scanner (16 scenarios × 2 interp × 3 rates × 3 blocks + 32 legacy renders; sample-accurate wrap/commit timestamps). Classified: initial spacing-lock steps 0.55-0.60 -> 0.011-0.017 (52x), vibrato retunes 0.79 -> 0.012 (67x), base-delay pops 0.73 -> 0.018 (40x) — ELIMINATED via the frozen-shadow commit crossfade / base-delay crossfade / voice activation ramps (all config-gated, 0 = legacy bit-exact). Wet/dry instant mix step 0.139 bounded (contract semantics). Read suppression (bypass/wet-0, fb==0) proven bit-identical by test.
+   379→- P3: engine + MODULE-level null tests (task's canonical settings, 32-bit float WAVs): unity BIT-IDENTICAL (both levels); −24 st: max diff 0.0156, RMS −38.5 dB, corr 0.99993 — the variants genuinely differ but at −38 dB the user's "sounds identical" is the correct perception; NOT a build defect. Windows proof set: 3 distinct module hashes (L/O/LQ), state-restore forcing (interp + detector), identity records, validator 47/47 per variant, user-runnable octavox_dual_nulltest.exe in the kit. Toolchain deviation recorded (clang 23.1.2 vs R18's 23.1.4).
+   380→- P4: variant metrics — CPU equal within 1%, pitch accuracy equal to 0.001 cent, THD+N equal to 0.01 dB, click metrics identical; the ONLY difference is the −38 dB null residual.
+   381→- Validation: suite 85 -> 93 cases (gates unchanged; default_neutrality legacy-pinned); release 93/93 + ASan/UBSan 93/93 ZERO reports; 4/4 + 4/4 legacy hash records + 4/4 new r19 record; wrapper 15/15, integration 12/12, validator 47/47 per variant; dual-module null test PASS on fresh R19 Linux bundles; Windows chain all legs green (byte-reproducible modules).
+   382→- Environment: 4th sandbox reset at round start (llvm-mingw + cmake lost; cmake reinstalled via pip, llvm-mingw re-acquired as release 20260922); the persistent octavox-work tree survived.
+   383→
+   384→
+   385→---
+   386→
+   387→## ROUND 20 DELIVERY (2026-11-01) — Complete Feature Reconstruction and Adaptive YIN Pitch Tracking
+   388→
+   389→**Core:** octavox-native 16.1.0-R20 (additive: Hybrid detector + VST3 default-init fixes; every existing behaviour and hash unchanged)
+   390→**Windows delivery:** OctavoxRE_R20_Windows_x64_Dual_Build.zip (see checksums)
+   391→**Evidence archive:** Octavox_RE_evidence_round20.zip (23373732 B, sha256 3e860ec54063f61628d9c42f6333b237f87b55455f8506dbac89d0f316518607, 616 files)
+   392→
+   393→- P0: VST3 default-parameter init ROOT-CAUSED (SDK Parameter() ctor leaves valueNormalized {0.} — vstparameters.cpp:48; all 38 params reported 0-based values while the engine ran the true defaults = the user's Generic-Editor symptom). Fixed 3 ways: OctavoxParameter ctor setNormalized(default), initialize() fresh-instance reset (terminate->init cycles), IEditController::setComponentState implemented (base = kNotImplemented; aliased to the authoritative setState). 5 new wrapper cases 16-20 (S1-S6, NO control movement; engine-bit-exact default-surface proof + automation-flush idempotence). Suite 15->20; sensitivity proof: fix disabled -> exactly cases 16/17/20 fail.
+   394→- P2: DetectorMode::Hybrid (coarse=decimated verbatim -> tau_c=tau_dec*D clamped into the raw domain -> full-rate difference-function refinement in +-(D+2) -> parabolic refine, vertex correction clamped to +-1 lag). Two in-round defect fixes found by the battery: neighbour-read overflow at domain-edge argmin (ASan; search bound tau_max_raw-1) and 51-61% estimate drops on out-of-range 55 Hz (unclamped parabola vertex past the [60,1200] gate; fixed by the +-1 clamp + candidate pre-clamp -> drop 0.00%, median 150-155 cent = Decimated-consistent edge behaviour). 13-corpus real-material battery (voice stacks/speech/bass/guitar/strings/vibrato/portamento/f0-steps/transient/breath/octave-pair/low-edge) x 3 modes x 2 rates: r20_detcompare.json + traj CSVs. Hybrid: worst pure-tone error 0.0196 cent (Dec 0.19); jitter matches FullRate (0.316 vs 0.393 cent vibrato; Dec noisier); lock-lag ~19 ms all modes (engine-side median law); FullRate itself shows a 172-cent 96 kHz transient excursion the decimated family does not; CPU 96k: 5023/355/404 ns/sample -> Hybrid +14% over Dec, 12.4x under FullRate. Suite 93->96 (3 Hybrid cases). Decimated stays default; no host parameter added; no adaptive controller (no measured benefit).
+   395→- P3: dual-mono/stereo integrity CLOSED (r20_dualmono.json + the doubling probe): (a) deterministic dual-mono BIT-IDENTICAL L/R in every config (1/2/8 voices x 2 interps x 2 rates) — no hidden widening, none added; (b) the user's "second zero-offset voice doubles" = the default inter-voice base-delay law, ECHO LAG measured 32.000 samples = 0.667 ms @48k (0.333 @96k) — temporal inter-voice doubling in the Haas fusion window, NOT an L/R mechanism; (c) true L/R Haas only from non-identical channels: 1-sample input offset -> 326-sample output lag divergence (per-channel tracker grain timing); true stereo -6.7 dB decorrelation.
+   396→- P1: docs/R20_FEATURE_RECONSTRUCTION_MATRIX.md — 5 panels x 40 elements, each with evidence class + exact addresses + our status. Crossfade CLOSED: the grain-commit blend width (R12 FINDING 4 chain; our commit_crossfade_seconds = same mechanism, config-level). Randomize CLOSED: the random walk on the per-voice advance rate (consumer record_ring[base+3] -> rate_v=4*P(f)*ratio*correction; P(0)=0.25=randomize-off reproduced bit-exactly by our core). Roadmap: R21-a harmony engine (evidence complete), R21-b Randomize, R21-c host-sync delays, R21-d host-expose crossfade, R22 MIDI.
+   397→- P4: docs/R20_PARAMETER_SEMANTICS.md — ratio composition law (ratio_v=GLOBAL*VOICE_OFFSET_v), spread-slot displacement table, naming-conflict resolution (documented, no silent rename), mute/count/gain laws, ms-domain delay rate dependence.
+   398→- P5: ALL GATES HELD: 96/96 release AND ASan/UBSan zero reports; 8/8 reference hashes exact (4 legacy 15.0.0 + 4 16.0.0 defaults) + 4/4 ObsKernel6; wrapper 20/20 x2 variants, integration 12/12 x2, validator 47/47 x2; Windows dual modules byte-reproducible (LEG 4). Windows chain: ALL GATES PASSED (227 s).
+   399→- Windows modules (R20, llvm-mingw clang 23.1.2 — toolchain deviation vs R19's 23.1.4 recorded): Lagrange6 sha256 d25902d6321950da4ddf622293132518768795a6c32ede3fc23a25cbb91aab50; ObsKernel6 sha256 0040425897a6aea318c0c18065a169627d350a9dabcef4134aa7e6b73fe4b966.
+   400→- Environment: 5th sandbox reset at round start (cmake lost -> pip cmake-4.4.4; llvm-mingw re-acquired as release 20260922 = clang 23.1.2; winshims recreated). windows_dual_build.sh updated for the reset environment (explicit CMAKE_MAKE_PROGRAM — pip-cmake 4.4 cannot find make on fresh cross-configure; LEG 3 now full-fresh builds — the R19 dirs carried objects from the previous toolchain, mixing two compiler generations and breaking LEG 4 byte-reproducibility; hash-gate refcap runs pinned to --legacy for the r15/r18_obs records + a new 16.0.0-default r19-record gate).
+   401→
+   402→---
+   403→
+   404→## ROUND 23 DELIVERY (2026-11-05) — YIN Pitch Tracking Research, Validation and Artifact-Free Integration
+   405→
+   406→**Package:** `Octavox_RE_evidence_round23.zip` (715 147 B, 93 files + manifest)
+   407→**SHA-256:** `9acf799e05c3bffe7278359bcf3aa327b59050e9e5367d80f24417d2aa89fc6e`
+   408→**Core:** octavox-native 16.2.0 + the R23 deltas · **Original binary: never executed.**
+   409→
+   410→- G0: R22 archive 782e7ab8… verified; clean rebuild 100/100 (Release +
+   411→  ASan/UBSan) before any edit; baseline snapshot logged
+   412→  (r23/evidence/analysis_round23/logs/g0_*).
+   413→- G1: R22 measurement harness repaired — all eight §27 items (the
+   414→  global-argmax fallback had produced 58 false 2000.0 Hz boundary cells —
+   415→  removed; explicit valid/invalid/unvoiced states; anti-aliased measurement
+   416→  decimation — no unfiltered sample dropping; derived tone-free lock
+   417→  criterion); the 360-cell matrix re-run with **0 verdict deltas**
+   418→  (r22_minpitch_legacy_rerun.json vs r23_minpitch_v2.json).
+   419→- G2: forensic audit of the actual R22 detector/spacing path — every §16.1
+   420→  item verified against source with file/function/line evidence
+   421→  (PITCHLAB_R23_CURRENT_ENGINE_YIN_AUDIT.md); the §16.2/§16.3 corrections
+   422→  honoured: detector-F0 → period-history → S_target vs per-voice ratio_t
+   423→  kept SEPARATE; the active window law IS the half-cosine
+   424→  w = 0.5−0.5·cos(π·frac) with frac_next = frac + (1−ratio)/S (OBS,
+   425→  line-cited) — the "triangular window" claim refuted for R22; no
+   426→  negative-shift anti-alias filter added (downshifts read SLOWER — the
+   427→  aliasing direction refuted by derivation + measured HF −11…−43 dB).
+   428→- G3: source comparison + variant taxonomy from five FETCHED
+   429→  implementations (hyuncat, ABSounds, tonalux, Rust pitch-detection,
+   430→  librosa + aubio as additional refs; agent reports with URL appendices);
+   431→  paper mirrors blocked → canonical math reconstructed and cross-validated
+   432→  by implementation instead (all [UNK]s labelled honestly).
+   433→- G4: canonical YIN reference implementation (r23_yin_core.h +
+   434→  r23_yin_reference.cpp): 12/12 vs independent vectors; the
+   435→  FFT-acceleration equivalence proven at 3.7e-9 relative error
+   436→  (yinfast-type = EXACT acceleration; yinfft = spectrally weighted
+   437→  DIFFERENT algorithm — taxonomy kept separate).
+   438→- G5: 15-signal × 4-rate × 7-variant detector comparison
+   439→  (r23_detector_compare.json): the R22 Decimated mode retained as
+   440→  production default (0.02 c median, 361–427 ns/sample FLAT 44.1–192 kHz,
+   441→  best moving-pitch tracking); FullRate = legacy reference; Hybrid
+   442→  retained; canonical/FFT = research references; W ≥ T_max tested both
+   443→  ways (≤ +0.09 c accuracy vs −6…−11 c tracking).
+   444→- G6: the Pitch Control Layer (pitch_control.{hpp,cpp} +
+   445→  r23_control_battery): **290/290** (lock/hold/release/outlier/octave/
+   446→  jitter/glissando/recovery/invalid-frame safety); integrated as Strategy
+   447→  A — a gate BEFORE the existing 8-entry period median via
+   448→  Config::tracking_gate (default OFF = bit-exact); per-voice ratio_t
+   449→  untouched; no double smoothing; zero added latency.
+   450→- G7: the four user symptoms — NaN/Inf propagation REPRODUCED and FIXED
+   451→  (process-boundary non-finite guard; the one genuine engine defect
+   452→  found this round); negative-shift crackle mechanism measured
+   453→  (spacing-commit jumps under pitch movement + jitter; the default 8 ms
+   454→  crossfade protects; positive-shift pre-read filter recorded as the top
+   455→  R24 candidate with measured +9.4 dB HF @ +12 st justification);
+   456→  dual-mono bit-exact native AND real-VST3-module (12/12,
+   457→  octavox_r23_vst3_module_integration driving the actual .vst3 bundle);
+   458→  R21 build differences measured 3.8–58× CPU (they DO execute different
+   459→  paths; the audible agreement at steady material is honest).
+   460→- G8: engine integration — non-finite guard + CMNDF telemetry
+   461→  side-channel (observer only) + tracking_gate: 100/100 + 12/12 + 5/5;
+   462→  VST3 surface untouched (38 ids, state blob v2, restored replay
+   463→  bit-exact).
+   464→- G9: synthetic + module levels complete; PTDB-TUG/GuitarSet
+   465→  (interactive-landing-page access) and Windows-DAW levels OPEN —
+   466→  recorded honestly, no real-audio accuracy claim anywhere.
+   467→
+   468→### Packaging post-audit (final session, this round)
+   469→
+   470→Three delivery-integrity defects found during the mandatory
+   471→fresh-extraction audit and FIXED (recorded in DELIVERY_ROUND23.md §
+   472→"Packaging post-audit"): (1) stale R22 cumulative manifest (638 records
+   473→vs 93 shipped files → sha256sum -c failed on 596 paths) — regenerated
+   474→93/93; (2) README still the round-22 header — R23 delta section
+   475→prepended; (3) CMake fresh-build link failure [OBS, reproduced]:
+   476→octavox_dsp references PitchControlLayer but pitch_control.cpp was only
+   477→in the separate octavox_pitch_control library — fixed with one idiomatic
+   478→line (target_link_libraries(octavox_dsp PUBLIC octavox_pitch_control));
+   479→bench/bench_main.cpp added to the package (referenced by the CMake
+   480→octavox_bench target). Final archive re-verified END-TO-END from fresh
+   481→extraction: manifest 93/93 · cmake + ALL targets build · octavox_tests
+   482→100/100 · 12/12 · 290/290 · 5/5 · r15refcap hashes bit-exact.
+   483→Web page: delivery cards (R23 + R22 + R21 baselines) with live
+   484→sidecar-read SHA-256; mobile sticky-header overflow fixed (488 px →
+   485→131 px at 390 px width); R21 card copy bug fixed; lint clean; browser
+   486→verified (downloads byte-identical over HTTP, TOC anchors, copy button,
+   487→responsive 390/1920, no console errors).
+   488→
+   489→---
+   490→
+   491→## ROUND 24 DELIVERY (2026-11-06) — SIMD Capability Layer (YIN kernels) and the Measured Decision Record
+   492→
+   493→**Core:** octavox-native 16.3.0 · **Original binary: never executed.**
+   494→**Session note:** the previous session started R24 (G0/G1 + two SIMD
+   495→files) and ran out of context mid-task; this session diagnosed the
+   496→left-behind state (unwired layer, MISSING simd_fma.cpp despite being
+   497→declared, no CMake/engine/test/doc integration) and completed the round.
+   498→
+   499→- The SIMD capability layer (simd.hpp + dispatch/AVX2/FMA units, per-TU
+   500→  ISA flags, -ffp-contract=off on the ISA units): CPUID detection
+   501→  (AVX2/FMA independently), Config::simd (default Scalar = bit-exact vs
+   502→  the R12-R23 record; Auto -> the bit-exact AVX2 level, the MEASURED
+   503→  decision), RT-safe kernel resolution at prepare() time only. The
+   504→  lag-axis AVX2 kernel is bit-identical to the scalar reference by
+   505→  construction (hard exact-equality gate); AVX2+FMA fuses the per-term
+   506→  rounding in the vector lanes with the reference-rounded scalar tail
+   507→  (bounded-deviation gate; measured max 4.4e-16 relative).
+   508→- Engine integration across all three detector modes (estimate +
+   509→  estimateHybrid coarse/fine/parabolic paths); prepare() validation with
+   510→  LOUD rejection of un-honourable forced modes; in-place re-prepare
+   511→  re-resolves; VST3 surface untouched (38 ids, blob v2 frozen).
+   512→- In-round defects caught by our own gates and fixed: (1) Hybrid
+   513→  fine-stage off-by-one in the parabolic-neighbourhood kernel call
+   514→  (y2 = d(best) instead of d(best+1) -> constant +1-lag bias, 880 Hz
+   515→  tracked as 864.86 Hz; 3 suite cases failed; fixed by spanning 3 taus);
+   516→  (2) runtime batch count kept the vector accumulators on the stack
+   517→  (2.1-3.1x -> templated -> 5.0-6.3x); (3) the ntau<16 pure-scalar branch
+   518→  (0.45x FMA; routed through the batch path); (4) the VST3 core library
+   519→  compiled dsp.cpp alone -> pitch_control + SIMD sources added.
+   520→- R23 DELIVERY GAP CLOSED (OBS): the R23 evidence tree's VST3 bundle
+   521→  predates the R23 engine deltas (no lastCmndfMin / PitchControlLayer
+   522→  symbols; the R23 12/12 module gate ran the pre-delta wrapper). R24
+   523→  rebuilt the module from the current core and re-ran the chain green.
+   524→- Measurements (best-of-5, reference vCPU): kernel 4.8-6.3x (full/dec
+   525→  domains), 2.8-3.1x (hybrid fine); stage det_estimate 3.9-4.0x (dec),
+   526→  5.9-6.0x (full); FullRate 96k stereo 8v wall 1144 -> 368 ms/s
+   527→  (~114% -> ~37% CPU; the R19 "offline only" mode becomes a usable
+   528→  bit-exact reference); engine 13-case: mono_1v 2.8x, 8v 1.7x; voice_loop
+   529→  + interp_reads (55%+24% at 8v) remain the R25 SIMD target. The
+   530→  reassociating sample-axis variant (faster only on small shapes) is
+   531→  benchmark-only; FMA measured >= AVX2 nowhere here -> Auto prefers the
+   532→  bit-exact level; the decisions + raw JSONs are in
+   533→  PITCHLAB_R24_SIMD_BENCHMARK_RESULTS.md.
+   534→- Validation: suite 100 -> 110 (new r24 group: bit-exactness hard gates,
+   535→  engine bit-identity at AVX2 across 10 configs incl. tracking-gate
+   536→  paths, FMA engine closeness -- measured bit-identical outputs on the
+   537→  whole matrix, prepare validation, default neutrality, re-prepare level
+   538→  switching, alloc-free accelerated processing); 110/110 Release AND
+   539→  ASan/UBSan zero reports; 4/4 legacy + 4/4 default hash pins bit-exact;
+   540→  VST3 wrapper 21/21 + module integration 12/12 (FRESH bundle) +
+   541→  validator 47/47; R23 instruments 290/290 + 5/5. Evidence:
+   542→  octavox-work/r24/evidence/analysis_round24/logs/ (g0..g6).
+   543→- Environment: 6th sandbox reset at round start (cmake + llvm-mingw lost;
+   544→  cmake 4.4.4 reinstalled via pip; the Windows cross toolchain was NOT
+   545→  re-acquired this round -- the MinGW CMake paths are authored but
+   546→  unexecuted; recorded in the findings §5).
+   547→

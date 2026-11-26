@@ -67,11 +67,12 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 26 · OCTAVOX COMPLETE STATIC RECONSTRUCTION — mély statikus audit, ellentmondás-lezárás" },
-  { label: "Record ring", value: "mezőrend gépi úton lezárva: író {correction, i4, i5, period} csökkenő · fogyasztó {period, interval, dead, correction} · i4 = dead field" },
-  { label: "Pan law", value: "trigonometrikus/equal-power család (atan2f ×2 + 1/√2 + trig) · a lineáris 0.5·(1±p)·g CÁFOLVA" },
-  { label: "Kernel 256×6", value: "bit-exakt palindrom · 608 egyedi érték · DC-ripple ≤ 1.22e-4 · Farrow/LS/windowed-sinc/Gaussian eliminálva · generátor UNK" },
-  { label: "Bizonyíték", value: "1 065 880 utasítás xref-szken · hash előtte/utána ✓ · 395/394/394 modul reprodukálva · R25 archívum elveszett — minden állítás újralevezetve" },
+  { label: "Kör", value: "Round 28 · EVENT/QUERY PROTOCOL & PARAMETER GRAPH — statikus folytatás: eseményrendszer-újraosztályozás, m02 teljes dekód, U-7 és U-10 lezárva" },
+  { label: "Eseményrendszer", value: "a kiadó/router = DebugReport megfigyelő-rendszer (NEM a DSP feed) · DSP: modul-lekérdezési protokoll, demux-thunkokkal · m02 id 7..13 teljesen dekódolva" },
+  { label: "m02 read-outok", value: "7 = cent C4-től (−65535 sentinel) · 8 = frekvencia-arány · 9 = Q23-kvantált · 10 = sqrt(frac·(1−2⁻²³)) · 11 = confidence-szerű · 12/13 = ∓cent(0xA58C/0xA588) dB-kapuval" },
+  { label: "Lezárt UNK-k", value: "U-7 userscale = UI-legacy paraméter (írás wired, NULLA olvasó) · U-10 c_minmax = min/max aggregátor, ms int16 skálán · Q23 deglitch-rámpa (2²³/N) · 5-tap szomszédság" },
+  { label: "Latencia (U-2)", value: "a „getLatencySamples = 0 stub” érv VISSZAVONVA (rossz vtable-térkép) · a diagnosztikai LatencySamples soha-nem-írt mezőt olvas (0 xref) · a host-facing útvonal R29-re definiálva" },
+  { label: "Bizonyíték", value: "39 s1..s4 evidenciafájl + 4 új s5 szonda · 4 párhuzamos alelemzés · hash előtte/utána ✓ minden sornál · sandbox-resetek túlélve (push-first)" },
 ];
 
 export function ReportViewer({
@@ -122,17 +123,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 27. kör
+                Octavox Research — 28. kör
               </h1>
               <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm sm:line-clamp-none">
-                R26 megmaradt UNK tételeinek statikus lezárása: az ÉLŐ pan-törvény visszanyerve — LINEÁRIS 0.5·(1∓p)·G, G = 10^(gain_dB/20) (FUN_1800D9B20; az R26 „trigonometrikus/equal-power” ítélete valós, de a szállított patch-ben elérhetetlen keretrendszer-kódra vonatkozott) — a mix-audio 4-mintás kadenenciája kettős pontosságú index-sorrendű akkumulációval, a softclip tanh átlagérték-clipper (ln cosh osztott differencia + tanh midpoint), a Live-Mode 40 = 40 ms (konverziós hely utasításszinten), a „hungarian” skála index-clip miatt a neapolitannal azonos (nincs OOB), az m01 id0 mező olvasója megtalálva (0x18013C868, korrelát-scan bázis), az m02 esemény-router feliratkoztatási rendszeren át érkezik, a 256×6 kernel frakcionális késleltetés-bank (DC csoportkésleltetés = 2 + r/256 pontosan) · Eventide Octavox RE statikus reverzibilis projekt
+                Eseményrendszer újraosztályozva (a router = DebugReport megfigyelő-rendszer, NEM a DSP eseményforrás — az R27-es besorolás korrigálva), az m02 hét read-outja teljesen dekódolva (cent C4-től, frekvencia-arány, Q23-kvantált, confidence, ∓cent-korrekciók dB-kapuval), az „userscale” lezárva UI-legacy paraméterként (írás wired, nulla olvasó — a „map” hipotézis cáfolva), a c_minmax lezárva min/max aggregátorként (ms, int16 skála; Q23 deglitch-rámpa 2²³/N; 5-tap olvasási szomszédság), és a host-latencia hamis nyom megszüntetve (a diagnosztika soha-nem-írt mezőt olvas) · Eventide Octavox RE statikus reverzibilis projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 26 · KÉSZ
+              ROUND 28 · KÉSZ
             </Badge>
           </div>
           <div

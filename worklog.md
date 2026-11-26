@@ -640,3 +640,61 @@ this audit; no deletion of prior evidence).
 - **Process:** sandbox output sanitizer strips "[h" from displayed text — documented; all
   affected results re-verified via base64/octal dumps. Deliverables: R27 report (root) +
   F1..F8 findings + scripts + kernel JSON; R26 artifacts byte-intact; web page R27 section.
+
+---
+
+## ROUND 28 DELIVERY (2026-11-26) — EVENT/QUERY PROTOCOL & PARAMETER GRAPH (static, user-directed continuation)
+
+**Core:** static continuation of the R26/R27 line — the s1..s4 probe evidence
+(previous session: 39 files + 21 scripts) analysed via four parallel subagent
+passes + four new follow-up probes (s5a..s5d) run this session.
+**Original binary: never executed; hash constant across all passes (verified
+after every sandbox-restart recovery too).**
+
+- **EVENT SYSTEM RECLASSIFIED (R27 F7.2 corrected):** the hierarchical
+  publisher/router (FUN_1800C27E0 family) is the REPORT-TREE OBSERVER system
+  (structure-change notifications for DebugReport section nodes, vtable
+  0x1800C1DB0) — NOT the DSP event feed. The DSP runs a module query protocol:
+  engine m01/m02 are the ONLY custom slot-1/2 handlers; ~20 container classes
+  forward via demux thunks (slots 3/4 = children[idx]->m01/m02). Five dispatch
+  primitives total (incl. a sender-excluding slot-1 dispatcher FUN_1800C2C70);
+  zero clones. m02 ids 12/13 must arrive via a NON-IMMEDIATE id register —
+  search shape defined (R29).
+- **m02 FULLY DECODED (ids 7..13, jump table 0x1800E1890, 4-byte RVA entries):**
+  7 = cents-from-C4 (1200/ln2 · 1/261.6256; −65535 sentinel), 8 = frequency
+  ratio, 9 = Q23-quantised ratio n/(n+8), 10 = sqrt(frac·(1−2⁻²³)), 11 =
+  confidence-like sqrt((u−t)/u)·(N·2048/corr)·1.0647e-5, 12 = −cents
+  (engine+0xA58C), 13 = +cents(engine+0xA588) — both gated by a dB-domain
+  (ln10/20) confidence. All constants rip-decode-verified.
+- **U-7 CLOSED — userscale = UI-legacy parameter:** a registered scalar param
+  (config+0x3E0; 48-byte record; name "userscale") with a WIRED write side
+  (applier 0x1800C4930 + dirty queue, byte-identical to "pslew") and ZERO
+  readers — the full-.text +0x3E0 scan (38 hits classified) finds no float
+  consumer. The R26/R27 "map at 0x1803BB60C" REFUTED (misread high-dword of
+  the slew descriptor pointer). Real scale path = pattern table 0x1803BB780
+  via fn 0x1800E5999.
+- **U-10-residual CLOSED — c_minmax = patch-arity min/max aggregator:** ctor
+  0x1800D15D0 registers "minimum"/"maximum" ports; "ninputs" patch property;
+  per-entry clamped running reduction (×4-unrolled, 0x1800D1D40); atomic
+  dirty-bit fanout; block-rate. Delay-family units = MILLISECONDS on the int16
+  scale ({−32768, +32767, 1.0} triple). Deglitch = Q23 LINEAR RAMP (step 2²³/N,
+  0x1800CFFB0) + 5-tap read neighbourhood (base−2..base+2); ms→samples at ≥3
+  sites; shared param-graph host at param+0x260; two engine clusters (+0x6E0,
+  +0xB088).
+- **U-2 NARROWED + false lead eliminated:** the "getLatencySamples = 0 stub"
+  claim WITHDRAWN (0x1803F05D0 = internal 0x28A0-byte MI engine class, slot0 =
+  deleting dtor — not COM). The DebugReport LatencySamples attribute
+  serialises a NEVER-WRITTEN field (env = X+0x25D0 via the 0x18034784F lea
+  chain; value [X+0x25F4]; 0 xrefs in .text; ctor writes nothing there) — the
+  plugin tracks no latency value in its own state. Host-facing path UNK; the
+  real COM-vtable hunt defined for R29 (GUID-comparing qI, export-parser fix,
+  factory class-registration array).
+- **Deliverables:** OCTAVOX_R28_EVENT_QUERY_CLOSURE.md (root) +
+  octavox-work/r28/notes/R28_FRESH_FINDINGS.md (F1..F4, VAs) + s5 scripts
+  (r28_s5_probe.py, r28_s5b_probe.py, r28_s5c_probe.py, s5d inline) + evidence
+  r28_s5*.txt; worklog R28 entry; web page R28 section.
+- **Process:** THREE sandbox working-tree resets during this round — all after
+  the push of the R26/R27/R28-WIP line (branch r26-28-static-audit), so
+  nothing was lost (push-first); evidence survived via the /tmp mirror; hash
+  re-verified after each recovery. Remote owner line (diverged main) untouched;
+  token stored outside the repo, never committed.
