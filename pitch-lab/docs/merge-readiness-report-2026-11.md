@@ -138,4 +138,8 @@ Remaining open items: the intermittent UI-lane engine-switch stall (1 of 3 runs;
 | 2ecd343 | shared resampler 4.6x faster (tabulated Kaiser factor + sinc rotation) | worst |fast - exact| 7.4e-13; granular @96k/-12st/grain 0.5 RTF 1.35-2.8 -> 0.43; timepitch adaptive worst callback 14.8 -> 7.6 ms |
 | b785138 | CI evidence steps run past a failed gate; regenerated examples uploaded | |
 | (this) | audio-path golden 228 -> 272 records (GCC, run 45825336190) | 227 identities unchanged, 44 new (all PASS), 1 phase-G switch target now native.bungee; 2 informational wobbles (transient-burst zero-cross pitch 699.7 -> 700.5 Hz, granular stereo diagnostic 441.6 -> 441.7 Hz); the 11 example WAVs byte-identical |
+| 469de4c | switch keys: short unambiguous labels (MODE read PITCH / PITCH on the CI capture) | |
+| ddc3917 | render-determinism checks run as offline bounces (realtime adoption timing is spec-dependent); WORLD paced zero-fallback gated on >= 8 cores | |
+
+**CI at ddc3917 (run 45873312435): ALL JOBS GREEN** — T-INF1, VST3 product layer (tests, audio-path gate 272 records, validator 47/47, examples, UI capture + parameter binding), Windows x64, ASan+UBSan, TSan.
 

@@ -1793,3 +1793,19 @@ Stage Summary:
 - CI (19a5c1b, VST3 attempt 2): 52/52 tests, artifact gate PASS, validator 47/47, 11/11 examples byte-identical; T-INF1 + Windows green; sanitizers: only the pre-existing LFO test fails; TSan reports no data race.
 - Open: the pre-existing LFO test; one realtime timepitch determinism flake (1 of 5 runs); the owner's engine review (granular removal likely, timepitch undecided; Bungee MPL-2.0 / stftPitchShift MIT as A/B candidates). Details: pitch-lab/docs/merge-readiness-report-2026-11.md §13.
 - Follow-up: the long-standing LFO test failure was an offline-bounce defect (envelope-exit re-centre not waited for in kOffline) — fixed with a bounded wait on the exit watermark (f2ecee9; deterministic 2010.07 in Release and ASan). UI-lane switch stall: intermittent, not reproducible at the adapter level (new realtime regression test), diagnostics added (24e90c6). CI at 24e90c6: ALL JOBS GREEN.
+
+---
+Task ID: 36c-product-feedback-round
+Agent: Claude Code (Opus 5.5)
+Task: owner feedback: switches instead of sliders for discrete values, typed pitch, +-24/+-12 range, formant in semitones, RECT replacement, pitch-synced sensitivity, Bungee + stftPitchShift A/B engines, performance at 96 kHz.
+
+Work Log:
+- UI: PLSwitch (discrete 2..5 positions), PLNumberEdit (typed pitch), per-engine pitch range (+-min(24, support)), formant ratios in st, short switch labels (80aa22f, 469de4c).
+- timepitch: Tukey replaces RECT (66 -> 0 clicks), Voicing Gate on the tracker's per-frame confidence (80aa22f).
+- Engines: native.bungee (MPL-2.0) + native.stft (MIT) through a shared fixed-latency streaming wrapper; PLV4 (c976dd7, 5d0a279).
+- Performance: resampler hot path 4.6x (tabulated Kaiser factor + sinc rotation, 7.4e-13 max error) — granular@96k RTF 1.35-2.8 -> 0.43, timepitch adaptive worst callback 14.8 -> 7.6 ms (2ecd343).
+- CI evidence steps run past gate failures; audio-path golden 272 records (b785138, c2b2690); determinism checks as offline bounces (ddc3917).
+
+Stage Summary:
+- CI ALL GREEN at ddc3917. Open: granular's rare 13 ms worst callback (not the resampler); listening comparison of the A/B engines against timepitch.
+
