@@ -739,13 +739,30 @@ class PitchLabEditor final : public VSTGUIEditor, public IControlListener {
       formatParamValue(tag, plain, buf, sizeof(buf));
       std::string l(buf);
       for (char& c : l) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-      labels.push_back(l);
+      labels.push_back(switchLabel(l));
     }
     auto* sw = new ui_::PLSwitch(r, this, static_cast<int32_t>(tag), labels);
     sw->setValueNormalized(getController()->getParamNormalized(tag));
     parent->addView(sw);
     sliderByTag_[tag] = sw;
     return sw;
+  }
+
+  /// A switch key holds ~6 pixel-font glyphs: long choice texts get a
+  /// short, UNAMBIGUOUS key label (truncation made "Pitch Synced" and
+  /// "Pitch + Formant" both read "PITCH"); the full text stays in the value
+  /// label above the switch.
+  [[nodiscard]] static std::string switchLabel(const std::string& upper) {
+    static const std::pair<const char*, const char*> kShort[] = {
+        {"ADAPTIVE", "ADAPT"},     {"PITCH SYNCED", "SYNC"}, {"PITCH + FORMANT", "FORMNT"},
+        {"HAMMING", "HAMMNG"},     {"BARTLETT", "BARTLT"},   {"TRIANGULAR", "TRI"},
+        {"REFERENCE", "REF"},      {"STANDARD", "STD"},      {"CHEAPER", "CHEAP"},
+        {"DEFAULT", "DEFLT"},      {"DIO (FAST)", "DIO"},  {"HARVEST (ACCURATE)", "HARVST"},
+    };
+    for (const auto& [full, abbr] : kShort) {
+      if (upper == full) return abbr;
+    }
+    return upper;
   }
 
   ui_::PLSlider* addSliderTo(CViewContainer* parent, uint32_t tag, const CRect& r) {
