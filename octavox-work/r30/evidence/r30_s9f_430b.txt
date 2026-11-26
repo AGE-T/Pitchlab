@@ -1,0 +1,12 @@
+functions with lea [x+0x430]: 10
+  fn 0x1800F00A0..0x1800FA000: 2 lea(s) ['0x1800F20C2 rcx=[rbp+0x430]', '0x1800F2115 rcx=[rbp+0x430]'] | slot2-calls: 0 []
+  fn 0x1800FA000..0x180103A08: 2 lea(s) ['0x1800FAE2C rcx=[rbp+0x430]', '0x1800FAE49 rcx=[rbp+0x430]'] | slot2-calls: 0 []
+  fn 0x180109D40..0x180113C3A: 2 lea(s) ['0x18010BD62 rcx=[rbp+0x430]', '0x18010BDB5 rcx=[rbp+0x430]'] | slot2-calls: 0 []
+  fn 0x180113C40..0x18011D5E5: 2 lea(s) ['0x180114A6C rcx=[rbp+0x430]', '0x180114A89 rcx=[rbp+0x430]'] | slot2-calls: 0 []
+  fn 0x180122E00..0x18012CCFA: 2 lea(s) ['0x180124E22 rcx=[rbp+0x430]', '0x180124E75 rcx=[rbp+0x430]'] | slot2-calls: 0 []
+  fn 0x18012CD00..0x1801366A5: 2 lea(s) ['0x18012DB2C rcx=[rbp+0x430]', '0x18012DB49 rcx=[rbp+0x430]'] | slot2-calls: 0 []
+  fn 0x180137DF0..0x180137E1E: 1 lea(s) ['0x180137E05 rcx=[rbx+0x430]'] | slot2-calls: 0 []
+  fn 0x180137E20..0x180137E83: 1 lea(s) ['0x180137E53 rcx=[rsi+0x430]'] | slot2-calls: 0 []
+  fn 0x18030F650..0x18030FDE7: 3 lea(s) ['0x18030F920 rcx=[rbp+0x430]', '0x18030F956 rdx=[rbp+0x430]', '0x18030FD85 rcx=[rbp+0x430]'] | slot2-calls: 0 []
+  fn 0x180331680..0x1803351F0: 2 lea(s) ['0x18033395C rdi=[rsi+0x430]', '0x1803339AD rdx=[rsi+0x430]'] | slot2-calls: 0 []
+post-pass hash OK

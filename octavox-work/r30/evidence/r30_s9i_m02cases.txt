@@ -1,0 +1,99 @@
+--- m02 head (dispatch) (0x1800E1520..0x1800E1560) ---
+  0x1800E1520  push     rbx                                         
+  0x1800E1522  sub      rsp, 0x40                                   
+  0x1800E1526  lea      eax, [rdx - 7]                              
+  0x1800E1529  movaps   xmmword ptr [rsp + 0x30], xmm6              
+  0x1800E152E  movaps   xmmword ptr [rsp + 0x20], xmm7              
+  0x1800E1533  mov      rbx, r8                                     
+  0x1800E1536  cmp      eax, 6                                      
+  0x1800E1539  ja       0x1800e1871                                 
+  0x1800E153F  lea      r8, [rip - 0xe1546]                         
+  0x1800E1546  mov      r9d, dword ptr [r8 + rax*4 + 0xe1890]       
+  0x1800E154E  add      r9, r8                                      
+  0x1800E1551  jmp      r9                                          
+  0x1800E1554  mov      rax, qword ptr [rcx + 0xa4e0]               
+  0x1800E155B  movss    xmm1, dword ptr [rax]                       
+  0x1800E155F  .byte    0x0f                                        
+
+--- case 12 + case 13 + tail (0x1800E1740..0x1800E1890) ---
+  0x1800E1740  add      ecx, dword ptr [rdi]                        
+  0x1800E1742  sub      byte ptr [rsp + 0x30], dh                   
+  0x1800E1746  movaps   xmm7, xmmword ptr [rsp + 0x20]              
+  0x1800E174B  add      rsp, 0x40                                   
+  0x1800E174F  pop      rbx                                         
+  0x1800E1750  ret                                                  
+  0x1800E1751  mov      rax, qword ptr [rcx + 0xa4e0]               
+  0x1800E1758  movss    xmm7, dword ptr [rcx + 0xa58c]              
+  0x1800E1760  movss    xmm0, dword ptr [rax + 4]                   
+  0x1800E1765  cvtps2pd xmm0, xmm0                                  
+  0x1800E1768  mulsd    xmm0, qword ptr [rip + 0x330bb0]              ; "о8����?"
+  0x1800E1770  sqrtpd   xmm0, xmm0                                  
+  0x1800E1774  cvtpd2ps xmm1, xmm0                                  
+  0x1800E1778  movss    xmm0, dword ptr [rcx + 0xa4e8]              
+  0x1800E1780  cvtps2pd xmm0, xmm0                                  
+  0x1800E1783  cvtps2pd xmm6, xmm1                                  
+  0x1800E1786  mulsd    xmm0, qword ptr [rip + 0x330a72]              ; "����(y�?"
+  0x1800E178E  call     0x180351f50                                 
+  0x1800E1793  comisd   xmm6, xmm0                                  
+  0x1800E1797  xorps    xmm2, xmm2                                  
+  0x1800E179A  jae      0x1800e179f                                 
+  0x1800E179C  xorps    xmm7, xmm7                                  
+  0x1800E179F  movaps   xmm1, xmm7                                  
+  0x1800E17A2  andps    xmm1, xmmword ptr [rip + 0x3314b7]            ; q=0x7FFFFFFF7FFFFFFF
+  0x1800E17A9  comiss   xmm1, dword ptr [rip + 0x330694]              ; q=0x2880000228000000
+  0x1800E17B0  jbe      0x1800e17cd                                 
+  0x1800E17B2  movaps   xmm0, xmm7                                  
+  0x1800E17B5  call     0x180352dc0                                 
+  0x1800E17BA  xorps    xmm1, xmm1                                  
+  0x1800E17BD  cvtss2sd xmm1, xmm0                                  
+  0x1800E17C1  mulsd    xmm1, qword ptr [rip + 0x3310bf]              ; f64=-1731.234
+  0x1800E17C9  cvtpd2ps xmm2, xmm1                                  
+  0x1800E17CD  movss    dword ptr [rbx], xmm2                       
+  0x1800E17D1  movaps   xmm6, xmmword ptr [rsp + 0x30]              
+  0x1800E17D6  movaps   xmm7, xmmword ptr [rsp + 0x20]              
+  0x1800E17DB  add      rsp, 0x40                                   
+  0x1800E17DF  pop      rbx                                         
+  0x1800E17E0  ret                                                  
+  0x1800E17E1  mov      rax, qword ptr [rcx + 0xa4e0]               
+  0x1800E17E8  movss    xmm7, dword ptr [rcx + 0xa588]              
+  0x1800E17F0  movss    xmm0, dword ptr [rax + 4]                   
+  0x1800E17F5  cvtps2pd xmm0, xmm0                                  
+  0x1800E17F8  mulsd    xmm0, qword ptr [rip + 0x330b20]              ; "о8����?"
+  0x1800E1800  sqrtpd   xmm0, xmm0                                  
+  0x1800E1804  cvtpd2ps xmm1, xmm0                                  
+  0x1800E1808  movss    xmm0, dword ptr [rcx + 0xa4e8]              
+  0x1800E1810  cvtps2pd xmm0, xmm0                                  
+  0x1800E1813  cvtps2pd xmm6, xmm1                                  
+  0x1800E1816  mulsd    xmm0, qword ptr [rip + 0x3309e2]              ; "����(y�?"
+  0x1800E181E  call     0x180351f50                                 
+  0x1800E1823  comisd   xmm6, xmm0                                  
+  0x1800E1827  xorps    xmm2, xmm2                                  
+  0x1800E182A  jae      0x1800e182f                                 
+  0x1800E182C  xorps    xmm7, xmm7                                  
+  0x1800E182F  movaps   xmm1, xmm7                                  
+  0x1800E1832  andps    xmm1, xmmword ptr [rip + 0x331427]            ; q=0x7FFFFFFF7FFFFFFF
+  0x1800E1839  comiss   xmm1, dword ptr [rip + 0x330604]              ; q=0x2880000228000000
+  0x1800E1840  jbe      0x1800e185d                                 
+  0x1800E1842  movaps   xmm0, xmm7                                  
+  0x1800E1845  call     0x180352dc0                                 
+  0x1800E184A  xorps    xmm1, xmm1                                  
+  0x1800E184D  cvtss2sd xmm1, xmm0                                  
+  0x1800E1851  mulsd    xmm1, qword ptr [rip + 0x330ce7]              ; f64=1731.234
+  0x1800E1859  cvtpd2ps xmm2, xmm1                                  
+  0x1800E185D  movss    dword ptr [rbx], xmm2                       
+  0x1800E1861  movaps   xmm6, xmmword ptr [rsp + 0x30]              
+  0x1800E1866  movaps   xmm7, xmmword ptr [rsp + 0x20]              
+  0x1800E186B  add      rsp, 0x40                                   
+  0x1800E186F  pop      rbx                                         
+  0x1800E1870  ret                                                  
+  0x1800E1871  mov      rax, qword ptr [rcx]                        
+  0x1800E1874  mov      r9, rbx                                     
+  0x1800E1877  xor      r8d, r8d                                    
+  0x1800E187A  movaps   xmm6, xmmword ptr [rsp + 0x30]              
+  0x1800E187F  movaps   xmm7, xmmword ptr [rsp + 0x20]              
+  0x1800E1884  add      rsp, 0x40                                   
+  0x1800E1888  pop      rbx                                         
+  0x1800E1889  jmp      qword ptr [rax + 0x20]                      
+  0x1800E188D  nop      dword ptr [rax]                             
+
+post-pass hash OK

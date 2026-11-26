@@ -1,0 +1,21 @@
+===== (a) callers of prepare fn 0x1801A5F40 =====
+
+===== (b) caller contexts =====
+===== (c) the latency block 0x1801A616A..0x1801A61A7 re-read =====
+--- live-mode latency block (0x1801A616A..0x1801A61A7) ---
+  0x1801A616A  movsd    xmm0, qword ptr [rdi + 0x30]                
+  0x1801A616F  mov      rax, qword ptr [rdi]                        
+  0x1801A6172  cvttsd2si edx, xmm0                                   
+  0x1801A6176  mov      rcx, rdi                                    
+  0x1801A6179  comiss   xmm6, dword ptr [rip + 0x26bed8]              ; f64=4.20404320493617e-05 f32=0.5
+  0x1801A6180  jbe      0x1801a618b                                 
+  0x1801A6182  mov      byte ptr [rdi + 0x2864], 1                  
+  0x1801A6189  jmp      0x1801a6192                                 
+  0x1801A618B  mov      byte ptr [rdi + 0x2864], 0                  
+  0x1801A6192  call     qword ptr [rax + 0x258]                     
+  0x1801A6198  mov      edx, eax                                    
+  0x1801A619A  mov      rcx, rdi                                    
+  0x1801A619D  call     0x180260220                                 
+  0x1801A61A2  jmp      0x1801a6436                                 
+
+post-pass hash OK

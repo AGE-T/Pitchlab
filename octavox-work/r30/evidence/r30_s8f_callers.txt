@@ -1,0 +1,104 @@
+===== (a) direct call/jmp sites of 0x180260220 =====
+  call/jmp at 0x1801A619D  (fn 0x1801A5F40..0x1801A6464)
+
+===== (b) vtable membership (qword refs in .rdata/.data) =====
+
+===== (c) caller contexts =====
+--- caller of setLatencySamples near 0x1801A619D (0x1801A609D..0x1801A61B5) ---
+  0x1801A609D  add      byte ptr [rax - 0x75], cl                   
+  0x1801A60A0  sbb      byte ptr [rbx - 0x566f0fbd], cl             
+  0x1801A60A6  add      byte ptr [rax], al                          
+  0x1801A60A8  add      byte ptr [rax], dh                          
+  0x1801A60AA  jne      0x1801a60b0                                 
+  0x1801A60AC  lock inc dword ptr [rbx - 0x10]                      
+  0x1801A60B0  mov      rcx, qword ptr [rsp + 0x20]                 
+  0x1801A60B5  add      rcx, -0x10                                  
+  0x1801A60B9  mov      eax, dword ptr [rcx]                        
+  0x1801A60BB  nop                                                  
+  0x1801A60BC  test     eax, 0x30000000                             
+  0x1801A60C1  jne      0x1801a60d8                                 
+  0x1801A60C3  mov      eax, 0xffffffff                             
+  0x1801A60C8  lock xadd dword ptr [rcx], eax                        
+  0x1801A60CC  dec      eax                                         
+  0x1801A60CE  cmp      eax, -1                                     
+  0x1801A60D1  jne      0x1801a60d8                                 
+  0x1801A60D3  call     0x18015e100                                 
+  0x1801A60D8  movsx    ebp, byte ptr [rbx + 1]                     
+  0x1801A60DC  shl      ebp, 0x10                                   
+  0x1801A60DF  movsx    eax, byte ptr [rbx + 2]                     
+  0x1801A60E3  shl      eax, 8                                      
+  0x1801A60E6  add      ebp, eax                                    
+  0x1801A60E8  movsx    eax, byte ptr [rbx]                         
+  0x1801A60EB  shl      eax, 0x18                                   
+  0x1801A60EE  add      ebp, eax                                    
+  0x1801A60F0  movsx    eax, byte ptr [rbx + 3]                     
+  0x1801A60F4  add      ebp, eax                                    
+  0x1801A60F6  mov      eax, dword ptr [rbx - 0x10]                 
+  0x1801A60F9  nop                                                  
+  0x1801A60FA  test     eax, 0x30000000                             
+  0x1801A60FF  jne      0x1801a611c                                 
+  0x1801A6101  mov      eax, 0xffffffff                             
+  0x1801A6106  lock xadd dword ptr [rbx - 0x10], eax                 
+  0x1801A610B  dec      eax                                         
+  0x1801A610D  cmp      eax, -1                                     
+  0x1801A6110  jne      0x1801a611c                                 
+  0x1801A6112  lea      rcx, [rbx - 0x10]                           
+  0x1801A6116  call     0x18015e100                                 
+  0x1801A611B  nop                                                  
+  0x1801A611C  mov      rcx, qword ptr [rsp + 0x28]                 
+  0x1801A6121  add      rcx, -0x10                                  
+  0x1801A6125  mov      eax, dword ptr [rcx]                        
+  0x1801A6127  nop                                                  
+  0x1801A6128  test     eax, 0x30000000                             
+  0x1801A612D  jne      0x1801a6144                                 
+  0x1801A612F  mov      eax, 0xffffffff                             
+  0x1801A6134  lock xadd dword ptr [rcx], eax                        
+  0x1801A6138  dec      eax                                         
+  0x1801A613A  cmp      eax, -1                                     
+  0x1801A613D  jne      0x1801a6144                                 
+  0x1801A613F  call     0x18015e100                                 
+  0x1801A6144  mov      rax, qword ptr [rdi]                        
+  0x1801A6147  mov      r9b, 1                                      
+  0x1801A614A  xor      r8d, r8d                                    
+  0x1801A614D  mov      edx, ebp                                    
+  0x1801A614F  mov      rcx, rdi                                    
+  0x1801A6152  call     qword ptr [rax + 0x300]                     
+  0x1801A6158  inc      r14d                                        
+  0x1801A615B  cmp      r14d, 8                                     
+  0x1801A615F  jle      0x1801a6050                                 
+  0x1801A6165  jmp      0x1801a6436                                 
+  0x1801A616A  movsd    xmm0, qword ptr [rdi + 0x30]                
+  0x1801A616F  mov      rax, qword ptr [rdi]                        
+  0x1801A6172  cvttsd2si edx, xmm0                                   
+  0x1801A6176  mov      rcx, rdi                                    
+  0x1801A6179  comiss   xmm6, dword ptr [rip + 0x26bed8]              ; f64=4.20404320493617e-05 f32=0.5
+  0x1801A6180  jbe      0x1801a618b                                 
+  0x1801A6182  mov      byte ptr [rdi + 0x2864], 1                  
+  0x1801A6189  jmp      0x1801a6192                                 
+  0x1801A618B  mov      byte ptr [rdi + 0x2864], 0                  
+  0x1801A6192  call     qword ptr [rax + 0x258]                     
+  0x1801A6198  mov      edx, eax                                    
+  0x1801A619A  mov      rcx, rdi                                    
+  0x1801A619D  call     0x180260220                                 
+  0x1801A61A2  jmp      0x1801a6436                                 
+  0x1801A61A7  comiss   xmm6, dword ptr [rip + 0x26beaa]              ; f64=4.20404320493617e-05 f32=0.5
+  0x1801A61AE  seta     al                                          
+  0x1801A61B1  .byte    0x88                                        
+  0x1801A61B2  xchg     dword ptr [rbp + 0x28], esp                 
+
+===== (d) notification fn 0x18025DA50 =====
+  bounds: 0x18025DA50..0x18025DA6E
+--- 0x18025DA50 head (0x18025DA50..0x18025DA6E) ---
+  0x18025DA50  mov      qword ptr [rsp + 0x18], rbx                 
+  0x18025DA55  push     rsi                                         
+  0x18025DA56  push     rdi                                         
+  0x18025DA57  push     r15                                         
+  0x18025DA59  sub      rsp, 0x20                                   
+  0x18025DA5D  mov      ebx, dword ptr [rcx + 0x24]                 
+  0x18025DA60  mov      r15, rdx                                    
+  0x18025DA63  sub      ebx, 1                                      
+  0x18025DA66  mov      rsi, rcx                                    
+  0x18025DA69  movsxd   rdi, ebx                                    
+  0x18025DA6C  js       0x18025dacf                                 
+
+post-pass hash OK

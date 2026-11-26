@@ -1,0 +1,79 @@
+===== 0x1800D2B10 bounds 0x1800D2B10..0x1800D2C32 (290 B) =====
+--- full (0x1800D2B10..0x1800D2C32) ---
+  0x1800D2B10  mov      qword ptr [rsp + 0x20], rbx                  
+  0x1800D2B15  push     rbp                                          
+  0x1800D2B16  push     rsi                                          
+  0x1800D2B17  push     rdi                                          
+  0x1800D2B18  push     r12                                          
+  0x1800D2B1A  push     r13                                          
+  0x1800D2B1C  push     r14                                          
+  0x1800D2B1E  push     r15                                          
+  0x1800D2B20  sub      rsp, 0x60                                    
+  0x1800D2B24  mov      rax, qword ptr [rip + 0x3d2515]               ; "2��-�+" 
+  0x1800D2B2B  xor      rax, rsp                                     
+  0x1800D2B2E  mov      qword ptr [rsp + 0x50], rax                  
+  0x1800D2B33  mov      r15, rdx                                     
+  0x1800D2B36  mov      r14, rcx                                     
+  0x1800D2B39  mov      qword ptr [rsp + 0x20], rcx                  
+  0x1800D2B3E  mov      qword ptr [rcx], rdx                         
+  0x1800D2B41  mov      dword ptr [rcx + 8], r9d                     
+  0x1800D2B45  mov      qword ptr [rcx + 0x10], 0xffffffffffffffff   
+  0x1800D2B4D  mov      dword ptr [rcx + 0x18], 0xc7000000           
+  0x1800D2B54  mov      dword ptr [rcx + 0x1c], 0x46fffe00           
+  0x1800D2B5B  mov      dword ptr [rcx + 0x20], 0x3f800000           
+  0x1800D2B62  xor      r12d, r12d                                   
+  0x1800D2B65  mov      qword ptr [rcx + 0x28], r12                  
+  0x1800D2B69  mov      dword ptr [rcx + 0x30], r12d                 
+  0x1800D2B6D  mov      qword ptr [rcx + 0x38], r12                  
+  0x1800D2B71  lea      rbx, [rcx + 0x48]                            
+  0x1800D2B75  mov      qword ptr [rsp + 0x30], r12                  
+  0x1800D2B7A  mov      r13d, 0xf                                    
+  0x1800D2B80  mov      qword ptr [rsp + 0x48], r13                  
+  0x1800D2B85  mov      esi, 3                                       
+  0x1800D2B8A  mov      qword ptr [rsp + 0x40], rsi                  
+  0x1800D2B8F  movzx    eax, word ptr [rip + 0x33582e]                ; "obj" 
+  0x1800D2B96  mov      word ptr [rsp + 0x30], ax                    
+  0x1800D2B9B  movzx    eax, byte ptr [rip + 0x335824]                ; q=0x65756C6176006A 
+  0x1800D2BA2  mov      byte ptr [rsp + 0x32], al                    
+  0x1800D2BA6  mov      byte ptr [rsp + 0x33], r12b                  
+  0x1800D2BAB  mov      rdx, r8                                      
+  0x1800D2BAE  mov      rcx, rbx                                     
+  0x1800D2BB1  call     0x180022400                                  
+  0x1800D2BB6  nop                                                   
+  0x1800D2BB7  mov      qword ptr [rbx + 0x20], r12                  
+  0x1800D2BBB  mov      qword ptr [rbx + 0x30], r12                  
+  0x1800D2BBF  mov      qword ptr [rbx + 0x38], r12                  
+  0x1800D2BC3  lea      rbp, [rsp + 0x30]                            
+  0x1800D2BC8  movups   xmm0, xmmword ptr [rbp]                      
+  0x1800D2BCC  movups   xmmword ptr [rbx + 0x20], xmm0               
+  0x1800D2BD0  mov      eax, esi                                     
+  0x1800D2BD2  mov      qword ptr [rbx + 0x30], rax                  
+  0x1800D2BD6  mov      qword ptr [rbx + 0x38], r13                  
+  0x1800D2BDA  mov      dword ptr [rbx + 0x40], 1                    
+  0x1800D2BE1  mov      dword ptr [rbx + 0x44], 1                    
+  0x1800D2BE8  mov      qword ptr [rbx + 0x48], r12                  
+  0x1800D2BEC  mov      qword ptr [rbx + 0x50], r12                  
+  0x1800D2BF0  mov      qword ptr [rbx + 0x58], r12                  
+  0x1800D2BF4  mov      qword ptr [rbx + 0x60], r12                  
+  0x1800D2BF8  mov      rdx, qword ptr [r15]                         
+  0x1800D2BFB  mov      r8, qword ptr [rdx + 0x18]                   
+  0x1800D2BFF  lea      rdx, [r14 + 0x48]                            
+  0x1800D2C03  mov      rcx, r15                                     
+  0x1800D2C06  call     r8                                           
+  0x1800D2C09  nop                                                   
+  0x1800D2C0A  mov      rax, r14                                     
+  0x1800D2C0D  mov      rcx, qword ptr [rsp + 0x50]                  
+  0x1800D2C12  xor      rcx, rsp                                     
+  0x1800D2C15  call     0x18015e0e0                                  
+  0x1800D2C1A  mov      rbx, qword ptr [rsp + 0xb8]                  
+  0x1800D2C22  add      rsp, 0x60                                    
+  0x1800D2C26  pop      r15                                          
+  0x1800D2C28  pop      r14                                          
+  0x1800D2C2A  pop      r13                                          
+  0x1800D2C2C  pop      r12                                          
+  0x1800D2C2E  pop      rdi                                          
+  0x1800D2C2F  pop      rsi                                          
+  0x1800D2C30  pop      rbp                                          
+  0x1800D2C31  ret                                                   
+
+post-pass hash OK

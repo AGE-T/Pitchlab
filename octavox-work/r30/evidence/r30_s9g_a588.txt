@@ -1,0 +1,8 @@
+=== reads of +0xA588/+0xA58C (movss from) ===
+  0x1800E1758  [rcx+0xa58c]  fn 0x1800E1520..0x1800E18AC
+  0x1800E17E8  [rcx+0xa588]  fn 0x1800E1520..0x1800E18AC
+total reads: 2
+
+=== writes to +0xA588/+0xA58C (movss to) ===
+total writes: 0
+post-pass hash OK

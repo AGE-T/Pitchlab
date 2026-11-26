@@ -1,0 +1,5 @@
+=== all 0xA588/0xA58C mentions + covering wide stores ===
+  0x1800E1758  movss xmm7, dword ptr [rcx + 0xa58c]                         fn 0x1800E1520..0x1800E18AC
+  0x1800E17E8  movss xmm7, dword ptr [rcx + 0xa588]                         fn 0x1800E1520..0x1800E18AC
+total: 2
+post-pass hash OK

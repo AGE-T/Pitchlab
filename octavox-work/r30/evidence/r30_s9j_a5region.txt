@@ -1,0 +1,41 @@
+  +0xA400: 2 hits  {'movups': 1, 'mov': 1}
+  +0xA404: 2 hits  {'movups': 1, 'mov': 1}
+  +0xA408: 1 hits  {'mov': 1}
+  +0xA40C: 1 hits  {'mov': 1}
+  +0xA410: 2 hits  {'mov': 2}
+  +0xA414: 2 hits  {'mov': 2}
+  +0xA418: 2 hits  {'mov': 2}
+  +0xA41C: 3 hits  {'mov': 3}
+  +0xA420: 3 hits  {'mov': 3}
+  +0xA42C: 3 hits  {'mov': 3}
+  +0xA440: 1 hits  {'mov': 1}
+  +0xA448: 1 hits  {'mov': 1}
+  +0xA44C: 1 hits  {'movss': 1}
+  +0xA450: 1 hits  {'mov': 1}
+  +0xA484: 1 hits  {'mov': 1}
+  +0xA488: 1 hits  {'mov': 1}
+  +0xA48C: 1 hits  {'mov': 1}
+  +0xA498: 1 hits  {'movss': 1}
+  +0xA4A8: 1 hits  {'movss': 1}
+  +0xA4B8: 1 hits  {'movss': 1}
+  +0xA4D8: 2 hits  {'mov': 2}
+  +0xA4E0: 6 hits  {'mov': 6}
+  +0xA4E8: 3 hits  {'mov': 1, 'movss': 2}
+  +0xA4FC: 1 hits  {'add': 1}
+  +0xA508: 15 hits  {'lea': 12, 'add': 3}
+  +0xA520: 3 hits  {'mulss': 2, 'divss': 1}
+  +0xA524: 3 hits  {'movss': 3}
+  +0xA558: 1 hits  {'mov': 1}
+  +0xA55C: 1 hits  {'movss': 1}
+  +0xA560: 1 hits  {'movss': 1}
+  +0xA564: 1 hits  {'movss': 1}
+  +0xA568: 1 hits  {'movss': 1}
+  +0xA57C: 1 hits  {'mov': 1}
+      0x1800E13EB  mov qword ptr [rbx + 0xa57c], rax                          fn 0x1800E10B0..0x1800E13FD
+  +0xA588: 1 hits  {'movss': 1}
+      0x1800E17E8  movss xmm7, dword ptr [rcx + 0xa588]                       fn 0x1800E1520..0x1800E18AC
+  +0xA58C: 1 hits  {'movss': 1}
+      0x1800E1758  movss xmm7, dword ptr [rcx + 0xa58c]                       fn 0x1800E1520..0x1800E18AC
+  +0xA598: 1 hits  {'mov': 1}
+      0x1800E7DC9  mov edx, 0xa598                                            fn 0x1800E7DB0..0x1800E7DE4
+post-pass hash OK

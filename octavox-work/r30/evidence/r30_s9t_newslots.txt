@@ -1,0 +1,10 @@
+=== immediate r8d ids at env_t-slot calls ===
+  0x1800E5576: call [+0x80] with r8d=10 (def 0x1800E5566)  fn 0x1800E5160..0x1800E5999
+  0x1800E558F: call [+0x80] with r8d=11 (def 0x1800E557F)  fn 0x1800E5160..0x1800E5999
+  0x1800E571C: call [+0x80] with r8d=12 (def 0x1800E5710)  fn 0x1800E5160..0x1800E5999
+  0x1800E5779: call [+0x80] with r8d=13 (def 0x1800E576D)  fn 0x1800E5160..0x1800E5999
+  0x1800EBB6E: call [+0x78] with r8d=0 (def 0x1800EBB68)  fn 0x1800EBAF0..0x1800EC0A9
+  0x180136816: call [+0x80] with r8d=0 (def 0x18013680D)  fn 0x180136780..0x1801368D7
+  0x180139205: call [+0x80] with r8d=0 (def 0x1801391F9)  fn 0x1801391F0..0x180139252
+total immediate: 7 | non-immediate: 219
+post-pass hash OK

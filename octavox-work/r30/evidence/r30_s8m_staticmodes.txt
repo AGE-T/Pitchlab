@@ -1,0 +1,4 @@
+===== (a) tag dwords in .data/.rdata with qword context =====
+
+===== (b) distinct mode-object vtables + slot0 bodies =====
+post-pass hash OK

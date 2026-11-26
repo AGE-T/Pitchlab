@@ -2,7 +2,18 @@ import fs from "node:fs";
 import path from "node:path";
 import { ReportViewer } from "../components/report-viewer";
 
-// R29 (current round): HOST COM SURFACE & NON-IMMEDIATE ID CENSUS — the U-2
+// R30 (current round): FINAL UNK CLOSURE — the last two standing UNKs closed
+// with numbers. U-2: the "slot 17 (+0x88)" premise was a phantom (the SDK's
+// IAudioProcessor has 11 slots; getLatencySamples = slot 6, +0x30 = 0x18000E540)
+// → host latency = max(0, [VoxAudioProcessor+0x3C]), set by the 'live'-mode
+// prepare to flag ? 8 : round(0.04·sr)+8 (40 ms pitch window + 8 samples);
+// the R29 "aggregation path" withdrawn (the VST3ClientExtensions cast is dead
+// code — zero deriving classes). U-3: the m02 ids-12/13 feed is the per-voice
+// block-rate poller 0x1800E5160 → modpp::simple::env_t::get_child_float
+// (slot 16, +0x80, id IMMEDIATE in r8d — the fifth dispatch shape no earlier
+// census scanned) → the voice's engine m02 → atomic dirty-bit fanout. The
+// R26–R29 UNK ledger is fully resolved.
+// R29 (previous round): HOST COM SURFACE & NON-IMMEDIATE ID CENSUS — the U-2
 // COM hunt executed to the last hop (true GetPluginFactory pinned, the juce::
 // JuceVST3Component broker decoded with its dual-path queryInterface, the
 // fallback IAudioProcessor surface proven non-viable, the host-facing service
@@ -25,6 +36,9 @@ import { ReportViewer } from "../components/report-viewer";
 // eliminations, host-latency verdict corrected). No new archive zip this round
 // (static-audit round); the delivery cards below remain the R23/R22/R21
 // evidence packages.
+const R30_REPORT =
+  "/home/z/my-project/OCTAVOX_R30_FINAL_UNK_CLOSURE.md";
+const R30_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R30_FINAL_UNK_CLOSURE.md");
 const R29_REPORT =
   "/home/z/my-project/OCTAVOX_R29_HOST_SURFACE_CLOSURE.md";
 const R29_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R29_HOST_SURFACE_CLOSURE.md");
@@ -66,6 +80,7 @@ function readFirstExisting(paths: string[]): string | null {
 }
 
 function readMarkdown(): string {
+  const r30Report = readFirstExisting([R30_REPORT, R30_REPORT_LOCAL]);
   const r29Report = readFirstExisting([R29_REPORT, R29_REPORT_LOCAL]);
   const r28Report = readFirstExisting([R28_REPORT, R28_REPORT_LOCAL]);
   const r27Report = readFirstExisting([R27_REPORT, R27_REPORT_LOCAL]);
@@ -81,8 +96,15 @@ function readMarkdown(): string {
   ]);
   const r23 = readFirstExisting([ROUND23_PATH, ROUND23_ALT, LOCAL_FALLBACK]);
   const parts: string[] = [];
+  if (r30Report)
+    parts.push(r30Report.trim()); // R30 first (current round) — keeps the page H1
   if (r29Report)
-    parts.push(r29Report.trim()); // R29 first (current round) — keeps the page H1
+    parts.push(
+      (parts.length ? "\n\n---\n\n" : "") +
+        r29Report
+          .replace(/^# /m, "## ") // demote the R29 H1 (one page, one H1)
+          .trim(),
+    );
   if (r28Report)
     parts.push(
       (parts.length ? "\n\n---\n\n" : "") +
@@ -126,7 +148,7 @@ function readMarkdown(): string {
         r23.replace(/^# /m, "## ").trim(),
     );
   if (parts.length === 0)
-    return "# PITCHLAB\n\nAz R28/R27/R26/R24/R23 kutatási dokumentumok nem találhatók.";
+    return "# PITCHLAB\n\nAz R30/R29/R28/R27/R26/R24/R23 kutatási dokumentumok nem találhatók.";
   return parts.join("\n\n");
 }
 

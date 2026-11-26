@@ -1,0 +1,42 @@
+===== lea/mov rip->0x180409F60 sites =====
+  0x1800E03B3  (fn 0x1800E0360..0x1800E10AC)
+
+--- context of 0x1800E03B3 (0x1800E0360..0x1800E03E3) ---
+  0x1800E0360  mov      qword ptr [rsp + 0x20], rbx                 
+  0x1800E0365  push     rbp                                         
+  0x1800E0366  push     rsi                                         
+  0x1800E0367  push     rdi                                         
+  0x1800E0368  push     r12                                         
+  0x1800E036A  push     r13                                         
+  0x1800E036C  push     r14                                         
+  0x1800E036E  push     r15                                         
+  0x1800E0370  lea      rbp, [rsp - 0x1f]                           
+  0x1800E0375  sub      rsp, 0xc0                                   
+  0x1800E037C  mov      rax, qword ptr [rip + 0x3c4cbd]               ; "2��-�+"
+  0x1800E0383  xor      rax, rsp                                    
+  0x1800E0386  mov      qword ptr [rbp + 0x17], rax                 
+  0x1800E038A  mov      qword ptr [rbp - 0x59], rdx                 
+  0x1800E038E  mov      r15, rcx                                    
+  0x1800E0391  mov      qword ptr [rbp - 0x51], rcx                 
+  0x1800E0395  mov      rdi, qword ptr [rbp + 0x7f]                 
+  0x1800E0399  xor      r14d, r14d                                  
+  0x1800E039C  mov      r12d, r14d                                  
+  0x1800E039F  mov      dword ptr [rbp - 0x61], r14d                
+  0x1800E03A3  mov      dword ptr [rcx + 8], r14d                   
+  0x1800E03A7  mov      qword ptr [rcx + 0x10], r14                 
+  0x1800E03AB  mov      qword ptr [rcx + 0x18], r14                 
+  0x1800E03AF  mov      qword ptr [rcx + 0x20], r14                 
+  0x1800E03B3  lea      rcx, [rip + 0x329ba6]                         ; q=0x1800E7DB0
+  0x1800E03BA  mov      qword ptr [r15], rcx                        
+  0x1800E03BD  mov      qword ptr [r15 + 0x28], rdx                 
+  0x1800E03C1  lea      rcx, [r15 + 0x30]                           
+  0x1800E03C5  mov      rdx, r8                                     
+  0x1800E03C8  call     0x180022400                                 
+  0x1800E03CD  nop                                                  
+  0x1800E03CE  lea      rsi, [rip + 0x2dccab]                         ; q=0x1803BC370
+  0x1800E03D5  mov      qword ptr [rbp - 0x71], rsi                 
+  0x1800E03D9  mov      qword ptr [rbp - 0x11], 0xf                 
+  0x1800E03E1  .byte    0x48                                        
+  0x1800E03E2  .byte    0xc7                                        
+
+post-pass hash OK

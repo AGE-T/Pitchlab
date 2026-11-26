@@ -1,0 +1,27 @@
+pdata functions: 13116
+slot-call sites total: 3618
+candidates (non-imm id + loop + 7..14 cmp in loop): 23
+  0x180009E06 fn 0x180009D40..0x18000A399 slot0x20 recv=rax recvdef=('mov', 'qword ptr [rcx]', 6442491385) iddef=('lea', '[rbp + 0x40]', 6442491392) loop=0x180009DE0..0x18000A148 cmps=[('al', 10)]
+  0x180009F09 fn 0x180009D40..0x18000A399 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rcx]', 6442491649) iddef=('mov', '1', 6442491652) loop=0x180009DE0..0x18000A148 cmps=[('al', 10)]
+  0x18000A044 fn 0x180009D40..0x18000A399 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rcx]', 6442491964) iddef=('mov', '1', 6442491967) loop=0x180009DE0..0x18000A148 cmps=[('al', 10)]
+  0x18000A0E0 fn 0x180009D40..0x18000A399 slot0x10 recv=rax recvdef=('mov', 'qword ptr [rbx]', 6442492122) iddef=None loop=0x180009DE0..0x18000A148 cmps=[('al', 10)]
+  0x18000A130 fn 0x180009D40..0x18000A399 slot0x10 recv=rax recvdef=('mov', 'qword ptr [rbx]', 6442492202) iddef=None loop=0x180009DE0..0x18000A148 cmps=[('al', 10)]
+  0x180097BD1 fn 0x180097A20..0x180097CC1 slot0x10 recv=rax recvdef=('mov', 'qword ptr [rcx]', 6443072462) iddef=None loop=0x180097AF2..0x180097C35 cmps=[('eax', 13), ('eax', 10)]
+  0x180097BFD fn 0x180097A20..0x180097CC1 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rcx]', 6443072501) iddef=('mov', '1', 6443072504) loop=0x180097AF2..0x180097C35 cmps=[('eax', 13), ('eax', 10)]
+  0x1801C7E0F fn 0x1801C7DBC..0x1801C7EE0 slot0x20 recv=rax recvdef=('mov', 'qword ptr [rsi]', 6444318208) iddef=('sub', 'r8, rdi', 6444318214) loop=0x1801C7DDE..0x1801C7E14 cmps=[('al', 10)]
+  0x1801C7E29 fn 0x1801C7DBC..0x1801C7EE0 slot0x20 recv=rax recvdef=('mov', 'qword ptr [rsi]', 6444318230) iddef=('mov', '2', 6444318240) loop=0x1801C7DF4..0x1801C7E37 cmps=[('al', 10)]
+  0x1801C7E68 fn 0x1801C7DBC..0x1801C7EE0 slot0x20 recv=rax recvdef=('mov', 'qword ptr [rsi]', 6444318297) iddef=('mov', 'rbx', 6444318303) loop=0x1801C7DDE..0x1801C7E6D cmps=[('al', 10), ('al', 13)]
+  0x1801D00ED fn 0x1801D0020..0x1801D0278 slot0x20 recv=rax recvdef=('mov', 'qword ptr [rbp - 0x19]', 6444351707) iddef=('mov', '1', 6444351711) loop=0x1801D00D0..0x1801D00FB cmps=[('al', 10), ('al', 13)]
+  0x1801D00F6 fn 0x1801D0020..0x1801D0278 slot0x20 recv=rax recvdef=('mov', 'qword ptr [rbx]', 6444351728) iddef=None loop=0x1801D00D0..0x1801D00FB cmps=[('al', 10), ('al', 13)]
+  0x180219429 fn 0x1802193A5..0x180219466 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rbx]', 6444651558) iddef=('cmove', 'edx, r8d', 6444651524) loop=0x1802193C0..0x180219456 cmps=[('ecx', 10)]
+  0x18021F52F fn 0x18021F466..0x18021F59C slot0x0 recv=rax recvdef=('mov', 'qword ptr [r14]', 6444676396) iddef=None loop=0x18021F470..0x18021F58D cmps=[('esi', 10)]
+  0x18021F70F fn 0x18021F68D..0x18021F786 slot0x0 recv=rax recvdef=('mov', 'qword ptr [r14]', 6444676876) iddef=('cmovns', 'edx, eax', 6444676826) loop=0x18021F6B0..0x18021F771 cmps=[('ebx', 11)]
+  0x180221839 fn 0x1802217B0..0x180221876 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rbx]', 6444685366) iddef=('cmove', 'edx, r8d', 6444685332) loop=0x1802217D0..0x180221866 cmps=[('ecx', 10)]
+  0x180221B0E fn 0x180221AC5..0x180221CF8 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rbx]', 6444686091) iddef=None loop=0x180221AE0..0x180221CDA cmps=[('esi', 10), ('ebp', 10)]
+  0x180221BC7 fn 0x180221AC5..0x180221CF8 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rbx]', 6444686276) iddef=('cmp', 'edx, 0x3f', 6444686232) loop=0x180221AE0..0x180221CDA cmps=[('esi', 10), ('ebp', 10)]
+  0x180221BF2 fn 0x180221AC5..0x180221CF8 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rbx]', 6444686319) iddef=None loop=0x180221AE0..0x180221CDA cmps=[('esi', 10), ('ebp', 10)]
+  0x1802244E5 fn 0x180224459..0x1802245F2 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rsi]', 6444696802) iddef=('sar', 'edx, 1', 6444696779) loop=0x180224481..0x1802245D3 cmps=[('rbx', 11), ('ebx', 10)]
+  0x18022456B fn 0x180224459..0x1802245F2 slot0x0 recv=rax recvdef=('mov', 'qword ptr [rsi]', 6444696936) iddef=('mov', 'dword ptr [r14 + 0x3c0]', 6444696856) loop=0x180224500..0x180224582 cmps=[('ebx', 10)]
+  0x1802246FB fn 0x180224610..0x18022473E slot0x0 recv=rax recvdef=('mov', 'qword ptr [r14]', 6444697336) iddef=('mov', 'dword ptr [rbp + 0x3c0]', 6444697255) loop=0x180224690..0x180224712 cmps=[('ebx', 10)]
+  0x180224C50 fn 0x180224B00..0x180224CDB slot0x0 recv=rax recvdef=('mov', 'qword ptr [rcx]', 6444698701) iddef=None loop=0x180224BC0..0x180224C9A cmps=[('edi', 10)]
+post-pass hash OK

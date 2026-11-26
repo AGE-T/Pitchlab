@@ -1,0 +1,172 @@
+===== caller fn 0x1801E2A90..0x1801E2E0F call @ 0x1801E2CD2 =====
+--- context (0x1801E2C42..0x1801E2CE2) ---
+  0x1801E2C42  test     ebx, ebx                                    
+  0x1801E2C44  jle      0x1801e2c69                                 
+  0x1801E2C46  movsxd   rdx, ebx                                    
+  0x1801E2C49  shl      rdx, 3                                      
+  0x1801E2C4D  test     rcx, rcx                                    
+  0x1801E2C50  jne      0x1801e2c5f                                 
+  0x1801E2C52  mov      rcx, rdx                                    
+  0x1801E2C55  call     0x180175488                                 
+  0x1801E2C5A  mov      qword ptr [rsi], rax                        
+  0x1801E2C5D  jmp      0x1801e2c71                                 
+  0x1801E2C5F  call     0x18016ec60                                 
+  0x1801E2C64  mov      qword ptr [rsi], rax                        
+  0x1801E2C67  jmp      0x1801e2c71                                 
+  0x1801E2C69  call     0x180174d2c                                 
+  0x1801E2C6E  mov      qword ptr [rsi], rdi                        
+  0x1801E2C71  mov      dword ptr [rsi + 8], ebx                    
+  0x1801E2C74  mov      ecx, 0x28                                   
+  0x1801E2C79  call     0x18015e63c                                 
+  0x1801E2C7E  mov      rbx, rax                                    
+  0x1801E2C81  mov      qword ptr [rsp + 0x40], rax                 
+  0x1801E2C86  mov      dword ptr [rax + 8], edi                    
+  0x1801E2C89  lea      rax, [rip + 0x210270]                         ; q=0x180030470
+  0x1801E2C90  mov      qword ptr [rbx], rax                        
+  0x1801E2C93  mov      qword ptr [rbx + 0x10], rbp                 
+  0x1801E2C97  mov      qword ptr [rbx + 0x18], r14                 
+  0x1801E2C9B  mov      dword ptr [rbx + 0x20], 0xffffffff          
+  0x1801E2CA2  mov      dword ptr [rbx + 0x24], 0xc61c4000          
+  0x1801E2CA9  mov      qword ptr [rsp + 0x40], rbx                 
+  0x1801E2CAE  mov      rcx, rbx                                    
+  0x1801E2CB1  call     qword ptr [rip + 0x210251]                    ; q=0x1800326A0
+  0x1801E2CB7  nop                                                  
+  0x1801E2CB8  mov      rcx, qword ptr [rsp + 0x48]                 
+  0x1801E2CBD  mov      rax, qword ptr [rcx]                        
+  0x1801E2CC0  xorps    xmm6, xmm6                                  
+  0x1801E2CC3  movss    dword ptr [rsp + 0x20], xmm6                
+  0x1801E2CC9  xorps    xmm3, xmm3                                  
+  0x1801E2CCC  mov      r8, rbx                                     
+  0x1801E2CCF  mov      rdx, rsi                                    
+  0x1801E2CD2  call     qword ptr [rax + 0x1d0]                     
+  0x1801E2CD8  nop                                                  
+  0x1801E2CD9  mov      rax, qword ptr [rbx]                        
+  0x1801E2CDC  mov      rcx, rbx                                    
+  0x1801E2CDF  call     qword ptr [rax + 0x10]                      
+
+===== caller fn 0x1803145C7..0x180314609 call @ 0x180316B60 =====
+--- context (0x180316AD0..0x180316B70) ---
+  0x180316AD0  shl      eax, 0x18                                   
+  0x180316AD3  add      edx, eax                                    
+  0x180316AD5  movsx    eax, byte ptr [r8 + 3]                      
+  0x180316ADA  add      edx, eax                                    
+  0x180316ADC  mov      r9b, 1                                      
+  0x180316ADF  call     r10                                         
+  0x180316AE2  nop                                                  
+  0x180316AE3  mov      rcx, qword ptr [rbx]                        
+  0x180316AE6  sub      rcx, 0x10                                   
+  0x180316AEA  mov      eax, dword ptr [rcx]                        
+  0x180316AEC  nop                                                  
+  0x180316AED  test     eax, 0x30000000                             
+  0x180316AF2  jne      0x180316b0e                                 
+  0x180316AF4  mov      eax, 0xffffffff                             
+  0x180316AF9  lock xadd dword ptr [rcx], eax                        
+  0x180316AFD  dec      eax                                         
+  0x180316AFF  cmp      eax, -1                                     
+  0x180316B02  jne      0x180316b0e                                 
+  0x180316B04  add      rsp, 0x20                                   
+  0x180316B08  pop      rbx                                         
+  0x180316B09  jmp      0x18015e100                                 
+  0x180316B0E  add      rsp, 0x20                                   
+  0x180316B12  pop      rbx                                         
+  0x180316B13  ret                                                  
+  0x180316B14  int3                                                 
+  0x180316B15  int3                                                 
+  0x180316B16  int3                                                 
+  0x180316B17  int3                                                 
+  0x180316B18  int3                                                 
+  0x180316B19  int3                                                 
+  0x180316B1A  int3                                                 
+  0x180316B1B  int3                                                 
+  0x180316B1C  int3                                                 
+  0x180316B1D  int3                                                 
+  0x180316B1E  int3                                                 
+  0x180316B1F  int3                                                 
+  0x180316B20  test     edx, edx                                    
+  0x180316B22  js       0x180316b98                                 
+  0x180316B24  mov      qword ptr [rsp + 8], rbx                    
+  0x180316B29  mov      qword ptr [rsp + 0x10], rsi                 
+  0x180316B2E  push     rdi                                         
+  0x180316B2F  sub      rsp, 0x30                                   
+  0x180316B33  movzx    esi, r9b                                    
+  0x180316B37  mov      edi, edx                                    
+  0x180316B39  mov      rbx, rcx                                    
+  0x180316B3C  cmp      edx, dword ptr [rcx + 0x27dc]               
+  0x180316B42  jae      0x180316b89                                 
+  0x180316B44  mov      rax, qword ptr [rcx]                        
+  0x180316B47  movaps   xmmword ptr [rsp + 0x20], xmm6              
+  0x180316B4C  call     qword ptr [rax + 0x320]                     
+  0x180316B52  mov      rax, qword ptr [rbx]                        
+  0x180316B55  mov      edx, edi                                    
+  0x180316B57  movaps   xmm2, xmm0                                  
+  0x180316B5A  mov      rcx, rbx                                    
+  0x180316B5D  movaps   xmm6, xmm0                                  
+  0x180316B60  call     qword ptr [rax + 0x1d0]                     
+  0x180316B66  test     sil, sil                                    
+  0x180316B69  je       0x180316b84                                 
+  0x180316B6B  .byte    0x0f                                        
+  0x180316B6C  mov      dh, 0x83                                    
+  0x180316B6E  push     rax                                         
+  0x180316B6F  .byte    0x26                                        
+
+===== caller fn 0x180318500..0x18031857A call @ 0x180318940 =====
+--- context (0x1803188B0..0x180318950) ---
+  0x1803188B0  mov      qword ptr [rsp + 8], rbx                    
+  0x1803188B5  push     rdi                                         
+  0x1803188B6  sub      rsp, 0x30                                   
+  0x1803188BA  mov      rax, qword ptr [rcx]                        
+  0x1803188BD  movzx    ebx, r9b                                    
+  0x1803188C1  movaps   xmmword ptr [rsp + 0x20], xmm6              
+  0x1803188C6  mov      rdi, rcx                                    
+  0x1803188C9  movaps   xmm6, xmm2                                  
+  0x1803188CC  call     qword ptr [rax + 0x2a0]                     
+  0x1803188D2  movzx    r9d, bl                                     
+  0x1803188D6  movaps   xmm2, xmm6                                  
+  0x1803188D9  mov      edx, eax                                    
+  0x1803188DB  mov      rcx, rdi                                    
+  0x1803188DE  mov      rbx, qword ptr [rsp + 0x40]                 
+  0x1803188E3  movaps   xmm6, xmmword ptr [rsp + 0x20]              
+  0x1803188E8  add      rsp, 0x30                                   
+  0x1803188EC  pop      rdi                                         
+  0x1803188ED  jmp      0x180316b20                                 
+  0x1803188F2  int3                                                 
+  0x1803188F3  int3                                                 
+  0x1803188F4  int3                                                 
+  0x1803188F5  int3                                                 
+  0x1803188F6  int3                                                 
+  0x1803188F7  int3                                                 
+  0x1803188F8  int3                                                 
+  0x1803188F9  int3                                                 
+  0x1803188FA  int3                                                 
+  0x1803188FB  int3                                                 
+  0x1803188FC  int3                                                 
+  0x1803188FD  int3                                                 
+  0x1803188FE  int3                                                 
+  0x1803188FF  int3                                                 
+  0x180318900  mov      qword ptr [rsp + 8], rbx                    
+  0x180318905  mov      qword ptr [rsp + 0x10], rsi                 
+  0x18031890A  push     rdi                                         
+  0x18031890B  sub      rsp, 0x30                                   
+  0x18031890F  mov      rax, qword ptr [rcx]                        
+  0x180318912  movzx    esi, r9b                                    
+  0x180318916  movaps   xmmword ptr [rsp + 0x20], xmm6              
+  0x18031891B  mov      rbx, rcx                                    
+  0x18031891E  movaps   xmm6, xmm2                                  
+  0x180318921  call     qword ptr [rax + 0x2a0]                     
+  0x180318927  mov      edi, eax                                    
+  0x180318929  test     eax, eax                                    
+  0x18031892B  js       0x180318965                                 
+  0x18031892D  cmp      eax, dword ptr [rbx + 0x27dc]               
+  0x180318933  jae      0x180318965                                 
+  0x180318935  mov      r8, qword ptr [rbx]                         
+  0x180318938  movaps   xmm2, xmm6                                  
+  0x18031893B  mov      edx, eax                                    
+  0x18031893D  mov      rcx, rbx                                    
+  0x180318940  call     qword ptr [r8 + 0x1d0]                      
+  0x180318947  test     sil, sil                                    
+  0x18031894A  je       0x180318965                                 
+  0x18031894C  .byte    0x0f                                        
+  0x18031894D  mov      dh, 0x83                                    
+  0x18031894F  push     rax                                         
+
+post-pass hash OK

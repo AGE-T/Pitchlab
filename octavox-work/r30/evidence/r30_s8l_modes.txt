@@ -1,0 +1,5 @@
+===== (a) tag-store sites (mov dword [r+0x10], imm32tag) =====
+
+===== (b) contexts of the tag stores =====
+
+post-pass hash OK

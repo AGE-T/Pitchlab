@@ -1,0 +1,303 @@
+===== (a) engine primary vtable 0x1803F05D0: class + bases =====
+  most-derived TD @ 0x1804BB8D0 name='.?AVVoxAudioProcessor@@' -> VoxAudioProcessor
+  COL: sig=1 offset=0 cdoff=0; CHD attrs=0x1 nbases=10
+  bases (in array order):
+    [ 0] mdisp=  +0x0 pdisp=  -0x1 vdisp=  +0x0 ncont=9 attrs=0x40 td=0x1804BB8D0 VoxAudioProcessor
+    [ 1] mdisp=  +0x0 pdisp=  -0x1 vdisp=  +0x0 ncont=7 attrs=0x40 td=0x1804BB758 tide::DigiPluginBase
+    [ 2] mdisp=  +0x0 pdisp=  -0x1 vdisp=  +0x0 ncont=6 attrs=0x40 td=0x1804B7478 tide::ExtendedAudioProcessor
+    [ 3] mdisp=  +0x0 pdisp=  -0x1 vdisp=  +0x0 ncont=4 attrs=0x40 td=0x1804BB8F8 tide::JuceAdapter
+    [ 4] mdisp=  +0x0 pdisp=  -0x1 vdisp=  +0x0 ncont=0 attrs=0x40 td=0x1804B7448 juce::AudioProcessor
+    [ 5] mdisp=+0x150 pdisp=  -0x1 vdisp=  +0x0 ncont=0 attrs=0x40 td=0x1804BB7B8 tide::MeterInterface
+    [ 6] mdisp=+0x158 pdisp=  -0x1 vdisp=  +0x0 ncont=0 attrs=0x40 td=0x1804BA6E8 juce::Timer
+    [ 7] mdisp=+0x170 pdisp=  -0x1 vdisp=  +0x0 ncont=0 attrs=0x40 td=0x1804BB5E0 DSPStatusBroadcaster
+    [ 8] mdisp=+0x2600 pdisp=  -0x1 vdisp=  +0x0 ncont=0 attrs=0x40 td=0x1804BB920 juce::ActionBroadcaster
+    [ 9] mdisp=+0x2810 pdisp=  -0x1 vdisp=  +0x0 ncont=0 attrs=0x40 td=0x1804BB580 juce::ChangeListener
+
+  >>> VST3ClientExtensions base offset = NOT FOUND
+
+===== (b) engine ctor 0x1801A7620: all vtable installs =====
+  bounds: 0x1801A7620..0x1801A79EA
+  (stores of lea-loaded vtables: pattern lea rax,[rip->vt]; mov [rsi+off],rax)
+--- engine ctor (0x1801A7620..0x1801A79EA) ---
+  0x1801A7620  mov      qword ptr [rsp + 0x10], rbx                 
+  0x1801A7625  mov      qword ptr [rsp + 0x18], rsi                 
+  0x1801A762A  mov      qword ptr [rsp + 0x20], rdi                 
+  0x1801A762F  push     rbp                                         
+  0x1801A7630  lea      rbp, [rsp - 0x80]                           
+  0x1801A7635  sub      rsp, 0x180                                  
+  0x1801A763C  mov      rax, qword ptr [rip + 0x2fd9fd]               ; "2��-�+"
+  0x1801A7643  xor      rax, rsp                                    
+  0x1801A7646  mov      qword ptr [rbp + 0x70], rax                 
+  0x1801A764A  mov      rsi, rcx                                    
+  0x1801A764D  mov      qword ptr [rbp - 0x28], rcx                 
+  0x1801A7651  lea      rax, [rbp - 0x20]                           
+  0x1801A7655  mov      qword ptr [rsp + 0x50], rax                 
+  0x1801A765A  xorps    xmm0, xmm0                                  
+  0x1801A765D  movups   xmmword ptr [rsp + 0x58], xmm0              
+  0x1801A7662  movups   xmmword ptr [rsp + 0x68], xmm0              
+  0x1801A7667  lea      rcx, [rbp - 0x20]                           
+  0x1801A766B  call     0x180017310                                 
+  0x1801A7670  mov      rbx, rax                                    
+  0x1801A7673  xor      edi, edi                                    
+  0x1801A7675  mov      qword ptr [rsp + 0x58], rdi                 
+  0x1801A767A  mov      qword ptr [rsp + 0x60], rdi                 
+  0x1801A767F  mov      qword ptr [rsp + 0x68], rdi                 
+  0x1801A7684  mov      qword ptr [rsp + 0x70], rdi                 
+  0x1801A7689  mov      dword ptr [rsp + 0x30], 1                   
+  0x1801A7691  mov      dword ptr [rsp + 0x34], 2                   
+  0x1801A7699  lea      rax, [rsp + 0x30]                           
+  0x1801A769E  mov      qword ptr [rbp - 0x68], rax                 
+  0x1801A76A2  lea      rax, [rsp + 0x38]                           
+  0x1801A76A7  mov      qword ptr [rbp - 0x60], rax                 
+  0x1801A76AB  lea      rdx, [rbp - 0x68]                           
+  0x1801A76AF  lea      rcx, [rbp + 0x48]                           
+  0x1801A76B3  call     0x18024b230                                 
+  0x1801A76B8  nop                                                  
+  0x1801A76B9  lea      rdx, [rip + 0x1e6b24]                         ; "Input"
+  0x1801A76C0  lea      rcx, [rsp + 0x48]                           
+  0x1801A76C5  call     0x180026440                                 
+  0x1801A76CA  nop                                                  
+  0x1801A76CB  lea      rdx, [rsp + 0x58]                           
+  0x1801A76D0  lea      rcx, [rsp + 0x78]                           
+  0x1801A76D5  call     0x180066d60                                 
+  0x1801A76DA  lea      rdx, [rsp + 0x68]                           
+  0x1801A76DF  lea      rcx, [rbp - 0x78]                           
+  0x1801A76E3  call     0x180066d60                                 
+  0x1801A76E8  lea      r9, [rbp + 0x48]                            
+  0x1801A76EC  lea      r8, [rsp + 0x48]                            
+  0x1801A76F1  mov      dl, 1                                       
+  0x1801A76F3  lea      rcx, [rsp + 0x78]                           
+  0x1801A76F8  call     0x18025c7d0                                 
+  0x1801A76FD  nop                                                  
+  0x1801A76FE  mov      dword ptr [rsp + 0x38], 1                   
+  0x1801A7706  mov      dword ptr [rsp + 0x3c], 2                   
+  0x1801A770E  lea      rax, [rsp + 0x38]                           
+  0x1801A7713  mov      qword ptr [rbp - 0x58], rax                 
+  0x1801A7717  lea      rax, [rsp + 0x40]                           
+  0x1801A771C  mov      qword ptr [rbp - 0x50], rax                 
+  0x1801A7720  lea      rdx, [rbp - 0x58]                           
+  0x1801A7724  lea      rcx, [rbp + 0x20]                           
+  0x1801A7728  call     0x18024b230                                 
+  0x1801A772D  nop                                                  
+  0x1801A772E  lea      rdx, [rip + 0x1e5eef]                         ; "Output"
+  0x1801A7735  lea      rcx, [rsp + 0x40]                           
+  0x1801A773A  call     0x180026440                                 
+  0x1801A773F  nop                                                  
+  0x1801A7740  lea      rdx, [rsp + 0x78]                           
+  0x1801A7745  lea      rcx, [rbp - 0x48]                           
+  0x1801A7749  call     0x180066d60                                 
+  0x1801A774E  lea      rdx, [rbp - 0x78]                           
+  0x1801A7752  lea      rcx, [rbp - 0x38]                           
+  0x1801A7756  call     0x180066d60                                 
+  0x1801A775B  lea      r9, [rbp + 0x20]                            
+  0x1801A775F  lea      r8, [rsp + 0x40]                            
+  0x1801A7764  xor      edx, edx                                    
+  0x1801A7766  lea      rcx, [rbp - 0x48]                           
+  0x1801A776A  call     0x18025c7d0                                 
+  0x1801A776F  nop                                                  
+  0x1801A7770  mov      ecx, dword ptr [rip + 0x323b3a]             
+  0x1801A7776  mov      rax, qword ptr gs:[0x58]                    
+  0x1801A777F  mov      edx, 4                                      
+  0x1801A7784  mov      rax, qword ptr [rax + rcx*8]                
+  0x1801A7788  mov      ecx, dword ptr [rdx + rax]                  
+  0x1801A778B  cmp      dword ptr [rip + 0x325607], ecx             
+  0x1801A7791  jg       0x1801a79b3                                 
+  0x1801A7797  mov      r9, rbx                                     
+  0x1801A779A  lea      r8, [rbp - 0x48]                            
+  0x1801A779E  lea      rdx, [rip + 0x30f663]                         ; q=0x18040A2F0
+  0x1801A77A5  mov      rcx, rsi                                    
+  0x1801A77A8  call     0x180319510                                 
+  0x1801A77AD  nop                                                  
+  0x1801A77AE  lea      rcx, [rbp - 0x38]                           
+  0x1801A77B2  call     0x180017940                                 
+  0x1801A77B7  lea      rcx, [rbp - 0x48]                           
+  0x1801A77BB  call     0x180017940                                 
+  0x1801A77C0  nop                                                  
+  0x1801A77C1  mov      rcx, qword ptr [rsp + 0x40]                 
+  0x1801A77C6  add      rcx, -0x10                                  
+  0x1801A77CA  mov      eax, dword ptr [rcx]                        
+  0x1801A77CC  nop                                                  
+  0x1801A77CD  test     eax, 0x30000000                             
+  0x1801A77D2  jne      0x1801a77ea                                 
+  0x1801A77D4  mov      eax, 0xffffffff                             
+  0x1801A77D9  lock xadd dword ptr [rcx], eax                        
+  0x1801A77DD  dec      eax                                         
+  0x1801A77DF  cmp      eax, -1                                     
+  0x1801A77E2  jne      0x1801a77ea                                 
+  0x1801A77E4  call     0x18015e100                                 
+  0x1801A77E9  nop                                                  
+  0x1801A77EA  mov      rcx, qword ptr [rbp + 0x20]                 
+  0x1801A77EE  call     0x180174d2c                                 
+  0x1801A77F3  nop                                                  
+  0x1801A77F4  lea      rcx, [rbp - 0x78]                           
+  0x1801A77F8  call     0x180017940                                 
+  0x1801A77FD  lea      rcx, [rsp + 0x78]                           
+  0x1801A7802  call     0x180017940                                 
+  0x1801A7807  nop                                                  
+  0x1801A7808  mov      rcx, qword ptr [rsp + 0x48]                 
+  0x1801A780D  add      rcx, -0x10                                  
+  0x1801A7811  mov      eax, dword ptr [rcx]                        
+  0x1801A7813  nop                                                  
+  0x1801A7814  test     eax, 0x30000000                             
+  0x1801A7819  jne      0x1801a7831                                 
+  0x1801A781B  mov      eax, 0xffffffff                             
+  0x1801A7820  lock xadd dword ptr [rcx], eax                        
+  0x1801A7824  dec      eax                                         
+  0x1801A7826  cmp      eax, -1                                     
+  0x1801A7829  jne      0x1801a7831                                 
+  0x1801A782B  call     0x18015e100                                 
+  0x1801A7830  nop                                                  
+  0x1801A7831  mov      rcx, qword ptr [rbp + 0x48]                 
+  0x1801A7835  call     0x180174d2c                                 
+  0x1801A783A  nop                                                  
+  0x1801A783B  lea      rcx, [rsp + 0x68]                           
+  0x1801A7840  call     0x180017940                                 
+  0x1801A7845  lea      rcx, [rsp + 0x58]                           
+  0x1801A784A  call     0x180017940                                 
+  0x1801A784F  lea      rax, [rip + 0x248d7a]                         ; q=0x1800175D0
+  0x1801A7856  mov      qword ptr [rsi], rax                        
+  0x1801A7859  lea      rax, [rip + 0x248c88]                         ; q=0x18001858C
+  0x1801A7860  mov      qword ptr [rsi + 0x150], rax                
+  0x1801A7867  lea      rax, [rip + 0x248b4a]                         ; q=0x180018568
+  0x1801A786E  mov      qword ptr [rsi + 0x158], rax                
+  0x1801A7875  lea      rax, [rip + 0x248d24]                         ; q=0x180018574
+  0x1801A787C  mov      qword ptr [rsi + 0x2600], rax               
+  0x1801A7883  lea      rax, [rip + 0x248bee]                         ; q=0x180018580
+  0x1801A788A  mov      qword ptr [rsi + 0x2810], rax               
+  0x1801A7891  mov      dword ptr [rsi + 0x2818], 0x42f00000        
+  0x1801A789B  mov      dword ptr [rsi + 0x281c], 0x40800000        
+  0x1801A78A5  mov      qword ptr [rsi + 0x2820], 0x40800000        
+  0x1801A78B0  movabs   rax, 0x4072c00000000000                     
+  0x1801A78BA  mov      qword ptr [rsi + 0x2828], rax               
+  0x1801A78C1  mov      qword ptr [rsi + 0x2830], rdi               
+  0x1801A78C8  mov      qword ptr [rsi + 0x2838], rdi               
+  0x1801A78CF  mov      ecx, 0x18                                   
+  0x1801A78D4  call     0x18015e63c                                 
+  0x1801A78D9  mov      qword ptr [rax], rax                        
+  0x1801A78DC  mov      qword ptr [rax + 8], rax                    
+  0x1801A78E0  mov      qword ptr [rsi + 0x2830], rax               
+  0x1801A78E7  mov      word ptr [rsi + 0x2864], 0                  
+  0x1801A78F0  mov      byte ptr [rsi + 0x2866], 0                  
+  0x1801A78F7  lea      rax, [rsi + 0x2868]                         
+  0x1801A78FE  mov      qword ptr [rsp + 0x50], rax                 
+  0x1801A7903  lea      rcx, [rip + 0x26a4e6]                         ; q=0x18015A260
+  0x1801A790A  mov      qword ptr [rax], rcx                        
+  0x1801A790D  mov      dword ptr [rax + 8], 0xffffffff             
+  0x1801A7914  mov      qword ptr [rax + 0x10], rdi                 
+  0x1801A7918  mov      dword ptr [rax + 0x18], 0xffffffff          
+  0x1801A791F  mov      qword ptr [rax + 0x20], rdi                 
+  0x1801A7923  mov      qword ptr [rax + 0x28], rdi                 
+  0x1801A7927  mov      qword ptr [rax + 0x30], rdi                 
+  0x1801A792B  mov      dl, 1                                       
+  0x1801A792D  mov      rcx, rsi                                    
+  0x1801A7930  call     0x1803170b0                                 
+  0x1801A7935  mov      rcx, rsi                                    
+  0x1801A7938  call     0x1801a0c40                                 
+  0x1801A793D  lea      rcx, [rsi + 0x208]                          
+  0x1801A7944  lea      rdx, [rsi + 0x2810]                         
+  0x1801A794B  call     0x18023fd90                                 
+  0x1801A7950  mov      rbx, qword ptr [rsi + 0x22e8]               
+  0x1801A7957  lea      rdi, [rbx + 0x380]                          
+  0x1801A795E  mov      qword ptr [rsp + 0x50], rdi                 
+  0x1801A7963  mov      rcx, rdi                                    
+  0x1801A7966  call     qword ptr [rip + 0x1d5c5c]                    ; "*5J"
+  0x1801A796C  nop                                                  
+  0x1801A796D  mov      rcx, qword ptr [rbx + 0x378]                
+  0x1801A7974  mov      rdx, qword ptr [rcx]                        
+  0x1801A7977  mov      r8, qword ptr [rdx + 0x28]                  
+  0x1801A797B  xor      edx, edx                                    
+  0x1801A797D  call     r8                                          
+  0x1801A7980  nop                                                  
+  0x1801A7981  mov      rcx, rdi                                    
+  0x1801A7984  call     qword ptr [rip + 0x1d5c36]                    ; "B5J"
+  0x1801A798A  nop                                                  
+  0x1801A798B  mov      rax, rsi                                    
+  0x1801A798E  mov      rcx, qword ptr [rbp + 0x70]                 
+  0x1801A7992  xor      rcx, rsp                                    
+  0x1801A7995  call     0x18015e0e0                                 
+  0x1801A799A  lea      r11, [rsp + 0x180]                          
+  0x1801A79A2  mov      rbx, qword ptr [r11 + 0x18]                 
+  0x1801A79A6  mov      rsi, qword ptr [r11 + 0x20]                 
+  0x1801A79AA  mov      rdi, qword ptr [r11 + 0x28]                 
+  0x1801A79AE  mov      rsp, r11                                    
+  0x1801A79B1  pop      rbp                                         
+  0x1801A79B2  ret                                                  
+  0x1801A79B3  lea      rcx, [rip + 0x3253de]                       
+  0x1801A79BA  call     0x18015e290                                 
+  0x1801A79BF  cmp      dword ptr [rip + 0x3253d2], -1              
+  0x1801A79C6  jne      0x1801a7797                                 
+  0x1801A79CC  lea      rcx, [rip + 0x1d333d]                         ; q=0xCCCCCCCCCC0000C2
+  0x1801A79D3  call     0x18015eab0                                 
+  0x1801A79D8  lea      rcx, [rip + 0x3253b9]                       
+  0x1801A79DF  call     0x18015e230                                 
+  0x1801A79E4  jmp      0x1801a7797                                 
+  0x1801A79E9  int3                                                 
+
+===== (c) engine-agg vtable candidates: COL TD names =====
+  vt 0x1803F05D0: COL@0x18041ACF8 off=0 TD=VoxAudioProcessor
+      slot0 (+0x0): 0x1800175D0
+      slot1 (+0x8): 0x1801A72A0
+      slot2 (+0x10): 0x1801A7250
+      slot3 (+0x18): 0x180313D20
+      slot4 (+0x20): 0x180313BC0
+      slot5 (+0x28): 0x180003B30
+  vt 0x1803F04E8: COL@0x18041A098 off=336 TD=VoxAudioProcessor
+      slot0 (+0x0): 0x18001858C
+      slot1 (+0x8): 0x18041A638
+      slot2 (+0x10): 0x18030C400
+      slot3 (+0x18): 0x18030C360
+      slot4 (+0x20): 0x18041A688
+      slot5 (+0x28): 0x1800177B0
+  vt 0x1803F03B8: COL@0x18041A928 off=344 TD=VoxAudioProcessor
+      slot0 (+0x0): 0x180018568
+      slot1 (+0x8): 0x180313AC0
+      slot2 (+0x10): 0xC8FFFFFFF8
+      slot3 (+0x18): 0x18041AE30
+      slot4 (+0x20): 0x180017750
+      slot5 (+0x28): 0x18030FF40
+  vt 0x1803F05A0: COL@0x18041A8D0 off=9728 TD=VoxAudioProcessor
+      slot0 (+0x0): 0x180018574
+      slot1 (+0x8): 0x18041A300
+      slot2 (+0x10): 0x180017880
+      slot3 (+0x18): 0x18030FFE0
+      slot4 (+0x20): 0x18030FF70
+      slot5 (+0x28): 0x18041ACF8
+  vt 0x1803F0478: COL@0x18041AF18 off=10256 TD=VoxAudioProcessor
+      slot0 (+0x0): 0x180018580
+      slot1 (+0x8): 0x1801A5C80
+      slot2 (+0x10): 0xC0FFFFFFF8
+      slot3 (+0x18): 0x18041A230
+      slot4 (+0x20): 0x18030BD70
+      slot5 (+0x28): 0x18030BCF0
+  vt 0x1803F23C8: COL@0x18041B9B0 off=0 TD=std::_NHH::V<lambda_fbbe8ad4363040bd98f9118ddf79b5a3>::?$_Func_impl_no_alloc
+      slot0 (+0x0): 0x1801A7A30
+      slot1 (+0x8): 0x1801A7A50
+      slot2 (+0x10): 0x1801A7A70
+      slot3 (+0x18): 0x1801A7A90
+      slot4 (+0x20): 0x1801A7AB0
+      slot5 (+0x28): 0x1801A7AA0
+  vt 0x1803F0E68: COL@0x18041B548 off=0 TD=std::H$$V::V<lambda_8ef97a6eff81f34bb97b140a5932cb0f>::?$_Func_impl_no_alloc
+      slot0 (+0x0): 0x1801A7C60
+      slot1 (+0x8): 0x1801A7C90
+      slot2 (+0x10): 0x1801A7CC0
+      slot3 (+0x18): 0x1801A7D90
+      slot4 (+0x20): 0x1801A7DB0
+      slot5 (+0x28): 0x1801A7DA0
+  vt 0x1803F0B00: no COL
+  vt 0x1803F2A78: COL@0x18041D120 off=0 TD=std::juce::XAEBUArgumentList::V<lambda_399a99edd0c7a6c756f1a505b0260bff>::?$_Func_impl_no_alloc
+      slot0 (+0x0): 0x1801A7DD0
+      slot1 (+0x8): 0x1801A7E10
+      slot2 (+0x10): 0x1801A7E40
+      slot3 (+0x18): 0x1801A7E50
+      slot4 (+0x20): 0x1801A7E70
+      slot5 (+0x28): 0x1801A7E60
+  vt 0x1803F2948: COL@0x18041BA50 off=0 TD=std::juce::XAEBUArgumentList::V<lambda_cd1b301c3ef97d6bcddca72207bee2bb>::?$_Func_impl_no_alloc
+      slot0 (+0x0): 0x1801A7ED0
+      slot1 (+0x8): 0x1801A7F00
+      slot2 (+0x10): 0x1801A7F30
+      slot3 (+0x18): 0x1801A7F80
+      slot4 (+0x20): 0x1801A7FA0
+      slot5 (+0x28): 0x1801A7F90
+
+===== (d) VST3ClientExtensions view: qword read at engine+offset =====
+post-pass hash OK

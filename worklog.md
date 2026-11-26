@@ -739,3 +739,57 @@ hunts executed. 13 new probes (s6a..s6k, s7a, s7b) + r29_lib.
   r26-28-static-audit @ 41c7628c). Recovery = fetch + git-object extract +
   hash re-verify. Token outside the repo (~/.secrets, ~/.git-credentials,
   600), never committed; local main untouched; remote owner line untouched.
+
+---
+
+## ROUND 30 DELIVERY (2026-11-26) — FINAL UNK CLOSURE (static, the last two standing UNKs)
+
+Target: upload/Ox.vst3, SHA-256 7bb260f66bb9c1b21b27f64f29e6fdd2865c34f8a31ad1c0ef21a1db7f32f1f2
+(verified pre+post every probe; 22 probe scripts s8a..s8k, s9a..s9u; never executed).
+Branch: r26-28-static-audit (continues the R26-R29 static lineage).
+
+- **U-2 CLOSED (numeric):** the "slot 17 (+0x88)" premise of R26-R29 was a
+  phantom — the vendored SDK's IAudioProcessor has 8 own methods => 11-slot
+  vtable, getLatencySamples = SLOT 6 (+0x30). The broker +8 view (vtable
+  0x1803EF580, exactly 11 code slots) IS the IAudioProcessor vtable; slot 6
+  = 0x18000E540: `return max(0, [VoxAudioProcessor+0x3C])`. Producer: JUCE-
+  shape setLatencySamples 0x180260220 (single caller 0x1801A619D, in the
+  'live' branch of VoxAudioProcessor vtable slot 58, fn 0x1801A5F40); value
+  from vtable slot 75 (0x1801A32D0): **flag ? 8 : (int)(sr*0.04+0.5)+8**
+  (40 ms pitch window + 8 samples; 48 kHz -> 1928; flat 8 when the mode flag
+  [engine+0x2864] is set). The R29 F1.7 "aggregation path" is WITHDRAWN:
+  the dynamic_cast<VST3ClientExtensions*> is dead code (zero deriving
+  classes in the image — BCD scan negative); the live path is the 7-IID
+  fallback. Engine class named by RTTI: VoxAudioProcessor (tide::DigiPluginBase
+  -> tide::ExtendedAudioProcessor -> tide::JuceAdapter -> juce::AudioProcessor
+  + MeterInterface@+0x150, Timer@+0x158, DSPStatusBroadcaster@+0x170,
+  ActionBroadcaster@+0x2600, ChangeListener@+0x2810).
+- **U-3 CLOSED (end-to-end):** the m02 ids-12/13 feed is the per-voice
+  block-rate POLLER fn 0x1800E5160 (called from voice processors 0x1801061A0/
+  0x18011FD60): calls modpp::simple::env_t::get_child_float (vtable
+  0x18040AE10 slot 16, +0x80) with the id IMMEDIATE in r8d (ids 7..13 at
+  0x1800E552D..0x1800E5779) — the FIFTH dispatch shape, at a displacement
+  the R28/R29 immediate censuses never scanned (slots 1-4 only). env_t
+  dispatches children[[env_t+0x58][voiceIndex]] = the voice's ENGINE
+  (vtable 0x180409F60) -> m02(id,&out) -> case 12/13 = -/+cents(engine+0xA58C/
+  0xA588). Ids 7..11 unconditional; 12/13 gated (correction-active test at
+  0x1800E5705); results change-detected ([this+0x378]/[this+0x398]) and
+  fanned out as ATOMIC DIRTY BITS (lock or [listener->bits], 1<<shift) —
+  the UI refresh. m02 is a PULL interface; the "publisher" hunt of
+  R26-R29 is resolved. The dsp engines are PER-VOICE (voice+0x430, ctor
+  0x1800E0360 via embedder 0x180137E20).
+- **New tooling:** r30_lib.py adds MSVC x64 RTTI walkers (TypeDescriptor/
+  COL/CHD/BCD, RVA-relative) + demangler; tag-store scans; interior-alias
+  tracing (engine+0xA508); the env_t-slot immediate census; call-shape
+  filters (lea r8,[stack] out-pointers).
+- **Named non-blocking residuals:** R-1 the exact twin-field store inside
+  the A508 param-object virtual; R-2 the semantic name of the >0.5 mode
+  flag; R-3 the [VoxAP+0x30] sampleRate store site.
+- **Deliverables:** OCTAVOX_R30_FINAL_UNK_CLOSURE.md (root) +
+  octavox-work/r30/notes/R30_FRESH_FINDINGS.md (F1..F2, VAs) + r30_lib.py
+  + 22 scripts + 34 evidence files; worklog R30 entry (this); web page R30
+  section. Standing-UNK table: U-2, U-3, U-7, U-10 all CLOSED; the
+  R26-R29 UNK ledger is fully resolved.
+- **Process:** no sandbox reset this session; token outside the repo
+  (~/.secrets, ~/.git-credentials, 600), never committed; local main
+  untouched; remote owner line untouched.

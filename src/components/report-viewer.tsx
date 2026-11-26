@@ -67,12 +67,12 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 28 · EVENT/QUERY PROTOCOL & PARAMETER GRAPH — statikus folytatás: eseményrendszer-újraosztályozás, m02 teljes dekód, U-7 és U-10 lezárva" },
-  { label: "Eseményrendszer", value: "a kiadó/router = DebugReport megfigyelő-rendszer (NEM a DSP feed) · DSP: modul-lekérdezési protokoll, demux-thunkokkal · m02 id 7..13 teljesen dekódolva" },
-  { label: "m02 read-outok", value: "7 = cent C4-től (−65535 sentinel) · 8 = frekvencia-arány · 9 = Q23-kvantált · 10 = sqrt(frac·(1−2⁻²³)) · 11 = confidence-szerű · 12/13 = ∓cent(0xA58C/0xA588) dB-kapuval" },
-  { label: "Lezárt UNK-k", value: "U-7 userscale = UI-legacy paraméter (írás wired, NULLA olvasó) · U-10 c_minmax = min/max aggregátor, ms int16 skálán · Q23 deglitch-rámpa (2²³/N) · 5-tap szomszédság" },
-  { label: "Latencia (U-2)", value: "a „getLatencySamples = 0 stub” érv VISSZAVONVA (rossz vtable-térkép) · a diagnosztikai LatencySamples soha-nem-írt mezőt olvas (0 xref) · a host-facing útvonal R29-re definiálva" },
-  { label: "Bizonyíték", value: "39 s1..s4 evidenciafájl + 4 új s5 szonda · 4 párhuzamos alelemzés · hash előtte/utána ✓ minden sornál · sandbox-resetek túlélve (push-first)" },
+  { label: "Kör", value: "Round 30 · VÉGSŐ UNK-LEZÁRÁS — az utolsó két nyitott UNK számokkal lezárva: U-2 (host-latencia) és U-3 (m02 id-12/13 feed) · a teljes R26–R29 UNK-lista megoldva" },
+  { label: "U-2 latencia", value: "getLatencySamples = slot 6 (+0x30, NEM +0x88!) @ 0x18000E540 · host-latencia = max(0, [VoxAudioProcessor+0x3C]) · 'live'-mód prepare: flag ? 8 : round(0.04·sr)+8 (40 ms pitch-ablak + 8 minta; 48 kHz → 1928)" },
+  { label: "U-3 poller", value: "fn 0x1800E5160 (per-hang, blokk-sebesség) → modpp::simple::env_t::get_child_float (slot 16, +0x80, id IMMEDIÁT r8d-ben — az ötödik dispatch-alak, amit korábban nem szkenneltek) → engine m02(12/13) → dirty-bit fanout" },
+  { label: "Architektúra", value: "processzor-osztály = VoxAudioProcessor (RTTI: tide::DigiPluginBase → ExtendedAudioProcessor → JuceAdapter → juce::AudioProcessor + 5 bázis) · a VST3ClientExtensions dynamic_cast holtkód (nulla leszármazott) · a DSP-motorok PER-HANG (voice+0x430)" },
+  { label: "Visszavonások", value: "R29 F1.7 (aggregációs útvonal) visszavonva — a cast mindig NULL · R28/R29 „nem-immediát id” tézis feloldva — az id mindvégig immediát volt, a +0x80-as felület nem volt lefedve" },
+  { label: "Bizonyíték", value: "22 szonda (s8a..s8k, s9a..s9u) · 34 evidenciafájl · r30_lib RTTI-walker (TypeDescriptor/COL/CHD/BCD) · hash előtte/utána ✓ minden sornál" },
 ];
 
 export function ReportViewer({
@@ -123,17 +123,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 28. kör
+                Octavox Research — 30. kör
               </h1>
               <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm sm:line-clamp-none">
-                Eseményrendszer újraosztályozva (a router = DebugReport megfigyelő-rendszer, NEM a DSP eseményforrás — az R27-es besorolás korrigálva), az m02 hét read-outja teljesen dekódolva (cent C4-től, frekvencia-arány, Q23-kvantált, confidence, ∓cent-korrekciók dB-kapuval), az „userscale” lezárva UI-legacy paraméterként (írás wired, nulla olvasó — a „map” hipotézis cáfolva), a c_minmax lezárva min/max aggregátorként (ms, int16 skála; Q23 deglitch-rámpa 2²³/N; 5-tap olvasási szomszédság), és a host-latencia hamis nyom megszüntetve (a diagnosztika soha-nem-írt mezőt olvas) · Eventide Octavox RE statikus reverzibilis projekt
+                Az utolsó két nyitott UNK lezárva számokkal: a host-latencia (U-2) = max(0, [VoxAudioProcessor+0x3C]), amit a ’live’-mód prepare állít be (flag ? 8 : round(0.04·sr)+8 — 40 ms pitch-ablak + 8 minta; a getLatencySamples a slot 6-os +0x30-as 0x18000E540, a korábbi „slot 17” premissza fantom volt); az m02 id-12/13 feed (U-3) = a hangonkénti blokk-sebességű poller 0x1800E5160, amely a modpp::simple::env_t::get_child_float (slot 16, +0x80, id immediát r8d-ben — az ötödik dispatch-alak) útvonalon hívja a motor m02-jét, majd atomic dirty-bit fanout-tal frissíti a UI-t · Eventide Octavox RE statikus reverzibilis projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 28 · KÉSZ
+              ROUND 30 · KÉSZ
             </Badge>
           </div>
           <div

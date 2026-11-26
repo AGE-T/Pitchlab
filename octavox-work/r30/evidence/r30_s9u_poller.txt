@@ -1,0 +1,175 @@
+--- poller head (0x1800E5160..0x1800E5240) ---
+  0x1800E5160  mov      rax, rsp                                    
+  0x1800E5163  mov      qword ptr [rax + 0x10], rbx                 
+  0x1800E5167  mov      qword ptr [rax + 0x18], rsi                 
+  0x1800E516B  mov      qword ptr [rax + 0x20], rdi                 
+  0x1800E516F  push     rbp                                         
+  0x1800E5170  push     r12                                         
+  0x1800E5172  push     r13                                         
+  0x1800E5174  push     r14                                         
+  0x1800E5176  push     r15                                         
+  0x1800E5178  lea      rbp, [rax - 0x548]                          
+  0x1800E517F  sub      rsp, 0x620                                  
+  0x1800E5186  movaps   xmmword ptr [rax - 0x38], xmm6              
+  0x1800E518A  movaps   xmmword ptr [rax - 0x48], xmm7              
+  0x1800E518E  movaps   xmmword ptr [rax - 0x58], xmm8              
+  0x1800E5193  movaps   xmmword ptr [rax - 0x68], xmm9              
+  0x1800E5198  movaps   xmmword ptr [rax - 0x78], xmm10             
+  0x1800E519D  movaps   xmmword ptr [rax - 0x88], xmm11             
+  0x1800E51A5  movaps   xmmword ptr [rax - 0x98], xmm12             
+  0x1800E51AD  movaps   xmmword ptr [rax - 0xb8], xmm14             
+  0x1800E51B5  mov      rax, qword ptr [rip + 0x3bfe84]               ; "2��-�+"
+  0x1800E51BC  xor      rax, rsp                                    
+  0x1800E51BF  mov      qword ptr [rbp + 0x470], rax                
+  0x1800E51C6  movzx    r14d, dl                                    
+  0x1800E51CA  mov      rsi, rcx                                    
+  0x1800E51CD  test     dl, dl                                      
+  0x1800E51CF  je       0x1800e51f2                                 
+  0x1800E51D1  mov      rdi, qword ptr [rcx]                        
+  0x1800E51D4  mov      rcx, rdi                                    
+  0x1800E51D7  mov      rax, qword ptr [rdi]                        
+  0x1800E51DA  mov      rbx, qword ptr [rax + 0x60]                 
+  0x1800E51DE  call     qword ptr [rax + 8]                         
+  0x1800E51E1  mov      edx, dword ptr [rsi + 8]                    
+  0x1800E51E4  mov      r8d, 5                                      
+  0x1800E51EA  movaps   xmm3, xmm0                                  
+  0x1800E51ED  mov      rcx, rdi                                    
+  0x1800E51F0  call     rbx                                         
+  0x1800E51F2  prefetchw byte ptr [rsi + 0x3b8]                      
+  0x1800E51F9  mov      rax, qword ptr [rsi + 0x3b8]                
+  0x1800E5200  mov      rcx, rax                                    
+  0x1800E5203  and      rcx, 0xfffffffffffffffd                     
+  0x1800E5207  lock cmpxchg qword ptr [rsi + 0x3b8], rcx                
+  0x1800E5210  jne      0x1800e5200                                 
+  0x1800E5212  shr      al, 1                                       
+  0x1800E5214  test     al, 1                                       
+  0x1800E5216  je       0x1800e5220                                 
+  0x1800E5218  mov      rcx, rsi                                    
+  0x1800E521B  call     0x1800e7960                                 
+  0x1800E5220  prefetchw byte ptr [rsi + 0x3b8]                      
+  0x1800E5227  mov      rax, qword ptr [rsi + 0x3b8]                
+  0x1800E522E  nop                                                  
+  0x1800E5230  mov      rcx, rax                                    
+  0x1800E5233  and      rcx, 0xfffffffffffffffb                     
+  0x1800E5237  lock cmpxchg qword ptr [rsi + 0x3b8], rcx                
+
+--- ids region 1 (7..11-ish) (0x1800E5500..0x1800E55D0) ---
+  0x1800E5500  minps    xmm0, xmmword ptr [rsi + 0x254]             
+  0x1800E5507  cvttss2si eax, xmm0                                   
+  0x1800E550B  test     eax, eax                                    
+  0x1800E550D  cmovns   r9d, eax                                    
+  0x1800E5511  mov      rax, qword ptr [rcx]                        
+  0x1800E5514  cmp      r9d, ebx                                    
+  0x1800E5517  cmovg    r9d, ebx                                    
+  0x1800E551B  call     qword ptr [rax + 0x58]                      
+  0x1800E551E  mov      rcx, qword ptr [rsi]                        
+  0x1800E5521  mov      r8d, 7                                      
+  0x1800E5527  mov      edx, dword ptr [rsi + 8]                    
+  0x1800E552A  mov      rax, qword ptr [rcx]                        
+  0x1800E552D  call     qword ptr [rax + 0x80]                      
+  0x1800E5533  mov      rcx, qword ptr [rsi]                        
+  0x1800E5536  mov      r8d, 8                                      
+  0x1800E553C  mov      edx, dword ptr [rsi + 8]                    
+  0x1800E553F  movaps   xmm7, xmm0                                  
+  0x1800E5542  mov      rax, qword ptr [rcx]                        
+  0x1800E5545  call     qword ptr [rax + 0x80]                      
+  0x1800E554B  mov      rcx, qword ptr [rsi]                        
+  0x1800E554E  mov      r8d, 9                                      
+  0x1800E5554  mov      edx, dword ptr [rsi + 8]                    
+  0x1800E5557  movaps   xmm6, xmm0                                  
+  0x1800E555A  mov      rax, qword ptr [rcx]                        
+  0x1800E555D  call     qword ptr [rax + 0x80]                      
+  0x1800E5563  mov      rcx, qword ptr [rsi]                        
+  0x1800E5566  mov      r8d, 0xa                                    
+  0x1800E556C  mov      edx, dword ptr [rsi + 8]                    
+  0x1800E556F  movaps   xmm9, xmm0                                  
+  0x1800E5573  mov      rax, qword ptr [rcx]                        
+  0x1800E5576  call     qword ptr [rax + 0x80]                      
+  0x1800E557C  mov      rcx, qword ptr [rsi]                        
+  0x1800E557F  mov      r8d, 0xb                                    
+  0x1800E5585  mov      edx, dword ptr [rsi + 8]                    
+  0x1800E5588  movaps   xmm8, xmm0                                  
+  0x1800E558C  mov      rax, qword ptr [rcx]                        
+  0x1800E558F  call     qword ptr [rax + 0x80]                      
+  0x1800E5595  comiss   xmm6, dword ptr [rip + 0x32c8a8]              ; q=0x2880000228000000
+  0x1800E559C  movss    xmm1, dword ptr [rip + 0x32d198]              ; q=0x44800000447A0000
+  0x1800E55A4  movaps   xmm2, xmm0                                  
+  0x1800E55A7  divss    xmm1, xmm6                                  
+  0x1800E55AB  jae      0x1800e55b1                                 
+  0x1800E55AD  movaps   xmm1, xmm12                                 
+  0x1800E55B1  ucomiss  xmm7, dword ptr [rsi + 0x2f8]               
+  0x1800E55B8  je       0x1800e55fa                                 
+  0x1800E55BA  movss    dword ptr [rsi + 0x2f8], xmm7               
+  0x1800E55C2  mov      r9, qword ptr [rsi + 0x308]                 
+  0x1800E55C9  mov      r8, qword ptr [rsi + 0x300]                 
+
+--- ids 12/13 region (0x1800E56C0..0x1800E57D0) ---
+  0x1800E56C0  add      byte ptr [rax - 0x7b], cl                   
+  0x1800E56C3  sal      byte ptr [rsi + rax - 0xd], 0xf             
+  0x1800E56C8  adc      byte ptr [rax], cl                          
+  0x1800E56CA  jmp      0x1800e56d4                                 
+  0x1800E56CC  movss    xmm1, dword ptr [rsi + 0x1b8]               
+  0x1800E56D4  movss    xmm0, dword ptr [rsi + 0x190]               
+  0x1800E56DC  lea      rax, [rbp - 0x68]                           
+  0x1800E56E0  comiss   xmm1, xmm0                                  
+  0x1800E56E3  lea      rcx, [rbp - 0x60]                           
+  0x1800E56E7  movss    dword ptr [rbp - 0x60], xmm0                
+  0x1800E56EC  movss    dword ptr [rbp - 0x68], xmm1                
+  0x1800E56F1  cmovbe   rax, rcx                                    
+  0x1800E56F5  movss    xmm0, dword ptr [rax]                       
+  0x1800E56F9  minss    xmm0, dword ptr [rsi + 0x194]               
+  0x1800E5701  cvttss2si eax, xmm0                                   
+  0x1800E5705  test     eax, eax                                    
+  0x1800E5707  jns      0x1800e57cc                                 
+  0x1800E570D  mov      rcx, qword ptr [rsi]                        
+  0x1800E5710  mov      r8d, 0xc                                    
+  0x1800E5716  mov      edx, dword ptr [rsi + 8]                    
+  0x1800E5719  mov      rax, qword ptr [rcx]                        
+  0x1800E571C  call     qword ptr [rax + 0x80]                      
+  0x1800E5722  ucomiss  xmm0, dword ptr [rsi + 0x378]               
+  0x1800E5729  je       0x1800e576a                                 
+  0x1800E572B  movss    dword ptr [rsi + 0x378], xmm0               
+  0x1800E5733  mov      r9, qword ptr [rsi + 0x388]                 
+  0x1800E573A  mov      r8, qword ptr [rsi + 0x380]                 
+  0x1800E5741  cmp      r8, r9                                      
+  0x1800E5744  je       0x1800e576a                                 
+  0x1800E5746  nop      word ptr [rax + rax]                        
+  0x1800E5750  mov      ecx, dword ptr [r8 + 8]                     
+  0x1800E5754  mov      rdx, rbx                                    
+  0x1800E5757  mov      rax, qword ptr [r8]                         
+  0x1800E575A  shl      rdx, cl                                     
+  0x1800E575D  lock or  qword ptr [rax], rdx                        
+  0x1800E5761  add      r8, 0x10                                    
+  0x1800E5765  cmp      r8, r9                                      
+  0x1800E5768  jne      0x1800e5750                                 
+  0x1800E576A  mov      rcx, qword ptr [rsi]                        
+  0x1800E576D  mov      r8d, 0xd                                    
+  0x1800E5773  mov      edx, dword ptr [rsi + 8]                    
+  0x1800E5776  mov      rax, qword ptr [rcx]                        
+  0x1800E5779  call     qword ptr [rax + 0x80]                      
+  0x1800E577F  ucomiss  xmm0, dword ptr [rsi + 0x398]               
+  0x1800E5786  je       0x1800e584a                                 
+  0x1800E578C  movss    dword ptr [rsi + 0x398], xmm0               
+  0x1800E5794  mov      r9, qword ptr [rsi + 0x3a8]                 
+  0x1800E579B  mov      r8, qword ptr [rsi + 0x3a0]                 
+  0x1800E57A2  cmp      r8, r9                                      
+  0x1800E57A5  je       0x1800e584a                                 
+  0x1800E57AB  nop      dword ptr [rax + rax]                       
+  0x1800E57B0  mov      ecx, dword ptr [r8 + 8]                     
+  0x1800E57B4  mov      rdx, rbx                                    
+  0x1800E57B7  mov      rax, qword ptr [r8]                         
+  0x1800E57BA  shl      rdx, cl                                     
+  0x1800E57BD  lock or  qword ptr [rax], rdx                        
+  0x1800E57C1  add      r8, 0x10                                    
+  0x1800E57C5  cmp      r8, r9                                      
+  0x1800E57C8  jne      0x1800e57b0                                 
+  0x1800E57CA  jmp      0x1800e584a                                 
+  0x1800E57CC  .byte    0x44                                        
+  0x1800E57CD  .byte    0x0f                                        
+  0x1800E57CE  .byte    0x2e                                        
+  0x1800E57CF  .byte    0x8e                                        
+
+===== callers of the poller 0x1800E5160 =====
+  call at 0x180106B2F in fn 0x1801061A0..0x18010705E
+  call at 0x1801206EF in fn 0x18011FD60..0x180120C12
+post-pass hash OK

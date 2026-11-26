@@ -1,0 +1,96 @@
+===== (a) IAudioProcessor view 0x1803EF580: all 11 slots =====
+  slot  0 (+0x00) queryInterface         = 0x180016ED0
+  slot  1 (+0x08) addRef                 = 0x180016E58
+  slot  2 (+0x10) release                = 0x180016F0C
+  slot  3 (+0x18) setBusArrangements     = 0x18000E310
+  slot  4 (+0x20) getBusArrangement      = 0x18000E4A0
+  slot  5 (+0x28) canProcessSampleSize   = 0x18000E500
+  slot  6 (+0x30) getLatencySamples      = 0x18000E540
+  slot  7 (+0x38) setupProcessing        = 0x18000E550
+  slot  8 (+0x40) setProcessing          = 0x18000E660
+  slot  9 (+0x48) process                = 0x18000E8C0
+  slot 10 (+0x50) getTailSamples         = 0x18000E680
+
+===== (b) getLatencySamples 0x18000E540 (slot 6) =====
+  bounds: 0x18000E540..0x18000E640
+--- getLatencySamples (0x18000E540..0x18000E640) ---
+  0x18000E540  mov      rax, qword ptr [rcx + 0x30]                 
+  0x18000E544  mov      ecx, dword ptr [rax + 0x3c]                 
+  0x18000E547  xor      eax, eax                                    
+  0x18000E549  test     ecx, ecx                                    
+  0x18000E54B  cmovg    eax, ecx                                    
+  0x18000E54E  ret                                                  
+  0x18000E54F  int3                                                 
+  0x18000E550  mov      qword ptr [rsp + 0x10], rbx                 
+  0x18000E555  mov      qword ptr [rsp + 0x18], rbp                 
+  0x18000E55A  mov      qword ptr [rsp + 0x20], rsi                 
+  0x18000E55F  push     rdi                                         
+  0x18000E560  push     r14                                         
+  0x18000E562  push     r15                                         
+  0x18000E564  sub      rsp, 0x20                                   
+  0x18000E568  mov      r15, rdx                                    
+  0x18000E56B  mov      rdi, rcx                                    
+  0x18000E56E  mov      rbx, qword ptr [rcx + 0x48]                 
+  0x18000E572  mov      qword ptr [rsp + 0x40], rbx                 
+  0x18000E577  mov      ebp, 1                                      
+  0x18000E57C  test     rbx, rbx                                    
+  0x18000E57F  je       0x18000e593                                 
+  0x18000E581  lea      rsi, [rbx + 0x6261]                         
+  0x18000E588  mov      eax, ebp                                    
+  0x18000E58A  xchg     byte ptr [rsi], al                          
+  0x18000E58C  mov      rbx, qword ptr [rsp + 0x40]                 
+  0x18000E591  jmp      0x18000e598                                 
+  0x18000E593  mov      esi, 0x6261                                 
+  0x18000E598  mov      rax, qword ptr [rcx]                        
+  0x18000E59B  mov      edx, dword ptr [rdx + 4]                    
+  0x18000E59E  call     qword ptr [rax + 0x28]                      
+  0x18000E5A1  xor      r14d, r14d                                  
+  0x18000E5A4  test     eax, eax                                    
+  0x18000E5A6  jne      0x18000e63c                                 
+  0x18000E5AC  movups   xmm0, xmmword ptr [r15]                     
+  0x18000E5B0  movups   xmmword ptr [rdi + 0xc0], xmm0              
+  0x18000E5B7  movsd    xmm1, qword ptr [r15 + 0x10]                
+  0x18000E5BD  movsd    qword ptr [rdi + 0xd0], xmm1                
+  0x18000E5C5  mov      rax, qword ptr [rdi + 0xd0]                 
+  0x18000E5CC  mov      qword ptr [rdi + 0x58], rax                 
+  0x18000E5D0  mov      rcx, qword ptr [rdi + 0x30]                 
+  0x18000E5D4  mov      eax, r14d                                   
+  0x18000E5D7  cmp      dword ptr [r15 + 4], 1                      
+  0x18000E5DC  sete     al                                          
+  0x18000E5DF  mov      dword ptr [rcx + 0x44], eax                 
+  0x18000E5E2  mov      rcx, qword ptr [rdi + 0x30]                 
+  0x18000E5E6  mov      rax, qword ptr [rcx]                        
+  0x18000E5E9  cmp      dword ptr [r15], 2                          
+  0x18000E5ED  sete     dl                                          
+  0x18000E5F0  call     qword ptr [rax + 0xa0]                      
+  0x18000E5F6  mov      r8d, dword ptr [rdi + 0xc8]                 
+  0x18000E5FD  movsd    xmm1, qword ptr [rdi + 0xd0]                
+  0x18000E605  mov      rcx, qword ptr [rdi + 0x30]                 
+  0x18000E609  movsd    qword ptr [rcx + 0x30], xmm1                
+  0x18000E60E  mov      dword ptr [rcx + 0x38], r8d                 
+  0x18000E612  mov      rax, qword ptr [rcx]                        
+  0x18000E615  call     qword ptr [rax + 0x18]                      
+  0x18000E618  lea      rcx, [rdi + 0xd8]                           
+  0x18000E61F  cmp      dword ptr [rcx + 8], 0x800                  
+  0x18000E626  jge      0x18000e632                                 
+  0x18000E628  mov      edx, 0xc08                                  
+  0x18000E62D  call     0x1800256c0                                 
+  0x18000E632  mov      dword ptr [rdi + 0xe4], r14d                
+  0x18000E639  mov      ebp, r14d                                   
+  0x18000E63C  mov      eax, ebp                                    
+  0x18000E63E  .byte    0x48                                        
+  0x18000E63F  .byte    0x85                                        
+
+===== (c) shape cross-check: slot sizes =====
+  queryInterface         0x180016ED0 (no pdata bounds)
+  addRef                 0x180016E58 (no pdata bounds)
+  release                0x180016F0C (no pdata bounds)
+  setBusArrangements     0x18000E310..0x18000E496 (390 bytes)
+  getBusArrangement      0x18000E4A0..0x18000E4F2 (82 bytes)
+  canProcessSampleSize   0x18000E500..0x18000E532 (50 bytes)
+  getLatencySamples      0x18000E540 (no pdata bounds)
+  setupProcessing        0x18000E550..0x18000E65F (271 bytes)
+  setProcessing          0x18000E660..0x18000E67C (28 bytes)
+  process                0x18000E8C0..0x18000E918 (88 bytes)
+  getTailSamples         0x18000E680..0x18000E6E0 (96 bytes)
+post-pass hash OK

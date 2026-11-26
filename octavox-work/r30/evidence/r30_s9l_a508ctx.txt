@@ -1,0 +1,109 @@
+--- context of lea 0x1800F6583 (0x1800F6553..0x1800F65D3) ---
+  0x1800F6553  .byte    0xd4                                        
+  0x1800F6554  cld                                                  
+  0x1800F6555  dec      dword ptr [rax - 0x75]                      
+  0x1800F6558  fmul     dword ptr [rax - 0x73]                      
+  0x1800F655B  adc      eax, 0x312de0                               
+  0x1800F6560  lea      rcx, [rbp + 0x3780]                         
+  0x1800F6567  call     0x180017a00                                 
+  0x1800F656C  nop                                                  
+  0x1800F656D  mov      qword ptr [rsp + 0x20], rbx                 
+  0x1800F6572  mov      r9d, 0xfb                                   
+  0x1800F6578  lea      r8, [rbp + 0x3780]                          
+  0x1800F657F  mov      rdx, qword ptr [r14 + 8]                    
+  0x1800F6583  lea      rcx, [r14 + 0xa508]                         
+  0x1800F658A  call     0x180138d30                                 
+  0x1800F658F  nop                                                  
+  0x1800F6590  lea      rcx, [rbp + 0x3780]                         
+  0x1800F6597  call     0x1800171b0                                 
+  0x1800F659C  nop                                                  
+  0x1800F659D  lea      rcx, [rbp + 0xef0]                          
+  0x1800F65A4  call     0x1800c48e0                                 
+  0x1800F65A9  lea      rdx, [rip + 0x3bfdf0]                         ; q=0x1803A2AB8
+  0x1800F65B0  lea      rcx, [rbp + 0xf00]                          
+  0x1800F65B7  call     0x1800c3990                                 
+  0x1800F65BC  mov      rbx, rax                                    
+  0x1800F65BF  lea      rdx, [rip + 0x312d8a]                         ; "iswitch7"
+  0x1800F65C6  lea      rcx, [rbp + 0x37a0]                         
+  0x1800F65CD  call     0x180017a00                                 
+  0x1800F65D2  nop                                                  
+
+--- context of lea 0x1801041BF (0x18010418F..0x18010420F) ---
+  0x18010418F  lea      rcx, [rbx + 0x9f90]                         
+  0x180104196  call     0x180138e70                                 
+  0x18010419B  lea      rcx, [rbx + 0xa100]                         
+  0x1801041A2  call     0x180138b00                                 
+  0x1801041A7  lea      rcx, [rbx + 0xa278]                         
+  0x1801041AE  call     0x180138870                                 
+  0x1801041B3  lea      rcx, [rbx + 0xa398]                         
+  0x1801041BA  call     0x180138e70                                 
+  0x1801041BF  lea      rcx, [rbx + 0xa508]                         
+  0x1801041C6  call     0x180138b00                                 
+  0x1801041CB  lea      rcx, [rbx + 0xa680]                         
+  0x1801041D2  call     0x180138870                                 
+  0x1801041D7  lea      rcx, [rbx + 0xa820]                         
+  0x1801041DE  call     0x1800d0d50                                 
+  0x1801041E3  lea      rcx, [rbx + 0xa900]                         
+  0x1801041EA  call     0x180138870                                 
+  0x1801041EF  lea      rcx, [rbx + 0xaa20]                         
+  0x1801041F6  call     0x180138870                                 
+  0x1801041FB  lea      rcx, [rbx + 0xac20]                         
+  0x180104202  call     0x1800ee420                                 
+  0x180104207  mov      r8, qword ptr [rbx + 0xad90]                
+  0x18010420E  .byte    0xf3                                        
+
+--- context of lea 0x180110223 (0x1801101F3..0x180110273) ---
+  0x1801101F3  .byte    0x37                                        
+  0x1801101F4  sti                                                  
+  0x1801101F5  dec      dword ptr [rax - 0x75]                      
+  0x1801101F8  fmul     dword ptr [rax - 0x73]                      
+  0x1801101FB  adc      eax, 0x2f9140                               
+  0x180110200  lea      rcx, [rbp + 0x3770]                         
+  0x180110207  call     0x180017a00                                 
+  0x18011020C  nop                                                  
+  0x18011020D  mov      qword ptr [rsp + 0x20], rbx                 
+  0x180110212  mov      r9d, 0xfb                                   
+  0x180110218  lea      r8, [rbp + 0x3770]                          
+  0x18011021F  mov      rdx, qword ptr [r14 + 8]                    
+  0x180110223  lea      rcx, [r14 + 0xa508]                         
+  0x18011022A  call     0x180138d30                                 
+  0x18011022F  nop                                                  
+  0x180110230  lea      rcx, [rbp + 0x3770]                         
+  0x180110237  call     0x1800171b0                                 
+  0x18011023C  nop                                                  
+  0x18011023D  lea      rcx, [rbp + 0xef0]                          
+  0x180110244  call     0x1800c48e0                                 
+  0x180110249  lea      rdx, [rip + 0x3a05d0]                         ; q=0x1803AAA88
+  0x180110250  lea      rcx, [rbp + 0xf00]                          
+  0x180110257  call     0x1800c3990                                 
+  0x18011025C  mov      rbx, rax                                    
+  0x18011025F  lea      rdx, [rip + 0x2f90ea]                         ; "iswitch7"
+  0x180110266  lea      rcx, [rbp + 0x3790]                         
+  0x18011026D  call     0x180017a00                                 
+  0x180110272  nop                                                  
+
+--- context of lea 0x18011DD9F (0x18011DD6F..0x18011DDEF) ---
+  0x18011DD6F  lea      rcx, [rbx + 0x9f90]                         
+  0x18011DD76  call     0x180138e70                                 
+  0x18011DD7B  lea      rcx, [rbx + 0xa100]                         
+  0x18011DD82  call     0x180138b00                                 
+  0x18011DD87  lea      rcx, [rbx + 0xa278]                         
+  0x18011DD8E  call     0x180138870                                 
+  0x18011DD93  lea      rcx, [rbx + 0xa398]                         
+  0x18011DD9A  call     0x180138e70                                 
+  0x18011DD9F  lea      rcx, [rbx + 0xa508]                         
+  0x18011DDA6  call     0x180138b00                                 
+  0x18011DDAB  lea      rcx, [rbx + 0xa680]                         
+  0x18011DDB2  call     0x180138870                                 
+  0x18011DDB7  lea      rcx, [rbx + 0xa820]                         
+  0x18011DDBE  call     0x1800d0d50                                 
+  0x18011DDC3  lea      rcx, [rbx + 0xa900]                         
+  0x18011DDCA  call     0x180138870                                 
+  0x18011DDCF  lea      rcx, [rbx + 0xaa20]                         
+  0x18011DDD6  call     0x180138870                                 
+  0x18011DDDB  lea      rcx, [rbx + 0xac20]                         
+  0x18011DDE2  call     0x1800ee420                                 
+  0x18011DDE7  mov      r8, qword ptr [rbx + 0xad90]                
+  0x18011DDEE  .byte    0xf3                                        
+
+post-pass hash OK

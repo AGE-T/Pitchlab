@@ -1,0 +1,98 @@
+===== (a) dispatch thunk 0x180016E14 =====
+--- thunk (0x180016E14..0x180016E34) ---
+  0x180016E14  mov      rax, qword ptr [rcx]                        
+  0x180016E17  jmp      qword ptr [rax + 0x10]                      
+  0x180016E1A  int3                                                 
+  0x180016E1B  int3                                                 
+  0x180016E1C  sub      rcx, 0x38                                   
+  0x180016E20  jmp      0x180004db0                                 
+  0x180016E25  int3                                                 
+  0x180016E26  int3                                                 
+  0x180016E27  int3                                                 
+  0x180016E28  sub      rcx, 0x10                                   
+  0x180016E2C  jmp      0x1800048e0                                 
+  0x180016E31  int3                                                 
+  0x180016E32  int3                                                 
+  0x180016E33  int3                                                 
+
+===== (b) TypeDescriptors =====
+  SRC (r8) @ 0x1804B7448: vftable=0x18037FE80 spare=0x0 name='.?AVAudioProcessor@juce@@' -> juce::AudioProcessor
+  DST (r9) @ 0x1804B73E0: vftable=0x18037FE80 spare=0x0 name='.?AUVST3ClientExtensions@juce@@' -> .?AUVST3ClientExtensions@juce@@
+
+===== (c) __RTDynamicCast 0x180160D5C =====
+  pdata bounds: 0x180160D5C..0x180160EC2
+--- __RTDynamicCast (0x180160D5C..0x180160EC2) ---
+  0x180160D5C  mov      qword ptr [rsp + 0x10], rbx                 
+  0x180160D61  mov      qword ptr [rsp + 0x18], rsi                 
+  0x180160D66  push     rdi                                         
+  0x180160D67  push     r12                                         
+  0x180160D69  push     r13                                         
+  0x180160D6B  push     r14                                         
+  0x180160D6D  push     r15                                         
+  0x180160D6F  sub      rsp, 0x50                                   
+  0x180160D73  mov      r15, r9                                     
+  0x180160D76  mov      r12, r8                                     
+  0x180160D79  movsxd   r13, edx                                    
+  0x180160D7C  mov      rdi, rcx                                    
+  0x180160D7F  xor      ebx, ebx                                    
+  0x180160D81  test     rcx, rcx                                    
+  0x180160D84  jne      0x180160da2                                 
+  0x180160D86  xor      eax, eax                                    
+  0x180160D88  lea      r11, [rsp + 0x50]                           
+  0x180160D8D  mov      rbx, qword ptr [r11 + 0x38]                 
+  0x180160D91  mov      rsi, qword ptr [r11 + 0x40]                 
+  0x180160D95  mov      rsp, r11                                    
+  0x180160D98  pop      r15                                         
+  0x180160D9A  pop      r14                                         
+  0x180160D9C  pop      r13                                         
+  0x180160D9E  pop      r12                                         
+  0x180160DA0  pop      rdi                                         
+  0x180160DA1  ret                                                  
+  0x180160DA2  mov      rax, qword ptr [rcx]                        
+  0x180160DA5  mov      rsi, qword ptr [rax - 8]                    
+  0x180160DA9  mov      eax, dword ptr [rsi + 4]                    
+  0x180160DAC  mov      r14, rdi                                    
+  0x180160DAF  sub      r14, rax                                    
+  0x180160DB2  mov      edx, dword ptr [rsi + 8]                    
+  0x180160DB5  sub      rcx, rdx                                    
+  0x180160DB8  neg      edx                                         
+  0x180160DBA  sbb      eax, eax                                    
+  0x180160DBC  and      eax, dword ptr [rcx]                        
+  0x180160DBE  movsxd   rcx, eax                                    
+  0x180160DC1  sub      r14, rcx                                    
+  0x180160DC4  cmp      dword ptr [rsi], ebx                        
+  0x180160DC6  jne      0x180160de6                                 
+  0x180160DC8  lea      rdx, [rsp + 0x80]                           
+  0x180160DD0  mov      rcx, rsi                                    
+  0x180160DD3  call     qword ptr [rip + 0x21c5cf]                    ; "<JJ"
+  0x180160DD9  mov      r9, rax                                     
+  0x180160DDC  mov      qword ptr [rsp + 0x80], rax                 
+  0x180160DE4  jmp      0x180160df0                                 
+  0x180160DE6  movsxd   rax, dword ptr [rsi + 0x14]                 
+  0x180160DEA  mov      r9, rsi                                     
+  0x180160DED  sub      r9, rax                                     
+  0x180160DF0  movsxd   rax, dword ptr [rsi + 0x10]                 
+  0x180160DF4  mov      ecx, dword ptr [rax + r9 + 4]               
+  0x180160DF9  test     cl, 1                                       
+  0x180160DFC  jne      0x180160e0e                                 
+  0x180160DFE  mov      r8, r15                                     
+  0x180160E01  mov      rdx, r12                                    
+  0x180160E04  mov      rcx, rsi                                    
+  0x180160E07  call     0x1801609c0                                 
+  0x180160E0C  jmp      0x180160e3b                                 
+  0x180160E0E  sub      rdi, r13                                    
+  0x180160E11  sub      rdi, r14                                    
+  0x180160E14  mov      qword ptr [rsp + 0x28], r9                  
+  0x180160E19  mov      r8, r12                                     
+  0x180160E1C  mov      rdx, rsi                                    
+  0x180160E1F  mov      qword ptr [rsp + 0x20], r15                 
+  0x180160E24  mov      r9, rdi                                     
+  0x180160E27  test     cl, 2                                       
+  0x180160E2A  mov      rcx, r14                                    
+  0x180160E2D  jne      0x180160e36                                 
+  0x180160E2F  call     0x180160838                                 
+  0x180160E34  jmp      0x180160e3b                                 
+  0x180160E36  call     0x180160af8                                 
+  0x180160E3B  mov      r9, rax                                     
+  0x180160E3E  test     rax, rax                                    
+  0x180160E41  jne      0x180160e53                                 

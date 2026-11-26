@@ -1,0 +1,49 @@
+===== callers of engine ctor 0x1800E0360 =====
+  call at 0x180137E6A in fn 0x180137E20..0x180137E83
+
+--- context 0x180137E6A (0x180137E20..0x180137E9A) ---
+  0x180137E20  mov      qword ptr [rsp + 0x10], rbx                 
+  0x180137E25  mov      qword ptr [rsp + 0x18], rsi                 
+  0x180137E2A  mov      qword ptr [rsp + 8], rcx                    
+  0x180137E2F  push     rdi                                         
+  0x180137E30  sub      rsp, 0x30                                   
+  0x180137E34  mov      rbx, r8                                     
+  0x180137E37  mov      rdi, rdx                                    
+  0x180137E3A  mov      rsi, rcx                                    
+  0x180137E3D  add      rdx, 0x260                                  
+  0x180137E44  xor      eax, eax                                    
+  0x180137E46  test     rdi, rdi                                    
+  0x180137E49  cmove    rdx, rax                                    
+  0x180137E4D  call     0x1800e2c00                                 
+  0x180137E52  nop                                                  
+  0x180137E53  lea      rcx, [rsi + 0x430]                          
+  0x180137E5A  mov      rax, qword ptr [rsp + 0x60]                 
+  0x180137E5F  mov      qword ptr [rsp + 0x20], rax                 
+  0x180137E64  mov      r8, rbx                                     
+  0x180137E67  mov      rdx, rdi                                    
+  0x180137E6A  call     0x1800e0360                                 
+  0x180137E6F  nop                                                  
+  0x180137E70  mov      rax, rsi                                    
+  0x180137E73  mov      rbx, qword ptr [rsp + 0x48]                 
+  0x180137E78  mov      rsi, qword ptr [rsp + 0x50]                 
+  0x180137E7D  add      rsp, 0x30                                   
+  0x180137E81  pop      rdi                                         
+  0x180137E82  ret                                                  
+  0x180137E83  int3                                                 
+  0x180137E84  int3                                                 
+  0x180137E85  int3                                                 
+  0x180137E86  int3                                                 
+  0x180137E87  int3                                                 
+  0x180137E88  int3                                                 
+  0x180137E89  int3                                                 
+  0x180137E8A  int3                                                 
+  0x180137E8B  int3                                                 
+  0x180137E8C  int3                                                 
+  0x180137E8D  int3                                                 
+  0x180137E8E  int3                                                 
+  0x180137E8F  int3                                                 
+  0x180137E90  mov      rax, qword ptr [rcx + 0x48]                 
+  0x180137E94  movss    xmm0, dword ptr [rcx + 0x68]                
+  0x180137E99  .byte    0xf3                                        
+
+post-pass hash OK

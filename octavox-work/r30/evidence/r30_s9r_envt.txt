@@ -1,0 +1,70 @@
+===== lea rip->0x18040AE10 sites (env_t ctor/installers) =====
+  0x180142BF6  (fn 0x180142B60..0x180142D46)
+  0x180142D79  (fn 0x180142D50..0x180142F1E)
+
+--- installer ctx 0x180142BF6 (0x180142BB6..0x180142C36) ---
+  0x180142BB6  add      byte ptr [rcx - 0x77], cl                   
+  0x180142BB9  scasb    al, byte ptr [rdi]                          
+  0x180142BBA  sub      byte ptr [rdx], al                          
+  0x180142BBC  add      byte ptr [rax], al                          
+  0x180142BBE  mov      qword ptr [r14 + 0x230], rbp                
+  0x180142BC5  mov      qword ptr [r14 + 0x238], rbp                
+  0x180142BCC  mov      qword ptr [r14 + 0x240], rbp                
+  0x180142BD3  lea      rax, [r14 + 0x248]                          
+  0x180142BDA  lea      rcx, [rip + 0x2c7f1f]                         ; q=0x180142480
+  0x180142BE1  mov      qword ptr [rax], rcx                        
+  0x180142BE4  mov      qword ptr [rax + 8], rax                    
+  0x180142BE8  mov      qword ptr [rax + 0x10], rax                 
+  0x180142BEC  lea      rax, [rip + 0x2c7f35]                         ; q=0x180145220
+  0x180142BF3  mov      qword ptr [r14], rax                        
+  0x180142BF6  lea      rax, [rip + 0x2c8213]                         ; q=0x18014746C
+  0x180142BFD  mov      qword ptr [r14 + 0x260], rax                
+  0x180142C04  movss    dword ptr [r14 + 0x268], xmm6               
+  0x180142C0D  mov      dword ptr [r14 + 0x26c], 0x42f00000         
+  0x180142C18  lea      rbx, [r14 + 0x270]                          
+  0x180142C1F  mov      qword ptr [rsp + 0x60], rbx                 
+  0x180142C24  mov      qword ptr [rbx], rbp                        
+  0x180142C27  mov      qword ptr [rbx + 8], rbp                    
+  0x180142C2B  lea      ecx, [rbp + 0x48]                           
+  0x180142C2E  call     0x18015e63c                                 
+  0x180142C33  mov      qword ptr [rax], rax                        
+
+--- installer ctx 0x180142D79 (0x180142D50..0x180142DB9) ---
+  0x180142D50  mov      qword ptr [rsp + 8], rbx                    
+  0x180142D55  mov      qword ptr [rsp + 0x10], rsi                 
+  0x180142D5A  mov      qword ptr [rsp + 0x18], rdi                 
+  0x180142D5F  push     r14                                         
+  0x180142D61  sub      rsp, 0x20                                   
+  0x180142D65  mov      rbx, qword ptr [rcx + 0x2d0]                
+  0x180142D6C  lea      rax, [rip + 0x2c7db5]                         ; q=0x180145220
+  0x180142D73  mov      qword ptr [rcx], rax                        
+  0x180142D76  mov      r14, rcx                                    
+  0x180142D79  lea      rax, [rip + 0x2c8090]                         ; q=0x18014746C
+  0x180142D80  mov      qword ptr [rcx + 0x260], rax                
+  0x180142D87  mov      rsi, qword ptr [rbx + 8]                    
+  0x180142D8B  mov      rbx, qword ptr [rbx]                        
+  0x180142D8E  cmp      rbx, rsi                                    
+  0x180142D91  je       0x180142dd5                                 
+  0x180142D93  mov      rdi, qword ptr [rbx]                        
+  0x180142D96  test     rdi, rdi                                    
+  0x180142D99  je       0x180142dcc                                 
+  0x180142D9B  lea      rcx, [rdi + 0x68]                           
+  0x180142D9F  call     0x180017ac0                                 
+  0x180142DA4  lea      rcx, [rdi + 0x48]                           
+  0x180142DA8  call     0x180017ac0                                 
+  0x180142DAD  lea      rcx, [rdi + 0x28]                           
+  0x180142DB1  call     0x180017ac0                                 
+  0x180142DB6  .byte    0x48                                        
+  0x180142DB7  .byte    0x8d                                        
+  0x180142DB8  .byte    0x4f                                        
+
+===== env_t vtable slots 12..20 =====
+  slot 12 (+0x60): 0x180144540    42 B
+  slot 13 (+0x68): 0x180144570    42 B
+  slot 14 (+0x70): 0x180144570    42 B
+  slot 15 (+0x78): 0x1801445A0    40 B
+  slot 16 (+0x80): 0x1801445D0    42 B
+  slot 17 (+0x88): 0x180144600    42 B
+  slot 18 (+0x90): 0x180144600    42 B
+  slot 19 (+0x98): 0x180144630    42 B
+post-pass hash OK

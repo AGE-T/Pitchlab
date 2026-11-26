@@ -1,0 +1,13 @@
+===== (a) vtables hosting 0x1801A5F40 =====
+  qword 0x1803F07A0: vtable 0x1803F05D0 slot 58  owner-class=VoxAudioProcessor
+
+===== (b) call sites of [reg + slot*8] matching the slot =====
+  scanning call [reg+0x1D0] (slot 58) in .text...
+    0x1801A6248  (fn (6444179264, 6444180580))
+    0x1801A62B3  (fn (6444179264, 6444180580))
+    0x1801E2CD2  (fn (6444428192, 6444429007))
+    0x180316B60  (fn (6445689671, 6445689737))
+    0x180318940  (fn (6445697280, 6445697402))
+  total: 5
+
+post-pass hash OK

@@ -1,0 +1,69 @@
+--- helper 0x1801445A0 (0x1801445A0..0x1801445D0) ---
+  0x1801445A0  sub      rsp, 0x28                                   
+  0x1801445A4  mov      rax, qword ptr [rcx + 0x58]                 
+  0x1801445A8  mov      r9d, r8d                                    
+  0x1801445AB  mov      edx, edx                                    
+  0x1801445AD  lea      r8, [rsp + 0x38]                            
+  0x1801445B2  mov      rcx, qword ptr [rax + rdx*8]                
+  0x1801445B6  mov      edx, r9d                                    
+  0x1801445B9  mov      rax, qword ptr [rcx]                        
+  0x1801445BC  call     qword ptr [rax + 0x10]                      
+  0x1801445BF  mov      eax, dword ptr [rsp + 0x38]                 
+  0x1801445C3  add      rsp, 0x28                                   
+  0x1801445C7  ret                                                  
+  0x1801445C8  int3                                                 
+  0x1801445C9  int3                                                 
+  0x1801445CA  int3                                                 
+  0x1801445CB  int3                                                 
+  0x1801445CC  int3                                                 
+  0x1801445CD  int3                                                 
+  0x1801445CE  int3                                                 
+  0x1801445CF  int3                                                 
+
+  callers of 0x1801445A0: 0
+
+--- helper 0x1801445D0 (0x1801445D0..0x180144600) ---
+  0x1801445D0  sub      rsp, 0x28                                   
+  0x1801445D4  mov      rax, qword ptr [rcx + 0x58]                 
+  0x1801445D8  mov      r9d, r8d                                    
+  0x1801445DB  mov      edx, edx                                    
+  0x1801445DD  lea      r8, [rsp + 0x38]                            
+  0x1801445E2  mov      rcx, qword ptr [rax + rdx*8]                
+  0x1801445E6  mov      edx, r9d                                    
+  0x1801445E9  mov      rax, qword ptr [rcx]                        
+  0x1801445EC  call     qword ptr [rax + 0x10]                      
+  0x1801445EF  movss    xmm0, dword ptr [rsp + 0x38]                
+  0x1801445F5  add      rsp, 0x28                                   
+  0x1801445F9  ret                                                  
+  0x1801445FA  int3                                                 
+  0x1801445FB  int3                                                 
+  0x1801445FC  int3                                                 
+  0x1801445FD  int3                                                 
+  0x1801445FE  int3                                                 
+  0x1801445FF  int3                                                 
+
+  callers of 0x1801445D0: 0
+
+--- helper 0x180144600 (0x180144600..0x180144630) ---
+  0x180144600  sub      rsp, 0x28                                   
+  0x180144604  mov      rax, qword ptr [rcx + 0x58]                 
+  0x180144608  mov      r9d, r8d                                    
+  0x18014460B  mov      edx, edx                                    
+  0x18014460D  lea      r8, [rsp + 0x30]                            
+  0x180144612  mov      rcx, qword ptr [rax + rdx*8]                
+  0x180144616  mov      edx, r9d                                    
+  0x180144619  mov      rax, qword ptr [rcx]                        
+  0x18014461C  call     qword ptr [rax + 0x10]                      
+  0x18014461F  movsd    xmm0, qword ptr [rsp + 0x30]                
+  0x180144625  add      rsp, 0x28                                   
+  0x180144629  ret                                                  
+  0x18014462A  int3                                                 
+  0x18014462B  int3                                                 
+  0x18014462C  int3                                                 
+  0x18014462D  int3                                                 
+  0x18014462E  int3                                                 
+  0x18014462F  int3                                                 
+
+  callers of 0x180144600: 0
+
+post-pass hash OK

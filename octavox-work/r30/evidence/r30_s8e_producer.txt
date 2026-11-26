@@ -1,0 +1,701 @@
+===== (a) engine primary vtable 0x1803F05D0: slots 0..23 =====
+  slot  0 (+0x000): 0x1800175D0    179 B
+  slot  1 (+0x008): 0x1801A72A0    33 B
+  slot  2 (+0x010): 0x1801A7250    63 B
+  slot  3 (+0x018): 0x180313D20    1612 B
+  slot  4 (+0x020): 0x180313BC0    ?
+  slot  5 (+0x028): 0x180003B30    ?
+  slot  6 (+0x030): 0x180260310    ?
+  slot  7 (+0x038): 0x180313D00    ?
+  slot  8 (+0x040): 0x180260270    66 B
+  slot  9 (+0x048): 0x180313CE0    ?
+  slot 10 (+0x050): 0x1800055F0    ?
+  slot 11 (+0x058): 0x1800055F0    ?
+  slot 12 (+0x060): 0x180260260    ?
+  slot 13 (+0x068): 0x180005AB0    ?
+  slot 14 (+0x070): 0x1800055F0    ?
+  slot 15 (+0x078): 0x1800055F0    ?
+  slot 16 (+0x080): 0x1800055F0    ?
+  slot 17 (+0x088): 0x1800055F0    ?
+  slot 18 (+0x090): 0x180313BD0    63 B
+  slot 19 (+0x098): 0x180004C50    ?
+  slot 20 (+0x0A0): 0x180260210    ?
+  slot 21 (+0x0A8): 0x1801A74D0    42 B
+  slot 22 (+0x0B0): 0x180017120    ?
+  slot 23 (+0x0B8): 0x180260200    ?
+
+===== (b) engine vtable slot 20 (+0xa0) =====
+  slot20 = 0x180260210
+  bounds 0x180260210..0x180260410 (512 B)
+--- engine slot20 (first 0x180 B) (0x180260210..0x180260390) ---
+  0x180260210  xchg     byte ptr [rcx + 0x41], dl                   
+  0x180260213  ret                                                  
+  0x180260214  int3                                                 
+  0x180260215  int3                                                 
+  0x180260216  int3                                                 
+  0x180260217  int3                                                 
+  0x180260218  int3                                                 
+  0x180260219  int3                                                 
+  0x18026021A  int3                                                 
+  0x18026021B  int3                                                 
+  0x18026021C  int3                                                 
+  0x18026021D  int3                                                 
+  0x18026021E  int3                                                 
+  0x18026021F  int3                                                 
+  0x180260220  sub      rsp, 0x28                                   
+  0x180260224  cmp      dword ptr [rcx + 0x3c], edx                 
+  0x180260227  je       0x18026024b                                 
+  0x180260229  mov      dword ptr [rsp + 0x38], 0                   
+  0x180260231  mov      eax, dword ptr [rsp + 0x38]                 
+  0x180260235  mov      dword ptr [rcx + 0x3c], edx                 
+  0x180260238  lea      rdx, [rsp + 0x38]                           
+  0x18026023D  mov      dword ptr [rsp + 0x38], eax                 
+  0x180260241  mov      byte ptr [rsp + 0x38], 1                    
+  0x180260246  call     0x18025da50                                 
+  0x18026024B  add      rsp, 0x28                                   
+  0x18026024F  ret                                                  
+  0x180260250  int3                                                 
+  0x180260251  int3                                                 
+  0x180260252  int3                                                 
+  0x180260253  int3                                                 
+  0x180260254  int3                                                 
+  0x180260255  int3                                                 
+  0x180260256  int3                                                 
+  0x180260257  int3                                                 
+  0x180260258  int3                                                 
+  0x180260259  int3                                                 
+  0x18026025A  int3                                                 
+  0x18026025B  int3                                                 
+  0x18026025C  int3                                                 
+  0x18026025D  int3                                                 
+  0x18026025E  int3                                                 
+  0x18026025F  int3                                                 
+  0x180260260  xor      al, al                                      
+  0x180260262  ret                                                  
+  0x180260263  int3                                                 
+  0x180260264  int3                                                 
+  0x180260265  int3                                                 
+  0x180260266  int3                                                 
+  0x180260267  int3                                                 
+  0x180260268  int3                                                 
+  0x180260269  int3                                                 
+  0x18026026A  int3                                                 
+  0x18026026B  int3                                                 
+  0x18026026C  int3                                                 
+  0x18026026D  int3                                                 
+  0x18026026E  int3                                                 
+  0x18026026F  int3                                                 
+  0x180260270  mov      qword ptr [rsp + 0x10], rbx                 
+  0x180260275  mov      qword ptr [rsp + 0x18], rbp                 
+  0x18026027A  push     rsi                                         
+  0x18026027B  sub      rsp, 0x20                                   
+  0x18026027F  cmp      dword ptr [rcx + 0xe4], 0                   
+  0x180260286  mov      rsi, rdx                                    
+  0x180260289  mov      rbp, rcx                                    
+  0x18026028C  jbe      0x1802602a5                                 
+  0x18026028E  mov      rax, qword ptr [rcx + 0xd8]                 
+  0x180260295  mov      rcx, qword ptr [rax]                        
+  0x180260298  test     rcx, rcx                                    
+  0x18026029B  je       0x1802602a5                                 
+  0x18026029D  mov      ebx, dword ptr [rcx + 0x8c]                 
+  0x1802602A3  jmp      0x1802602a7                                 
+  0x1802602A5  xor      ebx, ebx                                    
+  0x1802602A7  cmp      ebx, dword ptr [rbp + 0x10c]                
+  0x1802602AD  jge      0x1802602f3                                 
+  0x1802602AF  movsxd   rax, ebx                                    
+  0x1802602B2  mov      qword ptr [rsp + 0x30], rdi                 
+  0x1802602B7  lea      rdi, [rax*8]                                
+  0x1802602BF  nop                                                  
+  0x1802602C0  cmp      byte ptr [rsi + 0x120], 0                   
+  0x1802602C7  jne      0x1802602e0                                 
+  0x1802602C9  mov      rcx, qword ptr [rsi + 0x10]                 
+  0x1802602CD  xor      edx, edx                                    
+  0x1802602CF  movsxd   r8, dword ptr [rsi + 4]                     
+  0x1802602D3  shl      r8, 3                                       
+  0x1802602D7  mov      rcx, qword ptr [rcx + rdi]                  
+  0x1802602DB  call     0x180161700                                 
+  0x1802602E0  inc      ebx                                         
+  0x1802602E2  add      rdi, 8                                      
+  0x1802602E6  cmp      ebx, dword ptr [rbp + 0x10c]                
+  0x1802602EC  jl       0x1802602c0                                 
+  0x1802602EE  mov      rdi, qword ptr [rsp + 0x30]                 
+  0x1802602F3  mov      rbx, qword ptr [rsp + 0x38]                 
+  0x1802602F8  mov      rbp, qword ptr [rsp + 0x40]                 
+  0x1802602FD  add      rsp, 0x20                                   
+  0x180260301  pop      rsi                                         
+  0x180260302  ret                                                  
+  0x180260303  int3                                                 
+  0x180260304  int3                                                 
+  0x180260305  int3                                                 
+  0x180260306  int3                                                 
+  0x180260307  int3                                                 
+  0x180260308  int3                                                 
+  0x180260309  int3                                                 
+  0x18026030A  int3                                                 
+  0x18026030B  int3                                                 
+  0x18026030C  int3                                                 
+  0x18026030D  int3                                                 
+  0x18026030E  int3                                                 
+  0x18026030F  int3                                                 
+  0x180260310  ret      0                                           
+  0x180260313  int3                                                 
+  0x180260314  int3                                                 
+  0x180260315  int3                                                 
+  0x180260316  int3                                                 
+  0x180260317  int3                                                 
+  0x180260318  int3                                                 
+  0x180260319  int3                                                 
+  0x18026031A  int3                                                 
+  0x18026031B  int3                                                 
+  0x18026031C  int3                                                 
+  0x18026031D  int3                                                 
+  0x18026031E  int3                                                 
+  0x18026031F  int3                                                 
+  0x180260320  mov      qword ptr [rsp + 8], rbx                    
+  0x180260325  mov      qword ptr [rsp + 0x18], rsi                 
+  0x18026032A  mov      qword ptr [rsp + 0x10], rdx                 
+  0x18026032F  push     rdi                                         
+  0x180260330  sub      rsp, 0x20                                   
+  0x180260334  mov      rsi, rdx                                    
+  0x180260337  mov      rdi, rcx                                    
+  0x18026033A  mov      ecx, 0x18                                   
+  0x18026033F  call     0x18015e63c                                 
+  0x180260344  mov      qword ptr [rsp + 0x38], rax                 
+  0x180260349  mov      r8, qword ptr [rsi]                         
+  0x18026034C  xor      ecx, ecx                                    
+  0x18026034E  mov      qword ptr [rsi], rcx                        
+  0x180260351  mov      qword ptr [rax], rcx                        
+  0x180260354  mov      qword ptr [rax + 8], r8                     
+  0x180260358  mov      qword ptr [rax + 0x10], rdi                 
+  0x18026035C  mov      rdx, rax                                    
+  0x18026035F  lea      rcx, [rdi + 0x18]                           
+  0x180260363  call     0x1800658f0                                 
+  0x180260368  nop                                                  
+  0x180260369  mov      rcx, qword ptr [rsi]                        
+  0x18026036C  test     rcx, rcx                                    
+  0x18026036F  je       0x18026037b                                 
+  0x180260371  mov      rax, qword ptr [rcx]                        
+  0x180260374  mov      edx, 1                                      
+  0x180260379  call     qword ptr [rax]                             
+  0x18026037B  mov      rbx, qword ptr [rsp + 0x30]                 
+  0x180260380  mov      rsi, qword ptr [rsp + 0x40]                 
+  0x180260385  add      rsp, 0x20                                   
+  0x180260389  pop      rdi                                         
+  0x18026038A  ret                                                  
+  0x18026038B  int3                                                 
+  0x18026038C  int3                                                 
+  0x18026038D  int3                                                 
+  0x18026038E  int3                                                 
+  0x18026038F  int3                                                 
+
+===== (c) 32-bit stores to [reg+0x3c] =====
+  total: 277
+  fn NO-BOUNDS (1 hits):
+    0x18008DB9A: mov [rcx+0x3c], eax
+  fn 0x18000BA60..0x18000BB79 (2 hits):
+    0x18000BABA: mov [rsp+0x3c], r14d
+    0x18000BB39: mov [rsp+0x3c], r14d
+  fn 0x18001C880..0x18001CACB (2 hits):
+    0x18001C8BD: mov [rsp+0x3c], ebx
+    0x18001C988: mov [rsp+0x3c], ebx
+  fn 0x180032D40..0x180032ED7 (1 hits):
+    0x180032D9B: mov [rsp+0x3c], eax
+  fn 0x180032F70..0x18003306D (1 hits):
+    0x18003300D: mov [rsp+0x3c], 0
+  fn 0x1800330D0..0x180033214 (1 hits):
+    0x18003312F: mov [rsp+0x3c], eax
+  fn 0x180033E90..0x18003450F (2 hits):
+    0x180033FCF: mov [rsp+0x3c], eax
+    0x180034072: mov [rsp+0x3c], eax
+  fn 0x180035744..0x1800359F2 (1 hits):
+    0x180035896: mov [rsp+0x3c], r10d
+  fn 0x18003A7D0..0x18003A95E (1 hits):
+    0x18003A904: mov [rsp+0x3c], ecx
+  fn 0x18003ACAD..0x18003AE1B (1 hits):
+    0x18003AD11: mov [rsp+0x3c], eax
+  fn 0x18003F1C5..0x18003F214 (1 hits):
+    0x18003F20D: mov [rdi+0x3c], edx
+  fn 0x18003F214..0x18003F452 (1 hits):
+    0x18003F219: mov [rdi+0x3c], edx
+  fn 0x18003F564..0x18003F5B6 (1 hits):
+    0x18003F5AE: mov [r11+0x3c], edx
+  fn 0x18003F5B6..0x18003F90A (1 hits):
+    0x18003F5BA: mov [r11+0x3c], edx
+  fn 0x1800596F5..0x180059744 (1 hits):
+    0x18005973D: mov [rbp+0x3c], edx
+  fn 0x180059744..0x1800598B9 (1 hits):
+    0x180059749: mov [rbp+0x3c], edx
+  fn 0x1800599B9..0x180059A0B (1 hits):
+    0x180059A03: mov [r13+0x3c], edx
+  fn 0x180059A0B..0x180059E18 (1 hits):
+    0x180059A0F: mov [r13+0x3c], edx
+  fn 0x180059F20..0x180059F71 (1 hits):
+    0x180059F69: mov [r11+0x3c], edx
+  fn 0x180059F71..0x18005A1B8 (1 hits):
+    0x180059F75: mov [r11+0x3c], edx
+  fn 0x18005A2C2..0x18005A314 (1 hits):
+    0x18005A30C: mov [r11+0x3c], edx
+  fn 0x18005A314..0x18005A5D7 (1 hits):
+    0x18005A318: mov [r11+0x3c], edx
+  fn 0x180060000..0x180060189 (1 hits):
+    0x1800600C8: mov [rbx+0x3c], r14d
+  fn 0x1800627B0..0x1800627F7 (1 hits):
+    0x1800627C6: mov [rbx+0x3c], 0
+  fn 0x180065830..0x180065858 (1 hits):
+    0x180065839: mov [rcx+0x3c], 0
+  fn 0x180065A50..0x180065C30 (2 hits):
+    0x180065B83: mov [rbx+0x3c], eax
+    0x180065BE7: mov [rcx+0x3c], eax
+  fn 0x1800660A0..0x180066280 (2 hits):
+    0x1800661D3: mov [rbx+0x3c], eax
+    0x180066237: mov [rcx+0x3c], eax
+  fn 0x1800673B0..0x180067847 (2 hits):
+    0x180067592: mov [rsp+0x3c], esi
+    0x180067717: mov [rsp+0x3c], ebx
+  fn 0x180067A00..0x180067E97 (2 hits):
+    0x180067BE2: mov [rsp+0x3c], esi
+    0x180067D67: mov [rsp+0x3c], ebx
+  fn 0x18006836C..0x180068451 (1 hits):
+    0x180068401: mov [rsi+0x3c], eax
+  fn 0x180068C70..0x1800691D6 (1 hits):
+    0x180069151: mov [rsp+0x3c], ebx
+  fn 0x1800694F0..0x180069A56 (1 hits):
+    0x1800699D1: mov [rsp+0x3c], ebx
+  fn 0x180070AE3..0x180070D05 (1 hits):
+    0x180070C82: mov [rbx+0x3c], r15d
+  fn 0x180071993..0x180071B50 (1 hits):
+    0x180071AEA: mov [rsp+0x3c], eax
+  fn 0x18007BA50..0x18007C962 (1 hits):
+    0x18007BE8F: mov [rsp+0x3c], edi
+  fn 0x18007F6A0..0x180080230 (1 hits):
+    0x1800801C4: mov [rsp+0x3c], r13d
+  fn 0x180081D50..0x18008211A (1 hits):
+    0x180081E9F: mov [rsp+0x3c], ebx
+  fn 0x1800844B0..0x1800847F0 (1 hits):
+    0x180084703: mov [rsp+0x3c], r10d
+  fn 0x1800849A0..0x180084C75 (1 hits):
+    0x180084BE2: mov [rsp+0x3c], ecx
+  fn 0x180087600..0x180087644 (1 hits):
+    0x180087620: mov [rsp+0x3c], eax
+  fn 0x180087810..0x1800878DF (1 hits):
+    0x18008788F: mov [rsp+0x3c], edx
+  fn 0x180087D10..0x180087DAA (1 hits):
+    0x180087D84: mov [rsp+0x3c], eax
+  fn 0x180087DC7..0x180087E73 (1 hits):
+    0x180087E4E: mov [rsp+0x3c], r8d
+  fn 0x180088B80..0x180088C01 (1 hits):
+    0x180088BDF: mov [rsp+0x3c], ecx
+  fn 0x180088C10..0x1800899A4 (1 hits):
+    0x180089599: mov [rsp+0x3c], eax
+  fn 0x18008C010..0x18008C195 (1 hits):
+    0x18008C125: mov [rsp+0x3c], ecx
+  fn 0x18008CC40..0x18008CDAE (1 hits):
+    0x18008CCAE: mov [rbx+0x3c], edi
+  fn 0x18008CDB0..0x18008CE2E (1 hits):
+    0x18008CE12: mov [rsp+0x3c], eax
+  fn 0x18008D2E1..0x18008D40C (1 hits):
+    0x18008D367: mov [rdi+0x3c], esi
+  fn 0x18008E4A0..0x18008E514 (1 hits):
+    0x18008E4D8: mov [rdi+0x3c], 0
+  fn 0x18008EA7A..0x18008EAD9 (1 hits):
+    0x18008EAA6: mov [rsp+0x3c], eax
+  fn 0x18008F760..0x18008F924 (2 hits):
+    0x18008F7AA: mov [rsp+0x3c], ecx
+    0x18008F8CA: mov [rsp+0x3c], eax
+  fn 0x18008FD60..0x18008FDAC (1 hits):
+    0x18008FD88: mov [rsp+0x3c], eax
+  fn 0x1800911F0..0x1800913C9 (1 hits):
+    0x180091376: mov [rsp+0x3c], eax
+  fn 0x1800913D0..0x1800915DE (1 hits):
+    0x180091556: mov [rsp+0x3c], edx
+  fn 0x180091E40..0x1800923FD (1 hits):
+    0x18009237B: mov [rsp+0x3c], eax
+  fn 0x180094E30..0x180094EE9 (1 hits):
+    0x180094EBC: mov [rsp+0x3c], esi
+  fn 0x180095C64..0x180095D28 (1 hits):
+    0x180095CFD: mov [rsp+0x3c], eax
+  fn 0x180095D40..0x180095E12 (1 hits):
+    0x180095DE7: mov [rsp+0x3c], r11d
+  fn 0x180099D20..0x180099E58 (1 hits):
+    0x180099DDD: mov [rsp+0x3c], r10d
+  fn 0x18009AE4F..0x18009AEB4 (1 hits):
+    0x18009AE8F: mov [rsp+0x3c], eax
+  fn 0x18009CA8A..0x18009CADD (1 hits):
+    0x18009CAB7: mov [rsp+0x3c], eax
+  fn 0x18009D4A0..0x18009D737 (1 hits):
+    0x18009D6F7: mov [rdi+0x3c], eax
+  fn 0x1800A3EA0..0x1800A41A3 (1 hits):
+    0x1800A3FAE: mov [rsp+0x3c], ecx
+  fn 0x1800A41B0..0x1800A4461 (2 hits):
+    0x1800A427A: mov [rsp+0x3c], ecx
+    0x1800A4365: mov [rsp+0x3c], ebx
+  fn 0x1800A4B60..0x1800A4EE8 (1 hits):
+    0x1800A4C23: mov [rsp+0x3c], ecx
+  fn 0x1800A6E38..0x1800A6EEC (1 hits):
+    0x1800A6E98: mov [rsp+0x3c], edx
+  fn 0x1800A7A90..0x1800A7CCE (1 hits):
+    0x1800A7B4C: mov [rsp+0x3c], 2
+  fn 0x1800A9F30..0x1800AA1DE (1 hits):
+    0x1800AA151: mov [rsp+0x3c], r10d
+  fn 0x1800AC3F0..0x1800AC5BE (1 hits):
+    0x1800AC433: mov [rsp+0x3c], 5
+  fn 0x1800AE8A0..0x1800AE8F2 (1 hits):
+    0x1800AE8CE: mov [rsp+0x3c], eax
+  fn 0x1800B0920..0x1800B0985 (1 hits):
+    0x1800B0962: mov [rsp+0x3c], eax
+  fn 0x1800B2F50..0x1800B34F6 (2 hits):
+    0x1800B3380: mov [rbp+0x3c], eax
+    0x1800B33D6: mov [rbp+0x3c], eax
+  fn 0x1800C27E0..0x1800C2956 (1 hits):
+    0x1800C2921: mov [rsp+0x3c], 0
+  fn 0x1800DA450..0x1800DA5AC (1 hits):
+    0x1800DA4A8: mov [r14+0x3c], 0x46fffe00
+  fn 0x1800EE6E0..0x1800EE823 (1 hits):
+    0x1800EE740: mov [rcx+0x3c], 0x46fffe00
+  fn 0x18013A390..0x18013A4F1 (1 hits):
+    0x18013A3F1: mov [r14+0x3c], 0x46fffe00
+  fn 0x18014A120..0x18014B28E (4 hits):
+    0x18014AA7E: mov [rsp+0x3c], eax
+    0x18014ACFD: mov [rsp+0x3c], r15d
+    0x18014AE9D: mov [rsp+0x3c], r15d
+    0x18014AEE8: mov [rsp+0x3c], r15d
+  fn 0x18014C6F0..0x18014C7C2 (1 hits):
+    0x18014C72A: mov [rsp+0x3c], r11d
+  fn 0x18014D8D0..0x18014D9CB (1 hits):
+    0x18014D991: mov [rsp+0x3c], eax
+  fn 0x1801551E0..0x180155385 (2 hits):
+    0x180155298: mov [rsp+0x3c], eax
+    0x1801552EC: mov [rsp+0x3c], eax
+  fn 0x180168C14..0x18016953C (1 hits):
+    0x180168DE9: mov [rsp+0x3c], 0xaf0
+  fn 0x18016AA38..0x18016C89D (5 hits):
+    0x18016AC21: mov [rsp+0x3c], eax
+    0x18016AFEE: mov [rsp+0x3c], ecx
+    0x18016B146: mov [rsp+0x3c], eax
+    0x18016B4FB: mov [rsp+0x3c], ecx
+    0x18016B66C: mov [rsp+0x3c], ecx
+  fn 0x18016FF84..0x1801706DB (1 hits):
+    0x180170082: mov [rsp+0x3c], 0xb70
+  fn 0x180179508..0x180179C8F (1 hits):
+    0x180179636: mov [rsp+0x3c], 0xb70
+  fn 0x180179F6C..0x18017A6E2 (1 hits):
+    0x18017A09A: mov [rsp+0x3c], 0xb70
+  fn 0x1801906A8..0x1801918E8 (3 hits):
+    0x180190FD0: mov [rsp+0x3c], ebx
+    0x180191247: mov [rsp+0x3c], eax
+    0x1801915D4: mov [rsp+0x3c], edx
+  fn 0x1801A7620..0x1801A79EA (1 hits):
+    0x1801A7706: mov [rsp+0x3c], 2
+  fn 0x1801B4870..0x1801B5FD8 (1 hits):
+    0x1801B4FCD: mov [rax+0x3c], edx
+  fn 0x1801D3400..0x1801D3529 (1 hits):
+    0x1801D3486: mov [rsp+0x3c], eax
+  fn 0x1801E4760..0x1801E4AE2 (1 hits):
+    0x1801E4858: mov [rsp+0x3c], edx
+  fn 0x1801E6550..0x1801E66AD (1 hits):
+    0x1801E6684: mov [rsp+0x3c], ebx
+  fn 0x1801EC130..0x1801EC218 (1 hits):
+    0x1801EC17D: mov [rsp+0x3c], eax
+  fn 0x18020AE80..0x18020B01D (1 hits):
+    0x18020AF9B: mov [r8+0x3c], 0xf
+  fn 0x180211670..0x180211D63 (1 hits):
+    0x180211CC2: mov [rax+0x3c], r8d
+  fn 0x180211D70..0x1802122AA (1 hits):
+    0x1802121B5: mov [r15+0x3c], edx
+  fn 0x1802161B0..0x180216756 (1 hits):
+    0x180216388: mov [rbx+0x3c], r12d
+  fn 0x180216F90..0x18021720E (1 hits):
+    0x1802170B1: mov [rcx+0x3c], eax
+  fn 0x180217350..0x1802175FF (1 hits):
+    0x180217568: mov [rcx+0x3c], eax
+  fn 0x180217610..0x1802179A2 (2 hits):
+    0x18021776E: mov [rcx+0x3c], eax
+    0x1802177C9: mov [rcx+0x3c], eax
+  fn 0x180218040..0x18021813B (1 hits):
+    0x1802180FE: mov [rbx+0x3c], ecx
+  fn 0x1802192A0..0x1802193A5 (1 hits):
+    0x1802192F9: mov [r8+0x3c], 1
+  fn 0x1802193A5..0x180219466 (1 hits):
+    0x1802193F2: mov [r9+0x3c], edi
+  fn 0x18021B51F..0x18021BACE (2 hits):
+    0x18021B68A: mov [rsp+0x3c], r14d
+    0x18021B9E4: mov [rsp+0x3c], r14d
+  fn 0x18021C180..0x18021C47E (2 hits):
+    0x18021C1C2: mov [rsp+0x3c], edi
+    0x18021C3D1: mov [rsp+0x3c], edi
+  fn 0x18021CCA0..0x18021CE58 (5 hits):
+    0x18021CD0B: mov [rbx+0x3c], 5
+    0x18021CD1E: mov [rbx+0x3c], 4
+    0x18021CDC1: mov [rbx+0x3c], 3
+    0x18021CDE1: mov [rbx+0x3c], 2
+    0x18021CDF1: mov [rbx+0x3c], 1
+  fn 0x18021D3D0..0x18021D72C (2 hits):
+    0x18021D4AA: mov [rsp+0x3c], ecx
+    0x18021D67E: mov [rsp+0x3c], ecx
+  fn 0x1802216C0..0x1802217B0 (1 hits):
+    0x180221702: mov [r8+0x3c], 1
+  fn 0x1802217B0..0x180221876 (1 hits):
+    0x180221802: mov [r9+0x3c], edi
+  fn 0x180225995..0x180225BAF (1 hits):
+    0x180225A6C: mov [rdx+0x3c], eax
+  fn 0x18022AF40..0x18022AFC6 (1 hits):
+    0x18022AF8F: mov [rdi+0x3c], 0
+  fn 0x18022F1C0..0x18022F21A (1 hits):
+    0x18022F1D9: mov [rsp+0x3c], eax
+  fn 0x18022F3E0..0x18022F47A (1 hits):
+    0x18022F3E8: mov [rsp+0x3c], eax
+  fn 0x1802387D3..0x180238B04 (1 hits):
+    0x180238866: mov [rsp+0x3c], r15d
+  fn 0x1802403D0..0x1802406D4 (1 hits):
+    0x180240539: mov [rsp+0x3c], r14d
+  fn 0x180242070..0x1802427C5 (1 hits):
+    0x1802421D7: mov [rsp+0x3c], r14d
+  fn 0x1802443A6..0x1802443D5 (1 hits):
+    0x1802443CD: mov [rbx+0x3c], r8d
+  fn 0x180244400..0x18024460B (1 hits):
+    0x180244510: mov [rsi+0x3c], ebp
+  fn 0x180244620..0x18024477D (1 hits):
+    0x1802446D8: mov [rbx+0x3c], r14d
+  fn 0x180247210..0x1802475C2 (1 hits):
+    0x1802473C2: mov [rsp+0x3c], r10d
+  fn 0x18024A340..0x18024A4D5 (1 hits):
+    0x18024A3DB: mov [rsp+0x3c], eax
+  fn 0x1802509C0..0x180250AB8 (1 hits):
+    0x180250A5D: mov [rsp+0x3c], r14d
+  fn 0x180255D10..0x180255D76 (1 hits):
+    0x180255D57: mov [rsp+0x3c], ebx
+  fn 0x180255D76..0x180255E28 (1 hits):
+    0x180255E24: mov [rsp+0x3c], ebx
+  fn 0x180258AF0..0x180258B3B (1 hits):
+    0x180258B17: mov [rsp+0x3c], eax
+  fn 0x18025DD70..0x18025E87C (5 hits):
+    0x18025E027: mov [rsp+0x3c], r12d
+    0x18025E132: mov [rsp+0x3c], r12d
+    0x18025E23B: mov [rsp+0x3c], r12d
+    0x18025E4D2: mov [rsp+0x3c], r12d
+    0x18025E6E7: mov [rsp+0x3c], ecx
+  fn 0x180260220..0x180260250 (1 hits):
+    0x180260235: mov [rcx+0x3c], edx
+  fn 0x180261D40..0x1802625AB (3 hits):
+    0x180262204: mov [rsp+0x3c], eax
+    0x1802622C4: mov [rsp+0x3c], eax
+    0x180262383: mov [rsp+0x3c], eax
+  fn 0x180263A30..0x180263B72 (1 hits):
+    0x180263B36: mov [rsp+0x3c], eax
+  fn 0x180267840..0x180267A18 (1 hits):
+    0x1802678B9: mov [rsp+0x3c], r15d
+  fn 0x180267D90..0x1802682F9 (1 hits):
+    0x1802680B3: mov [rsp+0x3c], ecx
+  fn 0x18026E7B0..0x18026E815 (1 hits):
+    0x18026E7D9: mov [rsp+0x3c], r8d
+  fn 0x180271290..0x1802713EC (4 hits):
+    0x180271315: mov [rsp+0x3c], r14d
+    0x180271329: mov [rsp+0x3c], r14d
+    0x18027133E: mov [rsp+0x3c], r14d
+    0x1802713BD: mov [rsp+0x3c], r14d
+  fn 0x180273880..0x180273B4C (1 hits):
+    0x180273901: mov [rsp+0x3c], ecx
+  fn 0x180274B50..0x180274BC6 (1 hits):
+    0x180274B97: mov [rsp+0x3c], eax
+  fn 0x180275910..0x180275B26 (1 hits):
+    0x1802759F7: mov [rsp+0x3c], eax
+  fn 0x180277960..0x180277C8A (1 hits):
+    0x180277B9A: mov [rbx+0x3c], eax
+  fn 0x1802797A0..0x1802798E1 (1 hits):
+    0x1802798C2: mov [rbx+0x3c], 0
+  fn 0x18027AFD0..0x18027BEE0 (3 hits):
+    0x18027B16D: mov [rsp+0x3c], 1
+    0x18027B68D: mov [rsp+0x3c], 0xc
+    0x18027B699: mov [rsp+0x3c], 9
+  fn 0x18027BEF0..0x18027C37E (1 hits):
+    0x18027C0E0: mov [rsp+0x3c], 0xe
+  fn 0x18027D9E0..0x18027DA4B (1 hits):
+    0x18027DA22: mov [rbx+0x3c], eax
+  fn 0x18027DA4B..0x18027DA97 (1 hits):
+    0x18027DA85: mov [rbx+0x3c], ecx
+  fn 0x18027E980..0x18027EC3C (1 hits):
+    0x18027EBF6: mov [rsp+0x3c], ebp
+  fn 0x18027F540..0x18027F5CE (1 hits):
+    0x18027F560: mov [rsp+0x3c], eax
+  fn 0x180283E40..0x180283E89 (1 hits):
+    0x180283E71: mov [rsp+0x3c], edx
+  fn 0x1802860D0..0x18028730F (1 hits):
+    0x18028617F: mov [rbp+0x3c], eax
+  fn 0x180288DF0..0x180288FDB (1 hits):
+    0x180288F75: mov [rsp+0x3c], r8d
+  fn 0x18028A070..0x18028A3DD (1 hits):
+    0x18028A3A6: mov [rsp+0x3c], eax
+  fn 0x18028C840..0x18028CB16 (1 hits):
+    0x18028C986: mov [rsp+0x3c], eax
+  fn 0x18028D960..0x18028DC0C (1 hits):
+    0x18028DB7C: mov [rsp+0x3c], ecx
+  fn 0x180291EC0..0x180291FC2 (1 hits):
+    0x180291EF8: mov [rsp+0x3c], ecx
+  fn 0x180292A30..0x180292A7C (1 hits):
+    0x180292A58: mov [rsp+0x3c], eax
+  fn 0x180293050..0x180293273 (1 hits):
+    0x1802931CA: mov [rsp+0x3c], ecx
+  fn 0x180295EF0..0x180296170 (1 hits):
+    0x1802960F1: mov [rsp+0x3c], edx
+  fn 0x180296D90..0x180296E2C (1 hits):
+    0x180296DD2: mov [rsp+0x3c], ecx
+  fn 0x180296E2C..0x180296F12 (1 hits):
+    0x180296E8E: mov [rsp+0x3c], ecx
+  fn 0x180297A90..0x180297BD1 (1 hits):
+    0x180297B92: mov [rsp+0x3c], eax
+  fn 0x180297DF0..0x180297E6D (1 hits):
+    0x180297E19: mov [rsp+0x3c], eax
+  fn 0x180297E80..0x180297F67 (1 hits):
+    0x180297EF7: mov [rsp+0x3c], 0x1e
+  fn 0x18029A5E6..0x18029A61A (1 hits):
+    0x18029A5F7: mov [rbx+0x3c], r14d
+  fn 0x18029AAE0..0x18029AB33 (1 hits):
+    0x18029AB12: mov [rbx+0x3c], 0
+  fn 0x18029BF00..0x18029BF36 (1 hits):
+    0x18029BF1C: mov [rax+0x3c], r8d
+  fn 0x18029CEA0..0x18029CEE4 (1 hits):
+    0x18029CEC0: mov [rsp+0x3c], eax
+  fn 0x18029E8F0..0x18029EA84 (1 hits):
+    0x18029E9F6: mov [rsp+0x3c], ecx
+  fn 0x18029FF10..0x1802A0986 (2 hits):
+    0x18029FF74: mov [rsp+0x3c], r10d
+    0x1802A0055: mov [rbp+0x3c], ecx
+  fn 0x1802A1CA0..0x1802A1E7D (1 hits):
+    0x1802A1E43: mov [rsp+0x3c], 0
+  fn 0x1802A3660..0x1802A3BA2 (1 hits):
+    0x1802A3B43: mov [rsp+0x3c], r12d
+  fn 0x1802A4DB0..0x1802A4FBD (1 hits):
+    0x1802A4E2C: mov [rsp+0x3c], eax
+  fn 0x1802ABD30..0x1802AC40E (3 hits):
+    0x1802AC0FB: mov [rsp+0x3c], eax
+    0x1802AC1E7: mov [rsp+0x3c], eax
+    0x1802AC3C0: mov [rsp+0x3c], r13d
+  fn 0x1802ACC70..0x1802AD653 (1 hits):
+    0x1802AD0B0: mov [rsp+0x3c], edx
+  fn 0x1802AE430..0x1802AE947 (1 hits):
+    0x1802AE4C6: mov [rsp+0x3c], eax
+  fn 0x1802B1430..0x1802B1BAA (1 hits):
+    0x1802B1681: mov [rsp+0x3c], eax
+  fn 0x1802B5120..0x1802B5647 (1 hits):
+    0x1802B5309: mov [rsp+0x3c], 1
+  fn 0x1802B74D0..0x1802B75FC (1 hits):
+    0x1802B759C: mov [rsp+0x3c], ebx
+  fn 0x1802B78E0..0x1802B7B4C (1 hits):
+    0x1802B7AD5: mov [rsp+0x3c], eax
+  fn 0x1802B9080..0x1802B92F2 (3 hits):
+    0x1802B9187: mov [rsp+0x3c], edi
+    0x1802B91CE: mov [rsp+0x3c], edi
+    0x1802B921D: mov [rsp+0x3c], 1
+  fn 0x1802B9C90..0x1802B9FD5 (1 hits):
+    0x1802B9F83: mov [rsp+0x3c], esi
+  fn 0x1802BBE60..0x1802BC056 (2 hits):
+    0x1802BBEDF: mov [rsp+0x3c], edi
+    0x1802BBFB0: mov [rsp+0x3c], edx
+  fn 0x1802BF6A0..0x1802BF891 (1 hits):
+    0x1802BF7BC: mov [rsp+0x3c], r9d
+  fn 0x1802BF8A0..0x1802BFE0E (2 hits):
+    0x1802BF9A0: mov [rax+0x3c], r8d
+    0x1802BFB25: mov [rbp+0x3c], eax
+  fn 0x1802C7860..0x1802C79E7 (1 hits):
+    0x1802C7977: mov [rsp+0x3c], r11d
+  fn 0x1802CB290..0x1802CB470 (5 hits):
+    0x1802CB321: mov [rsp+0x3c], esi
+    0x1802CB339: mov [rsp+0x3c], esi
+    0x1802CB36D: mov [rsp+0x3c], ebp
+    0x1802CB38E: mov [rsp+0x3c], eax
+    0x1802CB40A: mov [rsp+0x3c], esi
+  fn 0x1802CC4C0..0x1802CCBEC (2 hits):
+    0x1802CC687: mov [rsp+0x3c], eax
+    0x1802CCBAD: mov [rsp+0x3c], r13d
+  fn 0x1802CCC60..0x1802CD250 (2 hits):
+    0x1802CCF4A: mov [rsp+0x3c], eax
+    0x1802CCF63: mov [rsp+0x3c], ebp
+  fn 0x1802CF9C0..0x1802CFBC7 (2 hits):
+    0x1802CFA73: mov [rsp+0x3c], eax
+    0x1802CFAD0: mov [rsp+0x3c], ecx
+  fn 0x1802D0CF0..0x1802D1040 (4 hits):
+    0x1802D0F6A: mov [rsp+0x3c], edi
+    0x1802D0FA4: mov [rsp+0x3c], r14d
+    0x1802D0FBA: mov [rsp+0x3c], ebp
+    0x1802D0FF5: mov [rsp+0x3c], ebp
+  fn 0x1802D3271..0x1802D32C8 (1 hits):
+    0x1802D329F: mov [rsp+0x3c], eax
+  fn 0x1802D5A50..0x1802D5B18 (1 hits):
+    0x1802D5AE6: mov [rsp+0x3c], 0
+  fn 0x1802D87C0..0x1802D894B (1 hits):
+    0x1802D88D1: mov [rsp+0x3c], edx
+  fn 0x1802E7D1A..0x1802E7E14 (1 hits):
+    0x1802E7DEA: mov [rsp+0x3c], eax
+  fn 0x1802E7E27..0x1802E7F4A (1 hits):
+    0x1802E7EDD: mov [rsp+0x3c], r14d
+  fn 0x1802E7F4A..0x1802E7F89 (1 hits):
+    0x1802E7F5F: mov [rsp+0x3c], eax
+  fn 0x1802E9351..0x1802E946E (1 hits):
+    0x1802E9455: mov [rsp+0x3c], r8d
+  fn 0x1802EAEA0..0x1802EB02F (1 hits):
+    0x1802EAF86: mov [rsp+0x3c], ecx
+  fn 0x1802ED0C0..0x1802ED166 (1 hits):
+    0x1802ED12B: mov [rsp+0x3c], eax
+  fn 0x1802F1A80..0x1802F1C74 (1 hits):
+    0x1802F1B9A: mov [rsp+0x3c], eax
+  fn 0x1802F1CC1..0x1802F1E7C (1 hits):
+    0x1802F1E1E: mov [rsp+0x3c], edx
+  fn 0x1802F87C0..0x1802F88B3 (1 hits):
+    0x1802F8885: mov [rsp+0x3c], r10d
+  fn 0x1802F88C0..0x1802F8A3F (1 hits):
+    0x1802F88F7: mov [rsp+0x3c], eax
+  fn 0x1802F8A70..0x1802F8B96 (1 hits):
+    0x1802F8B0D: mov [rsp+0x3c], ecx
+  fn 0x1802FC836..0x1802FC888 (1 hits):
+    0x1802FC86B: mov [rbx+0x3c], esi
+  fn 0x1802FDBB0..0x1802FDF59 (1 hits):
+    0x1802FDF20: mov [rsp+0x3c], 0
+  fn 0x1802FF5D0..0x1802FF7DB (1 hits):
+    0x1802FF644: mov [rbp+0x3c], ebx
+  fn 0x180302220..0x1803025C2 (2 hits):
+    0x1803022DE: mov [rsp+0x3c], ecx
+    0x1803023A5: mov [rsp+0x3c], ecx
+  fn 0x18030263B..0x180302764 (4 hits):
+    0x180302648: mov [rcx+0x3c], r14d
+    0x1803026B5: mov [rbx+0x3c], r14d
+    0x1803026C5: mov [rbx+0x3c], r14d
+    0x18030271C: mov [rbx+0x3c], r14d
+  fn 0x180302E90..0x18030312B (1 hits):
+    0x180302F19: mov [rbp+0x3c], edi
+  fn 0x180304310..0x180304794 (1 hits):
+    0x180304403: mov [rsp+0x3c], ecx
+  fn 0x180313D20..0x18031436C (1 hits):
+    0x180314174: mov [rdi+0x3c], eax
+  fn 0x18031B89E..0x18031B8EE (1 hits):
+    0x18031B8C9: mov [rsp+0x3c], ebp
+  fn 0x180324470..0x18032459A (1 hits):
+    0x1803244B8: mov [rsp+0x3c], eax
+  fn 0x180331680..0x1803351F0 (1 hits):
+    0x180334E8D: mov [rbp+0x3c], 0x6d747264
+  fn 0x180335D80..0x18033603F (2 hits):
+    0x180335E15: mov [rsp+0x3c], eax
+    0x180335E88: mov [rsp+0x3c], eax
+  fn 0x180342C00..0x180342CDD (1 hits):
+    0x180342C76: mov [rsp+0x3c], eax
+  fn 0x18034C290..0x18034C367 (1 hits):
+    0x18034C34D: mov [rsp+0x3c], eax
+  fn 0x18034CA60..0x18034CAB9 (1 hits):
+    0x18034CA9C: mov [rsp+0x3c], eax
+  fn 0x18034CAF3..0x18034CB2C (1 hits):
+    0x18034CB16: mov [rsp+0x3c], eax
+
+===== (d) 128-bit stores to [reg+0x30] (cover +0x3c) =====
+  0x180009B5A  ((6442489776, 6442491200))
+  0x18000EF2A  ((6442512048, 6442512846))
+  0x18000EFB0  ((6442512048, 6442512846))
+  0x18000F022  ((6442512048, 6442512846))
+  0x18000F04D  ((6442512048, 6442512846))
+  0x18000F073  ((6442512048, 6442512846))
+  0x18000F381  ()
+  0x18000F3AF  ()
+  0x18000F406  ()
+  0x18001DF57  ((6442573600, 6442574314))
+  0x18001EB9B  ((6442576752, 6442576877))
+  0x180025CAB  ((6442605680, 6442605942))
+  total movups [r+0x30]: 129
+post-pass hash OK

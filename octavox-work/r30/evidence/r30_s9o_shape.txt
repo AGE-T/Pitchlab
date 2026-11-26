@@ -1,0 +1,379 @@
+=== slot-2 calls with lea r8,[stack] in window: 66 ===
+  0x180009794 recv=rax idimm=False fn 0x180008F80..0x1800097B0
+      lea rcx, [r13 + 0x80]
+      mov rax, qword ptr [rcx]
+      lea r8, [rbp + 0x67]
+      mov rdx, r12
+  0x180066660 recv=rax idimm=False fn 0x180066620..0x1800666DC
+      lea r9, [rsp + 0x30]
+      lea r8, [rsp + 0x40]
+      lea rdx, [rsp + 0x48]
+      mov rcx, r10
+  0x18006674B recv=rax idimm=False fn 0x1800666E0..0x180066800
+      mov rax, qword ptr [rcx]
+      lea r9, [rsp + 0x68]
+      lea r8, [rsp + 0x60]
+      lea rdx, [rsp + 0x70]
+  0x180066848 recv=rax idimm=False fn 0x180066800..0x180066906
+      lea r9, [rsp + 0x40]
+      lea r8, [rsp + 0x50]
+      lea rdx, [rsp + 0x58]
+      mov rcx, r10
+  0x180074E43 recv=rax idimm=False fn 0x180074CE0..0x180074FE1
+      mov rcx, qword ptr [rdi + 0x120]
+      mov rax, qword ptr [rcx]
+      lea r8, [rbp - 0x61]
+      mov rdx, rsi
+  0x180091C87 recv=rax idimm=False fn 0x180091C40..0x180091D1F
+      mov rax, qword ptr [rcx]
+      lea r9, [rsp + 0x30]
+      lea r8, [rsp + 0x38]
+      lea rdx, [rsp + 0x40]
+  0x1800C5FEE recv=rax idimm=False fn 0x1800C5EA0..0x1800C625B
+      lea r9, [rbp - 0x29]
+      lea r8, [rbp - 0x49]
+      lea rdx, [rbp - 0x79]
+      mov rcx, rbx
+  0x1800C63BD recv=rax idimm=False fn 0x1800C6260..0x1800C643A
+      mov r9, rdi
+      lea r8, [rbp - 0x30]
+      mov rdx, r13
+      mov rcx, r14
+  0x1800C7FD9 recv=rax idimm=False fn 0x1800C7BF0..0x1800C812D
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rbx
+  0x1800C807E recv=rax idimm=False fn 0x1800C7BF0..0x1800C812D
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rdi
+  0x1800C9836 recv=rax idimm=False fn 0x1800C9460..0x1800C998A
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rbx
+  0x1800C98DB recv=rax idimm=False fn 0x1800C9460..0x1800C998A
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rdi
+  0x1800C9E69 recv=rax idimm=False fn 0x1800C9C50..0x1800C9F06
+      lea r9, [rbp - 0x39]
+      lea r8, [rbp - 0x59]
+      lea rdx, [rbp + 7]
+      mov rcx, rdi
+  0x1800CB0AB recv=rax idimm=False fn 0x1800CACD0..0x1800CB1FF
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rbx
+  0x1800CB150 recv=rax idimm=False fn 0x1800CACD0..0x1800CB1FF
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rdi
+  0x1800CD107 recv=rax idimm=False fn 0x1800CCFC0..0x1800CD3D9
+      mov byte ptr [rbp - 0x26], 0
+      lea r8, [rbp - 0x28]
+      mov rdx, rdi
+      mov rcx, rbx
+  0x1800CD17F recv=rax idimm=False fn 0x1800CCFC0..0x1800CD3D9
+      lea r9, [rsi + 0x90]
+      lea r8, [rbp - 0x28]
+      mov rdx, rdi
+      mov rcx, rbx
+  0x1800CD1F6 recv=rax idimm=False fn 0x1800CCFC0..0x1800CD3D9
+      lea r9, [rsi + 0xb0]
+      lea r8, [rbp - 0x28]
+      mov rdx, rdi
+      mov rcx, rbx
+  0x1800CD26A recv=rax idimm=False fn 0x1800CCFC0..0x1800CD3D9
+      lea r9, [rsi + 0xd0]
+      lea r8, [rbp - 0x28]
+      mov rdx, rdi
+      mov rcx, rbx
+  0x1800CD2DE recv=rax idimm=False fn 0x1800CCFC0..0x1800CD3D9
+      lea r9, [rsi + 0xf0]
+      lea r8, [rbp - 0x28]
+      mov rdx, rdi
+      mov rcx, rbx
+  0x1800CD352 recv=rax idimm=False fn 0x1800CCFC0..0x1800CD3D9
+      lea r9, [rsi + 0x110]
+      lea r8, [rbp - 0x28]
+      mov rdx, rdi
+      mov rcx, rbx
+  0x1800CDFE6 recv=rax idimm=False fn 0x1800CDDE0..0x1800CE083
+      lea r9, [rbp - 0x39]
+      lea r8, [rbp - 0x59]
+      lea rdx, [rbp + 7]
+      mov rcx, rdi
+  0x1800CEA4B recv=rax idimm=False fn 0x1800CE790..0x1800CEC76
+      lea r9, [rbp + 7]
+      lea r8, [rbp - 0x19]
+      lea rdx, [rbp - 0x79]
+      mov rcx, rbx
+  0x1800CEAF0 recv=rax idimm=False fn 0x1800CE790..0x1800CEC76
+      lea r9, [rbp - 0x59]
+      lea r8, [rbp - 0x79]
+      lea rdx, [rbp - 0x19]
+      mov rcx, rbx
+  0x1800D0BEF recv=rax idimm=False fn 0x1800D0810..0x1800D0D43
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rbx
+  0x1800D0C94 recv=rax idimm=False fn 0x1800D0810..0x1800D0D43
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rdi
+  0x1800D3753 recv=rax idimm=False fn 0x1800D3380..0x1800D38A7
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rbx
+  0x1800D37F8 recv=rax idimm=False fn 0x1800D3380..0x1800D38A7
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rdi
+  0x1800D7D44 recv=rax idimm=False fn 0x1800D7C40..0x1800D7F0F
+      lea r9, [rbp - 0x59]
+      lea r8, [rbp - 0x79]
+      lea rdx, [rbp - 0x39]
+      mov rcx, rbx
+  0x1800DADBF recv=rax idimm=False fn 0x1800DA9E0..0x1800DAF13
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rbx
+  0x1800DAE64 recv=rax idimm=False fn 0x1800DA9E0..0x1800DAF13
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rdi
+  0x1800DB345 recv=rax idimm=False fn 0x1800DB140..0x1800DB3E2
+      lea r9, [rbp - 0x39]
+      lea r8, [rbp - 0x59]
+      lea rdx, [rbp + 7]
+      mov rcx, rdi
+  0x1800DC2D1 recv=rax idimm=False fn 0x1800DBEF0..0x1800DC425
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rbx
+  0x1800DC376 recv=rax idimm=False fn 0x1800DBEF0..0x1800DC425
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rdi
+  0x1800DD9AD recv=rax idimm=False fn 0x1800DD550..0x1800DDAC0
+      lea r9, [rbp - 0x70]
+      lea r8, [rsp + 0x70]
+      lea rdx, [rbp - 0x30]
+      mov rcx, rsi
+  0x1800E1B7E recv=rax idimm=False fn 0x1800E18B0..0x1800E2026
+      lea r9, [rbp - 0x39]
+      lea r8, [rbp - 0x59]
+      lea rdx, [rbp - 0x19]
+      mov rcx, rbx
+  0x1800E1C23 recv=rax idimm=False fn 0x1800E18B0..0x1800E2026
+      lea r9, [rbp + 7]
+      lea r8, [rbp - 0x19]
+      lea rdx, [rbp - 0x59]
+      mov rcx, rbx
+  0x1800E3144 recv=rax idimm=False fn 0x1800E2C00..0x1800E3347
+      lea r9, [rdi + 0x338]
+      lea r8, [rbp - 0x28]
+      mov rdx, rsi
+      mov rcx, rbx
+  0x1800E323D recv=rax idimm=False fn 0x1800E2C00..0x1800E3347
+      lea r9, [rdi + 0x378]
+      lea r8, [rbp - 0x28]
+      mov rdx, rsi
+      mov rcx, rbx
+  0x1800E8940 recv=rax idimm=False fn 0x1800E83B0..0x1800E8B4B
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rbx
+  0x1800E89E5 recv=rax idimm=False fn 0x1800E83B0..0x1800E8B4B
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rbx
+  0x1800E8A8A recv=rax idimm=False fn 0x1800E83B0..0x1800E8B4B
+      lea r9, [rbp - 0x49]
+      lea r8, [rbp - 0x69]
+      lea rdx, [rbp - 9]
+      mov rcx, rdi
+  0x1800EA5AF recv=rax idimm=False fn 0x1800EA380..0x1800EA64C
+      lea r9, [rbp - 0x39]
+      lea r8, [rbp - 0x59]
+      lea rdx, [rbp + 7]
+      mov rcx, rsi
+  0x1800ED6A4 recv=rax idimm=False fn 0x1800ED5A0..0x1800ED82C
+      lea r9, [rbp - 0x59]
+      lea r8, [rbp - 0x79]
+      lea rdx, [rbp - 0x39]
+      mov rcx, rbx
+  0x1800EE2FE recv=rax idimm=False fn 0x1800EDF00..0x1800EE411
+      lea r9, [rbp - 0x70]
+      lea r8, [rsp + 0x70]
+      lea rdx, [rbp - 0x30]
+      mov rcx, rsi
+  0x180136A3B recv=rax idimm=True fn 0x180136980..0x180136B4D
+      mov word ptr [rsp + 0x38], dx
+      mov byte ptr [rsp + 0x3a], r15b
+      lea r8, [rsp + 0x38]
+      mov rdx, rbp
+  0x1801445BC recv=rax idimm=False fn 0x1801445A0..0x1801445C8
+      lea r8, [rsp + 0x38]
+      mov rcx, qword ptr [rax + rdx*8]
+      mov edx, r9d
+      mov rax, qword ptr [rcx]
+  0x1801445EC recv=rax idimm=False fn 0x1801445D0..0x1801445FA
+      lea r8, [rsp + 0x38]
+      mov rcx, qword ptr [rax + rdx*8]
+      mov edx, r9d
+      mov rax, qword ptr [rcx]
+  0x18014461C recv=rax idimm=False fn 0x180144600..0x18014462A
+      lea r8, [rsp + 0x30]
+      mov rcx, qword ptr [rax + rdx*8]
+      mov edx, r9d
+      mov rax, qword ptr [rcx]
+  0x18019EA03 recv=rax idimm=False fn 0x18019E840..0x18019EA3E
+      call 0x180014350
+      nop 
+      mov rax, qword ptr [rbx]
+      mov rcx, rbx
+  0x1801AA784 recv=rax idimm=False fn 0x1801AA760..0x1801AA792
+      je 0x1801aa78c
+      mov rax, qword ptr [rcx]
+      lea r8, [rsp + 0x40]
+      lea rdx, [rsp + 0x48]
+  0x18024F159 recv=rax idimm=False fn 0x18024F130..0x18024F16B
+      test rcx, rcx
+      je 0x18024f165
+      mov rax, qword ptr [rcx]
+      lea r8, [rsp + 0x48]
+  0x180250C74 recv=rax idimm=False fn 0x180250C50..0x180250C86
+      test rcx, rcx
+      je 0x180250c80
+      mov rax, qword ptr [rcx]
+      lea r8, [rsp + 0x48]
+  0x180251A38 recv=rax idimm=False fn 0x1802519C0..0x180251A56
+      mov rax, qword ptr [rcx]
+      lea r9, [rsp + 0x60]
+      lea r8, [rsp + 0x68]
+      mov rdx, rbx
+  0x180251DB3 recv=rax idimm=False fn 0x180251D80..0x180251DC5
+      je 0x180251dbf
+      mov rax, qword ptr [rcx]
+      lea r9, [rsp + 0x48]
+      lea r8, [rsp + 0x40]
+  0x1802522E8 recv=rax idimm=False fn 0x180252270..0x180252306
+      mov rax, qword ptr [rcx]
+      lea r9, [rsp + 0x60]
+      lea r8, [rsp + 0x68]
+      mov rdx, rbx
+  0x180252806 recv=rax idimm=False fn 0x180252790..0x180252824
+      mov rax, qword ptr [rcx]
+      lea r9, [rsp + 0x60]
+      lea r8, [rsp + 0x68]
+      mov rdx, rbx
+  0x180258CD4 recv=rax idimm=False fn 0x180258C90..0x180258CF1
+      mov rax, qword ptr [rsi]
+      lea r8, [rsp + 0x50]
+      mov rdx, rbx
+      mov rcx, rsi
+  0x18025A6B4 recv=rax idimm=False fn 0x18025A5A0..0x18025A6E1
+      mov rax, qword ptr [r14]
+      lea r8, [rsp + 0x60]
+      mov rdx, rbx
+      mov rcx, r14
+  0x18028EA52 recv=rax idimm=False fn 0x18028EA00..0x18028EB08
+      mov rax, qword ptr [rcx]
+      lea r9, [rsp + 0x40]
+      lea r8, [rsp + 0x50]
+      lea rdx, [rsp + 0x58]
+  0x18028EB87 recv=rax idimm=False fn 0x18028EB10..0x18028EC41
+      mov rax, qword ptr [rcx]
+      lea r9, [rsp + 0x60]
+      lea r8, [rsp + 0x68]
+      lea rdx, [rsp + 0x70]
+  0x18028F0BA recv=r9 idimm=False fn 0x18028F080..0x18028F127
+      je 0x18028f0c0
+      movsd qword ptr [rsp + 0x30], xmm2
+      lea r8, [rsp + 0x30]
+      mov r9, qword ptr [rcx]
+  0x18028F19D recv=rax idimm=False fn 0x18028F130..0x18028F251
+      movsd qword ptr [rsp + 0x40], xmm2
+      mov rax, qword ptr [rcx]
+      lea r8, [rsp + 0x40]
+      lea rdx, [rsp + 0x30]
+  0x18033C084 recv=rax idimm=False fn 0x18033BF80..0x18033C0FA
+      je 0x18033c0f4
+      mov rax, qword ptr [rcx]
+      lea r8, [rsp + 0x20]
+      lea rdx, [rsp + 0x70]
+  0x18033C14C recv=rax idimm=False fn 0x18033C100..0x18033C1C8
+      mov rcx, qword ptr [rbp + 0x58]
+      mov rax, qword ptr [rcx]
+      lea r8, [rsp + 0x50]
+      lea rdx, [rsp + 0x20]
+  0x18034B775 recv=rax idimm=False fn 0x18034B690..0x18034B910
+      add rcx, 0x50
+      mov rax, qword ptr [rcx]
+      lea r8, [rsp + 0x70]
+      lea rdx, [rsp + 0x60]
+
+=== slot-4 calls with lea r9,[stack] in window: 9 ===
+  0x180009E06 recv=rax idimm=False fn 0x180009D40..0x18000A399
+      mov rax, qword ptr [rcx]
+      lea r9, [rbp - 0x40]
+      lea r8, [rbp + 0x40]
+      mov edx, ebx
+  0x18002FAA2 recv=rax idimm=False fn 0x18002F830..0x18002FD89
+      lea r9, [rsp + 0x38]
+      lea r8, [rsp + 0x20]
+      lea rdx, [rip + 0x3656e9]
+      mov rcx, rdi
+  0x180144682 recv=rax idimm=False fn 0x180144660..0x18014468E
+      mov r8d, r10d
+      mov rcx, qword ptr [rax + rdx*8]
+      mov edx, r11d
+      mov rax, qword ptr [rcx]
+  0x1801446B2 recv=rax idimm=False fn 0x180144690..0x1801446C0
+      mov r8d, r10d
+      mov rcx, qword ptr [rax + rdx*8]
+      mov edx, r11d
+      mov rax, qword ptr [rcx]
+  0x1801446E2 recv=rax idimm=False fn 0x1801446C0..0x1801446F0
+      mov r8d, r10d
+      mov rcx, qword ptr [rax + rdx*8]
+      mov edx, r11d
+      mov rax, qword ptr [rcx]
+  0x18019A743 recv=rax idimm=False fn 0x18019A6D0..0x18019A775
+      mov rax, qword ptr [rcx]
+      lea r9, [rsp + 0x28]
+      lea r8, [rsp + 0x30]
+      lea rdx, [rsp + 0x30]
+  0x1801A0038 recv=rax idimm=False fn 0x1801A0020..0x1801A0045
+      mov rcx, qword ptr [rcx + 0x10]
+      lea r9, [rsp + 0x30]
+      mov dword ptr [rsp + 0x30], 0
+      mov rax, qword ptr [rcx]
+  0x1801E3584 recv=rax idimm=False fn 0x1801E3350..0x1801E3854
+      lea r9, [rbp - 0x75]
+      lea r8, [rsp + 0x24]
+      lea rdx, [rip + 0x1b1c07]
+      mov rcx, rdi
+  0x1801E3AD3 recv=rax idimm=False fn 0x1801E3AA0..0x1801E3B48
+      lea r9, [rsp + 0x50]
+      lea r8, [rsp + 0x40]
+      lea rdx, [rip + 0x1b16b8]
+      mov rcx, rdi
+post-pass hash OK

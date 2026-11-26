@@ -1,0 +1,2 @@
+lea [base+0x430] -> slot-2 call candidates: 0
+post-pass hash OK
