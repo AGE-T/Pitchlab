@@ -1,0 +1,119 @@
+===== (a) SDK IID table: 84 IIDs; .data registry naming =====
+  0x1804A6120  22888DDB-45AE156E-48B35883-25061908  IPluginBase
+  0x1804A6138  7A4D811C-4A1F5211-EED2D9AE-9FBF430B  IPluginFactory
+  0x1804A6150  C3BF6EA2-47523099-90F96B9B-9B3EE31E  IBStream
+  0x1804A6168  DF0FF9F7-466949B7-32B73AB6-E5F5DB7A  IMidiMapping
+  0x1804A6180  58E595CC-4969DB2D-8CAF6A8B-E564A636  IHostApplication
+  0x1804A6198  A4779663-4A560BB6-A88443B4-9DEB6F46  IParameterChanges
+  0x1804A61B0  C7C75364-43AC7B83-0A5B49A4-C7465A3E  ITestPlugProvider2
+  0x1804A61C8  067D02C1-274D5B4E-FD902DA9-4072AF6E  IComponentHandlerBusActivation
+  0x1804A61E0  309ECE78-4FAEEB7D-D925228B-B608FD09  IAudioPresentationLatency
+  0x1804A61F8  70A4156F-40266E6E-BF489198-D1D860AA  IConnectionPoint
+  0x1804A6210  3D4BD6B5-4FD2913A-68E786A8-C192EBA5  IUnitInfo
+  0x1804A6228  3A2C4214-49FE3463-97F3C4B2-445A69B9  IEventList
+  0x1804A6240  936F033B-47DBC6C0-F88208BB-13E6C113  IMessage
+  0x1804A6258  B7F8F859-48724123-81951691-A321374F  INoteExpressionController
+  0x1804A6270  A81A0471-4DC448C3-E1C930AC-D593833C  IXmlRepresentationController
+  0x1804A6288  93A0BEA3-45DB0BD0-0C0B898E-C66AE4C1  IComponentHandler
+  0x1804A62A0  4FB58B9E-4E0F9EAA-1C1C36AB-EA6FB5CC  IPlugInterfaceSupport
+  0x1804A62B8  B03078FF-4AC894D2-03D3CC90-243313D4  INoteExpressionPhysicalUIMapping
+  0x1804A62D0  F52B7AAE-416DDE72-CE8AF18A-5EBDD79D  IDependent
+  0x1804A62E8  5BC32507-49EAD060-521B15A6-295B752B  IPlugView
+  0x1804A6300  0007B650-4C0BF24B-B9ED64A4-BB2A0BF0  IPluginFactory2
+  0x1804A6318  00000000-00000000-000000C0-46000000  FUnknown
+  0x1804A6330  00000000-00000000-00000000-00000000  Interface
+  0x1804A6348  1F2F76D3-4B96BFFB-A52795B9-F4CEBC5E  IKeyswitchController
+  0x1804A6360  1E5F0AEB-4533CC7F-114054A2-E45EAD38  IAttributeList
+  0x1804A6378  F99DB7A3-48210FC1-F90C0B80-DF8E348E  IString
+  0x1804A6390  6D319DC6-624260C5-1B952CB3-C6F4BE93  IVst3ToAAXWrapper
+  0x1804A63A8  8AE54FDA-46B9E930-BC5585A2-1EE298DC  IPrefetchableSupport
+  0x1804A63C0  29633AEC-47E21D1C-7BB985BB-61AC6ED3  IVst3ToVst2Wrapper
+  0x1804A63D8  FA1E32F9-46F5CA6D-56F982A9-581B19B1  IAttributes
+  0x1804A63F0  0CE5743D-415E68DF-D45B28AE-FDC8CDE2  IInterAppAudioHost
+  0x1804A6408  4555A2AB-4E57C123-1029129B-31898736  IPluginFactory3
+  0x1804A6420  04F9549E-4E6EE02F-876AE887-7FE1F447  ISizeableStream
+  0x1804A6438  4B5147F8-486B4654-BA30AB8D-563C3A16  IUnitHandler
+  0x1804A6450  550798BC-49DB8720-150A9284-A8B7503B  IStringResult
+  0x1804A6468  ADE6FCC4-4E1D46C9-809AB4B3-DDEF3FC9  IInterAppAudioPresetManager
+  0x1804A6480  44149067-4BF942CF-50B70088-E39F35F7  IVst3WrapperMPESupport
+  0x1804A6498  42043F99-453CB7DA-9DE769A5-3DC3AE9A  IAudioProcessor
+  0x1804A64B0  A3B8C6C5-4688C095-0B6F91B0-44AA97B6  IVst3ToAUWrapper
+  0x1804A64C8  6C389611-455DD391-33B870B8-DDEFA094  IUnitData
+  0x1804A64E0  E831FF31-4301F2D5-EEBB8E92-02786925  IComponent
+  0x1804A64F8  6D21E1DC-9D4B9119-EF2FA0A2-5CE51A6C  IParameterFunctionName
+  0x1804A6510  69F11617-400DD26B-64B9B6A4-ABBB6E7B  IComponentHandler3
+  0x1804A6528  D45406B9-44433A2D-A99BAD9D-4B45A185  ICloneable
+  0x1804A6540  00C9DC5B-42549D90-C888A391-691BE9B4  IProgress
+  0x1804A6558  1382126A-4871FECA-452AD597-99AE42B0  IAttributes2
+
+===== (b) processor qI tail 0x18000ED80..0x18000EE40 =====
+  0x18000ED80  mov      eax, dword ptr [rax + 8]                    
+  0x18000ED83  cmp      rax, qword ptr [rip + 0x49747e]               ; f32=-0.7834715843200684
+  0x18000ED8A  jne      0x18000eda4                                 
+  0x18000ED8C  test     rcx, rcx                                    
+  0x18000ED8F  lea      rax, [rcx + 0x18]                           
+  0x18000ED93  cmove    rax, r9                                     
+  0x18000ED97  mov      qword ptr [rbp - 0x18], rax                 
+  0x18000ED9B  lea      rax, [rip + 0x716e]                           ; f32=132653.125
+  0x18000EDA2  jmp      0x18000edf9                                 
+  0x18000EDA4  mov      rax, qword ptr [r8]                         
+  0x18000EDA7  cmp      rax, qword ptr [rip + 0x4977fa]               ; q=0x4E3DEF762A654303
+  0x18000EDAE  jne      0x18000edd5                                 
+  0x18000EDB0  mov      rax, qword ptr [r8 + 8]                     
+  0x18000EDB4  cmp      rax, qword ptr [rip + 0x4977f5]               ; q=0xD0F60E7383FEB595
+  0x18000EDBB  jne      0x18000edd5                                 
+  0x18000EDBD  test     rcx, rcx                                    
+  0x18000EDC0  lea      rax, [rcx + 0x20]                           
+  0x18000EDC4  cmove    rax, r9                                     
+  0x18000EDC8  mov      qword ptr [rbp - 0x18], rax                 
+  0x18000EDCC  lea      rax, [rip + 0x713d]                           ; f32=132653.125
+  0x18000EDD3  jmp      0x18000edf9                                 
+  0x18000EDD5  mov      rax, qword ptr [r8]                         
+  0x18000EDD8  cmp      rax, qword ptr [rip + 0x497541]               ; q=0x0
+  0x18000EDDF  jne      0x18000ee23                                 
+  0x18000EDE1  mov      rax, qword ptr [r8 + 8]                     
+  0x18000EDE5  cmp      rax, qword ptr [rip + 0x49753c]               ; q=0x46000000000000C0
+  0x18000EDEC  jne      0x18000ee23                                 
+  0x18000EDEE  lea      rax, [rip + 0x711b]                           ; f32=132653.125
+  0x18000EDF5  mov      qword ptr [rbp - 0x18], rcx                 
+  0x18000EDF9  mov      qword ptr [rbp - 0x10], rax                 
+  0x18000EDFD  movsd    xmm1, qword ptr [rbp - 0x10]                
+  0x18000EE02  mov      dword ptr [rbp - 0x20], r9d                 
+  0x18000EE06  movups   xmm0, xmmword ptr [rbp - 0x20]              
+  0x18000EE0A  movd     eax, xmm0                                   
+  0x18000EE0E  test     eax, eax                                    
+  0x18000EE10  jne      0x18000ee23                                 
+  0x18000EE12  movups   xmmword ptr [rdx], xmm0                     
+  0x18000EE15  mov      rax, rdx                                    
+  0x18000EE18  movsd    qword ptr [rdx + 0x10], xmm1                
+  0x18000EE1D  add      rsp, 0x20                                   
+  0x18000EE21  pop      rbp                                         
+  0x18000EE22  ret                                                  
+  0x18000EE23  mov      rax, qword ptr [r8]                         
+  0x18000EE26  cmp      rax, qword ptr [rip + 0x49789b]               ; q=0xEF01ABCD0101ABAB
+  0x18000EE2D  jne      0x18000ee5b                                 
+  0x18000EE2F  mov      rax, qword ptr [r8 + 8]                     
+  0x18000EE33  cmp      rax, qword ptr [rip + 0x497896]               ; q=0x5774634F65646954
+  0x18000EE3A  jne      0x18000ee5b                                 
+  0x18000EE3C  mov      rax, qword ptr [rcx + 0x48]                 
+
+===== (c) adjustor thunks (sub rcx, imm8; jmp rel32) in .text =====
+  target 0x18000EC90  <- none
+  target 0x180004490  <- ['thunk 0x180016CAC (sub rcx, 0x-68)', 'thunk 0x180016CE8 (sub rcx, 0x-18)', 'thunk 0x180016D54 (sub rcx, 0x-40)', 'thunk 0x180016D6C (sub rcx, 0x-10)', 'thunk 0x180016DA8 (sub rcx, 0x-30)', 'thunk 0x180016DCC (sub rcx, 0x-70)', 'thunk 0x180016E34 (sub rcx, 0x-38)', 'thunk 0x180016E7C (sub rcx, 0x-78)']
+  target 0x1800074B0  <- ['thunk 0x180016CDC (sub rcx, 0x-78)', 'thunk 0x180016E88 (sub rcx, 0x-68)', 'thunk 0x180016EC4 (sub rcx, 0x-10)', 'thunk 0x180016EE8 (sub rcx, 0x-30)', 'thunk 0x180016F18 (sub rcx, 0x-70)', 'thunk 0x180016F8C (sub rcx, 0x-18)', 'thunk 0x180016FB0 (sub rcx, 0x-38)']
+  target 0x18019C2D0  <- ['thunk 0x180016EA0 (sub rcx, 0x-20)']
+  target 0x18000FB70  <- none
+  target 0x180004F60  <- ['thunk 0x180016D00 (sub rcx, 0x-18)', 'thunk 0x180016D18 (sub rcx, 0x-38)', 'thunk 0x180016EB8 (sub rcx, 0x-68)', 'thunk 0x180016F30 (sub rcx, 0x-10)', 'thunk 0x180016F48 (sub rcx, 0x-30)']
+  target 0x18000C230  <- ['thunk 0x180016DB4 (sub rcx, 0x-18)', 'thunk 0x180016E40 (sub rcx, 0x-20)', 'thunk 0x180016ED0 (sub rcx, 0x-8)', 'thunk 0x180016F98 (sub rcx, 0x-10)']
+  target 0x1800048E0  <- ['thunk 0x180016E28 (sub rcx, 0x-10)', 'thunk 0x180016EDC (sub rcx, 0x-18)']
+  target 0x180004480  <- ['thunk 0x180016CD0 (sub rcx, 0x-10)', 'thunk 0x180016D24 (sub rcx, 0x-30)', 'thunk 0x180016D3C (sub rcx, 0x-18)', 'thunk 0x180016D78 (sub rcx, 0x-38)', 'thunk 0x180016DC0 (sub rcx, 0x-68)', 'thunk 0x180016E4C (sub rcx, 0x-70)', 'thunk 0x180016EF4 (sub rcx, 0x-78)', 'thunk 0x180016F3C (sub rcx, 0x-40)']
+  target 0x18000C1F0  <- ['thunk 0x180016CB8 (sub rcx, 0x-18)', 'thunk 0x180016DD8 (sub rcx, 0x-20)', 'thunk 0x180016E58 (sub rcx, 0x-8)', 'thunk 0x180016F00 (sub rcx, 0x-10)']
+  target 0x18000C200  <- ['thunk 0x180016CC4 (sub rcx, 0x-10)', 'thunk 0x180016DE4 (sub rcx, 0x-18)', 'thunk 0x180016E94 (sub rcx, 0x-20)', 'thunk 0x180016F0C (sub rcx, 0x-8)']
+
+  processor-qI adjustors: []
+
+===== (d) vtable discovery (slot-0 search) =====
+  (qI-cluster-targeting thunks, for the layout map:)
+
+===== (e) candidate IAudioProcessor vtables =====
+post-pass hash OK

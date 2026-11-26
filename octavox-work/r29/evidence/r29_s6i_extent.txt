@@ -1,0 +1,252 @@
+===== (a) section table =====
+  .text    VA 0x180001000..0x18037D000 (vsize 0x37C000, raw 0x37B200)
+  .rdata   VA 0x18037D000..0x1804A5000 (vsize 0x128000, raw 0x127E00)
+  .data    VA 0x1804A5000..0x1804CD000 (vsize 0x28000, raw 0x25600)
+  .pdata   VA 0x1804CD000..0x1804F4000 (vsize 0x27000, raw 0x26800)
+  _RDATA   VA 0x1804F4000..0x180508000 (vsize 0x14000, raw 0x13400)
+  .rsrc    VA 0x180508000..0x180509000 (vsize 0x1000, raw 0x600)
+  .reloc   VA 0x180509000..0x180516000 (vsize 0xD000, raw 0xD000)
+
+===== (b) suspicious vtable slots + process() =====
+--- 0x180419D58 [.rdata] ---
+  0x180419D58  add      dword ptr [rax], eax                        
+  0x180419D5A  add      byte ptr [rax], al                          
+  0x180419D5C  add      byte ptr [rax], al                          
+  0x180419D5E  add      byte ptr [rax], al                          
+  0x180419D60  add      byte ptr [rax], al                          
+  0x180419D62  add      byte ptr [rax], al                          
+  0x180419D64  stosb    byte ptr [rdi], al                          
+  0x180419D66  add      byte ptr [r8], bpl                          
+  0x180419D69  ja       0x180419dac                                 
+  0x180419D6B  add      byte ptr [rax - 0x63], bl                   
+  0x180419D6E  add      byte ptr [r8], al                           
+  0x180419D71  add      byte ptr [rax], al                          
+  0x180419D73  add      byte ptr [rax], al                          
+  0x180419D75  add      byte ptr [rax], al                          
+  0x180419D77  .byte    0x00                                        
+--- 0x1804185C0 [.rdata] ---
+  0x1804185C0  add      dword ptr [rax], eax                        
+  0x1804185C2  add      byte ptr [rax], al                          
+  0x1804185C4  sub      byte ptr [rax], al                          
+  0x1804185C6  add      byte ptr [rax], al                          
+  0x1804185C8  add      byte ptr [rax], al                          
+  0x1804185CA  add      byte ptr [rax], al                          
+  0x1804185CC  push     0x70004ba9                                  
+  0x1804185D1  nop                                                  
+  0x1804185D2  add      r8b, al                                     
+  0x1804185D5  test     dword ptr [rcx], eax                        
+  0x1804185D8  add      byte ptr [rax], al                          
+  0x1804185DA  add      byte ptr [rax], al                          
+  0x1804185DC  add      byte ptr [rax], al                          
+  0x1804185DE  add      byte ptr [rax], al                          
+--- 0x180417D80 [.rdata] ---
+  0x180417D80  add      dword ptr [rax], eax                        
+  0x180417D82  add      byte ptr [rax], al                          
+  0x180417D84  js       0x180417d86                                 
+  0x180417D86  add      byte ptr [rax], al                          
+  0x180417D88  add      byte ptr [rax], al                          
+  0x180417D8A  add      byte ptr [rax], al                          
+  0x180417D8C  or       byte ptr [rdx - 0x78dfffb5], ch             
+  0x180417D92  add      byte ptr [r8 + 0x417d], al                  
+  0x180417D99  add      byte ptr [rax], al                          
+  0x180417D9B  add      byte ptr [rax], al                          
+  0x180417D9D  add      byte ptr [rax], al                          
+  0x180417D9F  .byte    0x00                                        
+--- 0x180419670 [.rdata] ---
+  0x180419670  add      dword ptr [rax], eax                        
+  0x180419672  add      byte ptr [rax], al                          
+  0x180419674  add      byte ptr [rax], al                          
+  0x180419677  add      byte ptr [rax], al                          
+  0x180419679  add      byte ptr [rax], al                          
+  0x18041967B  add      byte ptr [rax], ah                          
+  0x18041967D  test     eax, 0x86c8004b                             
+  0x180419682  add      byte ptr [r8 - 0x6a], sil                   
+  0x180419686  add      byte ptr [r8], al                           
+  0x180419689  add      byte ptr [rax], al                          
+  0x18041968B  add      byte ptr [rax], al                          
+  0x18041968D  add      byte ptr [rax], al                          
+  0x18041968F  .byte    0x00                                        
+--- 0x180417790 [.rdata] ---
+  0x180417790  add      dword ptr [rax], eax                        
+  0x180417792  add      byte ptr [rax], al                          
+  0x180417794  xor      byte ptr [rax], al                          
+  0x180417796  add      byte ptr [rax], al                          
+  0x180417798  add      byte ptr [rax], al                          
+  0x18041779A  add      byte ptr [rax], al                          
+  0x18041779C  sub      byte ptr [rbx - 0x627fffb5], 0x41           
+  0x1804177A3  add      byte ptr [rax + 0x4177], dl                 
+  0x1804177A9  add      byte ptr [rax], al                          
+  0x1804177AB  add      byte ptr [rax], al                          
+  0x1804177AD  add      byte ptr [rax], al                          
+  0x1804177AF  .byte    0x00                                        
+--- process() 0x180003D30 (head) ---
+  0x180003D30  mov      qword ptr [rsp + 8], rbx                    
+  0x180003D35  push     rdi                                         
+  0x180003D36  sub      rsp, 0x20                                   
+  0x180003D3A  mov      r8d, dword ptr [rcx + 0x10]                 
+  0x180003D3E  mov      rbx, rcx                                    
+  0x180003D41  mov      edi, edx                                    
+  0x180003D43  bt       r8d, 0x1e                                   
+  0x180003D48  jae      0x180003d66                                 
+  0x180003D4A  cmp      qword ptr [rcx + 8], 0                      
+  0x180003D4F  je       0x180003d66                                 
+  0x180003D51  mov      eax, r8d                                    
+  0x180003D54  and      eax, 0x3fffffff                             
+  0x180003D59  je       0x180003d66                                 
+  0x180003D5B  xor      edx, edx                                    
+  0x180003D5D  call     0x18019f2f0                                 
+  0x180003D62  mov      r8d, dword ptr [rbx + 0x10]                 
+  0x180003D66  mov      eax, r8d                                    
+  0x180003D69  and      eax, 0x3fffffff                             
+  0x180003D6E  cmp      edi, eax                                    
+  0x180003D70  jae      0x180003d91                                 
+  0x180003D72  mov      rcx, qword ptr [rbx + 8]                    
+  0x180003D76  test     rcx, rcx                                    
+  0x180003D79  je       0x180003d91                                 
+  0x180003D7B  bt       r8d, 0x1e                                   
+  0x180003D80  jb       0x180003d91                                 
+  0x180003D82  movzx    eax, byte ptr [rdi + rcx]                   
+  0x180003D86  mov      rbx, qword ptr [rsp + 0x30]                 
+  0x180003D8B  add      rsp, 0x20                                   
+  0x180003D8F  pop      rdi                                         
+  0x180003D90  ret                                                  
+  0x180003D91  mov      rbx, qword ptr [rsp + 0x30]                 
+  0x180003D96  xor      al, al                                      
+  0x180003D98  add      rsp, 0x20                                   
+  0x180003D9C  pop      rdi                                         
+  0x180003D9D  ret                                                  
+  0x180003D9E  int3                                                 
+  0x180003D9F  int3                                                 
+  0x180003DA0  mov      qword ptr [rsp + 8], rbx                    
+  0x180003DA5  push     rdi                                         
+  0x180003DA6  sub      rsp, 0x20                                   
+  0x180003DAA  mov      r8d, dword ptr [rcx + 0x10]                 
+  0x180003DAE  mov      rbx, rcx                                    
+  0x180003DB1  mov      edi, edx                                    
+  0x180003DB3  bt       r8d, 0x1e                                   
+  0x180003DB8  jb       0x180003dd3                                 
+  0x180003DBA  cmp      qword ptr [rcx + 8], 0                      
+  0x180003DBF  .byte    0x74                                        
+
+===== (c) aggregation thunk 0x180016E14 + lookup 0x180160D5C =====
+  0x180016E00  add      byte ptr [rax], al                          
+  0x180016E02  add      cl, ch                                      
+  0x180016E04  or       byte ptr [rdx - 0x7cb70001], cl             
+  0x180016E0A  jmp      0x15fa15727                                 
+  0x180016E0F  .byte    0xfe                                        
+  0x180016E10  dec      esp                                         
+  0x180016E12  int3                                                 
+  0x180016E13  int3                                                 
+  0x180016E14  mov      rax, qword ptr [rcx]                        
+  0x180016E17  jmp      qword ptr [rax + 0x10]                      
+  0x180016E1A  int3                                                 
+  0x180016E1B  int3                                                 
+  0x180016E1C  sub      rcx, 0x38                                   
+  0x180016E20  jmp      0x180004db0                                 
+  0x180016E25  int3                                                 
+  0x180016E26  int3                                                 
+  0x180016E27  int3                                                 
+  0x180016E28  sub      rcx, 0x10                                   
+  0x180016E2C  jmp      0x1800048e0                                 
+  0x180016E31  int3                                                 
+  0x180016E32  int3                                                 
+  0x180016E33  int3                                                 
+  0x180016E34  sub      rcx, 0x38                                   
+  0x180016E38  jmp      0x180004490                                 
+  0x180016E3D  int3                                                 
+  0x180016E3E  int3                                                 
+  0x180016E3F  int3                                                 
+--- lookup 0x180160D5C (head) ---
+  0x180160D5C  mov      qword ptr [rsp + 0x10], rbx                 
+  0x180160D61  mov      qword ptr [rsp + 0x18], rsi                 
+  0x180160D66  push     rdi                                         
+  0x180160D67  push     r12                                         
+  0x180160D69  push     r13                                         
+  0x180160D6B  push     r14                                         
+  0x180160D6D  push     r15                                         
+  0x180160D6F  sub      rsp, 0x50                                   
+  0x180160D73  mov      r15, r9                                     
+  0x180160D76  mov      r12, r8                                     
+  0x180160D79  movsxd   r13, edx                                    
+  0x180160D7C  mov      rdi, rcx                                    
+  0x180160D7F  xor      ebx, ebx                                    
+  0x180160D81  test     rcx, rcx                                    
+  0x180160D84  jne      0x180160da2                                 
+  0x180160D86  xor      eax, eax                                    
+  0x180160D88  lea      r11, [rsp + 0x50]                           
+  0x180160D8D  mov      rbx, qword ptr [r11 + 0x38]                 
+  0x180160D91  mov      rsi, qword ptr [r11 + 0x40]                 
+  0x180160D95  mov      rsp, r11                                    
+  0x180160D98  pop      r15                                         
+  0x180160D9A  pop      r14                                         
+  0x180160D9C  pop      r13                                         
+  0x180160D9E  pop      r12                                         
+  0x180160DA0  pop      rdi                                         
+  0x180160DA1  ret                                                  
+  0x180160DA2  mov      rax, qword ptr [rcx]                        
+  0x180160DA5  mov      rsi, qword ptr [rax - 8]                    
+  0x180160DA9  mov      eax, dword ptr [rsi + 4]                    
+  0x180160DAC  mov      r14, rdi                                    
+  0x180160DAF  sub      r14, rax                                    
+  0x180160DB2  mov      edx, dword ptr [rsi + 8]                    
+  0x180160DB5  sub      rcx, rdx                                    
+  0x180160DB8  neg      edx                                         
+  0x180160DBA  sbb      eax, eax                                    
+  0x180160DBC  and      eax, dword ptr [rcx]                        
+  0x180160DBE  movsxd   rcx, eax                                    
+  0x180160DC1  sub      r14, rcx                                    
+  0x180160DC4  cmp      dword ptr [rsi], ebx                        
+  0x180160DC6  jne      0x180160de6                                 
+  0x180160DC8  lea      rdx, [rsp + 0x80]                           
+  0x180160DD0  mov      rcx, rsi                                    
+  0x180160DD3  call     qword ptr [rip + 0x21c5cf]                    ; "<JJ"
+  0x180160DD9  mov      r9, rax                                     
+  0x180160DDC  mov      qword ptr [rsp + 0x80], rax                 
+  0x180160DE4  jmp      0x180160df0                                 
+  0x180160DE6  movsxd   rax, dword ptr [rsi + 0x14]                 
+  0x180160DEA  mov      r9, rsi                                     
+  0x180160DED  sub      r9, rax                                     
+  0x180160DF0  movsxd   rax, dword ptr [rsi + 0x10]                 
+  0x180160DF4  mov      ecx, dword ptr [rax + r9 + 4]               
+  0x180160DF9  test     cl, 1                                       
+  0x180160DFC  jne      0x180160e0e                                 
+  0x180160DFE  mov      r8, r15                                     
+  0x180160E01  mov      rdx, r12                                    
+  0x180160E04  mov      rcx, rsi                                    
+  0x180160E07  call     0x1801609c0                                 
+  0x180160E0C  jmp      0x180160e3b                                 
+  0x180160E0E  sub      rdi, r13                                    
+  0x180160E11  sub      rdi, r14                                    
+  0x180160E14  mov      qword ptr [rsp + 0x28], r9                  
+  0x180160E19  mov      r8, r12                                     
+  0x180160E1C  mov      rdx, rsi                                    
+  0x180160E1F  mov      qword ptr [rsp + 0x20], r15                 
+  0x180160E24  mov      r9, rdi                                     
+  0x180160E27  test     cl, 2                                       
+  0x180160E2A  mov      rcx, r14                                    
+  0x180160E2D  jne      0x180160e36                                 
+  0x180160E2F  call     0x180160838                                 
+  0x180160E34  jmp      0x180160e3b                                 
+  0x180160E36  call     0x180160af8                                 
+  0x180160E3B  mov      r9, rax                                     
+  0x180160E3E  .byte    0x48                                        
+  0x180160E3F  .byte    0x85                                        
+
+===== (d) engine ctor 0x1801A7620 — vtable installs =====
+  0x1801A784F  lea -> 0x1803F05D0
+  0x1801A7859  lea -> 0x1803F04E8
+  0x1801A7867  lea -> 0x1803F03B8
+  0x1801A7875  lea -> 0x1803F05A0
+  0x1801A7883  lea -> 0x1803F0478
+  0x1801A7A30  lea -> 0x1803F23C8
+  0x1801A7A50  lea -> 0x1803F23C8
+  0x1801A7C60  lea -> 0x1803F0E68
+  0x1801A7C90  lea -> 0x1803F0E68
+  0x1801A7D6B  lea -> 0x1803F0B00
+  0x1801A7DD0  lea -> 0x1803F2A78
+  0x1801A7E10  lea -> 0x1803F2A78
+  0x1801A7ED0  lea -> 0x1803F2948
+  0x1801A7F00  lea -> 0x1803F2948
+  (14 vtable-ish leas in engine ctor head)
+
+post-pass hash OK

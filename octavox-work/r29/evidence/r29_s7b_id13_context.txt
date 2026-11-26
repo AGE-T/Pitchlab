@@ -1,0 +1,159 @@
+===== CONTEXT 0x1801AB1A0..0x1801AB2B0 (the id-13 site) =====
+  0x1801AB1A0  mov      eax, eax                                    
+  0x1801AB1A2  mov      rdx, rdi                                    
+  0x1801AB1A5  lea      rcx, [rsp + 0x30]                           
+  0x1801AB1AA  call     r9                                          
+  0x1801AB1AD  inc      r14d                                        
+  0x1801AB1B0  cmp      r14d, dword ptr [r13 + 0x24]                
+  0x1801AB1B4  jl       0x1801ab0e4                                 
+  0x1801AB1BA  mov      r15, qword ptr [r13 + 0x38]                 
+  0x1801AB1BE  movsxd   rax, dword ptr [r13 + 0x44]                 
+  0x1801AB1C2  lea      r12, [r15 + rax*8]                          
+  0x1801AB1C6  cmp      r15, r12                                    
+  0x1801AB1C9  je       0x1801ab3e6                                 
+  0x1801AB1CF  lea      r13, [rip + 0x2467a2]                         ; q=0x180019F30
+  0x1801AB1D6  nop      word ptr [rax + rax]                        
+  0x1801AB1E0  mov      r14, qword ptr [r15]                        
+  0x1801AB1E3  mov      rax, qword ptr [rsp + 0x30]                 
+  0x1801AB1E8  mov      r8d, 0x28                                   
+  0x1801AB1EE  lea      rdx, [rip + 0x1e4e53]                         ; q=0x6E65746E6F430A0D
+  0x1801AB1F5  lea      rcx, [rsp + 0x30]                           
+  0x1801AB1FA  call     qword ptr [rax + 0x20]                      
+  0x1801AB1FD  mov      rcx, qword ptr [r14 + 0x10]                 
+  0x1801AB201  call     0x180026e50                                 
+  0x1801AB206  mov      rcx, qword ptr [rsp + 0x30]                 
+  0x1801AB20B  mov      r9, qword ptr [rcx + 0x20]                  
+  0x1801AB20F  mov      r8, rax                                     
+  0x1801AB212  mov      rdx, qword ptr [r14 + 0x10]                 
+  0x1801AB216  lea      rcx, [rsp + 0x30]                           
+  0x1801AB21B  call     r9                                          
+  0x1801AB21E  mov      rax, qword ptr [rsp + 0x30]                 
+  0x1801AB223  mov      r8d, 0xd                                    
+  0x1801AB229  lea      rdx, [rip + 0x1e4e08]                         ; ""; filename=""
+  0x1801AB230  lea      rcx, [rsp + 0x30]                           
+  0x1801AB235  call     qword ptr [rax + 0x20]                      
+  0x1801AB238  mov      rcx, qword ptr [r14 + 0x18]                 
+  0x1801AB23C  call     0x180026e50                                 
+  0x1801AB241  mov      rcx, qword ptr [rsp + 0x30]                 
+  0x1801AB246  mov      r9, qword ptr [rcx + 0x20]                  
+  0x1801AB24A  mov      r8, rax                                     
+  0x1801AB24D  mov      rdx, qword ptr [r14 + 0x18]                 
+  0x1801AB251  lea      rcx, [rsp + 0x30]                           
+  0x1801AB256  call     r9                                          
+  0x1801AB259  mov      rax, qword ptr [rsp + 0x30]                 
+  0x1801AB25E  mov      r8d, 3                                      
+  0x1801AB264  lea      rdx, [rip + 0x1e4d19]                         ; q=0x656E6977000A0D22
+  0x1801AB26B  lea      rcx, [rsp + 0x30]                           
+  0x1801AB270  call     qword ptr [rax + 0x20]                      
+  0x1801AB273  mov      rax, qword ptr [r14 + 0x20]                 
+  0x1801AB277  cmp      byte ptr [rax], 0                           
+  0x1801AB27A  je       0x1801ab2d1                                 
+  0x1801AB27C  mov      rax, qword ptr [rsp + 0x30]                 
+  0x1801AB281  mov      r8d, 0xe                                    
+  0x1801AB287  lea      rdx, [rip + 0x1e4e1a]                         ; "Content-Type: "
+  0x1801AB28E  lea      rcx, [rsp + 0x30]                           
+  0x1801AB293  call     qword ptr [rax + 0x20]                      
+  0x1801AB296  mov      rcx, qword ptr [r14 + 0x20]                 
+  0x1801AB29A  call     0x180026e50                                 
+  0x1801AB29F  mov      rcx, qword ptr [rsp + 0x30]                 
+  0x1801AB2A4  mov      r9, qword ptr [rcx + 0x20]                  
+  0x1801AB2A8  mov      r8, rax                                     
+  0x1801AB2AB  mov      rdx, qword ptr [r14 + 0x20]                 
+  0x1801AB2AF  .byte    0x48                                        
+
+===== CONTEXT 0x18022C230..0x18022C2D0 (id-10 site A) =====
+  0x18022C230  mov      edx, dword ptr [rbp - 0x40]                 
+  0x18022C233  mov      rcx, qword ptr [rsi + 8]                    
+  0x18022C237  call     0x1801c7b50                                 
+  0x18022C23C  mov      rbx, rax                                    
+  0x18022C23F  mov      r8, qword ptr [rax]                         
+  0x18022C242  mov      dl, 0x20                                    
+  0x18022C244  mov      rcx, rax                                    
+  0x18022C247  call     qword ptr [r8 + 0x28]                       
+  0x18022C24B  mov      edx, dword ptr [rbp - 0x3c]                 
+  0x18022C24E  add      edx, dword ptr [rbp - 0x34]                 
+  0x18022C251  neg      edx                                         
+  0x18022C253  mov      rcx, rbx                                    
+  0x18022C256  call     0x1801c7b50                                 
+  0x18022C25B  mov      rbx, rax                                    
+  0x18022C25E  mov      r8, qword ptr [rax]                         
+  0x18022C261  mov      dl, 0x20                                    
+  0x18022C263  mov      rcx, rax                                    
+  0x18022C266  call     qword ptr [r8 + 0x28]                       
+  0x18022C26A  mov      edx, dword ptr [rbp - 0x38]                 
+  0x18022C26D  mov      rcx, rbx                                    
+  0x18022C270  call     0x1801c7b50                                 
+  0x18022C275  mov      rbx, rax                                    
+  0x18022C278  mov      r8, qword ptr [rax]                         
+  0x18022C27B  mov      dl, 0x20                                    
+  0x18022C27D  mov      rcx, rax                                    
+  0x18022C280  call     qword ptr [r8 + 0x28]                       
+  0x18022C284  mov      edx, dword ptr [rbp - 0x34]                 
+  0x18022C287  mov      rcx, rbx                                    
+  0x18022C28A  call     0x1801c7b50                                 
+  0x18022C28F  mov      r9, qword ptr [rax]                         
+  0x18022C292  mov      r8d, 0xa                                    
+  0x18022C298  lea      rdx, [rip + 0x167059]                         ; q=0x6C69667463657220
+  0x18022C29F  mov      rcx, rax                                    
+  0x18022C2A2  call     qword ptr [r9 + 0x20]                       
+  0x18022C2A6  mov      rcx, qword ptr [rsi + 8]                    
+  0x18022C2AA  mov      rax, qword ptr [rcx]                        
+  0x18022C2AD  mov      r8d, 9                                      
+  0x18022C2B3  lea      rdx, [rip + 0x16705e]                         ; q=0x65726F7473657267
+  0x18022C2BA  call     qword ptr [rax + 0x20]                      
+  0x18022C2BD  lea      r11, [rsp + 0x60]                           
+  0x18022C2C2  mov      rbx, qword ptr [r11 + 0x28]                 
+  0x18022C2C6  mov      rsi, qword ptr [r11 + 0x30]                 
+  0x18022C2CA  mov      rsp, r11                                    
+  0x18022C2CD  pop      r14                                         
+  0x18022C2CF  pop      rdi                                         
+
+===== CONTEXT 0x18022C4B0..0x18022C560 (id-10 site B) =====
+  0x18022C4B0  or       al, ch                                      
+  0x18022C4B2  jp       0x18022c469                                 
+  0x18022C4B4  stc                                                  
+  0x18022C4B5  dec      dword ptr [rax - 0x75]                      
+  0x18022C4B8  fmul     dword ptr [rbx + rcx*4]                     
+  0x18022C4BC  mov      dl, 0x20                                    
+  0x18022C4BE  mov      rcx, rax                                    
+  0x18022C4C1  call     qword ptr [r8 + 0x28]                       
+  0x18022C4C5  addss    xmm8, xmm7                                  
+  0x18022C4CA  xorps    xmm8, xmmword ptr [rip + 0x1e67be]            ; q=0x8000000080000000
+  0x18022C4D2  xorps    xmm1, xmm1                                  
+  0x18022C4D5  cvtss2sd xmm1, xmm8                                  
+  0x18022C4DA  mov      rcx, rbx                                    
+  0x18022C4DD  call     0x1801c7a30                                 
+  0x18022C4E2  mov      rbx, rax                                    
+  0x18022C4E5  mov      r8, qword ptr [rax]                         
+  0x18022C4E8  mov      dl, 0x20                                    
+  0x18022C4EA  mov      rcx, rax                                    
+  0x18022C4ED  call     qword ptr [r8 + 0x28]                       
+  0x18022C4F1  cvtps2pd xmm1, xmm6                                  
+  0x18022C4F4  mov      rcx, rbx                                    
+  0x18022C4F7  call     0x1801c7a30                                 
+  0x18022C4FC  mov      rbx, rax                                    
+  0x18022C4FF  mov      r8, qword ptr [rax]                         
+  0x18022C502  mov      dl, 0x20                                    
+  0x18022C504  mov      rcx, rax                                    
+  0x18022C507  call     qword ptr [r8 + 0x28]                       
+  0x18022C50B  cvtps2pd xmm1, xmm7                                  
+  0x18022C50E  mov      rcx, rbx                                    
+  0x18022C511  call     0x1801c7a30                                 
+  0x18022C516  mov      r9, qword ptr [rax]                         
+  0x18022C519  mov      r8d, 0xa                                    
+  0x18022C51F  lea      rdx, [rip + 0x166dc2]                         ; q=0x6C69667463657220
+  0x18022C526  mov      rcx, rax                                    
+  0x18022C529  call     qword ptr [r9 + 0x20]                       
+  0x18022C52D  jmp      0x18022c5b9                                 
+  0x18022C532  mov      qword ptr [rsp + 0x48], rdi                 
+  0x18022C537  mov      qword ptr [rsp + 0x50], rdi                 
+  0x18022C53C  xorps    xmm0, xmm0                                  
+  0x18022C53F  movups   xmmword ptr [rsp + 0x58], xmm0              
+  0x18022C544  mov      byte ptr [rsp + 0x68], 1                    
+  0x18022C549  movups   xmm1, xmmword ptr [rdx]                     
+  0x18022C54C  movaps   xmm0, xmm1                                  
+  0x18022C54F  shufps   xmm0, xmm1, 0xff                            
+  0x18022C553  movss    dword ptr [rsp + 0x20], xmm0                
+  0x18022C559  movaps   xmm3, xmm1                                  
+  0x18022C55C  shufps   xmm3, xmm1, 0xaa                            
+post-pass hash OK

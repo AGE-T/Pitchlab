@@ -2,7 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { ReportViewer } from "../components/report-viewer";
 
-// R28 (current round): EVENT/QUERY PROTOCOL & PARAMETER GRAPH — the event system
+// R29 (current round): HOST COM SURFACE & NON-IMMEDIATE ID CENSUS — the U-2
+// COM hunt executed to the last hop (true GetPluginFactory pinned, the juce::
+// JuceVST3Component broker decoded with its dual-path queryInterface, the
+// fallback IAudioProcessor surface proven non-viable, the host-facing service
+// located on the engine aggregation path) and the U-3 immediate surface
+// exhausted across all four dispatch slot shapes (the demux argument shift
+// covered; 1337-site non-immediate census delivered).
+// R28 (previous round): EVENT/QUERY PROTOCOL & PARAMETER GRAPH — the event system
 // reclassified (the router = report-tree observer, NOT the DSP feed), m02 fully
 // decoded (ids 7..13: cents/ratio/Q23/confidence/±cents-corrections), userscale
 // closed as a UI-legacy parameter (zero readers), c_minmax closed as a min/max
@@ -18,6 +25,9 @@ import { ReportViewer } from "../components/report-viewer";
 // eliminations, host-latency verdict corrected). No new archive zip this round
 // (static-audit round); the delivery cards below remain the R23/R22/R21
 // evidence packages.
+const R29_REPORT =
+  "/home/z/my-project/OCTAVOX_R29_HOST_SURFACE_CLOSURE.md";
+const R29_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R29_HOST_SURFACE_CLOSURE.md");
 const R28_REPORT =
   "/home/z/my-project/OCTAVOX_R28_EVENT_QUERY_CLOSURE.md";
 const R28_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R28_EVENT_QUERY_CLOSURE.md");
@@ -56,6 +66,7 @@ function readFirstExisting(paths: string[]): string | null {
 }
 
 function readMarkdown(): string {
+  const r29Report = readFirstExisting([R29_REPORT, R29_REPORT_LOCAL]);
   const r28Report = readFirstExisting([R28_REPORT, R28_REPORT_LOCAL]);
   const r27Report = readFirstExisting([R27_REPORT, R27_REPORT_LOCAL]);
   const r26Audit = readFirstExisting([R26_AUDIT, R26_AUDIT_LOCAL]);
@@ -70,11 +81,18 @@ function readMarkdown(): string {
   ]);
   const r23 = readFirstExisting([ROUND23_PATH, ROUND23_ALT, LOCAL_FALLBACK]);
   const parts: string[] = [];
+  if (r29Report)
+    parts.push(r29Report.trim()); // R29 first (current round) — keeps the page H1
   if (r28Report)
-    parts.push(r28Report.trim()); // R28 first (current round) — keeps the page H1
-  if (r27Report)
     parts.push(
       (parts.length ? "\n\n---\n\n" : "") +
+        r28Report
+          .replace(/^# /m, "## ") // demote the R28 H1 (one page, one H1)
+          .trim(),
+    );
+  if (r27Report)
+    parts.push(
+      "\n\n---\n\n" +
         r27Report
           .replace(/^# /m, "## ") // demote the R27 H1 (one page, one H1)
           .trim(),

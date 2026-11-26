@@ -1,0 +1,161 @@
+===== (a) vtable discovery via adjustor-thunk qwords =====
+  thunk 0x180016DB4 (sub 0x18) referenced at 0x1803EF0D0 [.rdata]
+  thunk 0x180016E40 (sub 0x20) referenced at 0x1803F01E8 [.rdata]
+  thunk 0x180016ED0 (sub 0x8  <<< IAudioProcessor(this+8)) referenced at 0x1803EF580 [.rdata]
+  thunk 0x180016F98 (sub 0x10) referenced at 0x1803EFDC0 [.rdata]
+
+===== (b)+(c) vtables + RTTI names =====
+--- candidate vtable @ 0x1803EF0D0 (slot0 = 0x180016DB4 sub 0x18)  RTTI: sig=1 name=.?AVJuceVST3Component@juce@@ ---
+   slot 0  +0x00  0x180016DB4   queryInterface
+   slot 1  +0x08  0x180016CB8   addRef
+   slot 2  +0x10  0x180016DE4   release
+   slot 3  +0x18  0x18000C3F0   initialize
+   slot 4  +0x20  0x18000C430   terminate
+   slot 5  +0x28  0x18000C470   getControllerClassId
+   slot 6  +0x30  0x180417790  (DATA?)  setIoMode
+   slot 7  +0x38  0x180016D84   getBusCount
+   slot 8  +0x40  0x180016D24   getBusInfo
+   slot 9  +0x48  0x180016DA8   getRoutingInfo
+   slot 10 +0x50  0x180016F6C   activateBus
+   slot 11 +0x58  0x180016F54   setActive
+   slot 12 +0x60  0x18019CA70   setState
+   slot 13 +0x68  0x18019CA60   getState
+   slot 14 +0x70  0x18019CA50   setBusArrangements
+   slot 15 +0x78  0x18019CA30   canProcessSampleSize
+   slot 16 +0x80  0x18019C990   getBusArrangements
+   slot 17 +0x88  0x18019C930   getLatencySamples
+   slot 18 +0x90  0x18019C8D0   process
+   slot 19 +0x98  0x18019C880   getTailSamples
+--- candidate vtable @ 0x1803EF580 (slot0 = 0x180016ED0 sub 0x8  <<< IAudioProcessor(this+8))  RTTI: sig=1 name=.?AVJuceVST3Component@juce@@ ---
+   slot 0  +0x00  0x180016ED0   queryInterface
+   slot 1  +0x08  0x180016E58   addRef
+   slot 2  +0x10  0x180016F0C   release
+   slot 3  +0x18  0x18000E310   initialize
+   slot 4  +0x20  0x18000E4A0   terminate
+   slot 5  +0x28  0x18000E500   getControllerClassId
+   slot 6  +0x30  0x18000E540   setIoMode
+   slot 7  +0x38  0x18000E550   getBusCount
+   slot 8  +0x40  0x18000E660   getBusInfo
+   slot 9  +0x48  0x18000E8C0   getRoutingInfo
+   slot 10 +0x50  0x18000E680   activateBus
+   slot 11 +0x58  0x180419D58  (DATA?)  setActive
+   slot 12 +0x60  0x180004220   setState
+   slot 13 +0x68  0x180003B90   getState
+   slot 14 +0x70  0x180003C90   setBusArrangements
+   slot 15 +0x78  0x180003CE0   canProcessSampleSize
+   slot 16 +0x80  0x180003BE0   getBusArrangements
+   slot 17 +0x88  0x180003BA0   getLatencySamples
+   slot 18 +0x90  0x180003D30   process
+   slot 19 +0x98  0x180003DA0   getTailSamples
+--- candidate vtable @ 0x1803EFDC0 (slot0 = 0x180016F98 sub 0x10)  RTTI: sig=1 name=.?AVJuceVST3Component@juce@@ ---
+   slot 0  +0x00  0x180016F98   queryInterface
+   slot 1  +0x08  0x180016F00   addRef
+   slot 2  +0x10  0x180016CC4   release
+   slot 3  +0x18  0x18000DD30   initialize
+   slot 4  +0x20  0x18000DD40   terminate
+   slot 5  +0x28  0x18000DD50   getControllerClassId
+   slot 6  +0x30  0x18000DD60   setIoMode
+   slot 7  +0x38  0x18000DD70   getBusCount
+   slot 8  +0x40  0x18000DD80   getBusInfo
+   slot 9  +0x48  0x18000DD90   getRoutingInfo
+   slot 10 +0x50  0x18000DDA0   activateBus
+   slot 11 +0x58  0x18000DDD0   setActive
+   slot 12 +0x60  0x18000DDB0   setState
+   slot 13 +0x68  0x18000DDE0   getState
+   slot 14 +0x70  0x18000DDC0   setBusArrangements
+   slot 15 +0x78  0x180419230  (DATA?)  canProcessSampleSize
+   slot 16 +0x80  0x180003BB0   getBusArrangements
+   slot 17 +0x88  0x180003B90   getLatencySamples
+   slot 18 +0x90  0x180003BF0   process
+   slot 19 +0x98  0x180003C10   getTailSamples
+--- candidate vtable @ 0x1803F01E8 (slot0 = 0x180016E40 sub 0x20)  RTTI: sig=1 name=.?AVJuceVST3Component@juce@@ ---
+   slot 0  +0x00  0x180016E40   queryInterface
+   slot 1  +0x08  0x180016DD8   addRef
+   slot 2  +0x10  0x180016E94   release
+   slot 3  +0x18  0x18000EEA0   initialize
+   slot 4  +0x20  0x1804185C0  (DATA?)  terminate
+   slot 5  +0x28  0x180016D30   getControllerClassId
+   slot 6  +0x30  0x18000DDF0   setIoMode
+   slot 7  +0x38  0x1800055F0   getBusCount
+   slot 8  +0x40  0x180003B30   getBusInfo
+   slot 9  +0x48  0x180003B30   getRoutingInfo
+   slot 10 +0x50  0x180003B30   activateBus
+   slot 11 +0x58  0x180419048  (DATA?)  setActive
+   slot 12 +0x60  0x1800052B0   setState
+   slot 13 +0x68  0x180417D80  (DATA?)  getState
+   slot 14 +0x70  0x180016CDC   setBusArrangements
+   slot 15 +0x78  0x180016EF4   canProcessSampleSize
+   slot 16 +0x80  0x180016E7C   getBusArrangements
+   slot 17 +0x88  0x180007D70   getLatencySamples
+   slot 18 +0x90  0x180419670  (DATA?)  process
+   slot 19 +0x98  0x180016CF4   getTailSamples
+
+===== (d) getLatencySamples (slot 17, +0x88) =====
+  IAudioProcessor vtable @ 0x1803EF580  ->  slot17 (+0x88) = 0x180003BA0
+  --- getLatencySamples body ---
+    0x180003BA0  mov      rax, qword ptr [rcx + 8]                    
+    0x180003BA4  ret                                                  
+    0x180003BA5  int3                                                 
+    0x180003BA6  int3                                                 
+    0x180003BA7  int3                                                 
+    0x180003BA8  int3                                                 
+    0x180003BA9  int3                                                 
+    0x180003BAA  int3                                                 
+    0x180003BAB  int3                                                 
+    0x180003BAC  int3                                                 
+    0x180003BAD  int3                                                 
+    0x180003BAE  int3                                                 
+    0x180003BAF  int3                                                 
+    0x180003BB0  push     rbx                                         
+    0x180003BB2  sub      rsp, 0x20                                   
+    0x180003BB6  lea      rax, [rip + 0x3ec283]                         ; q=0x180003BB0
+    0x180003BBD  mov      rbx, rcx                                    
+    0x180003BC0  mov      qword ptr [rcx], rax                        
+    0x180003BC3  test     dl, 1                                       
+    0x180003BC6  je       0x180003bd2                                 
+    0x180003BC8  mov      edx, 0x18                                   
+    0x180003BCD  call     0x18015e100                                 
+    0x180003BD2  mov      rax, rbx                                    
+    0x180003BD5  add      rsp, 0x20                                   
+    0x180003BD9  pop      rbx                                         
+    0x180003BDA  ret                                                  
+    0x180003BDB  int3                                                 
+    0x180003BDC  int3                                                 
+    0x180003BDD  int3                                                 
+    0x180003BDE  int3                                                 
+    0x180003BDF  int3                                                 
+    0x180003BE0  mov      rax, qword ptr [rcx]                        
+    0x180003BE3  jmp      qword ptr [rax + 0x18]                      
+    0x180003BE7  int3                                                 
+    0x180003BE8  int3                                                 
+    0x180003BE9  int3                                                 
+    0x180003BEA  int3                                                 
+    0x180003BEB  int3                                                 
+    0x180003BEC  int3                                                 
+    0x180003BED  int3                                                 
+    0x180003BEE  int3                                                 
+    0x180003BEF  int3                                                 
+    0x180003BF0  test     dword ptr [rcx + 0x10], 0x40000000          
+    0x180003BF7  jne      0x180003c02                                 
+    0x180003BF9  mov      rax, qword ptr [rcx + 8]                    
+    0x180003BFD  test     rax, rax                                    
+    0x180003C00  jne      0x180003c09                                 
+    0x180003C02  lea      rax, [rip + 0x38945a]                         ; f32=-1.468231201171875
+    0x180003C09  ret                                                  
+    0x180003C0A  int3                                                 
+    0x180003C0B  int3                                                 
+    0x180003C0C  int3                                                 
+    0x180003C0D  int3                                                 
+    0x180003C0E  int3                                                 
+    0x180003C0F  int3                                                 
+    0x180003C10  test     dword ptr [rcx + 0x10], 0x40000000          
+    0x180003C17  je       0x180003c22                                 
+    0x180003C19  mov      rax, qword ptr [rcx + 8]                    
+    0x180003C1D  test     rax, rax                                    
+  context slot 14 (setBusArrangements) = 0x180003C90
+  context slot 15 (canProcessSampleSize) = 0x180003CE0
+  context slot 16 (getBusArrangements) = 0x180003BE0
+  context slot 18 (process) = 0x180003D30
+  context slot 19 (getTailSamples) = 0x180003DA0
+
+post-pass hash OK

@@ -1,0 +1,200 @@
+===== (a) slot-call census =====
+  immediate-id census (slot -> id -> count):
+    slot 3  id 0    x2
+    slot 3  id 12   x2 <<<
+    slot 3  id 16   x2
+    slot 3  id 20   x1
+    slot 3  id 22   x1
+    slot 3  id 24   x2
+    slot 3  id 26   x3
+    slot 3  id 4096 x2
+    slot 3  id 32768 x1
+    slot 4  id 0    x39
+    slot 4  id 10   x2 <<<
+    slot 4  id 13   x1 <<<
+    slot 4  id 14   x2
+    slot 4  id 30   x1
+    slot 4  id 37   x1
+    slot 4  id 40   x2
+    slot 4  id 128  x1
+    slot 4  id 160  x1
+    slot 4  id 512  x1
+    slot 4  id 1024 x1
+    slot 4  id 4294967295 x1
+
+  immediate ids in 7..13 at:
+    slot 3 id 12: ['0x1801E2288', '0x1801E240C']
+    slot 4 id 10: ['0x18022C2A2', '0x18022C529']
+    slot 4 id 13: ['0x1801AB235']
+
+  non-immediate id sites: 1337 total
+    0x180003ACF slot2 far   None (def @ ?)
+    0x180003E9A slot2 far   None (def @ ?)
+    0x1800044B2 slot4 far   None (def @ ?)
+    0x180004C1C slot2 far   None (def @ ?)
+    0x180004C31 slot2 far   None (def @ ?)
+    0x180005184 slot2 far   None (def @ ?)
+    0x1800052D5 slot2 far   None (def @ ?)
+    0x180005385 slot2 far   None (def @ ?)
+    0x18000544B slot2 far   None (def @ ?)
+    0x1800055DB slot4 far   None (def @ ?)
+    0x1800075D1 slot2 far   None (def @ ?)
+    0x180007657 slot2 far   None (def @ ?)
+    0x180007750 slot4 src   8 (def @ 0x180007742)
+    0x180007E44 slot4 src   [rsp + 0x40] (def @ 0x180007E35)
+    0x180008123 slot2 far   None (def @ ?)
+    0x1800081B0 slot2 src   qword ptr [rbx] (def @ 0x1800081AA)
+    0x18000891C slot2 far   None (def @ ?)
+    0x18000893D slot2 far   None (def @ ?)
+    0x180008FD7 slot2 far   None (def @ ?)
+    0x180009794 slot2 src   r12 (def @ 0x180009791)
+    0x180009DC9 slot3 far   None (def @ ?)
+    0x180009E06 slot4 src   [rbp + 0x40] (def @ 0x180009E00)
+    0x18000A0E0 slot2 far   None (def @ ?)
+    0x18000A130 slot2 far   None (def @ ?)
+    0x18000A485 slot3 src   [rsp + 0x50] (def @ 0x18000A47C)
+    0x18000A4F0 slot2 far   None (def @ ?)
+    0x18000A502 slot2 far   None (def @ ?)
+    0x18000A513 slot2 far   None (def @ ?)
+    0x18000A93F slot3 far   None (def @ ?)
+    0x18000BB0D slot3 src   [rsp + 0x50] (def @ 0x18000BB08)
+    0x18000C15A slot2 far   None (def @ ?)
+    0x18000C164 slot2 far   None (def @ ?)
+    0x18000C34E slot2 far   None (def @ ?)
+    0x18000C38E slot3 src   dword ptr [rbx + 0xd0] (def @ 0x18000C377)
+    0x18000C3DB slot4 far   None (def @ ?)
+    0x18000C45C slot2 src   rcx (def @ 0x18000C434)
+    0x18000C4FC slot2 far   None (def @ ?)
+    0x18000C50B slot2 far   None (def @ ?)
+    0x18000C552 slot2 far   None (def @ ?)
+    0x18000C59A slot4 far   None (def @ ?)
+
+===== (b) context dumps: strongest candidates =====
+--- site 0x180007750 (slot 4, id src 8) ---
+  0x180007710  add      dword ptr [rax - 0x75], ecx                 
+  0x180007713  mov      word ptr [rax + rcx*4], fs                  
+  0x180007716  add      byte ptr [rax], al                          
+  0x180007718  add      byte ptr [rax - 0x7d], cl                   
+  0x18000771B  sal      eax, 0x8b                                   
+  0x18000771E  add      dword ptr [rax + 0xa9], edx                 
+  0x180007724  xor      byte ptr [rbp + 0x11], dh                   
+  0x180007727  mov      eax, edi                                    
+  0x180007729  lock xadd dword ptr [rcx], eax                        
+  0x18000772D  dec      eax                                         
+  0x18000772F  cmp      eax, edi                                    
+  0x180007731  jne      0x180007738                                 
+  0x180007733  call     0x18015e100                                 
+  0x180007738  mov      rcx, qword ptr [r13 + 0x340]                
+  0x18000773F  mov      rax, qword ptr [rcx]                        
+  0x180007742  mov      r8d, 8                                      
+  0x180007748  lea      rdx, [rsp + 0x98]                           
+  0x180007750  call     qword ptr [rax + 0x20]                      
+  0x180007753  mov      r14, rax                                    
+  0x180007756  lea      rdx, [r13 + 0x114]                          
+  0x18000775D  .byte    0x48                                        
+  0x18000775E  .byte    0x8d                                        
+  0x18000775F  .byte    0x8c                                        
+
+--- site 0x180007E44 (slot 4, id src [rsp + 0x40]) ---
+  0x180007E04  mov      rax, qword ptr [rsp + 0x28]                 
+  0x180007E09  mov      rcx, qword ptr [rsp + 0x38]                 
+  0x180007E0E  mov      qword ptr [rsp + 0x28], rcx                 
+  0x180007E13  lea      rcx, [rax - 0x10]                           
+  0x180007E17  mov      eax, dword ptr [rcx]                        
+  0x180007E19  nop                                                  
+  0x180007E1A  test     eax, 0x30000000                             
+  0x180007E1F  jne      0x180007e32                                 
+  0x180007E21  mov      eax, edi                                    
+  0x180007E23  lock xadd dword ptr [rcx], eax                        
+  0x180007E27  dec      eax                                         
+  0x180007E29  cmp      eax, edi                                    
+  0x180007E2B  jne      0x180007e32                                 
+  0x180007E2D  call     0x18015e100                                 
+  0x180007E32  mov      rax, qword ptr [rbx]                        
+  0x180007E35  lea      r8, [rsp + 0x40]                            
+  0x180007E3A  lea      rdx, [rip + 0x385487]                         ; "channel color"
+  0x180007E41  mov      rcx, rbx                                    
+  0x180007E44  call     qword ptr [rax + 0x20]                      
+  0x180007E47  test     eax, eax                                    
+  0x180007E49  jne      0x180007e7a                                 
+  0x180007E4B  mov      rdx, qword ptr [rsp + 0x40]                 
+  0x180007E50  mov      r8d, edx                                    
+  0x180007E53  .byte    0x41                                        
+
+--- site 0x1800081B0 (slot 2, id src qword ptr [rbx]) ---
+  0x180008170  mov      rcx, rax                                    
+  0x180008173  call     r8                                          
+  0x180008176  mov      r8, qword ptr [rbx]                         
+  0x180008179  mov      rcx, rbx                                    
+  0x18000817C  call     qword ptr [r8 + 0x28]                       
+  0x180008180  mov      rcx, qword ptr [rax]                        
+  0x180008183  mov      r9, qword ptr [rcx + 0x18]                  
+  0x180008187  mov      r8, rbp                                     
+  0x18000818A  lea      rdx, [rip + 0x3e66af]                         ; "JuceVST3EditController"
+  0x180008191  mov      rcx, rax                                    
+  0x180008194  call     r9                                          
+  0x180008197  mov      rcx, qword ptr [rbp + 0x28]                 
+  0x18000819B  test     rcx, rcx                                    
+  0x18000819E  je       0x1800081aa                                 
+  0x1800081A0  mov      rax, qword ptr [rcx]                        
+  0x1800081A3  mov      rdx, rbx                                    
+  0x1800081A6  call     qword ptr [rax + 0x28]                      
+  0x1800081A9  nop                                                  
+  0x1800081AA  mov      rdx, qword ptr [rbx]                        
+  0x1800081AD  mov      rcx, rbx                                    
+  0x1800081B0  call     qword ptr [rdx + 0x10]                      
+  0x1800081B3  nop                                                  
+  0x1800081B4  mov      eax, esi                                    
+  0x1800081B6  jmp      0x1800081bd                                 
+  0x1800081B8  mov      eax, 1                                      
+  0x1800081BD  .byte    0x48                                        
+  0x1800081BE  .byte    0x8b                                        
+  0x1800081BF  pop      rsp                                         
+
+--- site 0x180009794 (slot 2, id src r12) ---
+  0x180009754  mov      rax, qword ptr [rcx + 8]                    
+  0x180009758  sub      rax, qword ptr [rcx]                        
+  0x18000975B  sar      rax, 3                                      
+  0x18000975F  jmp      0x180009763                                 
+  0x180009761  mov      eax, esi                                    
+  0x180009763  mov      dword ptr [r13 + 0xc0], eax                 
+  0x18000976A  mov      rcx, r13                                    
+  0x18000976D  call     0x1800097b0                                 
+  0x180009772  mov      dword ptr [rbp + 0x67], 0                   
+  0x180009779  mov      eax, dword ptr [rbp + 0x67]                 
+  0x18000977C  mov      dword ptr [rbp + 0x67], eax                 
+  0x18000977F  mov      byte ptr [rbp + 0x68], 1                    
+  0x180009783  lea      rcx, [r13 + 0x80]                           
+  0x18000978A  mov      rax, qword ptr [rcx]                        
+  0x18000978D  lea      r8, [rbp + 0x67]                            
+  0x180009791  mov      rdx, r12                                    
+  0x180009794  call     qword ptr [rax + 0x10]                      
+  0x180009797  movaps   xmm6, xmmword ptr [rsp + 0x70]              
+  0x18000979C  add      rsp, 0x88                                   
+  0x1800097A3  .byte    0x41                                        
+
+--- site 0x180009E06 (slot 4, id src [rbp + 0x40]) ---
+  0x180009DC6  mov      rax, qword ptr [rcx]                        
+  0x180009DC9  call     qword ptr [rax + 0x18]                      
+  0x180009DCC  mov      dword ptr [rbp - 0x80], eax                 
+  0x180009DCF  test     eax, eax                                    
+  0x180009DD1  jle      0x18000a14e                                 
+  0x180009DD7  lea      r15d, [r12 - 1]                             
+  0x180009DDC  nop      dword ptr [rax]                             
+  0x180009DE0  xor      edx, edx                                    
+  0x180009DE2  mov      r8d, 0x108                                  
+  0x180009DE8  lea      rcx, [rbp + 0x40]                           
+  0x180009DEC  call     0x180161700                                 
+  0x180009DF1  mov      qword ptr [rbp - 0x40], r12                 
+  0x180009DF5  mov      rcx, qword ptr [r14 + 0x10]                 
+  0x180009DF9  mov      rax, qword ptr [rcx]                        
+  0x180009DFC  lea      r9, [rbp - 0x40]                            
+  0x180009E00  lea      r8, [rbp + 0x40]                            
+  0x180009E04  mov      edx, ebx                                    
+  0x180009E06  call     qword ptr [rax + 0x20]                      
+  0x180009E09  mov      ecx, dword ptr [rbp + 0x144]                
+  0x180009E0F  mov      eax, ecx                                    
+  0x180009E11  and      eax, 0xa                                    
+  0x180009E14  cmp      al, 0xa                                     
+
+post-pass hash OK

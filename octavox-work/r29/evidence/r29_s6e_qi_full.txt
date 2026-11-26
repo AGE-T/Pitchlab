@@ -1,0 +1,236 @@
+===== (a) FULL processor qI 0x18000EC90..0x18000EF00 =====
+  0x18000EC90  push     rbp                                         
+  0x18000EC92  mov      rbp, rsp                                    
+  0x18000EC95  sub      rsp, 0x20                                   
+  0x18000EC99  mov      rax, qword ptr [r8]                         
+  0x18000EC9C  xor      r9d, r9d                                    
+  0x18000EC9F  cmp      rax, qword ptr [rip + 0x497482]               ; q=0x45AE156E22888DDB
+  0x18000ECA6  jne      0x18000ecc1                                 
+  0x18000ECA8  mov      rax, qword ptr [r8 + 8]                     
+  0x18000ECAC  cmp      rax, qword ptr [rip + 0x49747d]               ; f32=367300.09375
+  0x18000ECB3  jne      0x18000ecc1                                 
+  0x18000ECB5  lea      rax, [rip + 0x7254]                           ; f32=132653.125
+  0x18000ECBC  jmp      0x18000edf5                                 
+  0x18000ECC1  mov      rax, qword ptr [r8]                         
+  0x18000ECC4  cmp      rax, qword ptr [rip + 0x4bd3ed]             
+  0x18000ECCB  jne      0x18000ece6                                 
+  0x18000ECCD  mov      rax, qword ptr [r8 + 8]                     
+  0x18000ECD1  cmp      rax, qword ptr [rip + 0x4bd3e8]             
+  0x18000ECD8  jne      0x18000ece6                                 
+  0x18000ECDA  lea      rax, [rip + 0x722f]                           ; f32=132653.125
+  0x18000ECE1  jmp      0x18000edf5                                 
+  0x18000ECE6  mov      rax, qword ptr [r8]                         
+  0x18000ECE9  cmp      rax, qword ptr [rip + 0x4977f8]               ; q=0x4301F2D5E831FF31
+  0x18000ECF0  jne      0x18000ed0b                                 
+  0x18000ECF2  mov      rax, qword ptr [r8 + 8]                     
+  0x18000ECF6  cmp      rax, qword ptr [rip + 0x4977f3]               ; q=0x2786925EEBB8E92
+  0x18000ECFD  jne      0x18000ed0b                                 
+  0x18000ECFF  lea      rax, [rip + 0x720a]                           ; f32=132653.125
+  0x18000ED06  jmp      0x18000edf5                                 
+  0x18000ED0B  mov      rax, qword ptr [r8]                         
+  0x18000ED0E  cmp      rax, qword ptr [rip + 0x49778b]               ; f32=33.06210708618164
+  0x18000ED15  jne      0x18000ed3f                                 
+  0x18000ED17  mov      rax, qword ptr [r8 + 8]                     
+  0x18000ED1B  cmp      rax, qword ptr [rip + 0x497786]               ; q=0x3DC3AE9A9DE769A5
+  0x18000ED22  jne      0x18000ed3f                                 
+  0x18000ED24  test     rcx, rcx                                    
+  0x18000ED27  lea      rax, [rcx + 8]                              
+  0x18000ED2B  cmove    rax, r9                                     
+  0x18000ED2F  mov      qword ptr [rbp - 0x18], rax                 
+  0x18000ED33  lea      rax, [rip + 0x71d6]                           ; f32=132653.125
+  0x18000ED3A  jmp      0x18000edf9                                 
+  0x18000ED3F  mov      rax, qword ptr [r8]                         
+  0x18000ED42  cmp      rax, qword ptr [rip + 0x4974cf]               ; f32=0.04976530745625496
+  0x18000ED49  jne      0x18000ed73                                 
+  0x18000ED4B  mov      rax, qword ptr [r8 + 8]                     
+  0x18000ED4F  cmp      rax, qword ptr [rip + 0x4974ca]               ; f64=-79358298.22609961
+  0x18000ED56  jne      0x18000ed73                                 
+  0x18000ED58  test     rcx, rcx                                    
+  0x18000ED5B  lea      rax, [rcx + 0x10]                           
+  0x18000ED5F  cmove    rax, r9                                     
+  0x18000ED63  mov      qword ptr [rbp - 0x18], rax                 
+  0x18000ED67  lea      rax, [rip + 0x71a2]                           ; f32=132653.125
+  0x18000ED6E  jmp      0x18000edf9                                 
+  0x18000ED73  mov      rax, qword ptr [r8]                         
+  0x18000ED76  cmp      rax, qword ptr [rip + 0x497483]               ; f64=11.215686340360405
+  0x18000ED7D  jne      0x18000eda4                                 
+  0x18000ED7F  mov      rax, qword ptr [r8 + 8]                     
+  0x18000ED83  cmp      rax, qword ptr [rip + 0x49747e]               ; f32=-0.7834715843200684
+  0x18000ED8A  jne      0x18000eda4                                 
+  0x18000ED8C  test     rcx, rcx                                    
+  0x18000ED8F  lea      rax, [rcx + 0x18]                           
+  0x18000ED93  cmove    rax, r9                                     
+  0x18000ED97  mov      qword ptr [rbp - 0x18], rax                 
+  0x18000ED9B  lea      rax, [rip + 0x716e]                           ; f32=132653.125
+  0x18000EDA2  jmp      0x18000edf9                                 
+  0x18000EDA4  mov      rax, qword ptr [r8]                         
+  0x18000EDA7  cmp      rax, qword ptr [rip + 0x4977fa]               ; q=0x4E3DEF762A654303
+  0x18000EDAE  jne      0x18000edd5                                 
+  0x18000EDB0  mov      rax, qword ptr [r8 + 8]                     
+  0x18000EDB4  cmp      rax, qword ptr [rip + 0x4977f5]               ; q=0xD0F60E7383FEB595
+  0x18000EDBB  jne      0x18000edd5                                 
+  0x18000EDBD  test     rcx, rcx                                    
+  0x18000EDC0  lea      rax, [rcx + 0x20]                           
+  0x18000EDC4  cmove    rax, r9                                     
+  0x18000EDC8  mov      qword ptr [rbp - 0x18], rax                 
+  0x18000EDCC  lea      rax, [rip + 0x713d]                           ; f32=132653.125
+  0x18000EDD3  jmp      0x18000edf9                                 
+  0x18000EDD5  mov      rax, qword ptr [r8]                         
+  0x18000EDD8  cmp      rax, qword ptr [rip + 0x497541]               ; q=0x0
+  0x18000EDDF  jne      0x18000ee23                                 
+  0x18000EDE1  mov      rax, qword ptr [r8 + 8]                     
+  0x18000EDE5  cmp      rax, qword ptr [rip + 0x49753c]               ; q=0x46000000000000C0
+  0x18000EDEC  jne      0x18000ee23                                 
+  0x18000EDEE  lea      rax, [rip + 0x711b]                           ; f32=132653.125
+  0x18000EDF5  mov      qword ptr [rbp - 0x18], rcx                 
+  0x18000EDF9  mov      qword ptr [rbp - 0x10], rax                 
+  0x18000EDFD  movsd    xmm1, qword ptr [rbp - 0x10]                
+  0x18000EE02  mov      dword ptr [rbp - 0x20], r9d                 
+  0x18000EE06  movups   xmm0, xmmword ptr [rbp - 0x20]              
+  0x18000EE0A  movd     eax, xmm0                                   
+  0x18000EE0E  test     eax, eax                                    
+  0x18000EE10  jne      0x18000ee23                                 
+  0x18000EE12  movups   xmmword ptr [rdx], xmm0                     
+  0x18000EE15  mov      rax, rdx                                    
+  0x18000EE18  movsd    qword ptr [rdx + 0x10], xmm1                
+  0x18000EE1D  add      rsp, 0x20                                   
+  0x18000EE21  pop      rbp                                         
+  0x18000EE22  ret                                                  
+  0x18000EE23  mov      rax, qword ptr [r8]                         
+  0x18000EE26  cmp      rax, qword ptr [rip + 0x49789b]               ; q=0xEF01ABCD0101ABAB
+  0x18000EE2D  jne      0x18000ee5b                                 
+  0x18000EE2F  mov      rax, qword ptr [r8 + 8]                     
+  0x18000EE33  cmp      rax, qword ptr [rip + 0x497896]               ; q=0x5774634F65646954
+  0x18000EE3A  jne      0x18000ee5b                                 
+  0x18000EE3C  mov      rax, qword ptr [rcx + 0x48]                 
+  0x18000EE40  mov      qword ptr [rdx + 8], rax                    
+  0x18000EE44  lea      rax, [rip + 0x70c5]                           ; f32=132653.125
+  0x18000EE4B  mov      dword ptr [rdx], r9d                        
+  0x18000EE4E  mov      qword ptr [rdx + 0x10], rax                 
+  0x18000EE52  mov      rax, rdx                                    
+  0x18000EE55  add      rsp, 0x20                                   
+  0x18000EE59  pop      rbp                                         
+  0x18000EE5A  ret                                                  
+  0x18000EE5B  mov      qword ptr [rdx], 1                          
+  0x18000EE62  mov      rax, rdx                                    
+  0x18000EE65  mov      qword ptr [rdx + 8], r9                     
+  0x18000EE69  mov      qword ptr [rdx + 0x10], r9                  
+  0x18000EE6D  add      rsp, 0x20                                   
+  0x18000EE71  pop      rbp                                         
+  0x18000EE72  ret                                                  
+  0x18000EE73  int3                                                 
+  0x18000EE74  int3                                                 
+  0x18000EE75  int3                                                 
+  0x18000EE76  int3                                                 
+  0x18000EE77  int3                                                 
+  0x18000EE78  int3                                                 
+  0x18000EE79  int3                                                 
+  0x18000EE7A  int3                                                 
+  0x18000EE7B  int3                                                 
+  0x18000EE7C  int3                                                 
+  0x18000EE7D  int3                                                 
+  0x18000EE7E  int3                                                 
+  0x18000EE7F  int3                                                 
+  0x18000EE80  mov      rdx, qword ptr [rcx]                        
+  0x18000EE83  test     rdx, rdx                                    
+  0x18000EE86  je       0x18000ee90                                 
+  0x18000EE88  xor      eax, eax                                    
+  0x18000EE8A  xchg     byte ptr [rdx + 0x6261], al                 
+  0x18000EE90  ret                                                  
+  0x18000EE91  int3                                                 
+  0x18000EE92  int3                                                 
+  0x18000EE93  int3                                                 
+  0x18000EE94  int3                                                 
+  0x18000EE95  int3                                                 
+  0x18000EE96  int3                                                 
+  0x18000EE97  int3                                                 
+  0x18000EE98  int3                                                 
+  0x18000EE99  int3                                                 
+  0x18000EE9A  int3                                                 
+  0x18000EE9B  int3                                                 
+  0x18000EE9C  int3                                                 
+  0x18000EE9D  int3                                                 
+  0x18000EE9E  int3                                                 
+  0x18000EE9F  int3                                                 
+  0x18000EEA0  mov      eax, 0x7ff                                  
+  0x18000EEA5  ret                                                  
+  0x18000EEA6  int3                                                 
+  0x18000EEA7  int3                                                 
+  0x18000EEA8  int3                                                 
+  0x18000EEA9  int3                                                 
+  0x18000EEAA  int3                                                 
+  0x18000EEAB  int3                                                 
+  0x18000EEAC  int3                                                 
+  0x18000EEAD  int3                                                 
+  0x18000EEAE  int3                                                 
+  0x18000EEAF  int3                                                 
+  0x18000EEB0  mov      qword ptr [rsp + 0x10], rbx                 
+  0x18000EEB5  mov      qword ptr [rsp + 0x18], rbp                 
+  0x18000EEBA  mov      qword ptr [rsp + 0x20], rsi                 
+  0x18000EEBF  mov      qword ptr [rsp + 8], rcx                    
+  0x18000EEC4  push     rdi                                         
+  0x18000EEC5  push     r12                                         
+  0x18000EEC7  push     r13                                         
+  0x18000EEC9  push     r14                                         
+  0x18000EECB  push     r15                                         
+  0x18000EECD  sub      rsp, 0x20                                   
+  0x18000EED1  mov      r14, r8                                     
+  0x18000EED4  mov      rsi, rdx                                    
+  0x18000EED7  mov      r15, qword ptr [rip + 0x4bd88a]             
+  0x18000EEDE  test     r8, r8                                      
+  0x18000EEE1  jne      0x18000eeea                                 
+  0x18000EEE3  xor      al, al                                      
+  0x18000EEE5  jmp      0x18000f1b1                                 
+  0x18000EEEA  mov      ecx, 0x480                                  
+  0x18000EEEF  call     0x18015e63c                                 
+  0x18000EEF4  mov      rbp, rax                                    
+  0x18000EEF7  mov      rdx, rax                                    
+  0x18000EEFA  mov      rcx, rsi                                    
+  0x18000EEFD  .byte    0xbf                                        
+  0x18000EEFE  .byte    0x80                                        
+  0x18000EEFF  .byte    0x00                                        
+
+===== (b) the constant 0x180015F10 =====
+  0x180015F10  mov      rax, qword ptr [rcx]                        
+  0x180015F13  jmp      qword ptr [rax + 8]                         
+  0x180015F17  int3                                                 
+  0x180015F18  int3                                                 
+  0x180015F19  int3                                                 
+  0x180015F1A  int3                                                 
+  0x180015F1B  int3                                                 
+  0x180015F1C  int3                                                 
+  0x180015F1D  int3                                                 
+  0x180015F1E  int3                                                 
+  0x180015F1F  int3                                                 
+  0x180015F20  push     rbp                                         
+  0x180015F22  push     rsi                                         
+  0x180015F23  push     rdi                                         
+  0x180015F24  sub      rsp, 0x20                                   
+  0x180015F28  cmp      byte ptr [r8 + 0x19], 0                     
+  0x180015F2D  mov      rdi, r8                                     
+  0x180015F30  mov      rsi, rdx                                    
+  0x180015F33  mov      rbp, rcx                                    
+  0x180015F36  jne      0x180015fbe                                 
+  0x180015F3C  mov      qword ptr [rsp + 0x40], rbx                 
+  0x180015F41  mov      qword ptr [rsp + 0x48], r12                 
+  0x180015F46  lea      r12, [rip + 0x3d9693]                         ; q=0x180004220
+  0x180015F4D  mov      qword ptr [rsp + 0x50], r14                 
+  0x180015F52  lea      r14, [rip + 0x3d9ee7]                         ; q=0x180003BB0
+  0x180015F59  mov      qword ptr [rsp + 0x58], r15                 
+  0x180015F5E  xor      r15d, r15d                                  
+  0x180015F61  mov      r8, qword ptr [rdi + 0x10]                  
+  0x180015F65  mov      rdx, rsi                                    
+  0x180015F68  mov      rcx, rbp                                    
+  0x180015F6B  call     0x180015f20                                 
+
+===== (c) whole-image qword scan =====
+  qword 0x18000EC90 found at VAs: NOWHERE
+  qword 0x180015F10 found at VAs: NOWHERE
+  qword 0x18000EC90 found at VAs: NOWHERE
+
+===== (d) direct callers of 0x18000EC90 =====
+Traceback (most recent call last):
+  File "/home/z/my-project/octavox-work/r29/scripts/r29_s6e_qi_full.py", line 54, in <module>
+    for (site, fn) in scan_calls(pe, md, 0x18000EC90):
+        ^^^^^^^^^^
+ValueError: too many values to unpack (expected 2)

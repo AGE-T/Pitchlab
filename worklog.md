@@ -698,3 +698,44 @@ after every sandbox-restart recovery too).**
   nothing was lost (push-first); evidence survived via the /tmp mirror; hash
   re-verified after each recovery. Remote owner line (diverged main) untouched;
   token stored outside the repo, never committed.
+
+---
+
+## ROUND 29 DELIVERY (2026-11-26) — HOST COM SURFACE & NON-IMMEDIATE ID CENSUS (static, R28-mandated hunts)
+
+**Core:** static continuation of the R26-R28 line — the two R28-defined
+hunts executed. 13 new probes (s6a..s6k, s7a, s7b) + r29_lib.
+**Original binary: never executed; hash verified pre+post every pass
+(incl. after the between-session sandbox reset recovery).**
+
+- **U-2 closed to the last hop:** TRUE export table {ExitDll,
+  GetPluginFactory @ 0x180194440, InitDll} (the s4f parser bug resolved);
+  JUCE 0x1F0 factory object; CIDs generated at runtime from "Octavox"
+  (no static class array — the R28 F4.3 dead end explained); processor
+  class = juce::JuceVST3Component (RTTI), 0x480-byte broker (ctor
+  0x18000BEF0) with six vtable views; 0x28A0 Eventide engine aggregated at
+  +0x38; DUAL-PATH qI (outer 0x18000C230: RTTI-walk aggregation first,
+  7-IID fallback 0x18000EC90 with {status, iface, addRef-fwd} struct-return
+  ABI; IAudioProcessor -> this+8; vendor "TideOctW" GUID at [this+0x48]).
+  The broker's +8 view is an 11-slot IComponent-shaped vtable — its +0x88
+  would return a vtable pointer as latency -> the fallback surface is
+  structurally non-viable; the host-facing IAudioProcessor is served by the
+  aggregation path. Residual = one hop (the walk-result slot-2 target).
+- **U-3 immediate surface exhausted (negative):** R28 missed the demux
+  argument shift (slot-3/4 sites carry the id in R8D) — now scanned across
+  all four slot shapes; every immediate id in 7..13 is a writer length
+  ('"; filename="'=13), stream-read length (12), or format parameter.
+  No genuine immediate id-12/13 m02 feed exists; 1337-site non-immediate
+  census delivered as the R30 narrowing base.
+- **New tooling:** spec-correct export parser; GUID matcher + whole-image
+  reference scan; adjustor-thunk mapper; RTTI COL walker (class names);
+  memory-safe detail=False+skipdata bulk disassembler (detail=True costs
+  ~600MB/MB-of-code -> OOM on full-.text).
+- **Deliverables:** OCTAVOX_R29_HOST_SURFACE_CLOSURE.md (root) +
+  octavox-work/r29/notes/R29_FRESH_FINDINGS.md (F1..F2, VAs) + 13 scripts +
+  13 evidence files; worklog R29 entry; web page R29-first section.
+- **Process:** the sandbox was RESET between the R28 and R29 sessions
+  (R24-era snapshot; R25-R28 work survived via the push-first remote branch
+  r26-28-static-audit @ 41c7628c). Recovery = fetch + git-object extract +
+  hash re-verify. Token outside the repo (~/.secrets, ~/.git-credentials,
+  600), never committed; local main untouched; remote owner line untouched.

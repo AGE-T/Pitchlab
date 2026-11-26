@@ -1,0 +1,232 @@
+===== (a) all SDK-IID reference sites in .text (single streaming pass) =====
+  IPluginFactory     rip-refs: ['0x18000F253->0x1804A6140', '0x18000F260->0x1804A6148']
+                     movabs : NONE
+  IPluginFactory2    rip-refs: ['0x18000F231->0x1804A6308', '0x18000F23E->0x1804A6310']
+                     movabs : NONE
+  IPluginFactory3    rip-refs: ['0x18000F20F->0x1804A6410', '0x18000F21C->0x1804A6418']
+                     movabs : NONE
+  IPluginBase        rip-refs: ['0x1800048F3->0x1804A6128', '0x1800048FC->0x1804A6130', '0x180008E80->0x1804A6128', '0x180008E8D->0x1804A6130', '0x18000EC9F->0x1804A6128', '0x18000ECAC->0x1804A6130']
+                     movabs : NONE
+  IComponent         rip-refs: ['0x18000ECE9->0x1804A64E8', '0x18000ECF6->0x1804A64F0']
+                     movabs : NONE
+  IAudioProcessor    rip-refs: ['0x18000ED0E->0x1804A64A0', '0x18000ED1B->0x1804A64A8']
+                     movabs : NONE
+
+===== (b) FULL GetPluginFactory 0x180194440 =====
+--- GetPluginFactory  (fn 0x180194440..0x18019445E) ---
+  0x180194440  sub      rsp, 0x28                                   
+  0x180194444  mov      rcx, qword ptr [rip + 0x33831d]             
+  0x18019444B  mov      dword ptr [rip + 0x337c03], 2               
+  0x180194455  test     rcx, rcx                                    
+  0x180194458  jne      0x180194606                                 
+
+===== (c) .data registry region 0x1804A6100..0x1804A6520 =====
+  0x1804A6100: 0x000000018039B334 str "-13th"
+  0x1804A6108: 0x000000018039B954 str "-14th"
+  0x1804A6110: 0x0000000180399B5C str "-2 oct"
+  0x1804A6118: 0x0000000000000000 
+  0x1804A6120: 0x00000001803EEF98 
+  0x1804A6128: 0x45AE156E22888DDB 
+  0x1804A6130: 0x2506190848B35883 
+  0x1804A6138: 0x00000001803EEF98 
+  0x1804A6140: 0x4A1F52117A4D811C 
+  0x1804A6148: 0x9FBF430BEED2D9AE 
+  0x1804A6150: 0x00000001803EEF98 
+  0x1804A6158: 0x47523099C3BF6EA2 
+  0x1804A6160: 0x9B3EE31E90F96B9B 
+  0x1804A6168: 0x00000001803EEF98 
+  0x1804A6170: 0x466949B7DF0FF9F7 
+  0x1804A6178: 0xE5F5DB7A32B73AB6 
+  0x1804A6180: 0x00000001803EEF98 
+  0x1804A6188: 0x4969DB2D58E595CC 
+  0x1804A6190: 0xE564A6368CAF6A8B 
+  0x1804A6198: 0x00000001803EEF98 
+  0x1804A61A0: 0x4A560BB6A4779663 
+  0x1804A61A8: 0x9DEB6F46A88443B4 
+  0x1804A61B0: 0x00000001803EEF98 
+  0x1804A61B8: 0x43AC7B83C7C75364 
+  0x1804A61C0: 0xC7465A3E0A5B49A4 
+  0x1804A61C8: 0x00000001803EEF98 
+  0x1804A61D0: 0x274D5B4E067D02C1 
+  0x1804A61D8: 0x4072AF6EFD902DA9 
+  0x1804A61E0: 0x00000001803EEF98 
+  0x1804A61E8: 0x4FAEEB7D309ECE78 
+  0x1804A61F0: 0xB608FD09D925228B 
+  0x1804A61F8: 0x00000001803EEF98 
+  0x1804A6200: 0x40266E6E70A4156F 
+  0x1804A6208: 0xD1D860AABF489198 
+  0x1804A6210: 0x00000001803EEF98 
+  0x1804A6218: 0x4FD2913A3D4BD6B5 
+  0x1804A6220: 0xC192EBA568E786A8 
+  0x1804A6228: 0x00000001803EEF98 
+  0x1804A6230: 0x49FE34633A2C4214 
+  0x1804A6238: 0x445A69B997F3C4B2 
+  0x1804A6240: 0x00000001803EEF98 
+  0x1804A6248: 0x47DBC6C0936F033B 
+  0x1804A6250: 0x13E6C113F88208BB 
+  0x1804A6258: 0x00000001803EEF98 
+  0x1804A6260: 0x48724123B7F8F859 
+  0x1804A6268: 0xA321374F81951691 
+  0x1804A6270: 0x00000001803EEF98 
+  0x1804A6278: 0x4DC448C3A81A0471 
+  0x1804A6280: 0xD593833CE1C930AC 
+  0x1804A6288: 0x00000001803EEF98 
+  0x1804A6290: 0x45DB0BD093A0BEA3 
+  0x1804A6298: 0xC66AE4C10C0B898E 
+  0x1804A62A0: 0x00000001803EEF98 
+  0x1804A62A8: 0x4E0F9EAA4FB58B9E 
+  0x1804A62B0: 0xEA6FB5CC1C1C36AB 
+  0x1804A62B8: 0x00000001803EEF98 
+  0x1804A62C0: 0x4AC894D2B03078FF 
+  0x1804A62C8: 0x243313D403D3CC90 
+  0x1804A62D0: 0x00000001803EEF98 
+  0x1804A62D8: 0x416DDE72F52B7AAE 
+  0x1804A62E0: 0x5EBDD79DCE8AF18A 
+  0x1804A62E8: 0x00000001803EEF98 
+  0x1804A62F0: 0x49EAD0605BC32507 
+  0x1804A62F8: 0x295B752B521B15A6 
+  0x1804A6300: 0x00000001803EEF98 
+  0x1804A6308: 0x4C0BF24B0007B650 
+  0x1804A6310: 0xBB2A0BF0B9ED64A4 
+  0x1804A6318: 0x00000001803EEF98 
+  0x1804A6320: 0x0000000000000000 
+  0x1804A6328: 0x46000000000000C0 
+  0x1804A6330: 0x00000001803EEF98 
+  0x1804A6338: 0x0000000000000000 
+  0x1804A6340: 0x0000000000000000 
+  0x1804A6348: 0x00000001803EEF98 
+  0x1804A6350: 0x4B96BFFB1F2F76D3 
+  0x1804A6358: 0xF4CEBC5EA52795B9 
+  0x1804A6360: 0x00000001803EEF98 
+  0x1804A6368: 0x4533CC7F1E5F0AEB 
+  0x1804A6370: 0xE45EAD38114054A2 
+  0x1804A6378: 0x00000001803EEF98 
+  0x1804A6380: 0x48210FC1F99DB7A3 
+  0x1804A6388: 0xDF8E348EF90C0B80 
+  0x1804A6390: 0x00000001803EEF98 
+  0x1804A6398: 0x624260C56D319DC6 
+  0x1804A63A0: 0xC6F4BE931B952CB3 
+  0x1804A63A8: 0x00000001803EEF98 
+  0x1804A63B0: 0x46B9E9308AE54FDA 
+  0x1804A63B8: 0x1EE298DCBC5585A2 
+  0x1804A63C0: 0x00000001803EEF98 
+  0x1804A63C8: 0x47E21D1C29633AEC 
+  0x1804A63D0: 0x61AC6ED37BB985BB 
+  0x1804A63D8: 0x00000001803EEF98 
+  0x1804A63E0: 0x46F5CA6DFA1E32F9 
+  0x1804A63E8: 0x581B19B156F982A9 
+  0x1804A63F0: 0x00000001803EEF98 
+  0x1804A63F8: 0x415E68DF0CE5743D 
+  0x1804A6400: 0xFDC8CDE2D45B28AE 
+  0x1804A6408: 0x00000001803EEF98 
+  0x1804A6410: 0x4E57C1234555A2AB 
+  0x1804A6418: 0x318987361029129B 
+  0x1804A6420: 0x00000001803EEF98 
+  0x1804A6428: 0x4E6EE02F04F9549E 
+  0x1804A6430: 0x7FE1F447876AE887 
+  0x1804A6438: 0x00000001803EEF98 
+  0x1804A6440: 0x486B46544B5147F8 
+  0x1804A6448: 0x563C3A16BA30AB8D 
+  0x1804A6450: 0x00000001803EEF98 
+  0x1804A6458: 0x49DB8720550798BC 
+  0x1804A6460: 0xA8B7503B150A9284 
+  0x1804A6468: 0x00000001803EEF98 
+  0x1804A6470: 0x4E1D46C9ADE6FCC4 
+  0x1804A6478: 0xDDEF3FC9809AB4B3 
+  0x1804A6480: 0x00000001803EEF98 
+  0x1804A6488: 0x4BF942CF44149067 
+  0x1804A6490: 0xE39F35F750B70088 
+  0x1804A6498: 0x00000001803EEF98 
+  0x1804A64A0: 0x453CB7DA42043F99 
+  0x1804A64A8: 0x3DC3AE9A9DE769A5 
+  0x1804A64B0: 0x00000001803EEF98 
+  0x1804A64B8: 0x4688C095A3B8C6C5 
+  0x1804A64C0: 0x44AA97B60B6F91B0 
+  0x1804A64C8: 0x00000001803EEF98 
+  0x1804A64D0: 0x455DD3916C389611 
+  0x1804A64D8: 0xDDEFA09433B870B8 
+  0x1804A64E0: 0x00000001803EEF98 
+  0x1804A64E8: 0x4301F2D5E831FF31 
+  0x1804A64F0: 0x02786925EEBB8E92 
+  0x1804A64F8: 0x00000001803EEF98 
+  0x1804A6500: 0x9D4B91196D21E1DC 
+  0x1804A6508: 0x5CE51A6CEF2FA0A2 
+  0x1804A6510: 0x00000001803EEF98 
+  0x1804A6518: 0x400DD26B69F11617 
+
+===== (d) CID-by-index 0x18030A010 =====
+--- CID-by-index  (fn 0x18030A010..0x18030A110) ---
+  0x18030A010  mov      qword ptr [rsp + 0x18], rbx                 
+  0x18030A015  push     rbp                                         
+  0x18030A016  push     rsi                                         
+  0x18030A017  push     rdi                                         
+  0x18030A018  lea      rbp, [rsp - 0x47]                           
+  0x18030A01D  sub      rsp, 0xf0                                   
+  0x18030A024  mov      rax, qword ptr [rip + 0x19b015]               ; "2��-�+"
+  0x18030A02B  xor      rax, rsp                                    
+  0x18030A02E  mov      qword ptr [rbp + 0x37], rax                 
+  0x18030A032  xor      eax, eax                                    
+  0x18030A034  lea      r8, [rip + 0x91255]                           ; "%06X"
+  0x18030A03B  test     cl, cl                                      
+  0x18030A03D  mov      dword ptr [rbp - 9], eax                    
+  0x18030A040  mov      word ptr [rbp - 5], ax                      
+  0x18030A044  lea      rcx, [rbp - 9]                              
+  0x18030A048  mov      byte ptr [rbp - 3], al                      
+  0x18030A04B  mov      r9d, 0x54                                   
+  0x18030A051  mov      eax, 0x45                                   
+  0x18030A056  mov      rdi, rdx                                    
+  0x18030A059  cmovne   r9d, eax                                    
+  0x18030A05D  or       r9d, 0x565300                               
+  0x18030A064  lea      edx, [rax - 0x3e]                           
+  0x18030A067  call     0x1800185a0                                 
+  0x18030A06C  lea      r8, [rbp - 9]                               
+  0x18030A070  mov      edx, 0x21                                   
+  0x18030A075  lea      rcx, [rbp + 0xf]                            
+  0x18030A079  call     0x18017d204                                 
+  0x18030A07E  xor      eax, eax                                    
+  0x18030A080  lea      r8, [rip + 0x91201]                           ; "%08X"
+  0x18030A087  mov      r9d, 0x4f637457                             
+  0x18030A08D  mov      qword ptr [rbp - 1], rax                    
+  0x18030A091  lea      rcx, [rbp - 1]                              
+  0x18030A095  mov      byte ptr [rbp + 7], al                      
+  0x18030A098  lea      edx, [rax + 9]                              
+  0x18030A09B  call     0x1800185a0                                 
+  0x18030A0A0  lea      r8, [rbp - 1]                               
+  0x18030A0A4  mov      edx, 0x21                                   
+  0x18030A0A9  lea      rcx, [rbp + 0xf]                            
+  0x18030A0AD  call     0x18017d264                                 
+  0x18030A0B2  xor      eax, eax                                    
+  0x18030A0B4  lea      rsi, [rip + 0x9121d]                          ; "Octavox"
+  0x18030A0BB  mov      word ptr [rbp - 0x39], ax                   
+  0x18030A0BF  xor      ebx, ebx                                    
+  0x18030A0C1  mov      byte ptr [rbp - 0x37], al                   
+  0x18030A0C4  cmp      rbx, 7                                      
+  0x18030A0C8  jae      0x18030a0da                                 
+  0x18030A0CA  movzx    eax, byte ptr [rbx + rsi]                   
+  0x18030A0CE  lea      ecx, [rax - 0x41]                           
+  0x18030A0D1  cmp      cl, 0x19                                    
+  0x18030A0D4  ja       0x18030a0dc                                 
+  0x18030A0D6  add      al, 0x20                                    
+  0x18030A0D8  jmp      0x18030a0dc                                 
+  0x18030A0DA  xor      al, al                                      
+  0x18030A0DC  movzx    r9d, al                                     
+  0x18030A0E0  lea      r8, [rip + 0x911e9]                           ; "%02X"
+  0x18030A0E7  mov      edx, 3                                      
+  0x18030A0EC  lea      rcx, [rbp - 0x39]                           
+  0x18030A0F0  call     0x1800185a0                                 
+  0x18030A0F5  lea      r8, [rbp - 0x39]                            
+  0x18030A0F9  mov      edx, 0x21                                   
+  0x18030A0FE  lea      rcx, [rbp + 0xf]                            
+  0x18030A102  call     0x18017d264                                 
+  0x18030A107  inc      rbx                                         
+  0x18030A10A  cmp      rbx, 8                                      
+  0x18030A10E  jbe      0x18030a0c4                                 
+
+===== (e) createInstance slot 0x180016EA0 =====
+Traceback (most recent call last):
+  File "/home/z/my-project/octavox-work/r29/scripts/r29_s6b_comlatency.py", line 66, in <module>
+    dump_fn(0x180016EA0, 'createInstance', 0x100)
+  File "/home/z/my-project/octavox-work/r29/scripts/r29_s6b_comlatency.py", line 31, in dump_fn
+    lo, hi = fn_bounds(va)
+    ^^^^^^
+TypeError: cannot unpack non-iterable NoneType object

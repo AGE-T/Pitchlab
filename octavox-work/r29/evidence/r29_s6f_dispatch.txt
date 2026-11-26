@@ -1,0 +1,91 @@
+===== (a) direct callers =====
+--- target 0x18000EC90 ---
+  call/jmp at 0x18000C29F  (fn 0x18000C230..0x18000C31A)
+  call/jmp at 0x18000C2C9  (fn 0x18000C230..0x18000C31A)
+--- target 0x180015F10 ---
+  (no direct call/jmp sites)
+
+===== (b) bare jmp rel32 thunks -> 0x18000EC90 =====
+  bare thunks: NONE
+
+===== (c) .rdata/.data qwords into the qI cluster 0x18000EC00..0x18000EF00 =====
+  [.rdata] 0x1803F0200: 0x18000EEA0
+      0x1803F01E0 (+-32): 0x1804178E0
+      0x1803F01E8 (+-24): 0x180016E40
+      0x1803F01F0 (+-16): 0x180016DD8
+      0x1803F01F8 (+-8): 0x180016E94
+      0x1803F0200 (+0): 0x18000EEA0
+      0x1803F0208 (+8): 0x1804185C0
+      0x1803F0210 (+16): 0x180016D30
+      0x1803F0218 (+24): 0x18000DDF0
+      0x1803F0220 (+32): 0x1800055F0
+
+===== (d) caller contexts =====
+--- fn 0x18000C230..0x18000C31A (caller of the qI) ---
+  0x18000C230  mov      qword ptr [rsp + 0x10], rbx                 
+  0x18000C235  mov      qword ptr [rsp + 0x18], rsi                 
+  0x18000C23A  push     rdi                                         
+  0x18000C23B  sub      rsp, 0x50                                   
+  0x18000C23F  mov      rdi, rcx                                    
+  0x18000C242  mov      rbx, r8                                     
+  0x18000C245  mov      rcx, qword ptr [rcx + 0x38]                 
+  0x18000C249  mov      rsi, rdx                                    
+  0x18000C24C  test     rcx, rcx                                    
+  0x18000C24F  je       0x18000c2be                                 
+  0x18000C251  lea      r9, [rip + 0x4ab188]                          ; q=0x18037FE80
+  0x18000C258  mov      qword ptr [rsp + 0x60], 0                   
+  0x18000C261  lea      r8, [rip + 0x4ab1e0]                          ; q=0x18037FE80
+  0x18000C268  mov      dword ptr [rsp + 0x20], 0                   
+  0x18000C270  xor      edx, edx                                    
+  0x18000C272  call     0x180160d5c                                 
+  0x18000C277  test     rax, rax                                    
+  0x18000C27A  je       0x18000c2be                                 
+  0x18000C27C  lea      r8, [rsp + 0x60]                            
+  0x18000C281  mov      rdx, rsi                                    
+  0x18000C284  mov      rcx, rax                                    
+  0x18000C287  call     0x180016e14                                 
+  0x18000C28C  mov      r11, qword ptr [rsp + 0x60]                 
+  0x18000C291  lea      rdx, [rsp + 0x30]                           
+  0x18000C296  mov      r8, rsi                                     
+  0x18000C299  mov      rcx, rdi                                    
+  0x18000C29C  mov      r10d, eax                                   
+  0x18000C29F  call     0x18000ec90                                 
+  0x18000C2A4  test     r10d, r10d                                  
+  0x18000C2A7  jne      0x18000c2ce                                 
+  0x18000C2A9  mov      qword ptr [rbx], r11                        
+  0x18000C2AC  xor      eax, eax                                    
+  0x18000C2AE  mov      rbx, qword ptr [rsp + 0x68]                 
+  0x18000C2B3  mov      rsi, qword ptr [rsp + 0x70]                 
+  0x18000C2B8  add      rsp, 0x50                                   
+  0x18000C2BC  pop      rdi                                         
+  0x18000C2BD  ret                                                  
+  0x18000C2BE  mov      r8, rsi                                     
+  0x18000C2C1  lea      rdx, [rsp + 0x30]                           
+  0x18000C2C6  mov      rcx, rdi                                    
+  0x18000C2C9  call     0x18000ec90                                 
+  0x18000C2CE  mov      edi, dword ptr [rsp + 0x30]                 
+  0x18000C2D2  test     edi, edi                                    
+  0x18000C2D4  jne      0x18000c301                                 
+  0x18000C2D6  mov      rax, qword ptr [rsp + 0x40]                 
+  0x18000C2DB  mov      rcx, qword ptr [rsp + 0x38]                 
+  0x18000C2E0  mov      qword ptr [rbx], rcx                        
+  0x18000C2E3  test     rax, rax                                    
+  0x18000C2E6  je       0x18000c308                                 
+  0x18000C2E8  test     rcx, rcx                                    
+  0x18000C2EB  je       0x18000c308                                 
+  0x18000C2ED  call     rax                                         
+  0x18000C2EF  mov      eax, edi                                    
+  0x18000C2F1  mov      rbx, qword ptr [rsp + 0x68]                 
+  0x18000C2F6  mov      rsi, qword ptr [rsp + 0x70]                 
+  0x18000C2FB  add      rsp, 0x50                                   
+  0x18000C2FF  pop      rdi                                         
+  0x18000C300  ret                                                  
+  0x18000C301  mov      qword ptr [rbx], 0                          
+  0x18000C308  mov      rbx, qword ptr [rsp + 0x68]                 
+  0x18000C30D  mov      eax, edi                                    
+  0x18000C30F  mov      rsi, qword ptr [rsp + 0x70]                 
+  0x18000C314  add      rsp, 0x50                                   
+  0x18000C318  pop      rdi                                         
+  0x18000C319  ret                                                  
+
+post-pass hash OK

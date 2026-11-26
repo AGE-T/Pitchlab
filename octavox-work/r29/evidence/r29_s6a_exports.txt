@@ -1,0 +1,155 @@
+===== (a) export directory, spec-correct parse =====
+  ExitDll                  ord#0   VA 0x180194B70  [.text]
+  GetPluginFactory         ord#1   VA 0x180194440  [.text]
+  InitDll                  ord#2   VA 0x180194B80  [.text]
+  (total named exports: 3)
+
+===== (b) TRUE GetPluginFactory body @ 0x180194440 =====
+  0x180194440  sub      rsp, 0x28                                   
+  0x180194444  mov      rcx, qword ptr [rip + 0x33831d]             
+  0x18019444B  mov      dword ptr [rip + 0x337c03], 2               
+  0x180194455  test     rcx, rcx                                    
+  0x180194458  jne      0x180194606                                 
+  0x18019445E  mov      qword ptr [rsp + 0x30], rbx                 
+  0x180194463  mov      ecx, 0x1f0                                  
+  0x180194468  mov      qword ptr [rsp + 0x38], rbp                 
+  0x18019446D  mov      qword ptr [rsp + 0x40], rsi                 
+  0x180194472  mov      qword ptr [rsp + 0x48], rdi                 
+  0x180194477  mov      qword ptr [rsp + 0x20], r14                 
+  0x18019447C  call     0x18015e63c                                 
+  0x180194481  mov      rsi, rax                                    
+  0x180194484  lea      r8, [rip + 0x25a355]                          ; "Eventide"
+  0x18019448B  lea      rax, [rip + 0x25a4b6]                         ; q=0x18000F200
+  0x180194492  mov      ebx, 0x40                                   
+  0x180194497  mov      edx, ebx                                    
+  0x180194499  lea      rbp, [rsi + 0xc]                            
+  0x18019449D  mov      qword ptr [rsi], rax                        
+  0x1801944A0  mov      rcx, rbp                                    
+  0x1801944A3  mov      dword ptr [rsi + 8], 1                      
+  0x1801944AA  sub      r8, rbp                                     
+  0x1801944AD  nop      dword ptr [rax]                             
+  0x1801944B0  movzx    eax, byte ptr [r8 + rcx]                    
+  0x1801944B5  mov      byte ptr [rcx], al                          
+  0x1801944B7  inc      rcx                                         
+  0x1801944BA  dec      edx                                         
+  0x1801944BC  test     al, al                                      
+  0x1801944BE  je       0x1801944c6                                 
+
+===== (c) factory ctor 0x180194BB0 (F4.2 candidate) =====
+  0x180194BB0  push     rbx                                         
+  0x180194BB2  sub      rsp, 0x40                                   
+  0x180194BB6  mov      rax, qword ptr [rip + 0x310483]               ; "2��-�+"
+  0x180194BBD  xor      rax, rsp                                    
+  0x180194BC0  mov      qword ptr [rsp + 0x30], rax                 
+  0x180194BC5  movzx    r8d, dl                                     
+  0x180194BC9  mov      rbx, rcx                                    
+  0x180194BCC  movzx    ecx, r8b                                    
+  0x180194BD0  lea      rdx, [rsp + 0x20]                           
+  0x180194BD5  call     0x18030a010                                 
+  0x180194BDA  movups   xmm0, xmmword ptr [rsp + 0x20]              
+  0x180194BDF  lea      rax, [rip + 0x25a3b2]                         ; q=0x180003A90
+  0x180194BE6  mov      qword ptr [rbx], rax                        
+  0x180194BE9  mov      rax, rbx                                    
+  0x180194BEC  movups   xmmword ptr [rbx + 8], xmm0                 
+  0x180194BF0  mov      rcx, qword ptr [rsp + 0x30]                 
+  0x180194BF5  xor      rcx, rsp                                    
+  0x180194BF8  call     0x18015e0e0                                 
+  0x180194BFD  add      rsp, 0x40                                   
+  0x180194C01  pop      rbx                                         
+  0x180194C02  ret                                                  
+  0x180194C03  int3                                                 
+  0x180194C04  int3                                                 
+  0x180194C05  int3                                                 
+  0x180194C06  int3                                                 
+  0x180194C07  int3                                                 
+  0x180194C08  int3                                                 
+  0x180194C09  int3                                                 
+  0x180194C0A  int3                                                 
+  0x180194C0B  int3                                                 
+  0x180194C0C  int3                                                 
+  0x180194C0D  int3                                                 
+  0x180194C0E  int3                                                 
+  0x180194C0F  int3                                                 
+  0x180194C10  mov      rax, rdx                                    
+  0x180194C13  ret                                                  
+  0x180194C14  int3                                                 
+  0x180194C15  int3                                                 
+  0x180194C16  int3                                                 
+  0x180194C17  int3                                                 
+  0x180194C18  int3                                                 
+  0x180194C19  int3                                                 
+  0x180194C1A  int3                                                 
+  0x180194C1B  int3                                                 
+  0x180194C1C  int3                                                 
+  0x180194C1D  int3                                                 
+  0x180194C1E  int3                                                 
+  0x180194C1F  int3                                                 
+  0x180194C20  mov      rax, rcx                                    
+  0x180194C23  ret                                                  
+  0x180194C24  int3                                                 
+  0x180194C25  int3                                                 
+  0x180194C26  int3                                                 
+  0x180194C27  int3                                                 
+  0x180194C28  int3                                                 
+  0x180194C29  int3                                                 
+  0x180194C2A  int3                                                 
+  0x180194C2B  int3                                                 
+  0x180194C2C  int3                                                 
+  0x180194C2D  int3                                                 
+  0x180194C2E  int3                                                 
+  0x180194C2F  int3                                                 
+  0x180194C30  mov      rax, qword ptr [rcx + 0x10]                 
+  0x180194C34  ret                                                  
+  0x180194C35  int3                                                 
+  0x180194C36  int3                                                 
+  0x180194C37  int3                                                 
+  0x180194C38  int3                                                 
+  0x180194C39  int3                                                 
+  0x180194C3A  int3                                                 
+  0x180194C3B  int3                                                 
+  0x180194C3C  int3                                                 
+  0x180194C3D  int3                                                 
+  0x180194C3E  int3                                                 
+  0x180194C3F  int3                                                 
+  0x180194C40  mov      rax, qword ptr [rcx + 0x10]                 
+  0x180194C44  ret                                                  
+  0x180194C45  int3                                                 
+  0x180194C46  int3                                                 
+  0x180194C47  int3                                                 
+  0x180194C48  int3                                                 
+  0x180194C49  int3                                                 
+  0x180194C4A  int3                                                 
+  0x180194C4B  int3                                                 
+  0x180194C4C  int3                                                 
+  0x180194C4D  int3                                                 
+  0x180194C4E  int3                                                 
+  0x180194C4F  int3                                                 
+  0x180194C50  mov      qword ptr [rsp + 8], rbx                    
+  0x180194C55  push     rdi                                         
+  0x180194C56  sub      rsp, 0x40                                   
+  0x180194C5A  movaps   xmmword ptr [rsp + 0x30], xmm6              
+  0x180194C5F  .byte    0x0f                                        
+
+===== (d) factory vtable 0x1803EEF98 slots =====
+  slot 0  +0x00  0x0000000180003A90  code   queryInterface
+  slot 1  +0x08  0x000000018041A070  DATA?  addRef
+  slot 2  +0x10  0x0000000180016F48  code   release
+  slot 3  +0x18  0x0000000180016D24  code   getFactoryInfo
+  slot 4  +0x20  0x0000000180016DA8  code   numClasses/getClassCount
+  slot 5  +0x28  0x0000000180016F6C  code   getClassInfo
+  slot 6  +0x30  0x0000000180016EA0  code   createInstance
+  slot 7  +0x38  0x000000018019CA70  code   getClassInfo2 (IPluginFactory2)
+  slot 8  +0x40  0x000000018019CA60  code   getClassInfoUnicode (IPluginFactory3)
+  slot 9  +0x48  0x000000018019CA50  code   ?
+  slot 10 +0x50  0x000000018019CA30  code   ?
+  slot 11 +0x58  0x000000018019C990  code   ?
+
+===== (e) GUID presence check (which encoding does the image use) =====
+  IPluginFactory     encA(classic-GUID)=2 hits ['0x18038E6F8', '0x1804A6140']   encB(4xLE-dword)=0 hits []
+  IPluginFactory2    encA(classic-GUID)=2 hits ['0x18038E768', '0x1804A6308']   encB(4xLE-dword)=0 hits []
+  IPluginFactory3    encA(classic-GUID)=2 hits ['0x18038E748', '0x1804A6410']   encB(4xLE-dword)=0 hits []
+  IPluginBase        encA(classic-GUID)=2 hits ['0x18038E6A8', '0x1804A6128']   encB(4xLE-dword)=0 hits []
+  IComponent         encA(classic-GUID)=2 hits ['0x18038EA28', '0x1804A64E8']   encB(4xLE-dword)=0 hits []
+  IAudioProcessor    encA(classic-GUID)=2 hits ['0x18038E818', '0x1804A64A0']   encB(4xLE-dword)=0 hits []
+
+post-pass hash OK
