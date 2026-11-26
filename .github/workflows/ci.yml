@@ -232,6 +232,9 @@ jobs:
           echo "audio-path artifact gate passed (structured comparison); the suite ran and passed."
 
       - name: Official VST3 SDK validator (the built bundle)
+        # evidence keeps flowing past an earlier gate failure (the regenerated
+        # examples / UI captures are what a reviewer needs to update a golden)
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           build/bin/Release/validator build/VST3/Release/PitchLab.vst3 2>&1 | tee validator-vst3.log
@@ -239,6 +242,9 @@ jobs:
             || { echo "FAIL: validator result changed"; exit 1; }
 
       - name: "Host-simulation examples — regenerate + byte-determinism check"
+        # evidence keeps flowing past an earlier gate failure (the regenerated
+        # examples / UI captures are what a reviewer needs to update a golden)
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           mkdir -p /tmp/ex-regen
@@ -257,6 +263,9 @@ jobs:
           echo "All $n committed examples byte-identical to the committed evidence."
 
       - name: UI screenshot host (the real editor under Xvfb)
+        # evidence keeps flowing past an earlier gate failure (the regenerated
+        # examples / UI captures are what a reviewer needs to update a golden)
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           cat > /tmp/convert_ui.py << 'EOC'
@@ -331,6 +340,7 @@ jobs:
             ui-vst3.log
             build/audio-path-report.json
             /tmp/ui/*.png
+            /tmp/ex-regen/*.wav
           if-no-files-found: error
 
   # -------------------------------------------------------------------------
