@@ -59,7 +59,15 @@ octavox-work/r26/source/vst3/build_*/
 octavox-work/r24/build_win_r24w_*/
 octavox-work/r24/package/
 octavox-work/r24/package_v2/
+# R32-W regenerable build trees + package staging (zip tracked in public/)
+octavox-work/r26/source/build_r32/
+octavox-work/r26/source/build_r32_asan/
+octavox-work/r26/source/vst3/build_r32/
+octavox-work/r26/source/vst3/build_win_r32/
+octavox-work/r32/stage/
 # secrets: session tokens uploaded to upload/ are moved to ~/.secrets and must never be committed
 upload/token.txt
 upload/*_token*
 *.token
+# CMake try-compile artifact written to the vst3 source dir on every configure
+octavox-work/r26/source/vst3/-

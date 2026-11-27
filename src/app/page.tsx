@@ -2,7 +2,25 @@ import fs from "node:fs";
 import path from "node:path";
 import { ReportViewer } from "../components/report-viewer";
 
-// R30 (current round): FINAL UNK CLOSURE — the last two standing UNKs closed
+// R32 (current round): WINDOWS x64 BUILD OF THE TELEMETRY DEMO — the R31
+// demo ported to Windows x64 with the R24-W cross method restored: Zig
+// 0.13.0 re-acquired (outside the repo), the win-zig wrappers recreated
+// (env-driven, committed), and TWO Windows-portability defects closed —
+// (a) the lost R24-W corrective delta (simd_cpuid_explicit.h: zig's
+// windows-gnu has no compiler-rt cpu_model, so __builtin_cpu_supports
+// fails to link) and (b) the stale OCTAVOX_X86_MSVC capability gates that
+// would have dead-stripped the AVX2/FMA kernels (final DLL ymm=0, silently
+// scalar-only — caught by the machine-code gate; fixed → ymm=275 vfmadd=26
+// cpuid=3 xgetbv=1). Linux-neutral proof: fresh twin re-ran every gate
+// (115/115 Release+ASan, hash 0x35fe0d51a4372ac8 identical to R31,
+// wrapper 21/21, integration 16/16, validator 47/47, cpuid cross-check
+// AGREE). Delivery: PitchLab_R32_Telemetry_Demo_Windows_x64.zip.
+// R31 (previous round): TELEMETRY & LATENCY-TRUTH DEMO VST3 — built from the
+// R26-R30 audit findings: the m02 telemetry semantics (ids 7..13) through
+// the IPitchTelemetry vendor interface, the per-voice block-rate poller
+// with atomic dirty-bit fanout, the latency-truth notification; the
+// 38-parameter surface and state blob v2 byte-frozen (wrapper 21/21).
+// R30 (previous round): FINAL UNK CLOSURE — the last two standing UNKs closed
 // with numbers. U-2: the "slot 17 (+0x88)" premise was a phantom (the SDK's
 // IAudioProcessor has 11 slots; getLatencySamples = slot 6, +0x30 = 0x18000E540)
 // → host latency = max(0, [VoxAudioProcessor+0x3C]), set by the 'live'-mode
@@ -36,6 +54,9 @@ import { ReportViewer } from "../components/report-viewer";
 // eliminations, host-latency verdict corrected). No new archive zip this round
 // (static-audit round); the delivery cards below remain the R23/R22/R21
 // evidence packages.
+const R32_REPORT =
+  "/home/z/my-project/OCTAVOX_R32_WINDOWS_BUILD.md";
+const R32_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R32_WINDOWS_BUILD.md");
 const R31_REPORT =
   "/home/z/my-project/OCTAVOX_R31_TELEMETRY_DEMO.md";
 const R31_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R31_TELEMETRY_DEMO.md");
@@ -70,7 +91,9 @@ const LOCAL_FALLBACK = path.join(process.cwd(), "PITCHLAB_R23_YIN_RESEARCH.md");
 const ZIP_NAME = "Octavox_RE_evidence_round23.zip";
 const R22_ZIP_NAME = "Octavox_RE_evidence_round22.zip";
 const R21_ZIP_NAME = "Octavox_RE_evidence_round21.zip";
-// R31: the telemetry/latency-truth demo VST3 build (the current delivery).
+// R32: the Windows x64 telemetry demo (the current delivery).
+const R32_DEMO_ZIP = "PitchLab_R32_Telemetry_Demo_Windows_x64.zip";
+// R31: the Linux telemetry/latency-truth demo VST3 build.
 const R31_DEMO_ZIP = "PitchLab_R31_Telemetry_Demo_VST3.zip";
 
 function readFirstExisting(paths: string[]): string | null {
@@ -85,6 +108,7 @@ function readFirstExisting(paths: string[]): string | null {
 }
 
 function readMarkdown(): string {
+  const r32Report = readFirstExisting([R32_REPORT, R32_REPORT_LOCAL]);
   const r31Report = readFirstExisting([R31_REPORT, R31_REPORT_LOCAL]);
   const r30Report = readFirstExisting([R30_REPORT, R30_REPORT_LOCAL]);
   const r29Report = readFirstExisting([R29_REPORT, R29_REPORT_LOCAL]);
@@ -102,8 +126,15 @@ function readMarkdown(): string {
   ]);
   const r23 = readFirstExisting([ROUND23_PATH, ROUND23_ALT, LOCAL_FALLBACK]);
   const parts: string[] = [];
+  if (r32Report)
+    parts.push(r32Report.trim()); // R32 first (current round) — keeps the page H1
   if (r31Report)
-    parts.push(r31Report.trim()); // R31 first (current round) — keeps the page H1
+    parts.push(
+      (parts.length ? "\n\n---\n\n" : "") +
+        r31Report
+          .replace(/^# /m, "## ") // demote the R31 H1 (one page, one H1)
+          .trim(),
+    );
   if (r30Report)
     parts.push(
       (parts.length ? "\n\n---\n\n" : "") +
@@ -167,7 +198,7 @@ function readMarkdown(): string {
 
 function readDelivery() {
   const entries: { fileName: string; url: string; sizeBytes: number; sha256: string | null }[] = [];
-  for (const name of [R31_DEMO_ZIP, ZIP_NAME, R22_ZIP_NAME, R21_ZIP_NAME]) {
+  for (const name of [R32_DEMO_ZIP, R31_DEMO_ZIP, ZIP_NAME, R22_ZIP_NAME, R21_ZIP_NAME]) {
     try {
       const zipPath = path.join(process.cwd(), "public", name);
       const sizeBytes = fs.statSync(zipPath).size;

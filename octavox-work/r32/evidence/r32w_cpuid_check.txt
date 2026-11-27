@@ -1,0 +1,7 @@
+R32-W EXPLICIT-CPUID CROSS-CHECK (the exact Windows algorithm vs the Linux builtin path, same silicon)
+======================================================================================================
+r24w_cpuid_check
+  explicit (Windows algorithm): avx2=1 fma=1
+  builtin  (Linux R24 path)   : avx2=1 fma=1
+  verdict: AGREE
+exit=0

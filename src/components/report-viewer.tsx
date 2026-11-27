@@ -67,12 +67,11 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 31 · DEMÓ VST3 AZ AUDIT LELETEIBŐL — a PitchLab Harmonizer új buildje (Linux x86-64) a R26–R30 statikus audit négy cselekvésre alkalmas leletével: m02-telemetria (id 7..13), blokk-sebességű poller + dirty-bit fanout, vendor-interfész minta, latencia-igazság értesítés" },
-  { label: "m02 telemetria", value: "R28 F1.6 alkalmazva: id 7 = cent C4-től (1200/ln2; −65535 szeninel) · id 8 = arány · id 9 = Q23 n/(n+8) · id 10 = sqrt(frac·(1−2⁻²³)) · id 11 = konfidencia · id 12/13 = ∓cent ikrek (kapuzott)" },
-  { label: "Poller + dirty bitek", value: "R30 F2.3–F2.6 alkalmazva: hangonkénti blokk-sebességű poll a process() végén · pontos változás-detektálás · atomic fetch_or dirty maszk (bit = hang*8 + (id−7); 56 élő bit) · consumeDirtyBits() = UI-oldali olvasás-törlés" },
-  { label: "Vendor interfész", value: "R29 minta alkalmazva: IPitchTelemetry (IID D1A60F31-…) a queryInterface-n át — a 38 paraméteres automatizálási felület és a state blob v2 byte-ra fagyva (wrapper 21/21 változatlan)" },
-  { label: "Latencia-igazság", value: "R30 U-2 elv alkalmazva: notifyLatencyIfChanged() — restartComponent(kLatencyChanged) pontosan akkor, ha a jelentett érték változik (első aktiválás + aktív state-restore) · változatlan → nincs új értesítés" },
-  { label: "Ellenőrzés", value: "115/115Release · wrapper 21/21 · modul-integráció 16/16 (12 + 4 új R31 eset) · validator 47/47 · 220 Hz → id7 = −300.009 cent · 4/4 referencia-hash bit-exakt" },
+  { label: "Kör", value: "Round 32 · WINDOWS x64 TELEMETRIA-DEMÓ — az R31 demó portolása Windows x64-re a helyreállított R24-W cross-módszerrel (Zig 0.13.0, a repón kívül) · két Windows-hordozhatósági hiba lezárva: az elveszett R24-W javítódelta (explicit CPUID+XGETBV — a zig windows-gnu-nál nincs compiler-rt cpu_model, a __builtin_cpu_supports nem linkel) és az elavult MSVC-kapuk, amik csendben skalár-only-re csorbították volna a buildet (ymm=0 → javítva ymm=275)" },
+  { label: "Windows build", value: "PE32+ x64 DLL · MS x64 ABI · csak rendszer-DLL importok (11) · GetPluginFactory export · FUID 6F4E…4E60 + IPitchTelemetry IID GUID megtalálva · moduleinfo byte-azonos az ikerrel · PDB a csomagban" },
+  { label: "Gépikód-kapu", value: "ymm=275 (=207 avx2 + 68 fma objektum — minden 256-bit utasítás a két ISA-egységből) · vfmadd=26 (csak az FMA-egység) · cpuid=3 + xgetbv=1 (az explicit Windows detektálás) · kernelt bájtsorozatok presence 26/30" },
+  { label: "Linux-semlegesség", value: "friss iker-build az újra minden kapun: 115/115 Release + ASan · determinizmus-hash 0x35fe0d51a4372ac8 (az R31 rekorddal azonos) · wrapper 21/21 · modul-integráció 16/16 · validator 47/47 · cpuid kereszteszt: EGYEZIK" },
+  { label: "Ellenőrzés", value: "115/115 Release+ASan · wrapper 21/21 · modul-integráció 16/16 · validator 47/47 · gépikód-számlálás · explicit-vs-builtin cpuid EGYEZIK · 4/4 referencia-hash bit-exakt" },
 ];
 
 export function ReportViewer({
@@ -123,17 +122,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 31. kör
+                Octavox Research — 32. kör
               </h1>
               <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm sm:line-clamp-none">
-                Demó VST3 az audit leleteiből: a PitchLab Harmonizer új buildje (Linux x86-64) az R26–R30 statikus audit négy cselekvésre alkalmas leletével — m02-stílusú hangmagasság-telemetria (id 7..13: cent C4-től −65535 szeninellel, Q23 arány, grain-fázis, konfidencia, ∓cent ikrek), hangonkénti blokk-sebességű poller atomic dirty-bit fanout-tal (R30), vendor-interfész a queryInterface-n át (R29 minta — a 38 paraméteres felület fagyva marad), és a latencia-igazság értesítés (U-2 elv: a host pontosan a változáskor kap kLatencyChanged-et) · Ellenőrzés: 115/115 core + wrapper 21/21 + modul-integráció 16/16 + validator 47/47 · Eventide Octavox RE statikus reverzibilis projekt
+                Windows x64 telemetria-demó: az R31 build (m02-telemetria id 7..13 az IPitchTelemetry vendor-interfészen, blokk-sebességű poller dirty-bit fanout-tal, latencia-igazság értesítés) portolása Windows x64-re a helyreállított R24-W cross-módszerrel (Zig 0.13.0 — a felvételt rögzítő toolchain-deviáció) · két Windows-hordozhatósági hiba lezárva: az elveszett explicit CPUID+XGETBV javítódelta és az elavult MSVC-kapuk, amik a gépikód-kapun fogva csendben skalár-only buildet eredményeztek volna (ymm=0 → ymm=275 vfmadd=26 cpuid=3 xgetbv=1) · Linux-semlegesség: friss iker 115/115 Release+ASan, hash-azonos · Eventide Octavox RE statikus reverzibilis projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 31 · KÉSZ
+              ROUND 32 · KÉSZ
             </Badge>
           </div>
           <div
@@ -166,15 +165,17 @@ export function ReportViewer({
                       aria-hidden="true"
                     />
                     <h2 className="text-base font-semibold tracking-tight">
-                      {di === 0 ? "R31 demó VST3 — letöltés (az aktuális kör buildje)" : di === 1 ? "R23 eredménycsomag — letöltés (az utolsó archivált kör)" : di === 2 ? "R22-baseline archívum — letöltés" : "Helyreállított R21-alapvonal — letöltés"}
+                      {di === 0 ? "R32 Windows x64 demó — letöltés (az aktuális kör buildje)" : di === 1 ? "R31 Linux demó VST3 — letöltés (az előző kör buildje)" : di === 2 ? "R23 eredménycsomag — letöltés (az utolsó archivált kör)" : di === 3 ? "R22-baseline archívum — letöltés" : "Helyreállított R21-alapvonal — letöltés"}
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
                     {di === 0
-                      ? "A 31. kör demó buildje: a PitchLab Harmonizer (Lagrange6 Balanced, Linux x86-64) az R26–R30 statikus audit leleteivel — m02-stílusú hangmagasság-telemetria (id 7..13: cent C4-től −65535 szeninellel, frekvenciaarány, Q23 n/(n+8), sqrt(frac·(1−2⁻²³)) grain-fázis, konfidencia, kapuzott ∓cent ikrek), hangonkénti blokk-sebességű poller atomic dirty-bit fanout-tal (bit = hang*8 + (id−7), 56 élő bit), vendor-interfész (IPitchTelemetry, IID D1A60F31-…) a queryInterface-n át — a 38 paraméteres automatizálási felület és a state blob byte-ra fagyva —, és a latencia-igazság értesítés (restartComponent(kLatencyChanged) pontosan a változáskor). A csomagban: a .vst3 bundle, telepítő- és host-szerzői README az interfész-specifikációval, az R31 riport és az ellenőrzési naplók."
+                      ? "A 32. kör Windows buildje: a PitchLab Harmonizer (Lagrange6 Balanced) Windows x64 PE32+ modulja ugyanazzal az R31 funkciókészlettel — m02-stílusú hangmagasság-telemetria (id 7..13) az IPitchTelemetry vendor-interfészen, hangonkénti blokk-sebességű poller atomic dirty-bit fanout-tal, latencia-igazság értesítés — és a R24 SIMD réteggel: per-TU AVX2/AVX2+FMA kernel-egységek futásidejű CPUID+XGETBV detektálással. A cross-build a rögzített R24-W módszer (Zig 0.13.0) helyreállításával készült; a kör két Windows-hordozhatósági hibát zárt le: az elveszett explicit CPUID javítódeltát (a zig windows-gnu-nél a __builtin_cpu_supports nem linkel) és az elavult MSVC-kapukat, amik nélküle a linker kidobta volna az ISA kerneleket (ymm=0 — csendesen skalár-only). A csomagban: a .vst3 bundle + PDB, telepítő- és host-szerzői README, az R32 riport és a teljes ellenőrzési naplófájl."
                       : di === 1
-                      ? "A 23. kör teljes kutatási csomagja: 16 dokumentum (forrás-összehasonlítás, kanonikus matematikai levezetés, ablak/lag/latencia tanulmány, variáns-taxonómia, decimáló szűrő tanulmány, confidence/voicing tanulmány, Step-6 valós idejű tanulmány, benchmark protokoll és eredmények, döntési rekord), a kanonikus YIN referencia implementáció (12/12 — FFT-gyorsítás ekvivalenciája 3.7e-9 relatív hibán belül bizonyítva), a 15 jel × 4 mintavételi frekvencia × 7 variáns detektor-mátrix (a motor Decimated módja: 0.02 cent medián, 361 ns/minta síkban 44.1–192 kHz-ig), a független Pitch Control Layer (290/290 elfogadási teszt — lock/hold/outlier/oktáv/jitter/glissando/recovery), az R22 mérési harnes mind a nyolc §27 javítása (58 hamis 2000 Hz-es határcella eltávolítva, a verdiktumok 141/18/31/170 null eltéréssel reprodukálva), és a négy felhasználói tünet gyökérok-vizsgálata: a NaN/Inf propagáció reprodukálva ÉS javítva (rögzített motor-delta), a kattogás-mechanizmus megmérve (spacing-commit ugrások mozgás+jitter alatt — a default 8 ms crossfade véd), a dual-mono sztereó bit-exakt a natív ÉS a valódi VST3-modul szintjén (12/12), a build-különbségek 3.8–58× CPU-n mérve."
+                      ? "A 31. kör demó buildje: a PitchLab Harmonizer (Lagrange6 Balanced, Linux x86-64) az R26–R30 statikus audit leleteivel — m02-stílusú hangmagasság-telemetria (id 7..13: cent C4-től −65535 szeninellel, frekvenciaarány, Q23 n/(n+8), sqrt(frac·(1−2⁻²³)) grain-fázis, konfidencia, kapuzott ∓cent ikrek), hangonkénti blokk-sebességű poller atomic dirty-bit fanout-tal (bit = hang*8 + (id−7), 56 élő bit), vendor-interfész (IPitchTelemetry, IID D1A60F31-…) a queryInterface-n át — a 38 paraméteres automatizálási felület és a state blob byte-ra fagyva —, és a latencia-igazság értesítés (restartComponent(kLatencyChanged) pontosan a változáskor). A csomagban: a .vst3 bundle, telepítő- és host-szerzői README az interfész-specifikációval, az R31 riport és az ellenőrzési naplók."
                       : di === 2
+                      ? "A 23. kör teljes kutatási csomagja: 16 dokumentum (forrás-összehasonlítás, kanonikus matematikai levezetés, ablak/lag/latencia tanulmány, variáns-taxonómia, decimáló szűrő tanulmány, confidence/voicing tanulmány, Step-6 valós idejű tanulmány, benchmark protokoll és eredmények, döntési rekord), a kanonikus YIN referencia implementáció (12/12 — FFT-gyorsítás ekvivalenciája 3.7e-9 relatív hibán belül bizonyítva), a 15 jel × 4 mintavételi frekvencia × 7 variáns detektor-mátrix (a motor Decimated módja: 0.02 cent medián, 361 ns/minta síkban 44.1–192 kHz-ig), a független Pitch Control Layer (290/290 elfogadási teszt — lock/hold/outlier/oktáv/jitter/glissando/recovery), az R22 mérési harnes mind a nyolc §27 javítása (58 hamis 2000 Hz-es határcella eltávolítva, a verdiktumok 141/18/31/170 null eltéréssel reprodukálva), és a négy felhasználói tünet gyökérok-vizsgálata: a NaN/Inf propagáció reprodukálva ÉS javítva (rögzített motor-delta), a kattogás-mechanizmus megmérve (spacing-commit ugrások mozgás+jitter alatt — a default 8 ms crossfade véd), a dual-mono sztereó bit-exakt a natív ÉS a valódi VST3-modul szintjén (12/12), a build-különbségek 3.8–58× CPU-n mérve."
+                      : di === 3
                       ? "A 22. kör leszállított bizonyítékarchívuma — az R23 kiinduló alapvonala (SHA-256 782e7ab8…, újraellenőrizve). Tartalmazza a Minimum Pitch jelútvonal teljes 8 szintű láncolatát, az egységesített spacing-kaput, a 360 cellás mátrixot és a 100/100 alapvonál-tesztcsomagot — minden, amire az R23 épült."
                       : "A 21. kör bizonyítékarchívuma — a teljes R21 kutatási fa (633 fájl: natív forrás, dokumentumok, PoC-mérések és a háromvariáns Windows-kiadás validációs láncolata: Lagrange6 / ObsKernel6 / Lagrange6+ObsKernel6). A körök közti bináris-azonosság és visszamenőleges alapvonal-ellenőrzés céljából őrizzük meg."}
                   </p>
@@ -185,8 +186,8 @@ export function ReportViewer({
                     <Badge variant="outline" className="text-[11px]">
                       {formatBytes(entry.sizeBytes)}
                     </Badge>
-                    <Badge variant="outline" className="text-[11px]">
-                      {di === 0 ? "13 fájl · Linux x86-64 VST3 · validator 47/47 · modul 16/16" : di === 1 ? "93 fájl · 16 dokumentum · friss cmake-build 100/100" : di === 2 ? "638 fájl · R23-alapvonal" : "632 fájl · alapvonal"}
+                    <Badge variant="outline" className="h-auto max-w-full whitespace-normal text-left text-[11px] font-normal leading-relaxed">
+                      {di === 0 ? "18 fájl · Windows x64 PE32+ VST3 + PDB · gépikód-ellenőrzött (ymm=275) · iker 115/115" : di === 1 ? "13 fájl · Linux x86-64 VST3 · validator 47/47 · modul 16/16" : di === 2 ? "93 fájl · 16 dokumentum · friss cmake-build 100/100" : di === 3 ? "638 fájl · R23-alapvonal" : "632 fájl · alapvonal"}
                     </Badge>
                   </div>
                   {entry.sha256 ? (

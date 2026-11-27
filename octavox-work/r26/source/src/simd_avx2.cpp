@@ -38,6 +38,11 @@
 #include "interp_tables.hpp"
 #include "obs_kernel_table.h"
 
+// R32-W: <cmath> is required for std::abs in the scalar tail (peak scan).
+// libstdc++ provides it transitively via <immintrin.h>'s libstdc++ chain;
+// libc++ (zig 0.13.0 cross) correctly does not -- include-what-you-use,
+// no semantic change.
+#include <cmath>
 #include <immintrin.h>
 
 namespace octavox {

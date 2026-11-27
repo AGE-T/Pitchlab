@@ -23,16 +23,29 @@
 #include <algorithm>
 #include <cmath>
 
+// ---------------------------------------------------------------------------
+// FEATURE-DETECTION PATH SELECTION (R24-W, ported to this line in R32-W):
+//   * Linux/ELF builds (GCC/Clang): __builtin_cpu_supports -- the
+//     R24-VALIDATED path, UNCHANGED (the bit-exact regression record was
+//     produced with it).
+//   * Windows builds (any compiler): the EXPLICIT CPUID+XGETBV sequence
+//     from src/simd_cpuid_explicit.h (see that file's R24-W defect record:
+//     zig 0.13.0 x86_64-windows-gnu provides no compiler-rt cpu_model, so
+//     __builtin_cpu_supports fails to LINK there; genuine MSVC uses its
+//     <intrin.h> intrinsics). -DOCTAVOX_FORCE_EXPLICIT_CPUID forces the
+//     explicit path on Linux for on-hardware validation of the exact
+//     Windows algorithm (the octavox_r24w_cpuid_check target).
+// ---------------------------------------------------------------------------
 #if defined(__x86_64__) || defined(__i386__)
-#if defined(__GNUC__) || defined(__clang__)
-#define OCTAVOX_X86_GCC_CLANG 1
-#elif defined(_MSC_VER)
-#define OCTAVOX_X86_MSVC 1
+#if defined(_WIN32) || defined(OCTAVOX_FORCE_EXPLICIT_CPUID)
+#define OCTAVOX_X86_EXPLICIT 1  // Windows compilers + forced validation builds
+#elif defined(__GNUC__) || defined(__clang__)
+#define OCTAVOX_X86_GCC_CLANG 1  // Linux/ELF: the R24-validated builtin path
 #endif
 #endif
 
-#if defined(OCTAVOX_X86_MSVC)
-#include <intrin.h>
+#if defined(OCTAVOX_X86_EXPLICIT)
+#include "simd_cpuid_explicit.h"  // cpuid_explicit::detect() (internal)
 #endif
 
 namespace octavox {
@@ -64,10 +77,14 @@ double peakScalar(const double* x, int n) {
 
 // ---- CPU feature detection (once; cached) ---------------------------------
 //
-// GCC/Clang: __builtin_cpu_supports (the compiler's own CPUID resolver --
-// it also verifies OSXSAVE/YMM state save support, not just the leaf bits).
-// MSVC: the canonical CPUID sequence (leaf 1 ecx: FMA bit 12, OSXSAVE bit
-// 27 + XGETBV YMM state; leaf 7.0 ebx: AVX2 bit 5).
+// GCC/Clang (Linux/ELF): __builtin_cpu_supports (the compiler's own CPUID
+// resolver -- it also verifies OSXSAVE/YMM state save support, not just the
+// leaf bits).
+// Windows (any compiler) + forced validation builds: the explicit
+// CPUID+XGETBV sequence from src/simd_cpuid_explicit.h (leaf 1 ecx: FMA
+// bit 12, OSXSAVE bit 27 + XGETBV XCR0 bits 1:2 for XMM+YMM state; leaf
+// 7.0 ebx: AVX2 bit 5; BOTH features gated on the YMM OS-support check --
+// the R24-W fix; the original R24 MSVC branch gated only FMA).
 
 Capabilities detectOnce() {
     Capabilities caps{false, false};
@@ -75,26 +92,8 @@ Capabilities detectOnce() {
     __builtin_cpu_init();
     caps.avx2 = __builtin_cpu_supports("avx2");
     caps.fma = __builtin_cpu_supports("fma");
-#elif defined(OCTAVOX_X86_MSVC)
-    int regs[4];
-    __cpuid(regs, 0);
-    const int maxLeaf = regs[0];
-    if (maxLeaf >= 1) {
-        __cpuid(regs, 1);
-        const bool osxsave = (regs[2] & (1 << 27)) != 0;
-        caps.fma = (regs[2] & (1 << 12)) != 0;
-        if (osxsave) {
-            const unsigned long long xcr0 = _xgetbv(0);
-            const bool ymmSaved = (xcr0 & 0x6) == 0x6;
-            if (!ymmSaved) caps.fma = false;
-        } else {
-            caps.fma = false;
-        }
-        if (maxLeaf >= 7) {
-            __cpuidex(regs, 7, 0);
-            caps.avx2 = (regs[1] & (1 << 5)) != 0;
-        }
-    }
+#elif defined(OCTAVOX_X86_EXPLICIT)
+    caps = cpuid_explicit::detect();
 #endif
     return caps;
 }
@@ -209,7 +208,7 @@ double readInterpRef(const double* ring, int w0, int mode, double delay) {
 // a non-x86 build reports false here and every non-Scalar mode is rejected
 // at prepare()).
 bool isaUnitsCompiled() {
-#if defined(OCTAVOX_X86_GCC_CLANG) || defined(OCTAVOX_X86_MSVC)
+#if defined(OCTAVOX_X86_GCC_CLANG) || defined(OCTAVOX_X86_EXPLICIT)
     return true;
 #else
     return false;
@@ -264,7 +263,7 @@ Level resolve(Mode m) {
 // their own translation units (no static-init dependency: the pointers are
 // materialised on first use of kernels(), which prepare() calls).
 // ---------------------------------------------------------------------------
-#if defined(OCTAVOX_X86_GCC_CLANG) || defined(OCTAVOX_X86_MSVC)
+#if defined(OCTAVOX_X86_GCC_CLANG) || defined(OCTAVOX_X86_EXPLICIT)
 
 // src/simd_avx2.cpp (compiled -mavx2, no FMA instructions anywhere in it)
 void diffLagAxisAVX2(const double* x, int seg0, int tau0, int ntau, int m,
@@ -290,7 +289,7 @@ Kernels kernels(Level l) {
     k.diff_sample = &diffScalar;
     k.diff_lag = &diffScalar;
     k.peak = &peakScalar;
-#if defined(OCTAVOX_X86_GCC_CLANG) || defined(OCTAVOX_X86_MSVC)
+#if defined(OCTAVOX_X86_GCC_CLANG) || defined(OCTAVOX_X86_EXPLICIT)
     switch (l) {
         case Level::Scalar:
             break;
@@ -338,7 +337,7 @@ ReadKernels readKernels(Level l) {
     r.level = l;
     r.read = &readInterpRef;
     r.read4 = nullptr;
-#if defined(OCTAVOX_X86_GCC_CLANG) || defined(OCTAVOX_X86_MSVC)
+#if defined(OCTAVOX_X86_GCC_CLANG) || defined(OCTAVOX_X86_EXPLICIT)
     if (l == Level::AVX2 || l == Level::AVX2FMA) r.read4 = &readInterp4AVX2;
 #endif
     return r;

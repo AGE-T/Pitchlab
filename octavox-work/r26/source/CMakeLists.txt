@@ -349,3 +349,23 @@ target_link_libraries(octavox_r23_integration_check PRIVATE octavox_dsp octavox_
 if(NOT MSVC)
     target_compile_options(octavox_r23_integration_check PRIVATE -Wall -Wextra)
 endif()
+
+# ---------------------------------------------------------------------------
+# R32-W: the EXPLICIT-CPUID CROSS-CHECK (ported from the R24-W corrective
+# delta; validates the exact Windows detection algorithm on real Linux
+# hardware). Compiles the dispatch TU with -DOCTAVOX_FORCE_EXPLICIT_CPUID
+# and compares cpuid_explicit::detect() against the compiler's own
+# __builtin_cpu_supports -- they must AGREE on both features (exit 0).
+# ---------------------------------------------------------------------------
+add_executable(octavox_r24w_cpuid_check
+    cli/r24w_cpuid_check.cpp
+    src/simd_dispatch.cpp
+    src/simd_avx2.cpp
+    src/simd_fma.cpp
+)
+target_include_directories(octavox_r24w_cpuid_check PRIVATE include src)
+target_compile_definitions(octavox_r24w_cpuid_check PRIVATE
+    OCTAVOX_FORCE_EXPLICIT_CPUID=1)
+if(NOT MSVC)
+    target_compile_options(octavox_r24w_cpuid_check PRIVATE -Wall -Wextra)
+endif()

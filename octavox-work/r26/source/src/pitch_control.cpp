@@ -8,6 +8,10 @@
 // ============================================================================
 #include "octavox/pitch_control.hpp"
 
+// R32-W: <algorithm> is required for std::max (lines ~83-84). libstdc++
+// provides it transitively via <cmath>; libc++ (the zig 0.13.0 cross
+// toolchain) correctly does not -- include-what-you-use, no semantic change.
+#include <algorithm>
 #include <cmath>
 
 namespace octavox {

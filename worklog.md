@@ -900,3 +900,75 @@ the end of the R31 session (which ran out of context); everything stays on
   (stale R28-era copy of the live `src/components/report-viewer.tsx`;
   never on the branch, not imported by anything) and the regenerable
   `vst3/build_r31/` tree.
+
+---
+
+## ROUND 32 DELIVERY (2026-11-27) — WINDOWS x64 BUILD OF THE TELEMETRY DEMO (the R24-W cross method restored; two Windows-portability defects closed)
+
+**Core:** octavox-native 16.3.0 · **Original binary: never executed** (no
+new RE claims — the round APPLIES the R26-R30 record and delivers the R31
+demo on Windows). **Mandate (user):** "folytasd" on the r31-telemetry-demo
+branch (main untouched).
+
+- **Toolchain restoration:** Zig 0.13.0 re-acquired from ziglang.org and
+  installed OUTSIDE the repo (~/toolchains). The win-zig wrapper scripts
+  (zig-cc.sh, zig-cxx.sh, zig-win-toolchain.cmake,
+  moduleinfotool-host.sh) RECREATED — the originals were lost with the
+  sandbox resets and survived only inside the R24-W delivery package
+  (build_configuration/win-zig/), from which the method was reconstructed
+  and cross-checked against the shipped binaries (the package copy proved
+  decisive twice this round). The recreated scripts are env-driven
+  (ZIG_BIN) instead of hardcoding /home/z/tools/zig, and are COMMITTED to
+  the branch this time. cmake 4.4.5 re-installed via pip (the venv package
+  was also lost).
+- **Defect (a) closed — the lost R24-W corrective delta:** zig 0.13.0
+  targeting x86_64-windows-gnu provides NO compiler-rt cpu_model
+  (reproduced with a minimal probe: __builtin_cpu_supports compiles but
+  fails to link, undefined __cpu_indicator_init/__cpu_model). The R24-W
+  fix — src/simd_cpuid_explicit.h (canonical explicit CPUID+XGETBV,
+  BOTH features gated on OSXSAVE + XCR0 YMM state) + the dispatch TU
+  platform gates — existed only in the R24-W package (the repo delta was
+  re-applied narrowly at R24; the R26+ audit line never had it). Ported
+  verbatim, together with cli/r24w_cpuid_check.cpp + the
+  octavox_r24w_cpuid_check native CMake target (on-hardware cross-check
+  vs __builtin_cpu_supports: AGREE, avx2=1 fma=1, exit 0).
+- **Defect (b) closed — the silent scalar-only trap:** after (a) the
+  module linked, but the machine-code gate caught final-DLL ymm=0: the
+  isaUnitsCompiled()/kernels()/read-kernel capability gates still tested
+  the removed OCTAVOX_X86_MSVC macro, so the Windows dispatch reported
+  "no ISA units", the kernel references compiled out, and the linker
+  dead-stripped the AVX2/FMA objects — the plugin would have loaded and
+  run scalar-only with every functional gate still green. Fixed by
+  aligning the four gates with the R24-W corrected form
+  (OCTAVOX_X86_EXPLICIT). Final DLL: ymm=275 = 207+68 (every 256-bit
+  instruction from the two ISA units), vfmadd=26 (FMA unit only),
+  cpuid=3 + xgetbv=1 (the explicit detection).
+- **Two libc++ include-what-you-use fixes** (zig's libc++ is stricter
+  than libstdc++): pitch_control.cpp +<algorithm> (std::max),
+  simd_avx2.cpp +<cmath> (std::abs in the scalar tail).
+- **Verification (all gates green, fresh build dirs, no cache reuse):**
+  Linux twin build_r32 Release **115/115** (r15acc determinism hash
+  0x35fe0d51a4372ac8 — IDENTICAL to the R31 record: the source delta is
+  Linux-neutral) · ASan/UBSan **115/115, zero reports** · cpuid
+  cross-check **AGREE** · wrapper **21/21** · module integration **16/16**
+  on the fresh twin bundle (incl. all four R31 telemetry cases) ·
+  validator **47/47** · Windows module machine-code + structural record:
+  per-TU ISA flags exact, ymm/vfmadd/cpuid/xgetbv accounting, kernel
+  byte-sequences 26/30, imports = 11 Windows system DLLs only (same set
+  as R24-W), single export GetPluginFactory, processor FUID
+  6F4E6258-9A31-42E1-8F3C-5A971D2B4E60 + IPitchTelemetry IID
+  D1A60F31-8C4B-4E39-9A67-31D1-8E4F5A21 GUIDs found, moduleinfo.json
+  byte-identical to the twin.
+- **Deliverables:** OCTAVOX_R32_WINDOWS_BUILD.md (root) +
+  octavox-work/r32/evidence/ (9 verification records) +
+  public/PitchLab_R32_Telemetry_Demo_Windows_x64.zip (18 files: the
+  Windows bundle + PDB + README + report + logs; SHA-256
+  d2ff38bdeaa2adfc8484ca0e31d13ce031f1898176bdd52405d532f31e040e10) +
+  sha256 sidecar + the web page R32 section (5 delivery cards now).
+- **Honest limits (documented in the report):** cross-built (the recorded
+  zig deviation — same evidence class as the accepted R24-W delivery), no
+  PE execution in the sandbox (Linux-twin + machine-code record is the
+  verification method), the R24-W on-target Validation Kit is not
+  re-shipped, byte-identical rebuilds not claimed.
+- **Process:** everything on the r31-telemetry-demo branch; local main
+  untouched; token outside the repo (~/.secrets, 600).

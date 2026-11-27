@@ -1,0 +1,55 @@
+R32-W MACHINE-CODE & STRUCTURAL VERIFICATION (Windows x64 cross-build, zig 0.13.0)
+==================================================================================
+Date (UTC): 2026-11-27T21:16:29Z
+
+1) PER-TU COMPILER FLAGS (Unix Makefiles rules, build_win_r32):
+   dsp.cpp: -O3 -DNDEBUG -std=c++17
+   pitch_control.cpp: -O3 -DNDEBUG -std=c++17
+   simd_dispatch.cpp: -O3 -DNDEBUG -std=c++17
+   telemetry.cpp: -O3 -DNDEBUG -std=c++17
+   simd_avx2.cpp: -O3 -ffp-contract=off -mavx2
+   simd_fma.cpp: -O3 -ffp-contract=off -mavx2 -mfma
+
+2) OBJECT-LEVEL INSTRUCTION SCAN (objdump -d, pe-x86-64):
+   dsp.cpp.obj: ymm=0 vfmadd=0
+   pitch_control.cpp.obj: ymm=0 vfmadd=0
+   simd_dispatch.cpp.obj: ymm=0 vfmadd=0
+   simd_avx2.cpp.obj: ymm=207 vfmadd=0
+   simd_fma.cpp.obj: ymm=68 vfmadd=26
+   telemetry.cpp.obj: ymm=0 vfmadd=0
+
+3) FINAL DLL SCAN (objdump -d on the shipped module):
+   PitchLab_Lagrange6_Balanced.vst3: ymm=275 vfmadd=26 cpuid=3 xgetbv=1
+
+   ymm arithmetic: 275 = 207 (simd_avx2.obj) + 68 (simd_fma.obj) -> EVERY
+   256-bit instruction in the final DLL originates from the two ISA kernel
+   units; the baseline code contributes ZERO mandatory AVX2/FMA.
+   vfmadd arithmetic: 26 = 26 (simd_fma.obj only).
+   cpuid(3 leaves: 0,1,7) + xgetbv(1) = the R24-W explicit Windows detection
+   path (src/simd_cpuid_explicit.h; zig/windows-gnu provides no compiler-rt
+   cpu_model, so __builtin_cpu_supports cannot link there).
+
+4) KERNEL PRESENCE (byte-sequence match, link-independent check):
+   26/30 distinctive simd_avx2 ymm byte-sequences found verbatim in the final
+   DLL (the 4 misses are relocation-adjusted encodings; instruction count
+   accounting above is the authoritative gate).
+
+5) STRUCTURAL CHECKS:
+   format: PE32+ executable for MS Windows 6.00 (DLL), x86-64, 11 sections
+   export: GetPluginFactory (single export, VST3 module contract)
+   imports: 11 DLLs, all Windows system:
+   DLL Name: KERNEL32.dll
+   DLL Name: api-ms-win-crt-math-l1-1-0.dll
+   DLL Name: api-ms-win-crt-private-l1-1-0.dll
+   DLL Name: api-ms-win-crt-runtime-l1-1-0.dll
+   DLL Name: api-ms-win-crt-string-l1-1-0.dll
+   DLL Name: api-ms-win-crt-heap-l1-1-0.dll
+   DLL Name: api-ms-win-crt-stdio-l1-1-0.dll
+   DLL Name: api-ms-win-crt-environment-l1-1-0.dll
+   DLL Name: api-ms-win-crt-time-l1-1-0.dll
+   DLL Name: USER32.dll
+   DLL Name: ole32.dll
+   processor FUID 6F4E6258-9A31-42E1-8F3C-5A971D2B4E60: FOUND (GUID bytes)
+   IPitchTelemetry IID D1A60F31-8C4B-4E39-9A67-31D1-8E4F5A21: FOUND (GUID bytes)
+   moduleinfo.json: byte-identical to the Linux twin's (compile-time factory
+   metadata; copied via the documented moduleinfotool host bridge)

@@ -1,0 +1,116 @@
+R32-WINDOWS BUILD ENVIRONMENT RECORD
+====================================
+Date (UTC): 2026-11-27
+Recorded for: PitchLab_R32_Telemetry_Demo_Windows_x64 (the R31 telemetry
+demo ported to Windows x64)
+
+SOURCE BASELINE
+  branch            : r31-telemetry-demo (AGE-T/Pitchlab), on top of the
+                      R31 delivery commit b494562 + the post-R31 sync
+                      commit 0ecedbb
+  source line       : octavox-work/r26/source (the R26-R31 audit/demo line)
+  R32-W source delta: (all three provably Linux-neutral; the fresh Linux
+                      twin re-ran every gate, see the verification logs)
+    1. src/pitch_control.cpp: +#include <algorithm> (std::max;
+       libstdc++ provided it transitively, zig's libc++ correctly not)
+    2. src/simd_avx2.cpp: +#include <cmath> (std::abs in the scalar tail;
+       same class of portability gap)
+    3. the R24-W corrective delta PORTED to this line (it was present in
+       the R24-W delivery package but only NARROWLY re-applied to the repo
+       at R24, so the R26+ line had lost it):
+         * src/simd_cpuid_explicit.h (verbatim from the R24-W package:
+           the explicit CPUID+XGETBV detection; MSVC <intrin.h> path for
+           genuine MSVC, GNU inline asm for zig/mingw; BOTH features
+           gated on OSXSAVE + XCR0 YMM state)
+         * src/simd_dispatch.cpp: the platform gates renamed to
+           OCTAVOX_X86_EXPLICIT (_WIN32 or -DOCTAVOX_FORCE_EXPLICIT_CPUID)
+           vs OCTAVOX_X86_GCC_CLANG (Linux/ELF, the R24-validated builtin
+           path UNCHANGED), detectOnce() dispatching to
+           cpuid_explicit::detect(), and the four capability gates
+           (isaUnitsCompiled, kernels table, read-kernel table) matching
+         * cli/r24w_cpuid_check.cpp + the octavox_r24w_cpuid_check native
+           CMake target (on-hardware cross-check: the explicit Windows
+           algorithm vs __builtin_cpu_supports must AGREE; they do)
+
+HOST (build machine)
+  OS                 : Debian-based x86-64 Linux sandbox
+  CPU                : AVX2+FMA+OSXSAVE present (explicit cpuid cross-check)
+  build tools        : cmake 4.4.5 (pip), GNU Make, GNU binutils objdump
+                       (pei-x86-64 capable)
+  native compilers   : g++ 14 (Linux twin + validation)
+
+WINDOWS CROSS TOOLCHAIN (the recorded R21/R22/R24-W deviation, same method)
+  toolchain          : Zig 0.13.0 (clang/LLVM 18.1.6 frontend, lld,
+                       mingw-w64 headers, STATIC libc++), downloaded from
+                       ziglang.org (zig-linux-x86_64-0.13.0.tar.xz),
+                       installed OUTSIDE the repo (~/toolchains)
+  target             : x86_64-windows-gnu (PE32+ / COFF x86-64,
+                       Microsoft x64 ABI, ucrt)
+  wrapper scripts    : octavox-work/r24/win-zig/zig-cc.sh + zig-cxx.sh
+                       (RECREATED this round after the sandbox resets lost
+                       the originals; now env-driven: ZIG_BIN overrides the
+                       default ~/toolchains path, so the scripts are
+                       repo-portable and never hardcode a host path)
+  toolchain cmake    : win-zig/zig-win-toolchain.cmake (recreated;
+                       CMAKE_SYSTEM_NAME=Windows, TRY_COMPILE_TARGET_TYPE=
+                       STATIC_LIBRARY, compilers = the wrapper scripts)
+  honesty note       : no MSVC / no Windows SDK / no wine in this sandbox
+                       (PE execution BLOCKED). The zig cross-build produces
+                       genuine PE32+ x64 DLLs with the MS x64 ABI importing
+                       only Windows system DLLs -- the same recorded
+                       toolchain deviation behind the ACCEPTED R21/R22/
+                       R24-W Windows deliveries. The Windows Validation
+                       Kit approach of R24-W (on-target runner) is NOT
+                       re-shipped this round; the R32 package documents the
+                       Linux-twin verification method instead.
+
+THE LINK DEFECT THIS ROUND CLOSED (reproduced + fixed)
+  zig 0.13.0 targeting x86_64-windows-gnu does NOT provide the
+  compiler-rt cpu_model runtime: __builtin_cpu_supports compiles but
+  FAILS TO LINK (undefined __cpu_indicator_init / __cpu_model; reproduced
+  with a minimal probe THIS round too). The R24-W fix (the explicit
+  CPUID+XGETBV path) is ported to the R26+ line -- without it the Windows
+  module cannot link at all. A SECOND, subtler consequence was caught by
+  the machine-code gate this round: the stale OCTAVOX_X86_MSVC capability
+  gates (isaUnitsCompiled/kernels/read-kernels) meant the Windows build
+  reported "no ISA units" and the linker DEAD-STRIPPED the AVX2/FMA kernel
+  objects (final DLL ymm=0 -- the module would have silently run
+  scalar-only on Windows). With the corrected gates the final DLL carries
+  ymm=275 vfmadd=26 cpuid=3 xgetbv=1 (every 256-bit instruction accounted
+  for; see r32w_machinecode_verification.txt).
+
+VST3 SDK
+  version            : v3.7.12_build_20 (pinned; octavox-work/vst3sdk)
+  moduleinfo bridge  : win-zig/moduleinfotool-host.sh (recreated; planted
+                       at <build>/bin/moduleinfotool.exe -- the SDK
+                       post-build invokes that path and Linux execve
+                       honors the shebang) copies the IDENTICAL-variant
+                       Linux twin's moduleinfo.json (compile-time factory
+                       metadata: same FUIDs, same parameters, same
+                       version). Verified byte-identical to the R32 twin.
+  attrib bridge      : win-zig/host-shims/attrib (no-op; Explorer
+                       decoration only)
+
+BUILD DIRECTORIES (separate, clean; no Linux cache reuse)
+  Linux twin (native): octavox-work/r26/source/build_r32 (+ build_r32_asan)
+  Windows cross      : octavox-work/r26/source/vst3/build_win_r32
+  variant            : LAGRANGE6 + DECIMATED (Balanced) -- identical to the
+                       R31 demo build
+
+VERIFICATION (all green; logs in this directory + the package)
+  core suite Release : 115/115, all four reference hashes bit-exact
+                       (r15acc determinism hash 0x35fe0d51a4372ac8 --
+                       IDENTICAL to the R31 record: the source delta is
+                       Linux-neutral)
+  core suite ASan    : 115/115, zero sanitizer reports
+  cpuid cross-check  : explicit (Windows algorithm) vs builtin AGREE
+  wrapper tests      : 21/21 (the frozen surface untouched)
+  module integration : 16/16 on the fresh twin bundle (incl. all four R31
+                       telemetry cases: vendor interface, values/sentinel,
+                       dirty bits, latency notification)
+  validator          : 47/47 (Steinberg VST3 validator, Linux twin)
+  Windows module     : machine-code + structural verification (ymm/vfmadd/
+                       cpuid/xgetbv accounting, kernel byte presence,
+                       imports = system DLLs only, GetPluginFactory export,
+                       processor FUID + IPitchTelemetry IID GUIDs found,
+                       moduleinfo byte-identical to the twin)
