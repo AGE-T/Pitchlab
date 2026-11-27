@@ -2261,6 +2261,31 @@ const VoiceStats& MultichannelShifter::voiceStats(int channel, int voice) const 
     return mimpl_->engines[channel]->voiceStats(voice);
 }
 
+// R31: telemetry observers on the shifter -- delegated to channel 0 (the
+// reference engine). Per-voice DSP state remains addressable per channel
+// through voiceStats(channel, voice).
+double MultichannelShifter::lastEstimateHz() const {
+    return mimpl_ && !mimpl_->engines.empty() ? mimpl_->engines[0]->lastEstimateHz() : 0.0;
+}
+
+double MultichannelShifter::lastEstimateCmndfMin() const {
+    return mimpl_ && !mimpl_->engines.empty() ? mimpl_->engines[0]->lastEstimateCmndfMin() : 1.0;
+}
+
+ControlState MultichannelShifter::lastControlState() const {
+    return mimpl_ && !mimpl_->engines.empty() ? mimpl_->engines[0]->lastControlState()
+                                              : ControlState::kNoLock;
+}
+
+double MultichannelShifter::trackedHz() const {
+    return mimpl_ && !mimpl_->engines.empty() ? mimpl_->engines[0]->trackedHz() : 0.0;
+}
+
+bool MultichannelShifter::lastEstimateSpacingAccepted() const {
+    return mimpl_ && !mimpl_->engines.empty() ? mimpl_->engines[0]->lastEstimateSpacingAccepted()
+                                              : false;
+}
+
 double AlignedDelayLine::lastEstimateHz() const {
     return impl_ ? impl_->last_f0 : 0.0;
 }
@@ -2285,6 +2310,21 @@ bool AlignedDelayLine::lastEstimateSpacingAccepted() const {
 
 int AlignedDelayLine::spacingHistoryCount() const {
     return impl_ ? impl_->f0_hist_n : 0;
+}
+
+// R31: m02-style telemetry observers -- pure reads of state the engine
+// already maintains (det.lastCmndfMin / control.diagnostics()). No
+// arithmetic on any audio path; see the R31 block in dsp.hpp.
+double AlignedDelayLine::lastEstimateCmndfMin() const {
+    return impl_ ? impl_->det.lastCmndfMin() : 1.0;
+}
+
+ControlState AlignedDelayLine::lastControlState() const {
+    return impl_ ? impl_->control.diagnostics().state : ControlState::kNoLock;
+}
+
+double AlignedDelayLine::trackedHz() const {
+    return impl_ ? impl_->control.diagnostics().tracked_hz : 0.0;
 }
 
 const char* versionString() { return "octavox-native 16.3.0"; }

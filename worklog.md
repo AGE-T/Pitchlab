@@ -793,3 +793,65 @@ Branch: r26-28-static-audit (continues the R26-R29 static lineage).
 - **Process:** no sandbox reset this session; token outside the repo
   (~/.secrets, ~/.git-credentials, 600), never committed; local main
   untouched; remote owner line untouched.
+
+---
+
+## ROUND 31 DELIVERY (2026-11-27) — TELEMETRY & LATENCY-TRUTH DEMO VST3 (built from the R26-R30 audit findings)
+
+**Core:** octavox-native 16.3.0 · **Original binary: never executed** (no new
+RE claims this round — the round APPLIES the existing R26-R30 record).
+**Mandate (user):** "Tudnál buildeltetni egy új demó vst-t az itt feltárt
+infók használatával?" — a new demo VST3 using the r26-28-static-audit line's
+findings.
+
+- **Finding -> feature (all cited in OCTAVOX_R31_TELEMETRY_DEMO.md §1):**
+  R28 F1.6 (the m02 telemetry semantics, ids 7..13) -> the SDK-free
+  `TelemetryPoller` (include/octavox/telemetry.hpp + src/telemetry.cpp):
+  id 7 = cents from C4 (1200/ln2·ln(f0/261.6256), −65535 sentinel; the
+  tracked value when the R23 gate is locked, else the raw detector
+  estimate — the default config runs the gate OFF), id 8 = the voice's
+  gliding ratio, id 9 = the Q23-quantised n/(n+8), id 10 =
+  sqrt(frac·(1−2⁻²³)) on the grain phase, id 11 = a LABELLED PitchLab
+  confidence mapping (periodicity × control-state weight), ids 12/13 =
+  the gated ∓cents shift twins. R30 F2.3-F2.6 (the per-voice block-rate
+  poller + atomic dirty-bit fanout) -> `poll()` once per process() block,
+  exact change detection, `fetch_or` mask (bit = voice*8 + (id−7); 56
+  live bits), `consumeDirtyBits()` read-and-clear. R29 F1.x (the vendor
+  interface answered by queryInterface) -> `IPitchTelemetry` (IID
+  D1A60F31-8C4B-4E39-9A67-31D1-8E4F5A21) served FIRST by the processor's
+  queryInterface — the 38-parameter surface and state blob v2 stay
+  byte-frozen. R30 U-2 (the latency is a live value) ->
+  `notifyLatencyIfChanged()`: restartComponent(kLatencyChanged) exactly on
+  change (first activation; an active state restore with a changed
+  sample-domain config), never on an unchanged value.
+- **Engine additions = pure observers** (dsp.hpp R31 block):
+  `lastEstimateCmndfMin()` / `lastControlState()` / `trackedHz()` +
+  shifter delegates to channel 0. Output neutrality PROVEN: 115/115 with
+  all four reference hashes bit-exact.
+- **SDK patterns learned/applied:** the REFCOUNT_METHODS(BaseClass) macro
+  for an FObject class gaining a second FUnknown-derived interface (both
+  subobjects need the most-derived overrider); DECLARE_CLASS_IID inside
+  the class + DEF_CLASS_IID in ONE TU linked by every consumer (the
+  module AND the test harnesses — the integration binary does not link
+  the processor TU); ComponentBase does NOT query IComponentHandler from
+  the context — the host contract is setComponentHandler on the
+  controller (the test's LatencyCountingHost exercises exactly that).
+- **Verification (all gates green):** core suite 115/115 Release AND ASan/UBSan
+  (zero sanitizer reports, 4/4 hashes bit-exact); wrapper tests 21/21 (unchanged — the frozen
+  surface untouched); module integration 12 -> **16/16** (new:
+  telemetry_vendor_interface, telemetry_values_sentinel — 220 Hz reads
+  id 7 = −300.009 cents, silence reads the sentinel; telemetry_dirty_bits
+  — the id-7 bit quiet in steady silence, fires on the tone, consume
+  clears; latency_notification — 1 restart on first activation, no
+  re-notify unchanged, grain-2048 restore -> re-notify, 2304 -> 1280
+  samples); Steinberg validator **47/47** on the fresh
+  PitchLab_Lagrange6_Balanced.vst3.
+- **Demo package:** public/PitchLab_R31_Telemetry_Demo_VST3.zip (the
+  bundle + install/host-author README with the IPitchTelemetry spec + the
+  R31 report + the verification logs; SHA-256 ac8fb4c22190b719f7fdb63745cb3b17ff35525f2a318df56ef7be606d31888b) + web card. Windows cross-build
+  NOT produced (llvm-mingw lost with the sandbox resets; the MinGW CMake
+  paths remain authored — same status as R24-W).
+- **Deliberately not applied (documented):** the R27 pan law + tanh
+  softclip (PitchLab has no pan parameter and does not clip), the R28 Q23
+  deglitch (the R19 crossfaded base-delay mechanism already covers the
+  click-free requirement).

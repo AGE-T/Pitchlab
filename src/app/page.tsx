@@ -36,6 +36,9 @@ import { ReportViewer } from "../components/report-viewer";
 // eliminations, host-latency verdict corrected). No new archive zip this round
 // (static-audit round); the delivery cards below remain the R23/R22/R21
 // evidence packages.
+const R31_REPORT =
+  "/home/z/my-project/OCTAVOX_R31_TELEMETRY_DEMO.md";
+const R31_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R31_TELEMETRY_DEMO.md");
 const R30_REPORT =
   "/home/z/my-project/OCTAVOX_R30_FINAL_UNK_CLOSURE.md";
 const R30_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R30_FINAL_UNK_CLOSURE.md");
@@ -67,6 +70,8 @@ const LOCAL_FALLBACK = path.join(process.cwd(), "PITCHLAB_R23_YIN_RESEARCH.md");
 const ZIP_NAME = "Octavox_RE_evidence_round23.zip";
 const R22_ZIP_NAME = "Octavox_RE_evidence_round22.zip";
 const R21_ZIP_NAME = "Octavox_RE_evidence_round21.zip";
+// R31: the telemetry/latency-truth demo VST3 build (the current delivery).
+const R31_DEMO_ZIP = "PitchLab_R31_Telemetry_Demo_VST3.zip";
 
 function readFirstExisting(paths: string[]): string | null {
   for (const p of paths) {
@@ -80,6 +85,7 @@ function readFirstExisting(paths: string[]): string | null {
 }
 
 function readMarkdown(): string {
+  const r31Report = readFirstExisting([R31_REPORT, R31_REPORT_LOCAL]);
   const r30Report = readFirstExisting([R30_REPORT, R30_REPORT_LOCAL]);
   const r29Report = readFirstExisting([R29_REPORT, R29_REPORT_LOCAL]);
   const r28Report = readFirstExisting([R28_REPORT, R28_REPORT_LOCAL]);
@@ -96,8 +102,15 @@ function readMarkdown(): string {
   ]);
   const r23 = readFirstExisting([ROUND23_PATH, ROUND23_ALT, LOCAL_FALLBACK]);
   const parts: string[] = [];
+  if (r31Report)
+    parts.push(r31Report.trim()); // R31 first (current round) — keeps the page H1
   if (r30Report)
-    parts.push(r30Report.trim()); // R30 first (current round) — keeps the page H1
+    parts.push(
+      (parts.length ? "\n\n---\n\n" : "") +
+        r30Report
+          .replace(/^# /m, "## ") // demote the R30 H1 (one page, one H1)
+          .trim(),
+    );
   if (r29Report)
     parts.push(
       (parts.length ? "\n\n---\n\n" : "") +
@@ -154,7 +167,7 @@ function readMarkdown(): string {
 
 function readDelivery() {
   const entries: { fileName: string; url: string; sizeBytes: number; sha256: string | null }[] = [];
-  for (const name of [ZIP_NAME, R22_ZIP_NAME, R21_ZIP_NAME]) {
+  for (const name of [R31_DEMO_ZIP, ZIP_NAME, R22_ZIP_NAME, R21_ZIP_NAME]) {
     try {
       const zipPath = path.join(process.cwd(), "public", name);
       const sizeBytes = fs.statSync(zipPath).size;

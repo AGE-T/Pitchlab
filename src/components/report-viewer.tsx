@@ -67,12 +67,12 @@ function childText(node: React.ReactNode): string {
 }
 
 const META = [
-  { label: "Kör", value: "Round 30 · VÉGSŐ UNK-LEZÁRÁS — az utolsó két nyitott UNK számokkal lezárva: U-2 (host-latencia) és U-3 (m02 id-12/13 feed) · a teljes R26–R29 UNK-lista megoldva" },
-  { label: "U-2 latencia", value: "getLatencySamples = slot 6 (+0x30, NEM +0x88!) @ 0x18000E540 · host-latencia = max(0, [VoxAudioProcessor+0x3C]) · 'live'-mód prepare: flag ? 8 : round(0.04·sr)+8 (40 ms pitch-ablak + 8 minta; 48 kHz → 1928)" },
-  { label: "U-3 poller", value: "fn 0x1800E5160 (per-hang, blokk-sebesség) → modpp::simple::env_t::get_child_float (slot 16, +0x80, id IMMEDIÁT r8d-ben — az ötödik dispatch-alak, amit korábban nem szkenneltek) → engine m02(12/13) → dirty-bit fanout" },
-  { label: "Architektúra", value: "processzor-osztály = VoxAudioProcessor (RTTI: tide::DigiPluginBase → ExtendedAudioProcessor → JuceAdapter → juce::AudioProcessor + 5 bázis) · a VST3ClientExtensions dynamic_cast holtkód (nulla leszármazott) · a DSP-motorok PER-HANG (voice+0x430)" },
-  { label: "Visszavonások", value: "R29 F1.7 (aggregációs útvonal) visszavonva — a cast mindig NULL · R28/R29 „nem-immediát id” tézis feloldva — az id mindvégig immediát volt, a +0x80-as felület nem volt lefedve" },
-  { label: "Bizonyíték", value: "22 szonda (s8a..s8k, s9a..s9u) · 34 evidenciafájl · r30_lib RTTI-walker (TypeDescriptor/COL/CHD/BCD) · hash előtte/utána ✓ minden sornál" },
+  { label: "Kör", value: "Round 31 · DEMÓ VST3 AZ AUDIT LELETEIBŐL — a PitchLab Harmonizer új buildje (Linux x86-64) a R26–R30 statikus audit négy cselekvésre alkalmas leletével: m02-telemetria (id 7..13), blokk-sebességű poller + dirty-bit fanout, vendor-interfész minta, latencia-igazság értesítés" },
+  { label: "m02 telemetria", value: "R28 F1.6 alkalmazva: id 7 = cent C4-től (1200/ln2; −65535 szeninel) · id 8 = arány · id 9 = Q23 n/(n+8) · id 10 = sqrt(frac·(1−2⁻²³)) · id 11 = konfidencia · id 12/13 = ∓cent ikrek (kapuzott)" },
+  { label: "Poller + dirty bitek", value: "R30 F2.3–F2.6 alkalmazva: hangonkénti blokk-sebességű poll a process() végén · pontos változás-detektálás · atomic fetch_or dirty maszk (bit = hang*8 + (id−7); 56 élő bit) · consumeDirtyBits() = UI-oldali olvasás-törlés" },
+  { label: "Vendor interfész", value: "R29 minta alkalmazva: IPitchTelemetry (IID D1A60F31-…) a queryInterface-n át — a 38 paraméteres automatizálási felület és a state blob v2 byte-ra fagyva (wrapper 21/21 változatlan)" },
+  { label: "Latencia-igazság", value: "R30 U-2 elv alkalmazva: notifyLatencyIfChanged() — restartComponent(kLatencyChanged) pontosan akkor, ha a jelentett érték változik (első aktiválás + aktív state-restore) · változatlan → nincs új értesítés" },
+  { label: "Ellenőrzés", value: "115/115Release · wrapper 21/21 · modul-integráció 16/16 (12 + 4 új R31 eset) · validator 47/47 · 220 Hz → id7 = −300.009 cent · 4/4 referencia-hash bit-exakt" },
 ];
 
 export function ReportViewer({
@@ -123,17 +123,17 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-                Octavox Research — 30. kör
+                Octavox Research — 31. kör
               </h1>
               <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm sm:line-clamp-none">
-                Az utolsó két nyitott UNK lezárva számokkal: a host-latencia (U-2) = max(0, [VoxAudioProcessor+0x3C]), amit a ’live’-mód prepare állít be (flag ? 8 : round(0.04·sr)+8 — 40 ms pitch-ablak + 8 minta; a getLatencySamples a slot 6-os +0x30-as 0x18000E540, a korábbi „slot 17” premissza fantom volt); az m02 id-12/13 feed (U-3) = a hangonkénti blokk-sebességű poller 0x1800E5160, amely a modpp::simple::env_t::get_child_float (slot 16, +0x80, id immediát r8d-ben — az ötödik dispatch-alak) útvonalon hívja a motor m02-jét, majd atomic dirty-bit fanout-tal frissíti a UI-t · Eventide Octavox RE statikus reverzibilis projekt
+                Demó VST3 az audit leleteiből: a PitchLab Harmonizer új buildje (Linux x86-64) az R26–R30 statikus audit négy cselekvésre alkalmas leletével — m02-stílusú hangmagasság-telemetria (id 7..13: cent C4-től −65535 szeninellel, Q23 arány, grain-fázis, konfidencia, ∓cent ikrek), hangonkénti blokk-sebességű poller atomic dirty-bit fanout-tal (R30), vendor-interfész a queryInterface-n át (R29 minta — a 38 paraméteres felület fagyva marad), és a latencia-igazság értesítés (U-2 elv: a host pontosan a változáskor kap kLatencyChanged-et) · Ellenőrzés: 115/115 core + wrapper 21/21 + modul-integráció 16/16 + validator 47/47 · Eventide Octavox RE statikus reverzibilis projekt
               </p>
             </div>
             <Badge
               className="bg-emerald-600 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-500"
               variant="default"
             >
-              ROUND 30 · KÉSZ
+              ROUND 31 · KÉSZ
             </Badge>
           </div>
           <div
@@ -166,13 +166,15 @@ export function ReportViewer({
                       aria-hidden="true"
                     />
                     <h2 className="text-base font-semibold tracking-tight">
-                      {di === 0 ? "R23 eredménycsomag — letöltés (az utolsó archivált kör)" : di === 1 ? "R22-baseline archívum — letöltés" : "Helyreállított R21-alapvonal — letöltés"}
+                      {di === 0 ? "R31 demó VST3 — letöltés (az aktuális kör buildje)" : di === 1 ? "R23 eredménycsomag — letöltés (az utolsó archivált kör)" : di === 2 ? "R22-baseline archívum — letöltés" : "Helyreállított R21-alapvonal — letöltés"}
                     </h2>
                   </div>
                   <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
                     {di === 0
-                      ? "A 23. kör teljes kutatási csomagja: 16 dokumentum (forrás-összehasonlítás, kanonikus matematikai levezetés, ablak/lag/latencia tanulmány, variáns-taxonómia, decimáló szűrő tanulmány, confidence/voicing tanulmány, Step-6 valós idejű tanulmány, benchmark protokoll és eredmények, döntési rekord), a kanonikus YIN referencia implementáció (12/12 — FFT-gyorsítás ekvivalenciája 3.7e-9 relatív hibán belül bizonyítva), a 15 jel × 4 mintavételi frekvencia × 7 variáns detektor-mátrix (a motor Decimated módja: 0.02 cent medián, 361 ns/minta síkban 44.1–192 kHz-ig), a független Pitch Control Layer (290/290 elfogadási teszt — lock/hold/outlier/oktáv/jitter/glissando/recovery), az R22 mérési harnes mind a nyolc §27 javítása (58 hamis 2000 Hz-es határcella eltávolítva, a verdiktumok 141/18/31/170 null eltéréssel reprodukálva), és a négy felhasználói tünet gyökérok-vizsgálata: a NaN/Inf propagáció reprodukálva ÉS javítva (rögzített motor-delta), a kattogás-mechanizmus megmérve (spacing-commit ugrások mozgás+jitter alatt — a default 8 ms crossfade véd), a dual-mono sztereó bit-exakt a natív ÉS a valódi VST3-modul szintjén (12/12), a build-különbségek 3.8–58× CPU-n mérve."
+                      ? "A 31. kör demó buildje: a PitchLab Harmonizer (Lagrange6 Balanced, Linux x86-64) az R26–R30 statikus audit leleteivel — m02-stílusú hangmagasság-telemetria (id 7..13: cent C4-től −65535 szeninellel, frekvenciaarány, Q23 n/(n+8), sqrt(frac·(1−2⁻²³)) grain-fázis, konfidencia, kapuzott ∓cent ikrek), hangonkénti blokk-sebességű poller atomic dirty-bit fanout-tal (bit = hang*8 + (id−7), 56 élő bit), vendor-interfész (IPitchTelemetry, IID D1A60F31-…) a queryInterface-n át — a 38 paraméteres automatizálási felület és a state blob byte-ra fagyva —, és a latencia-igazság értesítés (restartComponent(kLatencyChanged) pontosan a változáskor). A csomagban: a .vst3 bundle, telepítő- és host-szerzői README az interfész-specifikációval, az R31 riport és az ellenőrzési naplók."
                       : di === 1
+                      ? "A 23. kör teljes kutatási csomagja: 16 dokumentum (forrás-összehasonlítás, kanonikus matematikai levezetés, ablak/lag/latencia tanulmány, variáns-taxonómia, decimáló szűrő tanulmány, confidence/voicing tanulmány, Step-6 valós idejű tanulmány, benchmark protokoll és eredmények, döntési rekord), a kanonikus YIN referencia implementáció (12/12 — FFT-gyorsítás ekvivalenciája 3.7e-9 relatív hibán belül bizonyítva), a 15 jel × 4 mintavételi frekvencia × 7 variáns detektor-mátrix (a motor Decimated módja: 0.02 cent medián, 361 ns/minta síkban 44.1–192 kHz-ig), a független Pitch Control Layer (290/290 elfogadási teszt — lock/hold/outlier/oktáv/jitter/glissando/recovery), az R22 mérési harnes mind a nyolc §27 javítása (58 hamis 2000 Hz-es határcella eltávolítva, a verdiktumok 141/18/31/170 null eltéréssel reprodukálva), és a négy felhasználói tünet gyökérok-vizsgálata: a NaN/Inf propagáció reprodukálva ÉS javítva (rögzített motor-delta), a kattogás-mechanizmus megmérve (spacing-commit ugrások mozgás+jitter alatt — a default 8 ms crossfade véd), a dual-mono sztereó bit-exakt a natív ÉS a valódi VST3-modul szintjén (12/12), a build-különbségek 3.8–58× CPU-n mérve."
+                      : di === 2
                       ? "A 22. kör leszállított bizonyítékarchívuma — az R23 kiinduló alapvonala (SHA-256 782e7ab8…, újraellenőrizve). Tartalmazza a Minimum Pitch jelútvonal teljes 8 szintű láncolatát, az egységesített spacing-kaput, a 360 cellás mátrixot és a 100/100 alapvonál-tesztcsomagot — minden, amire az R23 épült."
                       : "A 21. kör bizonyítékarchívuma — a teljes R21 kutatási fa (633 fájl: natív forrás, dokumentumok, PoC-mérések és a háromvariáns Windows-kiadás validációs láncolata: Lagrange6 / ObsKernel6 / Lagrange6+ObsKernel6). A körök közti bináris-azonosság és visszamenőleges alapvonal-ellenőrzés céljából őrizzük meg."}
                   </p>
@@ -184,7 +186,7 @@ export function ReportViewer({
                       {formatBytes(entry.sizeBytes)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
-                      {di === 0 ? "93 fájl · 16 dokumentum · friss cmake-build 100/100" : di === 1 ? "638 fájl · R23-alapvonal" : "632 fájl · alapvonal"}
+                      {di === 0 ? "13 fájl · Linux x86-64 VST3 · validator 47/47 · modul 16/16" : di === 1 ? "93 fájl · 16 dokumentum · friss cmake-build 100/100" : di === 2 ? "638 fájl · R23-alapvonal" : "632 fájl · alapvonal"}
                     </Badge>
                   </div>
                   {entry.sha256 ? (

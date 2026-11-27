@@ -312,6 +312,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "octavox/pitch_control.hpp"  // R31: ControlState (telemetry observers)
 #include "octavox/simd.hpp"
 
 namespace octavox {
@@ -612,6 +613,26 @@ public:
     /// Diagnostics only.
     int spacingHistoryCount() const;
 
+    // -- R31: m02-style telemetry observers (read-only) --------------------
+    // The R26-R30 static audit fully decoded the original's m02 pitch-
+    // correction telemetry (ids 7..13) and its per-voice block-rate
+    // poller/dirty-bit fanout (R28 F1.6, R30 F2). These three observers
+    // expose the PitchLab-side ingredients so the SDK-free telemetry
+    // component (include/octavox/telemetry.hpp) can serve the equivalent
+    // readouts. PURE OBSERVERS: they change no arithmetic (the 110-case
+    // suite and the four reference hashes gate this round).
+    /// CMNDF value at the selected minimum of the LAST estimate
+    /// (1.0 = no dip/degenerate, 0 = perfect periodicity). The detector's
+    /// own confidence ingredient (= 1 - periodicity). Diagnostics only.
+    double lastEstimateCmndfMin() const;
+    /// The R23 Pitch Control Layer's state for the LAST frame (the public
+    /// ControlState enum; kNoLock when the tracking gate is off).
+    ControlState lastControlState() const;
+    /// The control layer's validated+smoothed tracked Hz (0 = none).
+    /// Distinct from the raw detector estimate (lastEstimateHz): this is
+    /// the post-gate value the spacing path consumes when locked.
+    double trackedHz() const;
+
 private:
     struct Impl;
     Impl* impl_ = nullptr;
@@ -652,6 +673,14 @@ public:
     void process(const float* const* in, float* const* out, int channels, int n);
 
     const VoiceStats& voiceStats(int channel, int voice) const;
+
+    // -- R31: telemetry observers, delegated to channel 0 (the reference
+    // engine; per-voice DSP state stays per-channel via voiceStats()).
+    double lastEstimateHz() const;
+    double lastEstimateCmndfMin() const;
+    ControlState lastControlState() const;
+    double trackedHz() const;
+    bool lastEstimateSpacingAccepted() const;
 
 private:
     struct MImpl;

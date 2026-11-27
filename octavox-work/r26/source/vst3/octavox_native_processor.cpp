@@ -23,6 +23,7 @@ namespace vst3wrap {
 using Steinberg::int32;
 using Steinberg::tresult;
 using Steinberg::uint32;
+using Steinberg::uint64;
 using Steinberg::TBool;
 using Steinberg::IBStream;
 using namespace Steinberg::Vst;
@@ -48,6 +49,53 @@ OctavoxNativeProcessor::OctavoxNativeProcessor() {
 
 OctavoxNativeProcessor::~OctavoxNativeProcessor() = default;
 
+//==========================================================================
+// R31: vendor telemetry interface + the latency-truth notification
+//==========================================================================
+
+tresult PLUGIN_API OctavoxNativeProcessor::queryInterface(const Steinberg::TUID iid,
+                                                          void** obj) {
+    // The vendor telemetry IID is answered FIRST (the R29 vendor-interface
+    // pattern); everything else (IComponent/IAudioProcessor/IEditController/
+    // IConnectionPoint/FUnknown...) falls through to the base chain.
+    QUERY_INTERFACE(iid, obj, IPitchTelemetry::iid, IPitchTelemetry)
+    return SingleComponentEffect::queryInterface(iid, obj);
+}
+
+tresult PLUGIN_API OctavoxNativeProcessor::getVoiceFrame(int32 voice, double* frame14) {
+    if (!frame14 || voice < 0 || voice >= kTelemetryMaxVoices)
+        return Steinberg::kResultFalse;
+    for (int id = 0; id < kTelIdCount; ++id) frame14[id] = telemetry_.cell(voice, id);
+    return Steinberg::kResultTrue;
+}
+
+tresult PLUGIN_API OctavoxNativeProcessor::getCellId(int32 cell, int32* idOut) {
+    if (!idOut || cell < 0 || cell >= kTelIdCount)
+        return Steinberg::kResultFalse;
+    // Cells 0..6 are reserved (the original's m02 handled ids 7..13; we
+    // keep the numbering aligned for cross-reference readability).
+    *idOut = (cell >= kTelCentsFromC4) ? cell : -1;
+    return Steinberg::kResultTrue;
+}
+
+uint64 PLUGIN_API OctavoxNativeProcessor::consumeDirtyBits() {
+    return telemetry_.consumeDirtyBits();
+}
+
+uint64 PLUGIN_API OctavoxNativeProcessor::getDirtyBits() {
+    return telemetry_.dirtyBits();
+}
+
+void OctavoxNativeProcessor::notifyLatencyIfChanged() {
+    const uint32 lat = getLatencySamples();
+    if (lat == lastLatencyReported_) return;
+    lastLatencyReported_ = lat;
+    // componentHandler is the host connection captured by initialize()
+    // (ComponentBase keeps it); restartComponent is a main-thread call per
+    // the VST3 spec -- every caller below is on the main thread.
+    if (componentHandler) componentHandler->restartComponent(kLatencyChanged);
+}
+
 tresult PLUGIN_API OctavoxNativeProcessor::initialize(Steinberg::FUnknown* context) {
     const tresult r = SingleComponentEffect::initialize(context);
     if (r != Steinberg::kResultOk) return r;
@@ -68,6 +116,9 @@ tresult PLUGIN_API OctavoxNativeProcessor::initialize(Steinberg::FUnknown* conte
     cfg_ = defaultConfig();
     processSetup.sampleRate = 0;
     processSetup.maxSamplesPerBlock = 0;
+    // R31: fresh lifecycle = fresh latency bookkeeping + telemetry state.
+    lastLatencyReported_ = 0;
+    telemetry_.reset();
 
     // Buses: symmetric main in/out, stereo by default (mono negotiated via
     // setBusArrangements).
@@ -151,6 +202,9 @@ tresult PLUGIN_API OctavoxNativeProcessor::setupProcessing(ProcessSetup& setup) 
         engineReady_ = engine_.prepare(cfg_, channels_);
         if (engineReady_) applyFullSurface();
         if (!engineReady_) return Steinberg::kResultFalse;
+        // R31: a re-prepare at a new rate can change the reported latency
+        // (the R30 U-2 principle: live-update the host).
+        notifyLatencyIfChanged();
     }
     return Steinberg::kResultOk;
 }
@@ -167,6 +221,10 @@ tresult PLUGIN_API OctavoxNativeProcessor::setActive(TBool state) {
         if (!engineReady_) return Steinberg::kResultFalse;
         applyFullSurface();
         active_ = true;
+        // R31: fresh activation = fresh telemetry state, and the host is
+        // told the (possibly changed) latency (the R30 U-2 principle).
+        telemetry_.reset();
+        notifyLatencyIfChanged();
     } else {
         active_ = false;  // suspend: engine state is kept; reset = the
                           // setActive(false)->(true) cycle (documented)
@@ -439,6 +497,12 @@ tresult PLUGIN_API OctavoxNativeProcessor::process(ProcessData& data) {
     // block -- same semantics a block-boundary implementation would give).
     applyEventsAt(INT32_MAX);
 
+    // ---- R31: the per-voice block-rate telemetry poll (R30 F2.3-F2.6) -----
+    // Once per process() call, AFTER the audio (the frame reflects the
+    // engine state at the end of the block). Wait-free + allocation-free;
+    // change-detect + atomic dirty-bit fanout inside.
+    telemetry_.poll(engine_, static_cast<int>(std::lround(surface_.voices)));
+
     // We cannot guarantee silence at the output (delay/feedback tails):
     // clear the host's silence hint honestly.
     if (data.outputs && data.numOutputs > 0) data.outputs[0].silenceFlags = 0;
@@ -518,6 +582,10 @@ tresult PLUGIN_API OctavoxNativeProcessor::setState(IBStream* state) {
     if (active_) {
         engineReady_ = engine_.prepare(cfg_, channels_);
         if (engineReady_) applyFullSurface();
+        // R31: an active state restore may change the sample-domain config
+        // (grain/base delay) -> the reported latency may change; the host
+        // is told (the R30 U-2 live-update principle).
+        notifyLatencyIfChanged();
     }
     return Steinberg::kResultOk;
 }

@@ -48,6 +48,9 @@
 #include "octavox_params.h"
 
 #include "octavox/dsp.hpp"
+#include "octavox/telemetry.hpp"
+
+#include "octavox_telemetry_interface.h"
 
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivstcomponent.h"
@@ -59,10 +62,32 @@
 namespace octavox {
 namespace vst3wrap {
 
-class OctavoxNativeProcessor : public Steinberg::Vst::SingleComponentEffect {
+class OctavoxNativeProcessor : public Steinberg::Vst::SingleComponentEffect,
+                               public IPitchTelemetry {
 public:
     OctavoxNativeProcessor();
     ~OctavoxNativeProcessor() override;
+
+    //--- R31: vendor queryInterface (the R29 vendor-interface pattern) -----
+    // The m02-style telemetry is served through IPitchTelemetry (a custom
+    // IID answered HERE, before the base chain), keeping the 38-parameter
+    // automation surface and the state blob byte-frozen.
+    Steinberg::tresult PLUGIN_API queryInterface(const Steinberg::TUID iid,
+                                                 void** obj) SMTG_OVERRIDE;
+
+    //--- from IPitchTelemetry (R31; see octavox_telemetry_interface.h) -----
+    Steinberg::tresult PLUGIN_API getVoiceFrame(Steinberg::int32 voice,
+                                                double* frame14) SMTG_OVERRIDE;
+    Steinberg::tresult PLUGIN_API getCellId(Steinberg::int32 cell,
+                                            Steinberg::int32* idOut) SMTG_OVERRIDE;
+    Steinberg::uint64 PLUGIN_API consumeDirtyBits() SMTG_OVERRIDE;
+    Steinberg::uint64 PLUGIN_API getDirtyBits() SMTG_OVERRIDE;
+
+    // The SDK's documented pattern for an FObject-based class that adds an
+    // extra FUnknown-derived interface (fobject.h): declare the refcount
+    // in the most-derived class so it overrides BOTH FUnknown subobjects
+    // (the SingleComponentEffect chain and the IPitchTelemetry branch).
+    REFCOUNT_METHODS(SingleComponentEffect)
 
     //--- from IPluginBase ---------------------------------------------------
     Steinberg::tresult PLUGIN_API initialize(Steinberg::FUnknown* context) SMTG_OVERRIDE;
@@ -117,6 +142,18 @@ private:
     int channels_ = 2;        // negotiated bus channel count (1 or 2)
     bool engineReady_ = false;
     bool active_ = false;
+
+    // -- R31: m02-style telemetry (poller + dirty bits; see telemetry.hpp) --
+    TelemetryPoller telemetry_;
+    /// The latency value last handed to the host via
+    /// restartComponent(kLatencyChanged) (0 = none yet). Main thread only.
+    uint32 lastLatencyReported_ = 0;
+    /// Notify the host when the reported latency changed (the R30 U-2
+    /// principle: the latency must be live-updated whenever a prepare or a
+    /// configuration change alters it). MAIN THREAD ONLY (setupProcessing /
+    /// setActive / setState paths -- per the VST3 spec restartComponent is
+    /// a main-thread call).
+    void notifyLatencyIfChanged();
 
     // -- preallocated scratch for in-place (aliased) host buffers -----------
     std::vector<float> scratch_[2];

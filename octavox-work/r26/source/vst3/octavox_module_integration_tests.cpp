@@ -36,7 +36,9 @@
 // ---------------------------------------------------------------------------
 #include "octavox_params.h"
 #include "octavox_ids.h"
+#include "octavox_telemetry_interface.h"
 #include "octavox/dsp.hpp"
+#include "octavox/telemetry.hpp"
 
 #include "public.sdk/source/vst/hosting/module.h"
 #include "public.sdk/source/vst/hosting/hostclasses.h"
@@ -57,6 +59,19 @@
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
+
+// R31: the vendor telemetry types (kept explicit; the file is in the
+// global namespace).
+using octavox::vst3wrap::IPitchTelemetry;
+using octavox::kTelIdCount;
+using octavox::kTelCentsFromC4;
+using octavox::kTelFreqRatio;
+using octavox::kTelQ23Ratio;
+using octavox::kTelPhaseConf;
+using octavox::kTelConfidence;
+using octavox::kTelNegCents;
+using octavox::kTelPosCents;
+using octavox::kTelemetryMaxVoices;
 
 //==========================================================================
 // harness plumbing (the same shape as the project's other test mains)
@@ -205,6 +220,33 @@ void addEvent(ParameterChanges& changes, uint32_t id,
         q->addPoint(offset, norm, pidx);
     }
 }
+
+// --------------------------------------------------------------------------
+// R31: a HostApplication that ALSO answers IComponentHandler and counts
+// restartComponent(kLatencyChanged) -- the observer for the latency-truth
+// notification test (the SDK's plain HostApplication does not implement
+// IComponentHandler, so the wrapper's componentHandler stays null there).
+// --------------------------------------------------------------------------
+class LatencyCountingHost : public HostApplication, public IComponentHandler {
+public:
+    int latencyRestarts = 0;
+
+    tresult PLUGIN_API queryInterface(const TUID iid, void** obj) SMTG_OVERRIDE {
+        QUERY_INTERFACE(iid, obj, IComponentHandler::iid, IComponentHandler)
+        return HostApplication::queryInterface(iid, obj);
+    }
+    tresult PLUGIN_API restartComponent(int32 flags) SMTG_OVERRIDE {
+        if (flags & kLatencyChanged) ++latencyRestarts;
+        return kResultOk;
+    }
+    tresult PLUGIN_API beginEdit(ParamID /*id*/) SMTG_OVERRIDE { return kResultOk; }
+    tresult PLUGIN_API performEdit(ParamID /*id*/, ParamValue /*v*/) SMTG_OVERRIDE { return kResultOk; }
+    tresult PLUGIN_API endEdit(ParamID /*id*/) SMTG_OVERRIDE { return kResultOk; }
+
+    // the SDK pattern for an extra FUnknown-derived interface on an
+    // FObject-based class (both FUnknown subobjects get the overrider)
+    REFCOUNT_METHODS(HostApplication)
+};
 
 }  // namespace
 
@@ -603,6 +645,324 @@ void caseLatencyReporting(CaseResult& c) {
     c.pass = c.note.empty();
 }
 
+// ===== R31: the m02-style telemetry + latency-truth cases =================
+
+// helper: fill `n` samples of a sine at `hz` (mono) starting at stream
+// position `off0` (continuous phase across blocks).
+void fillSine(float* dst, int n, int off0, double hz, double sr) {
+    for (int i = 0; i < n; ++i)
+        dst[i] = 0.5f * static_cast<float>(std::sin(2.0 * 3.14159265358979323846 * hz *
+                                                   static_cast<double>(off0 + i) / sr));
+}
+
+// The vendor interface is served through queryInterface (the R29 pattern).
+void caseTelemetryVendorInterface(CaseResult& c) {
+    if (!g_audio) { c.note = "no processor"; return; }
+    IPitchTelemetry* tel = nullptr;
+    if (g_audio->queryInterface(IPitchTelemetry::iid, (void**)&tel) != kResultOk || !tel) {
+        c.note = "queryInterface(IPitchTelemetry) failed";
+        c.pass = false;
+        return;
+    }
+    bool idsOk = true;
+    for (int cell = 0; cell < kTelIdCount; ++cell) {
+        int32 id = -2;
+        if (tel->getCellId(cell, &id) != kResultOk) { idsOk = false; break; }
+        const int32 expect = (cell >= kTelCentsFromC4) ? cell : -1;
+        if (id != expect) { idsOk = false; break; }
+    }
+    check(c, idsOk, "getCellId mapping wrong (cells 0..6 must be -1, 7..13 = id)");
+    double frame[kTelIdCount];
+    check(c, tel->getVoiceFrame(0, frame) == kResultOk, "getVoiceFrame(0) failed");
+    check(c, tel->getVoiceFrame(-1, frame) == kResultFalse, "voice -1 accepted");
+    check(c, tel->getVoiceFrame(kTelemetryMaxVoices, frame) == kResultFalse,
+          "voice kTelemetryMaxVoices accepted");
+    check(c, tel->getVoiceFrame(0, nullptr) == kResultFalse, "null frame accepted");
+    tel->release();  // QUERY_INTERFACE add-ref'd
+    c.pass = c.note.empty();
+}
+
+// A fresh instance: silence -> the -65535 sentinel; then a 220 Hz sine ->
+// id 7 = -300 cents (A3), the Q23 identity for id 9, ids 10/11 in range,
+// and the +/-cents twins consistent with the unity default (both 0).
+void caseTelemetryValues(CaseResult& c) {
+    if (!g_module) { c.note = "no module"; return; }
+    IPtr<IComponent> comp2 = g_module->getFactory().createInstance<IComponent>(
+        VST3::UID(octavox::vst3wrap::OctavoxNativeProcessorUID));
+    check(c, comp2 != nullptr, "instance creation failed");
+    if (!comp2) { c.pass = false; return; }
+    IPtr<IAudioProcessor> audio2;
+    {
+        IAudioProcessor* ap2 = nullptr;
+        if (comp2->queryInterface(IAudioProcessor::iid, (void**)&ap2) == kResultOk && ap2)
+            audio2 = IPtr<IAudioProcessor>(ap2);
+    }
+    IPitchTelemetry* tel2 = nullptr;
+    check(c, comp2->queryInterface(IPitchTelemetry::iid, (void**)&tel2) == kResultOk && tel2,
+          "IPitchTelemetry not served by the fresh instance");
+    if (!audio2 || !tel2) { c.pass = false; return; }
+    check(c, comp2->initialize(g_hostContext) == kResultOk, "initialize failed");
+    SpeakerArrangement mono = SpeakerArr::kMono;
+    audio2->setBusArrangements(&mono, 1, &mono, 1);
+    ProcessSetup ps;
+    std::memset(&ps, 0, sizeof(ps));
+    ps.processMode = kRealtime;
+    ps.symbolicSampleSize = kSample32;
+    ps.sampleRate = 48000.0;
+    ps.maxSamplesPerBlock = 4096;
+    check(c, audio2->setupProcessing(ps) == kResultOk, "setupProcessing failed");
+    check(c, comp2->setActive(true) == kResultOk, "setActive failed");
+    audio2->setProcessing(true);
+
+    const int B = 4096;
+    std::vector<float> buf(B), out(B, 0.0f);
+    auto run = [&](bool sine, int blocks) {
+        for (int b = 0; b < blocks; ++b) {
+            if (sine) fillSine(buf.data(), B, b * B, 220.0, 48000.0);
+            else std::fill(buf.begin(), buf.end(), 0.0f);
+            float* inP[1] = {buf.data()};
+            float* outP[1] = {out.data()};
+            AudioBusBuffers ib{}, ob{};
+            ib.numChannels = 1;
+            ib.channelBuffers32 = inP;
+            ob.numChannels = 1;
+            ob.channelBuffers32 = outP;
+            AudioBusBuffers inB[1] = {ib}, outB[1] = {ob};
+            ProcessData pd{};
+            pd.processMode = kRealtime;
+            pd.symbolicSampleSize = kSample32;
+            pd.numSamples = B;
+            pd.inputs = inB;
+            pd.numInputs = 1;
+            pd.outputs = outB;
+            pd.numOutputs = 1;
+            audio2->process(pd);
+        }
+    };
+
+    // 1) silence: the sentinel
+    run(false, 4);
+    double frame[kTelIdCount];
+    tel2->getVoiceFrame(0, frame);
+    addValue(c, "silence_id7_cents", frame[kTelCentsFromC4]);
+    check(c, frame[kTelCentsFromC4] == octavox::kTelemetryNoPitchSentinel,
+          "silence did not serve the -65535 sentinel on id 7");
+
+    // 2) a 220 Hz sine (1 s): the tracker locks -> id 7 = -300 cents
+    run(true, 12);
+    tel2->getVoiceFrame(0, frame);
+    addValue(c, "sine220_id7_cents", frame[kTelCentsFromC4]);
+    check(c, std::fabs(frame[kTelCentsFromC4] - (-300.0)) < 5.0,
+          "id 7 not within 5 cents of -300 for the 220 Hz sine");
+
+    // 3) the internal identities of the other ids on the same frame
+    const double ratio = frame[kTelFreqRatio];
+    addValue(c, "sine220_id8_ratio", ratio);
+    check(c, ratio > 0.0, "id 8 ratio non-positive");
+    const double n23 = std::llround(ratio * 8388608.0);
+    check(c, std::fabs(frame[kTelQ23Ratio] - n23 / (n23 + 8.0)) < 1e-12,
+          "id 9 != n/(n+8) with n = llround(ratio*2^23)");
+    check(c, frame[kTelPhaseConf] >= 0.0 && frame[kTelPhaseConf] <= 1.0,
+          "id 10 outside [0,1]");
+    check(c, frame[kTelConfidence] >= 0.0 && frame[kTelConfidence] <= 1.0,
+          "id 11 outside [0,1]");
+    // the default surface is unity (pitch 0): the +/-cents twins read 0
+    check(c, frame[kTelNegCents] == 0.0 && frame[kTelPosCents] == 0.0,
+          "id 12/13 not 0 at the unity default");
+    addValue(c, "sine220_id11_confidence", frame[kTelConfidence]);
+
+    audio2->setProcessing(false);
+    comp2->setActive(false);
+    check(c, comp2->terminate() == kResultOk, "terminate failed");
+    tel2->release();
+    c.pass = c.note.empty();
+}
+
+// The dirty-bit contract (R30): the id-7 bit stays quiet while the tracked
+// value is unchanged (silence), fires when the tone locks, and consume
+// clears the mask.
+void caseTelemetryDirtyBits(CaseResult& c) {
+    if (!g_module) { c.note = "no module"; return; }
+    IPtr<IComponent> comp2 = g_module->getFactory().createInstance<IComponent>(
+        VST3::UID(octavox::vst3wrap::OctavoxNativeProcessorUID));
+    check(c, comp2 != nullptr, "instance creation failed");
+    if (!comp2) { c.pass = false; return; }
+    IPtr<IAudioProcessor> audio2;
+    {
+        IAudioProcessor* ap2 = nullptr;
+        if (comp2->queryInterface(IAudioProcessor::iid, (void**)&ap2) == kResultOk && ap2)
+            audio2 = IPtr<IAudioProcessor>(ap2);
+    }
+    IPitchTelemetry* tel2 = nullptr;
+    check(c, comp2->queryInterface(IPitchTelemetry::iid, (void**)&tel2) == kResultOk && tel2,
+          "IPitchTelemetry not served");
+    if (!audio2 || !tel2) { c.pass = false; return; }
+    check(c, comp2->initialize(g_hostContext) == kResultOk, "initialize failed");
+    SpeakerArrangement mono = SpeakerArr::kMono;
+    audio2->setBusArrangements(&mono, 1, &mono, 1);
+    ProcessSetup ps;
+    std::memset(&ps, 0, sizeof(ps));
+    ps.processMode = kRealtime;
+    ps.symbolicSampleSize = kSample32;
+    ps.sampleRate = 48000.0;
+    ps.maxSamplesPerBlock = 4096;
+    check(c, audio2->setupProcessing(ps) == kResultOk, "setupProcessing failed");
+    check(c, comp2->setActive(true) == kResultOk, "setActive failed");
+    audio2->setProcessing(true);
+
+    const int B = 4096;
+    std::vector<float> buf(B), out(B, 0.0f);
+    auto run = [&](bool sine, int blocks) {
+        for (int b = 0; b < blocks; ++b) {
+            if (sine) fillSine(buf.data(), B, b * B, 220.0, 48000.0);
+            else std::fill(buf.begin(), buf.end(), 0.0f);
+            float* inP[1] = {buf.data()};
+            float* outP[1] = {out.data()};
+            AudioBusBuffers ib{}, ob{};
+            ib.numChannels = 1;
+            ib.channelBuffers32 = inP;
+            ob.numChannels = 1;
+            ob.channelBuffers32 = outP;
+            AudioBusBuffers inB[1] = {ib}, outB[1] = {ob};
+            ProcessData pd{};
+            pd.processMode = kRealtime;
+            pd.symbolicSampleSize = kSample32;
+            pd.numSamples = B;
+            pd.inputs = inB;
+            pd.numInputs = 1;
+            pd.outputs = outB;
+            pd.numOutputs = 1;
+            audio2->process(pd);
+        }
+    };
+
+    const uint64 id7Bit0 = static_cast<uint64>(1) << (0 * 8 + (kTelCentsFromC4 - 7));
+
+    // 1) initial consume (the first polls marked the sentinel transition)
+    run(false, 2);
+    (void)tel2->consumeDirtyBits();
+
+    // 2) steady silence: the id-7 bit must stay quiet (no tracked change)
+    run(false, 4);
+    const uint64 quiet = tel2->consumeDirtyBits();
+    addValue(c, "silence_id7_bit", (quiet & id7Bit0) ? 1.0 : 0.0);
+    check(c, (quiet & id7Bit0) == 0, "id-7 dirty bit fired during steady silence");
+
+    // 3) consume-clears: a second consume without processing returns 0
+    check(c, tel2->consumeDirtyBits() == 0, "consumeDirtyBits did not clear the mask");
+
+    // 4) the tone begins: once the tracker locks, the id-7 bit fires
+    run(true, 12);
+    uint64 fired = 0;
+    // consume across a few further blocks; the lock transition must appear
+    for (int k = 0; k < 4 && (fired & id7Bit0) == 0; ++k) {
+        run(true, 2);
+        fired |= tel2->consumeDirtyBits();
+    }
+    addValue(c, "tone_id7_bit", (fired & id7Bit0) ? 1.0 : 0.0);
+    check(c, (fired & id7Bit0) != 0, "id-7 dirty bit never fired for the tone");
+
+    audio2->setProcessing(false);
+    comp2->setActive(false);
+    check(c, comp2->terminate() == kResultOk, "terminate failed");
+    tel2->release();
+    c.pass = c.note.empty();
+}
+
+// The latency-truth notification (the R30 U-2 principle): the host is told
+// kLatencyChanged on the first report and whenever the reported value
+// changes (an active state restore with a different sample-domain config).
+void caseLatencyNotification(CaseResult& c) {
+    if (!g_module) { c.note = "no module"; return; }
+    static LatencyCountingHost countingHost;
+    countingHost.latencyRestarts = 0;
+    IPtr<IComponent> comp2 = g_module->getFactory().createInstance<IComponent>(
+        VST3::UID(octavox::vst3wrap::OctavoxNativeProcessorUID));
+    check(c, comp2 != nullptr, "instance creation failed");
+    if (!comp2) { c.pass = false; return; }
+    IPtr<IAudioProcessor> audio2;
+    {
+        IAudioProcessor* ap2 = nullptr;
+        if (comp2->queryInterface(IAudioProcessor::iid, (void**)&ap2) == kResultOk && ap2)
+            audio2 = IPtr<IAudioProcessor>(ap2);
+    }
+    if (!audio2) { c.pass = false; return; }
+    // (the FUnknown* cast goes through the HostApplication branch -- the
+    // IComponentHandler branch is reached by the component's own
+    // queryInterface, exactly like a real host)
+    check(c, comp2->initialize(static_cast<FUnknown*>(
+                            static_cast<HostApplication*>(&countingHost))) == kResultOk,
+          "initialize failed");
+    // The VST3 host contract for the handler connection: the host hands the
+    // controller its IComponentHandler via setComponentHandler (the SDK's
+    // ComponentBase does NOT query it from the context). A real host does
+    // exactly this call after creating the controller.
+    {
+        IEditController* ec2 = nullptr;
+        check(c, comp2->queryInterface(IEditController::iid, (void**)&ec2) == kResultOk && ec2,
+              "IEditController not served");
+        if (ec2) {
+            ec2->setComponentHandler(static_cast<IComponentHandler*>(&countingHost));
+            ec2->release();
+        }
+    }
+    SpeakerArrangement mono = SpeakerArr::kMono;
+    audio2->setBusArrangements(&mono, 1, &mono, 1);
+    ProcessSetup ps;
+    std::memset(&ps, 0, sizeof(ps));
+    ps.processMode = kRealtime;
+    ps.symbolicSampleSize = kSample32;
+    ps.sampleRate = 48000.0;
+    ps.maxSamplesPerBlock = 4096;
+    check(c, audio2->setupProcessing(ps) == kResultOk, "setupProcessing failed");
+    check(c, comp2->setActive(true) == kResultOk, "setActive failed");
+
+    // 1) the first report: exactly one notification so far
+    addValue(c, "restarts_after_first_activate", (double)countingHost.latencyRestarts);
+    check(c, countingHost.latencyRestarts == 1,
+          "expected exactly 1 kLatencyChanged after the first activation");
+
+    // 2) the reported value equals the core's contract
+    octavox::MultichannelShifter ref;
+    ref.prepare(octavox::vst3wrap::defaultConfig(), 1);
+    check(c, audio2->getLatencySamples() == ref.latencySamples(),
+          "reported latency != the core contract");
+
+    // 3) unchanged latency -> NO re-notification on a deactivate/activate
+    comp2->setActive(false);
+    comp2->setActive(true);
+    addValue(c, "restarts_after_reactivate", (double)countingHost.latencyRestarts);
+    check(c, countingHost.latencyRestarts == 1,
+          "unchanged latency must not re-notify");
+
+    // 4) a changed sample-domain config -> the host is told again.
+    // Build a state blob with grain 2048 (the default is 4096): the
+    // latency (base_delay + grain/2) changes by 1024 samples.
+    MemoryStream state;
+    {
+        octavox::vst3wrap::StateData st{};
+        st.cfg = octavox::vst3wrap::defaultConfig();
+        st.cfg.grain = 2048.0;
+        st.cfg.sample_rate = 48000.0;
+        st.channels = 1;
+        st.surface = octavox::vst3wrap::defaultSurface();
+        check(c, octavox::vst3wrap::writeStateData(&state, st),
+              "building the grain-2048 state blob failed");
+    }
+    state.seek(0, IBStream::kIBSeekSet, nullptr);
+    check(c, comp2->setState(&state) == kResultOk, "setState failed");
+    addValue(c, "restarts_after_changed_latency", (double)countingHost.latencyRestarts);
+    check(c, countingHost.latencyRestarts == 2,
+          "a latency change must re-notify the host");
+    addValue(c, "latency_after_change", (double)audio2->getLatencySamples());
+    check(c, audio2->getLatencySamples() == ref.latencySamples() - 1024,
+          "the grain-2048 latency must be 1024 samples lower");
+
+    comp2->setActive(false);
+    check(c, comp2->terminate() == kResultOk, "terminate failed");
+    c.pass = c.note.empty();
+}
+
 void caseTerminateUnload(CaseResult& c) {
     if (!g_component) { c.note = "no component"; return; }
     check(c, g_component->terminate() == kResultOk, "terminate failed");
@@ -731,6 +1091,26 @@ int main(int argc, char** argv) {
     {
         CaseResult c{"latency_reporting"};
         caseLatencyReporting(c);
+        pushCase(R, std::move(c));
+    }
+    {
+        CaseResult c{"telemetry_vendor_interface"};
+        caseTelemetryVendorInterface(c);
+        pushCase(R, std::move(c));
+    }
+    {
+        CaseResult c{"telemetry_values_sentinel"};
+        caseTelemetryValues(c);
+        pushCase(R, std::move(c));
+    }
+    {
+        CaseResult c{"telemetry_dirty_bits"};
+        caseTelemetryDirtyBits(c);
+        pushCase(R, std::move(c));
+    }
+    {
+        CaseResult c{"latency_notification"};
+        caseLatencyNotification(c);
         pushCase(R, std::move(c));
     }
     {

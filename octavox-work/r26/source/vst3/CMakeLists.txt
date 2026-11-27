@@ -128,6 +128,12 @@ add_library(octavox_core_vst3 STATIC
     ../src/dsp.cpp
     ../src/pitch_control.cpp
     ../src/simd_dispatch.cpp
+    # R31: the m02-style telemetry poller (SDK-free; see
+    # include/octavox/telemetry.hpp for the provenance note) + the vendor
+    # interface's single FUID definition (linked by the module AND the
+    # test harnesses).
+    ../src/telemetry.cpp
+    octavox_telemetry_interface.cpp
 )
 target_include_directories(octavox_core_vst3 PUBLIC ../include ../src)
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i.86|x86)$")
