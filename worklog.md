@@ -855,3 +855,48 @@ findings.
   softclip (PitchLab has no pan parameter and does not clip), the R28 Q23
   deglitch (the R19 crossfaded base-delay mechanism already covers the
   click-free requirement).
+
+---
+
+## POST-R31 BRANCH SYNC (2026-11-27) — r31-telemetry-demo integrity audit + two-way sync (user-directed: stay on this branch, main untouched)
+
+**Mandate (user):** "Indulhat kérlek. Maradjunk ebben a branchben. Main
+ágra ne menjünk még ki." — green light for the branch operation proposed at
+the end of the R31 session (which ran out of context); everything stays on
+`r31-telemetry-demo`, no main operations.
+
+- **Full-tree integrity audit (local worktree vs remote branch b494562):**
+  git ls-tree over all 5451 branch blobs, SHA-1 hash compare against every
+  local file — 5394/5394 existing files bit-exact, 0 content mismatches;
+  the R31 demo zip on the branch is byte-identical to the local
+  `public/PitchLab_R31_Telemetry_Demo_VST3.zip` (SHA-256 ac8fb4c2…888b).
+- **Sandbox-loss recovery (remote -> local): 57 files restored** from the
+  branch (push-first proved its worth): the complete R24-W Windows evidence
+  set `logs_r24w/` (23 files), `octavox-work/r24/win-zig/` (README +
+  host-shims), the `octavox-work/r25/` doc set (3 files), the R24/R25
+  public packages (12 files incl. sha256 sidecars), and 17 tool-results.
+  All restored bit-exact (cmp-verified per file).
+- **Branch delta (local -> remote): sync commit pushed** on top of b494562:
+  the two R30/R31-session tool-results (bash_1795718322431 disassembly
+  evidence, bash_1795772099023 local-vs-remote listing), the .gitignore
+  completion, this worklog entry, and the removal of the stray
+  `octavox-work/r24/source/vst3/-` file (1937-byte CMake CXX-DetectStdlib
+  preprocessor artifact committed by accident in an earlier round).
+- **.gitignore completion:** `octavox-work/r26/source/vst3/build_*/` — the
+  R31 build tree (478 CMake files under `vst3/build_r31/`) slipped through
+  the earlier `source/build_*/` pattern; regenerable build trees stay
+  untracked per the existing policy. Plus `upload/token.txt` /
+  `upload/*_token*` / `*.token` — session tokens are secrets and can never
+  be committed to the public repo.
+- **Token handling (process restored after the sandbox reset):** the
+  uploaded GitHub token moved OUT of the repo to `~/.secrets/pitchlab_token`
+  (600) + `~/.git-credentials` (600, credential.helper store); the remote
+  URL de-tokenized; `upload/token.txt` deleted from the worktree and
+  ignored. Never committed.
+- **Untouched:** local `main` (still ac6612c, worktree state preserved),
+  remote `main` (42757e7a), the other round branches, the pushed R26-R31
+  commits (the sync commit is a clean child of b494562 — no rewrites).
+- **Local strays NOT pushed (documented):** `src/app/report-viewer.tsx`
+  (stale R28-era copy of the live `src/components/report-viewer.tsx`;
+  never on the branch, not imported by anything) and the regenerable
+  `vst3/build_r31/` tree.

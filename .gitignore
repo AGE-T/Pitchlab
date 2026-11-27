@@ -54,7 +54,12 @@ server.log
 /skills/
 # octavox-work regenerable build trees (CMake output; sources + delivery zips are tracked)
 octavox-work/r26/source/build_*/
+octavox-work/r26/source/vst3/build_*/
 # R24-W regenerable cross-build trees + package staging (zips tracked in public/)
 octavox-work/r24/build_win_r24w_*/
 octavox-work/r24/package/
 octavox-work/r24/package_v2/
+# secrets: session tokens uploaded to upload/ are moved to ~/.secrets and must never be committed
+upload/token.txt
+upload/*_token*
+*.token
