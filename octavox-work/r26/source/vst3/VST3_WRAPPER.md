@@ -9,7 +9,8 @@ VST3 SDK's own conformance validator (47/47), and passes a **20-case**
 in-process wrapper test suite (8 cases round 16 + 7 parameter/state cases
 round 17 + **5 default-initialisation cases round 20**) including the
 **bit-exact sample-accurate-vs-block-boundary equivalence proof**, the full
-38-parameter contract audit, and the R20-P0 default/state-sync gates
+38-parameter contract audit, the R20-P0 default/state-sync gates, and
+the R34 stereo-width parameter
 (fresh instance, after prepare, save/restore, state-to-new-instance via
 BOTH `setState` and `setComponentState`, repeated initialize/terminate
 cycles — all without moving a control; see §4a and
@@ -29,10 +30,10 @@ contained here and the original binary was never executed.
 | Plugin/component/controller lifecycle | `SingleComponentEffect` subclass (one object = IComponent + IAudioProcessor + IEditController; the SDK's supported minimal lifecycle for a non-distributable effect): initialize (buses + parameters + units) / terminate; factory registration with a fresh FUID ({6F4E6258-9A31-42E1-8F3C-5A971D2B4E60}) | wrapper test `lifecycle_smoke` (factory-created, interface-driven); validator category "Termination/Initialization" |
 | Mono and stereo bus layouts | symmetric Main In/Out only: mono↔mono, stereo↔stereo (`setBusArrangements` accepts channels ∈ {1,2} with in==out count; asymmetric rejected); the engine is a `MultichannelShifter` (one core engine per channel = structural isolation) | validator bus categories; wrapper test bus negotiation |
 | Host sample rate / block size preparation | `setupProcessing` validates the core's documented domain ((0, 1e6] Hz — the R13-b bound) before accepting; scratch preallocated at `maxSamplesPerBlock` + 64; `setActive(true)` prepares the engine (R13-c zero-alloc re-prepare fast path on re-activation) | validator "Process Format" (all rates 22050 Hz…384000 Hz + odd rates); wrapper tests |
-| Global + per-voice parameter mapping | 38 parameters (ids 0–37): Bypass, Pitch Shift (±24 st, 1 cent), Voices (1..8), Spread, Feedback, Wet/Dry + per voice v∈0..7: Pitch Offset (±24 st), Gain (0..2), Mute, Base Delay (0..200 ms → samples at the current rate, ring-range-clamped); per-voice absolute ratio = global × 2^(offset/12) re-applied on pitch/spread changes (the core's override-clearing contract) | wrapper test `param_roundtrip`; `moduleinfo.json` |
+| Global + per-voice parameter mapping | 39 parameters (ids 0–38): Bypass, Pitch Shift (±24 st, 1 cent), Voices (1..8), Spread, Feedback, Wet/Dry + per voice v∈0..7: Pitch Offset (±24 st), Gain (0..2), Mute, Base Delay (0..200 ms → samples at the current rate, ring-range-clamped) + the R34 **Stereo Width** (id 38, [0,1], default 1.0 = bit-neutral; the chain-end correlation-adaptive energy-preserving width stage — see `include/octavox/stereo_width.hpp` and OCTAVOX_R34_STEREO_WIDTH_RESEARCH.md; distinct from the Harmony Map (id 3)); per-voice absolute ratio = global × 2^(offset/12) re-applied on pitch/spread changes (the core's override-clearing contract) | wrapper test `param_roundtrip`; `moduleinfo.json` |
 | Sample-accurate parameter automation | `process()` reads `IParameterChanges`, splits the block into segments at the event sample offsets, applies the parameters at each segment start (the core's tested block-boundary semantics at finer granularity); multiple queues, multiple points per queue, block-end events applied for the next block; per-queue cursors, no allocation | wrapper test `segmentation_equivalence_BITEXACT`: **maxdiff = 0** vs the hand-driven core with the same setter calls at the same stream positions (the required equivalence proof); validator "Accuracy" categories |
 | Host-safe parameter transfer / RT | parameters reach the audio thread ONLY through the host's lock-free queues; no shared mutable UI/audio state except the host-managed parameter objects; all core setters wait-free | design + `no_alloc_steady_state` (0 allocations across 100 process calls with events) |
-| State save/restore | `IComponent::get/setState`: versioned binary blob `OVR1` v1 = full Config (17 fields) + bus channels + the 38-value live surface (fixed order); restore = prepare(Config at the host's current rate) + re-apply the surface in a canonical order + silent parameter-object sync; the controller-state methods alias the same blob; corrupt state rejected | wrapper test `state_roundtrip_BITEXACT`: live, same-instance and fresh-instance restores all **maxdiff = 0** vs the hand-driven core; validator persistence categories |
+| State save/restore | `IComponent::get/setState`: versioned binary blob `OVR1` (v3 = R34; v2/v1 remain readable): full Config (21 fields) + bus channels + the 39-value live surface (fixed order; the 39th double = Stereo Width, appended so all pre-R34 ids keep their slots); a v1/v2 restore defaults the width to the bit-neutral 1.0; restore = prepare(Config at the host's current rate) + re-apply the surface in a canonical order + silent parameter-object sync; the controller-state methods alias the same blob; corrupt state rejected | wrapper test `state_roundtrip_BITEXACT`: live, same-instance and fresh-instance restores all **maxdiff = 0** vs the hand-driven core; `state_v3_width_backcompat` (v3 roundtrip + the hand-crafted v2 blob → width defaults to 1.0); validator persistence categories |
 | Correct latency reporting | `getLatencySamples()` = the engine's `latencySamples()` (2304 at the default config; the dry path is latency-aligned) | wrapper test `latency_report` (2304 == 2304); validator latency category |
 | Bypass behaviour | the Bypass parameter maps to the core's click-free, state-transparent `setBypass` (ramp over `bypass_seconds`); no host-side gating | wrapper test: bypass path bit-identical to the core (maxdiff = 0) |
 | Silence / block-size changes / reset | zero input → finite bounded output (silence-exact by the core); n = 0 no-ops without touching buffers; varying host block sizes (1/7/64/512/3/1024) bit-identical to a one-shot run; larger-than-prepared blocks chunked through scratch (never allocated in process()); reset = the setActive(false)→(true) cycle (VST3 has no separate reset) — preserves the surface, replays equal a fresh engine configured with that surface (the cold-start law) | wrapper test `silence_blocks_reset` |
@@ -110,7 +111,7 @@ only OS dependency added is core Xlib on Linux / user32+gdi32 on Windows.)
 
 ```
 octavox_ids.h                  fresh FUIDs + identity strings
-octavox_params.h/.cpp          the 38-parameter surface: ids, domains,
+octavox_params.h/.cpp          the 39-parameter surface: ids, domains,
                                exact normalized<->plain conversions (step-
                                quantized, reversible), the live Surface
                                model, the OVR1 state blob, the VST3
@@ -127,15 +128,15 @@ CMakeLists.txt                 the build (SDK external-consumer pattern)
 ../tools/build_and_test.{sh,ps1} R17-P2: the full build+validation chains
 ```
 
-### 3a. The 38-parameter contract (R17-P3 audit)
+### 3a. The 38-parameter contract (R17-P3 audit; R34 extends it to 39)
 
 The complete machine-readable table (id, title, short title, units, min,
 max, step, stepCount, default plain, default normalized, flags, unit) is
 dumped by `octavox_vst3_wrapper_tests --dump-params`; the round-17 capture
 is `../../evidence/analysis_round17/r17_param_metadata_table.txt` and the
 automated audit is the `param_metadata_table` test case (ID uniqueness via
-a 38-bit mask, spec-table integrity, processor<->controller
-`ParameterInfo` agreement for all 38 ids, boundary/middle conversion
+a 39-bit mask, spec-table integrity, processor<->controller
+`ParameterInfo` agreement for all 39 ids, boundary/middle conversion
 roundtrips — exact on step grids, ≤ 4 ulp continuous). Summary:
 
 | ids | parameter | domain | step | default | notes |
@@ -166,20 +167,32 @@ sample-domain default table 256+32v; at other rates the ms-domain
 interpretation is the documented wrapper behaviour (a "6 ms" delay is 6 ms
 at any rate).
 
-### 3b. The OVR1 v1 state blob layout (428 bytes, self-verified in tests)
+### 3b. The OVR1 state blob layout (v3 = 464 bytes, self-verified in tests)
 
 ```
 0x000  u32 magic 'OVR1' (0x3152564F)     0x120  i32 channels (bus count at save)
-0x004  i32 version = 1                   0x124  38 × f64 plain values, fixed
-0x008  Config (17 fields, 112 bytes):         order = parameter id order
-       sample_rate@8, ratio@16, voices@24,     (bypass@124, pitch@132,
-       max_voices@28, spread@32, feedback@36,  voices@140, spread@148,
-       interpolation@44, grain@48,             feedback@156, wetdry@164,
-       base_delay@56, fmin@64, fmax@72,        then per voice: offset, gain,
-       s_hysteresis@80, f0_history@88,         mute, base-ms ×8)
-       detection_interval@92, engagement@96,
-       gain_ramp@104, bypass_seconds@112
+0x004  i32 version = 3 (R34)                   engagement@96, gain_ramp@104,
+0x008  Config v2 core (17 fields, 112 bytes):  bypass_seconds@112
+       sample_rate@8, ratio@16, voices@24,  0x120  i32 detector_mode (R19)
+       max_voices@28, spread@32, feedback@36, 0x124  f64 commit_crossfade (R19)
+       interpolation@44, grain@48,           0x12C  f64 delay_crossfade (R19)
+       base_delay@56, fmin@64, fmax@72,     0x134  f64 voice_fade (R19)
+       s_hysteresis@80, f0_history@88,      0x13C  i32 channels (bus count)
+       detection_interval@92,               0x140  39 × f64 plain values, fixed
+                                             order = parameter id order
+                                             (bypass@0x140, pitch@0x148,
+                                             voices@0x150, spread@0x158,
+                                             feedback@0x160, wetdry@0x168,
+                                             then per voice: offset, gain,
+                                             mute, base-ms ×8;
+                                             stereoWidth@0x278 = 0x140+38*8)
 ```
+Version history: v1 = the 17-field Config + channels + 38 doubles (R16);
+v2 = + the four R19 fields; **v3 (R34) = + the 39th double (Stereo
+Width, id 38)**. A v1/v2 blob restores with the width at the bit-neutral
+default 1.0 (gated by `state_v3_width_backcompat`). Total v3 size:
+464 bytes.
+
 Reading rejects: short/truncated input (EVERY prefix length is tested),
 wrong magic, unsupported version, non-finite/unfixable config fields
 (NaN sample_rate/grain, ring-law violations); fixable fields are
@@ -205,7 +218,7 @@ CURRENT rate/layout and re-applies the full surface in canonical order.
   via the `setRatio`+re-apply dance). A voice with offset 0 stays on the
   core's spread table — spread behaviour is preserved.
 * **Threading.** The audio thread reads parameters exclusively via the
-  host's queues; `surface_` (the 38-value mirror) is written from
+  host's queues; `surface_` (the 39-value mirror) is written from
   `process()` (authoritative) and from `setState` (the host guarantees
   processing is paused during state exchange — the documented VST3
   contract, same reliance as the SDK's own samples).
@@ -233,7 +246,7 @@ control is moved". Three coordinated fixes (all in-round, gated by the new
 test group):
 
 1. `OctavoxParameter`'s ctor ends with `setNormalized(info.defaultNormalizedValue)`
-   (no listeners exist yet — pure value initialisation). All 38 parameters
+   (no listeners exist yet — pure value initialisation). All 39 parameters
    now REPORT the declared default as their CURRENT value on registration.
 2. `OctavoxNativeProcessor::initialize()` resets `surface_`/`cfg_`/processSetup
    to the documented defaults — fresh-instance semantics for a host's
@@ -248,7 +261,7 @@ test group):
 Gates: wrapper cases 16–20 (the S1–S6 scenarios, no control ever moved),
 including the engine-truth proof (the DSP bit-exactly runs the default
 surface with NO events ever delivered) and the automation-flush proof (a
-host sending all 38 CURRENT values through the queues leaves the engine at
+host sending all 39 CURRENT values through the queues leaves the engine at
 the defaults — the conversion chain is exactly idempotent for the default
 grid at 48 kHz). Sensitivity proof: with fix 1 disabled, exactly the three
 default-checking cases fail with the reported symptom.
@@ -262,7 +275,7 @@ default-checking cases fail with the reported symptom.
   coarse-host timing by 0.509); state roundtrips 0/0/0 (428-byte blob);
   split-invariance 0; reset-vs-fresh-surface 0; in-place 0; **0
   allocations** in 100 process calls with events; latency 2304 == 2304)
-  plus the R17 seven: **param_metadata_table** (38-id mask, spec
+  plus the R17 seven: **param_metadata_table** (39-id mask, spec
   integrity, ParameterInfo agreement 0 mismatches, boundary roundtrips —
   0 exact failures, 0 ulp failures), **events_block_positions**
   (start/middle/last/block-end events bit-identical, maxdiff = 0, and the
@@ -270,7 +283,7 @@ default-checking cases fail with the reported symptom.
   **simultaneous_multivoice_events** (5 queues at one sample position,
   bit-identical, maxdiff = 0), **bypass_wetdry_clickless_noalloc**
   (automation_max_step 0.4980181 ≤ bound 0.5073929; 0 allocations across
-  the 120-block automation run), **state_full_surface_restore** (all 38
+  the 120-block automation run), **state_full_surface_restore** (all 39
   parameters non-default: 0 restored-value mismatches, live and
   fresh-restore replays maxdiff = 0), **state_cross_rate_layout**
   (48 kHz stereo → 96 kHz mono and 44.1 kHz stereo replays maxdiff = 0
@@ -299,7 +312,8 @@ default-checking cases fail with the reported symptom.
 
 * ~~No GUI/editor~~ — **R33: the minimal editor exists** (see §8). It is a
   fixed-size 784x416 software-rendered `IPlugView` served by
-  `createView("Editor")`: all 38 parameters reachable, the R31 vendor
+  `createView("Editor")`: all 39 parameters reachable (incl. the R34
+  WIDTH slider), the R31 vendor
   telemetry displayed live. It is deliberately minimal (no VSTGUI, no font
   stack, no resize, no keyboard handling) — **macOS is not implemented**
   (no hardware; `isPlatformTypeSupported` refuses NSView), and on Linux a
@@ -350,7 +364,7 @@ The 12 cases (results: `evidence/analysis_round18/r18_module_integration.json`,
 2. `processor_creation` — `createInstance<IComponent>` + the
    IAudioProcessor/IEditController queries (single-component);
 3. `component_initialize_buses` — `initialize(HostApplication)` (a real
-   host context), 1+1 audio buses, the 38-parameter surface published;
+   host context), 1+1 audio buses, the 39-parameter surface published;
 4. `bus_negotiation_mono` / 5. `bus_negotiation_stereo` — the
    `setBusArrangements` negotiation reflected by `getBusArrangement`;
    `canProcessSampleSize(kSample32)`;
@@ -394,7 +408,7 @@ compilation re-proven from the moved SDK tree.
 nullptr). Three strictly separated layers:
 
 1. **`MinimalUiModel`** (`octavox_minimal_view.h`) — platform-free logic:
-   the layout, the cached 38 plain parameter values, the cached per-voice
+   the layout, the cached 39 plain parameter values, the cached per-voice
    R31 telemetry frames, the mouse gesture state machine, and the
    full-frame draw through the software renderer. Directly unit-testable
    without any window system (and tested: `octavox_ui_tests`, 11 cases).
@@ -427,7 +441,7 @@ self-contained, keeps every test binary linkable, and — decisively — makes
 each rendered frame **bit-reproducible**: the golden-render test pins the
 exact pixels (FNV-1a `0x0f80c7f43a8358ad` at the default surface).
 
-**The editor surface.** All 38 host parameters are reachable: global
+**The editor surface.** All 39 host parameters are reachable: global
 pitch slider / voices stepper / harmony-map toggle / feedback + mix sliders
 in the top panel; per-voice transpose fields (relative drags), gain bars,
 delay fields and mute buttons in the voice panel; the header bypass LED is
@@ -451,7 +465,7 @@ deterministic on every platform.
 
 **Testing** (`octavox_ui_tests`, 11 cases + the 17th module-integration
 case): font table sanity; renderer primitives + clipping; hit-map coverage
-(38/38 controls); slider drag protocol + exact quantization; relative
+(39/39 controls); slider drag protocol + exact quantization; relative
 value drags + domain clamps; toggles/steppers; double-click defaults;
 telemetry display values (the 220 Hz → −300.009 cents pin; the sentinel);
 the golden full-frame hash; view lifecycle contract; and — under a real X

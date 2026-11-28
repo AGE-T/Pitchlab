@@ -43,6 +43,7 @@ constexpr ParamDomain kDomFeedback{0.0, 0.9, 0.0};
 constexpr ParamDomain kDomWetDry{0.0, 1.0, 0.0};
 constexpr ParamDomain kDomGain{0.0, 2.0, 0.0};
 constexpr ParamDomain kDomMs{0.0, 200.0, 0.0};
+constexpr ParamDomain kDomWidth{0.0, 1.0, 0.0};  // R34: continuous, like Wet/Dry
 
 // The core's per-voice default base delay (256 + 32*v samples) expressed in
 // ms at the 48 kHz nominal rate. At 48000 Hz the ms->samples conversion of
@@ -119,10 +120,14 @@ const ParamSpec kSpecs[kNumParams] = {
     {voiceGainId(7),   "Voice 8 Gain",         "V8 Gain",   "",          kDomGain, 1.0, kAutomate, kUnitVoiceBase + 7},
     {voiceMuteId(7),   "Voice 8 Mute",         "V8 Mute",   "",          kDomBool, 0.0, kAutomate, kUnitVoiceBase + 7},
     {voiceDelayId(7),  "Voice 8 Base Delay",   "V8 Delay",  "ms",        kDomMs,   kDefaultBaseMs[7], kAutomate, kUnitVoiceBase + 7},
+    // -- R34 (id 38): the chain-end stereo width --------------------------
+    {kStereoWidth, "Stereo Width",      "Width",     "",          kDomWidth,  1.0, kAutomate, kUnitGlobal},
     // clang-format on
 };
 
-static_assert(voiceOffsetId(7) == 34 && voiceDelayId(7) == 37, "param id layout");
+static_assert(voiceOffsetId(7) == 34 && voiceDelayId(7) == 37 &&
+                  kStereoWidth == 38,
+              "param id layout");
 
 //--------------------------------------------------------------------------
 // Per-parameter help text (R21-P0: "help text or equivalent metadata").
@@ -201,10 +206,19 @@ const char* const kParamHelp[kNumParams] = {
     "Mute voice 8 (ramped out; DSP state stays warm).",
     "Voice 8 base delay in ms [0,200]; default = (256+32*7)/48 ms. Changes are "
     "crossfaded.",
+    // R34 (id 38)
+    "Stereo image width at the END of the chain [0,1] (R34): 1 = the "
+    "original image (bit-neutral), 0 = full mono collapse. The collapse is "
+    "energy-preserving: the compensation adapts to the measured L/R "
+    "correlation (dual-mono content collapses at exact unity, uncorrelated "
+    "content at +3 dB; out-of-phase content is clamped at +6 dB -- it cannot "
+    "survive a mono collapse at any finite gain). Bypass disables the stage. "
+    "NOT the Harmony Map (id 3): that is the musical per-voice interval "
+    "switch, this is the stereo image.",
 };
 
 static_assert(sizeof(kParamHelp) / sizeof(kParamHelp[0]) == kNumParams,
-              "help text table must cover all 38 parameters");
+              "help text table must cover all 39 parameters");
 
 }  // namespace
 
@@ -288,6 +302,7 @@ Surface defaultSurface() {
         s.mute[v] = 0.0;
         s.baseMs[v] = kDefaultBaseMs[v];
     }
+    s.stereoWidth = 1.0;  // R34: the bit-neutral original image
     return s;
 }
 
@@ -316,6 +331,7 @@ void surfaceToPlainArray(const Surface& s, double out[kNumParams]) {
         out[voiceMuteId(v)] = s.mute[v];
         out[voiceDelayId(v)] = s.baseMs[v];
     }
+    out[kStereoWidth] = s.stereoWidth;
 }
 
 void plainArrayToSurface(const double in[kNumParams], Surface& s) {
@@ -333,6 +349,7 @@ void plainArrayToSurface(const double in[kNumParams], Surface& s) {
         s.mute[v] = clampPlain(voiceMuteId(v), in[voiceMuteId(v)]);
         s.baseMs[v] = clampPlain(voiceDelayId(v), in[voiceDelayId(v)]);
     }
+    s.stereoWidth = clampPlain(kStereoWidth, in[kStereoWidth]);
 }
 
 //--------------------------------------------------------------------------
@@ -347,8 +364,13 @@ constexpr uint32_t kStateMagic = 0x3152564Fu;  // 'O','V','R','1' (LE byte order
 // R16-R18 'OctavoxNative' and R18-WDB variant blobs) remain READABLE: the
 // new fields take the 16.0.0 defaults and the caller (the processor) forces
 // the compile-time selections on top.
-constexpr int32_t kStateVersion = 2;
-constexpr int32_t kStateVersionLegacy = 1;
+// R34: version 3 appends the 39th plain double (the Stereo Width value,
+// param id 38) after the per-voice block. Version 1/2 blobs remain
+// READABLE: the width takes the bit-neutral default 1.0 (a restored
+// pre-R34 session is bit-identical to a pre-R34 build).
+constexpr int32_t kStateVersion = 3;
+constexpr int32_t kStateVersionLegacy2 = 2;
+constexpr int32_t kStateVersionLegacy1 = 1;
 
 bool finiteD(double x) { return std::isfinite(x); }
 
@@ -448,9 +470,11 @@ bool readStateData(Steinberg::IBStream* stream, StateData& out) {
     int32_t version = 0;
     if (!r.readInt32u(magic) || magic != kStateMagic) return false;
     if (!r.readInt32(version) ||
-        (version != kStateVersion && version != kStateVersionLegacy))
+        (version != kStateVersion && version != kStateVersionLegacy2 &&
+         version != kStateVersionLegacy1))
         return false;
-    const bool v2 = (version == kStateVersion);
+    const bool v2 = (version >= kStateVersionLegacy2);
+    const bool v3 = (version >= kStateVersion);
 
     Config c{};
     int32_t i32 = 0;
@@ -485,7 +509,13 @@ bool readStateData(Steinberg::IBStream* stream, StateData& out) {
     const int32_t channels = i32;
 
     double vals[kNumParams];
-    if (!r.readDoubleArray(vals, kNumParams)) return false;
+    // v1/v2 blobs carry 38 plain doubles (ids 0..37); v3 appends the R34
+    // Stereo Width (id 38). Pre-fill the whole array with the width default
+    // so a v1/v2 read leaves slot 38 at the bit-neutral 1.0.
+    for (int i = 0; i < kNumParams; ++i) vals[i] = 1.0;
+    if (!r.readDoubleArray(vals,
+                           v3 ? kNumParams : kNumParams - 1))
+        return false;
 
     if (!sanitizeConfig(c)) return false;
     out.cfg = c;

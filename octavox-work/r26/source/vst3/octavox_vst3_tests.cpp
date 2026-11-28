@@ -1044,8 +1044,8 @@ static void caseParamMetadata(CaseResult& c) {
     using octavox::vst3wrap::normalizedFromPlain;
     using octavox::vst3wrap::plainFromNormalized;
 
-    // (a) Parameter ID uniqueness: the spec table covers ids 0..37 exactly
-    //     once (a 38-bit mask, no holes, no duplicates).
+    // (a) Parameter ID uniqueness: the spec table covers ids 0..38 exactly
+    //     once (a 39-bit mask, no holes, no duplicates).
     uint64_t mask = 0;
     int nSpecs = 0;
     for (uint32_t id = 0; id < 64u; ++id) {
@@ -1055,15 +1055,15 @@ static void caseParamMetadata(CaseResult& c) {
         mask |= (1ULL << id);
     }
     addValue(c, "spec_table_entries", nSpecs);
-    check(c, nSpecs == 38, "spec table must have exactly 38 entries");
-    const uint64_t wantMask = (kNumParams == 64) ? ~0ULL : ((1ULL << 38) - 1ULL);
+    check(c, nSpecs == 39, "spec table must have exactly 39 entries");
+    const uint64_t wantMask = (kNumParams == 64) ? ~0ULL : ((1ULL << 39) - 1ULL);
     addValue(c, "id_mask_complete", mask == wantMask ? 1.0 : 0.0);
     check(c, mask == wantMask,
-          "parameter ids must be unique and contiguous 0..37 (mask)");
+          "parameter ids must be unique and contiguous 0..38 (mask)");
 
     // (b) Spec-table integrity: domain sanity, default in domain, stepCount
     //     consistency.
-    for (uint32_t id = 0; id < 38u; ++id) {
+    for (uint32_t id = 0; id < 39u; ++id) {
         const auto& sp = paramSpec(id);
         const auto& d = sp.domain;
         check(c, d.maxPlain > d.minPlain, "bad domain (max<=min) at id " + std::to_string(id));
@@ -1086,7 +1086,7 @@ static void caseParamMetadata(CaseResult& c) {
     //     one object serves both interfaces; the host-visible ParameterInfo
     //     must match the spec table the audio path consults).
     auto* p = makeProcessor(Setup{});
-    check(c, p->getParameterCount() == 38, "processor must expose 38 parameters");
+    check(c, p->getParameterCount() == 39, "processor must expose 39 parameters");
     int mismatches = 0;
     for (uint32_t id = 0; id < 38u; ++id) {
         ParameterInfo info;
@@ -1616,16 +1616,17 @@ static void caseStateFullSurface(CaseResult& c) {
     std::vector<float> in(N);
     rng.fill(in);
 
-    // The non-default surface (every one of the 38 parameters moved off its
+    // The non-default surface (every one of the 39 parameters moved off its
     // default; bypass stays 0 so the processing path stays exercised -- its
     // restoration is verified through the normalized roundtrip below).
-    double plainVals[38];
+    double plainVals[39];
     plainVals[ParamId::kBypass] = 0.0;
     plainVals[ParamId::kPitch] = -7.31;
     plainVals[ParamId::kVoices] = 6.0;
     plainVals[ParamId::kSpread] = 0.0;
     plainVals[ParamId::kFeedback] = 0.45;
     plainVals[ParamId::kWetDry] = 0.62;
+    plainVals[ParamId::kStereoWidth] = 0.35;  // R34 (mono run: the stage no-ops)
     for (int v = 0; v < 8; ++v) {
         plainVals[voiceOffsetId(v)] = 3.0 - v;                 // +3 .. -4 st
         plainVals[voiceGainId(v)] = 0.3 + 0.15 * v;            // 0.3 .. 1.35
@@ -1665,6 +1666,7 @@ static void caseStateFullSurface(CaseResult& c) {
             toEnginePlain(ParamId::kVoices, plainVals[ParamId::kVoices]))));
         ref.setFeedback(toEnginePlain(ParamId::kFeedback, plainVals[ParamId::kFeedback]));
         ref.setWetDry(toEnginePlain(ParamId::kWetDry, plainVals[ParamId::kWetDry]));
+        ref.setStereoWidth(plainVals[ParamId::kStereoWidth]);  // R34 (mono: no-op)
         ref.setBypass(plainVals[ParamId::kBypass] >= 0.5);
         float* inP[1] = {in.data()};
         float* outP[1] = {refOut.data()};
@@ -1702,6 +1704,9 @@ static void caseStateFullSurface(CaseResult& c) {
                  normalizedFromPlain(ParamId::kFeedback, plainVals[ParamId::kFeedback]));
         addEvent(ch, ParamId::kWetDry, 0,
                  normalizedFromPlain(ParamId::kWetDry, plainVals[ParamId::kWetDry]));
+        addEvent(ch, ParamId::kStereoWidth, 0,
+                 normalizedFromPlain(ParamId::kStereoWidth,
+                                     plainVals[ParamId::kStereoWidth]));
         addEvent(ch, ParamId::kBypass, 0,
                  normalizedFromPlain(ParamId::kBypass, plainVals[ParamId::kBypass]));
 
@@ -1736,7 +1741,7 @@ static void caseStateFullSurface(CaseResult& c) {
         check(c, p->setActive(true) == kResultOk, "fresh activate failed");
 
         int valueMismatches = 0;
-        for (uint32_t id = 0; id < 38u; ++id) {
+        for (uint32_t id = 0; id < 39u; ++id) {
             const double wantNorm = normalizedFromPlain(
                 id, toEnginePlain(id, plainVals[id]));
             const double gotNorm = p->getParamNormalized(id);
@@ -1744,7 +1749,7 @@ static void caseStateFullSurface(CaseResult& c) {
         }
         addValue(c, "restored_value_mismatches", valueMismatches);
         check(c, valueMismatches == 0,
-              "every one of the 38 parameter values must be restored exactly "
+              "every one of the 39 parameter values must be restored exactly "
               "(normalized roundtrip equality)");
 
         float* inP[1] = {in.data()};
@@ -1765,6 +1770,85 @@ static void caseStateFullSurface(CaseResult& c) {
 // replay must be bit-identical to a hand-driven core prepared at that rate
 // and layout with the same surface.
 //==========================================================================
+// ---------------------------------------------------------------------------
+// R34: the state blob v3 <-> v2 back-compat -- the 39th double (Stereo
+// Width) appended; a hand-crafted v2 blob (the v3 bytes with the version
+// patched to 2 and the last double removed) must load with the width at
+// the bit-neutral default 1.0 and every other value intact.
+// ---------------------------------------------------------------------------
+static void caseStateV3BackCompat(CaseResult& c) {
+    using octavox::vst3wrap::ParamId;
+    namespace vw = octavox::vst3wrap;
+
+    // (a) v3 roundtrip: a width of 0.25 survives save/restore exactly.
+    MemoryStream v3;
+    {
+        auto* p = makeProcessor(Setup{});  // stereo
+        ParameterChanges ch;
+        addEvent(ch, ParamId::kStereoWidth, 0,
+                 vw::normalizedFromPlain(ParamId::kStereoWidth, 0.25));
+        std::vector<float> sil(256, 0.0f);
+        float* inP[2] = {sil.data(), sil.data()};
+        float* outP[2] = {sil.data(), sil.data() + 128};
+        driveBlock(p, inP, outP, 2, 128, &ch);
+        // NOTE: process() queues apply to the ENGINE surface (surface_);
+        // the parameter CONTAINER is only updated by setState/performEdit
+        // (the wrapper's documented division) -- the landed value is
+        // verified through the save/restore below.
+        check(c, p->getState(&v3) == kResultOk, "getState failed");
+        p->terminate();
+        p->release();
+    }
+    {
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "fresh init failed");
+        int64 spos = 0;
+        v3.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&v3) == kResultOk, "v3 setState failed");
+        check(c, std::fabs(vw::plainFromNormalized(
+                             ParamId::kStereoWidth,
+                             p->getParamNormalized(ParamId::kStereoWidth)) -
+                          0.25) < 1e-12,
+              "v3 restore lost the width");
+        p->terminate();
+        p->release();
+    }
+
+    // (b) v2 back-compat: the v3 bytes, version patched 3 -> 2, minus the
+    //     last double. Must load; the width takes the DEFAULT 1.0 (a
+    //     restored pre-R34 session is bit-neutral).
+    const int64 v3Size = v3.getSize();
+    addValue(c, "v3_state_bytes", static_cast<double>(v3Size));
+    check(c, v3Size > 16, "v3 state suspiciously small");
+    MemoryStream v2;
+    {
+        char* bytes = v3.getData();
+        std::vector<char> cut(bytes, bytes + v3Size - 8);  // drop the width
+        // patch the version int32 (offset 4, little-endian) to 2
+        cut[4] = 2; cut[5] = 0; cut[6] = 0; cut[7] = 0;
+        int32 written = 0;
+        check(c, v2.write(cut.data(), static_cast<int32>(cut.size()), &written) ==
+                      kResultOk &&
+                  written == (int32)cut.size(),
+              "crafting the v2 blob failed");
+    }
+    {
+        auto* p = new OctavoxNativeProcessor();
+        check(c, p->initialize(nullptr) == kResultOk, "fresh init failed");
+        int64 spos = 0;
+        v2.seek(0, IBStream::kIBSeekSet, &spos);
+        check(c, p->setState(&v2) == kResultOk,
+              "v2 (pre-R34) blob must remain loadable");
+        check(c, std::fabs(vw::plainFromNormalized(
+                             ParamId::kStereoWidth,
+                             p->getParamNormalized(ParamId::kStereoWidth)) -
+                          1.0) < 1e-12,
+              "v2 restore must default the width to 1.0 (bit-neutral)");
+        p->terminate();
+        p->release();
+    }
+}
+
 static void caseStateCrossRateLayout(CaseResult& c) {
     using octavox::vst3wrap::ParamId;
     using octavox::vst3wrap::normalizedFromPlain;
@@ -1966,7 +2050,7 @@ static void caseStateInvalidBlobs(CaseResult& c) {
         const uint32_t magic = *reinterpret_cast<const uint32_t*>(&good[0]);
         check(c, magic == 0x3152564Fu, "blob magic offset self-check failed");
         const int32_t ver = *reinterpret_cast<const int32_t*>(&good[4]);
-        check(c, ver == 2, "blob version offset self-check failed (R19 v2)");
+        check(c, ver == 3, "blob version offset self-check failed (R34 v3)");
         const double sr = *reinterpret_cast<const double*>(&good[8]);
         check(c, sr == 48000.0, "blob sample_rate offset self-check failed");
         const int32_t cfgVoices = *reinterpret_cast<const int32_t*>(&good[24]);
@@ -2028,11 +2112,12 @@ static void caseStateInvalidBlobs(CaseResult& c) {
         bad[0] = static_cast<char>(bad[0] ^ 0x5A);
         check(c, rejectsWith(bad), "wrong magic must be rejected");
     }
-    // (c) wrong version (2 is now the CURRENT version; 1 is the supported
-    // legacy version -- an unsupported future version must be rejected)
+    // (c) wrong version (3 is now the CURRENT version; 2 and 1 are the
+    // supported legacy versions -- an unsupported future version must be
+    // rejected)
     {
         std::vector<char> bad = good;
-        *reinterpret_cast<int32_t*>(&bad[4]) = 3;
+        *reinterpret_cast<int32_t*>(&bad[4]) = 4;
         check(c, rejectsWith(bad), "unsupported version must be rejected");
     }
     // (d) NaN sample_rate / NaN grain (non-finite, structurally unfixable:
@@ -2194,7 +2279,7 @@ static void caseParamDefaultsFresh(CaseResult& c) {
     // control movement of any kind.
     auto* p = new OctavoxNativeProcessor();
     check(c, p->initialize(nullptr) == kResultOk, "initialize failed");
-    check(c, p->getParameterCount() == 38, "fresh instance must expose 38 parameters");
+    check(c, p->getParameterCount() == 39, "fresh instance must expose 39 parameters");
 
     // (a) CURRENT value == declared default for all 38 (the R20-P0 fix;
     //     before it, every parameter reported normalized 0: Pitch -24.00,
@@ -2619,8 +2704,8 @@ static void caseParamDefaultsReinitCycles(CaseResult& c) {
     int paramCountIssues = 0;
     for (int cycle = 0; cycle < 6; ++cycle) {
         check(c, p->initialize(nullptr) == kResultOk, "initialize failed in cycle " + std::to_string(cycle));
-        check(c, p->getParameterCount() == 38, "parameter count wrong in cycle " + std::to_string(cycle));
-        if (p->getParameterCount() != 38) ++paramCountIssues;
+        check(c, p->getParameterCount() == 39, "parameter count wrong in cycle " + std::to_string(cycle));
+        if (p->getParameterCount() != 39) ++paramCountIssues;
 
         // after initialize: the documented DEFAULT state
         const double w = defaultsCurrentVsSpec(p);
@@ -2897,6 +2982,7 @@ int main(int argc, char** argv) {
         {"simultaneous_multivoice_events", caseSimultaneousEvents},
         {"bypass_wetdry_clickless_noalloc", caseBypassWetDryClickless},
         {"state_full_surface_restore", caseStateFullSurface},
+        {"state_v3_width_backcompat", caseStateV3BackCompat},
         {"state_cross_rate_layout", caseStateCrossRateLayout},
         {"state_invalid_blobs", caseStateInvalidBlobs},
         {"param_defaults_fresh_instance", caseParamDefaultsFresh},

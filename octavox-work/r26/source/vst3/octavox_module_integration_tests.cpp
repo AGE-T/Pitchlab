@@ -330,8 +330,8 @@ void caseComponentInit(CaseResult& c) {
     check(c, inBuses == 1 && outBuses == 1,
           "expected symmetric single Main audio buses");
     // the parameter surface is published at initialization (host contract)
-    check(c, g_edit->getParameterCount() == 38,
-          "getParameterCount() != 38 on the loaded instance after initialize");
+    check(c, g_edit->getParameterCount() == 39,
+          "getParameterCount() != 39 on the loaded instance after initialize");
     addValue(c, "parameter_count", (double)g_edit->getParameterCount());
     c.pass = c.note.empty();
 }
@@ -1194,6 +1194,75 @@ void caseLatencyNotification(CaseResult& c) {
     c.pass = c.note.empty();
 }
 
+// R34: the stereo width parameter drives the chain-end stage through the
+// SHIPPED module (a real IParameterChanges queue): width=0 collapses the
+// module's stereo output to bitwise mono with the total energy preserved
+// (vs a default-width run of the same stream), and the engine's bypass
+// gates the stage OFF (a bypassed width=0 run is bit-identical to a
+// bypass-only reference).
+void caseStereoWidth(CaseResult& c) {
+    if (!g_audio) { c.note = "no processor"; return; }
+    using octavox::vst3wrap::ParamId;
+    using octavox::vst3wrap::normalizedFromPlain;
+    const int N = 72000;  // 1.5 s; steady state measured on the last 0.5 s
+    Lcg rngA(424242), rngB(242424);
+    std::vector<float> inL(N), inR(N);
+    rngA.fill(inL);
+    rngB.fill(inR);  // independent -> uncorrelated stereo content
+
+    auto runModule = [&](std::vector<float>& oL, std::vector<float>& oR,
+                         double widthPlain, bool bypass) {
+        check(c, setupLoadedInstance(Setup{}, 2), "activation failed");
+        ParameterChanges ch;
+        addEvent(ch, ParamId::kStereoWidth, 0,
+                 normalizedFromPlain(ParamId::kStereoWidth, widthPlain));
+        if (bypass)
+            addEvent(ch, ParamId::kBypass, 0,
+                     normalizedFromPlain(ParamId::kBypass, 1.0));
+        for (int off = 0; off < N; off += 3000) {
+            const int n = std::min(3000, N - off);
+            float* inP[2] = {inL.data() + off, inR.data() + off};
+            float* outP[2] = {oL.data() + off, oR.data() + off};
+            driveLoaded(inP, outP, 2, n, off == 0 ? &ch : nullptr);
+        }
+        teardownLoadedInstance();
+    };
+
+    // (a) the default-width reference run.
+    std::vector<float> rL(N), rR(N);
+    runModule(rL, rR, 1.0, false);
+    // (b) width=0: bitwise mono after the settle + energy preserved.
+    std::vector<float> wL(N), wR(N);
+    runModule(wL, wR, 0.0, false);
+    long nonMono = 0;
+    for (int i = 4800; i < N; ++i)  // past the slew + seed settle
+        if (wL[i] != wR[i]) ++nonMono;
+    addValue(c, "nonmono_samples_after_settle", static_cast<double>(nonMono));
+    check(c, nonMono == 0, "width=0 did not collapse the module output to mono");
+    auto energy = [](const std::vector<float>& l, const std::vector<float>& r,
+                     int from, int to) {
+        double e = 0.0;
+        for (int i = from; i < to; ++i)
+            e += (double)l[i] * l[i] + (double)r[i] * r[i];
+        return e;
+    };
+    const double eRef = energy(rL, rR, N - 24000, N);
+    const double eOut = energy(wL, wR, N - 24000, N);
+    const double db = eRef > 0 ? 10.0 * std::log10(eOut / eRef) : 0.0;
+    addValue(c, "steady_state_energy_delta_db", db);
+    check(c, std::fabs(db) < 0.15,
+          "energy not preserved through the module's width collapse");
+    // (c) bypass gates the stage: bypass+width=0 == bypass-only, bitwise.
+    std::vector<float> bL(N), bR(N), cL(N), cR(N);
+    runModule(bL, bR, 0.0, true);
+    runModule(cL, cR, 1.0, true);
+    const bool bitBypass = bitIdentical(bL.data(), cL.data(), N) &&
+                           bitIdentical(bR.data(), cR.data(), N);
+    addValue(c, "bypass_width_gate_bitexact", bitBypass ? 1.0 : 0.0);
+    check(c, bitBypass, "width stage active during bypass (module)");
+    c.pass = c.note.empty();
+}
+
 void caseTerminateUnload(CaseResult& c) {
     if (!g_component) { c.note = "no component"; return; }
     check(c, g_component->terminate() == kResultOk, "terminate failed");
@@ -1347,6 +1416,11 @@ int main(int argc, char** argv) {
     {
         CaseResult c{"minimal_editor_surface"};
         caseMinimalEditorSurface(c);
+        pushCase(R, std::move(c));
+    }
+    {
+        CaseResult c{"stereo_width_module"};
+        caseStereoWidth(c);
         pushCase(R, std::move(c));
     }
     {

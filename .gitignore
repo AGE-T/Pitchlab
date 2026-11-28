@@ -65,6 +65,8 @@ octavox-work/r26/source/build_r32_asan/
 octavox-work/r26/source/vst3/build_r32/
 octavox-work/r26/source/vst3/build_win_r32/
 octavox-work/r32/stage/
+# R34 regenerable build trees + package staging (zip tracked in public/)
+octavox-work/r34/stage/
 # secrets: session tokens uploaded to upload/ are moved to ~/.secrets and must never be committed
 upload/token.txt
 upload/*_token*

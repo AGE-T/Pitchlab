@@ -1,0 +1,96 @@
+R34 BUILD ENVIRONMENT RECORD
+============================
+Date (UTC): 2026-11-28
+Recorded for: PitchLab R34 -- the chain-end stereo width stage with
+correlation-adaptive energy preservation (the user-requested feature:
+"stereo kep szelessege allithato, teljesen monora osszehuzhato, a hang
+energiaja megorizve" -- research first, then implement).
+
+SOURCE BASELINE
+  branch            : r31-telemetry-demo (AGE-T/Pitchlab) line; local
+                      worktree state = the pushed R33 (4aae128f) + this
+                      round's files (the push-first sandbox strategy)
+  source line       : octavox-work/r26/source (the R26-R34 audit/demo line)
+  R34 delta         : the core gains src/stereo_width.cpp +
+                      include/octavox/stereo_width.hpp (a NEW chain-end
+                      stage owned by MultichannelShifter; the mono
+                      AlignedDelayLine engines are untouched) + the
+                      wrapper's 39th parameter + state v3 + the UI WIDTH
+                      slider
+  core version      : octavox-native 16.4.0 (audio-path change; R31-R33
+                      were observer/UI-only and stayed 16.3.0)
+
+TOOLCHAINS
+  native            : g++ 14.2.0 (Debian), cmake 4.4.5 via pip (re-installed
+                      after the sandbox reset)
+  Windows cross     : Zig 0.13.0 (re-acquired from ziglang.org after ANOTHER
+                      sandbox reset; ~/toolchains/zig-linux-x86_64-0.13.0),
+                      the env-driven wrappers at octavox-work/r24/win-zig/
+                      (ZIG_BIN override; the attrib host-shim needed
+                      chmod +x after the reset)
+  X server          : Xvfb :99 (the pixel-identity proof + the UI ASan run
+                      need a real X server)
+
+BUILD DIRECTORIES (fresh; no cache reuse)
+  native core       : build_r34 (+ build_r34_asan)
+  vst3 Linux        : build_r34 (+ build_r34_asan, validator post-step off)
+  vst3 Windows      : build_win_r34 (twin moduleinfo from build_r34 via
+                      OCTAVOX_TWIN_MODULEINFO; moduleinfotool-host.sh
+                      planted at <build>/bin/moduleinfotool.exe)
+
+VERIFICATION (all green; logs in this directory)
+  core suite Release : 126/126 (115 pre-R34 cases UNCHANGED + 11 new r34
+                       cases); all four reference hashes bit-exact; the
+                       r15acc determinism hash 0x35fe0d51a4372ac8 IDENTICAL
+                       to the R31/R32/R33 records (the width stage is inert
+                       at the default -- the round is default-bit-neutral)
+  core suite ASan    : 126/126, zero sanitizer reports, zero leaks
+  wrapper tests      : 22/22 (Release + ASan; the 39-param surface, state
+                       v3 roundtrip + the v2 back-compat, the full-surface
+                       restore incl. the width)
+  ui tests           : 11/11 Release + ASan (the golden frame re-pinned
+                       DELIBERATELY for the new layout: FNV-1a
+                       0x929df78511dc9220; hit-map 39/39 incl. the WIDTH
+                       slider; drag protocol + double-click default on the
+                       new control; the X11 pixel-identity proof green)
+                       -- the ASan gate caught and fixed a
+                       stack-use-after-scope in the NEW test code (the mock
+                       handler detach; see the test's comment)
+  module integration : 18/18 Release + ASan/LSan (the NEW stereo_width_module
+                       case drives the SHIPPED module: width=0 through a
+                       real parameter queue -> bitwise mono after settle,
+                       steady-state energy delta +0.013 dB vs the
+                       default-width run, bypass+width bit-identical to
+                       bypass-only)
+  validator          : 47/47 (Steinberg VST3 validator, Linux bundle)
+  Windows module     : machine-code + structural record
+                       (r34w_machinecode_verification.txt): ymm=275
+                       vfmadd=26 cpuid=3 xgetbv=1 (identical to R32-W/
+                       R33-W; stereo_width.obj baseline-ISA), zero X11
+                       references, same 12 system-DLL imports, single
+                       GetPluginFactory export, both GUIDs found,
+                       moduleinfo byte-identical to the Linux twin
+
+KEY MEASURED VALUES (the r34 gate records)
+  uncorrelated w=0   : energy delta -0.0016 dB (k -> 1.4185 = sqrt(2) for
+                       the engine's residual rho ~ -0.006)
+  uncorrelated w=0.5 : energy delta -0.0012 dB, k = 1.3263 (law:
+                       sqrt(2-0.25) = 1.3229 + rho residual)
+  rho=+0.5, w=0      : k = 1.1572 vs law 1.1547 (0.22% -- the EMA window
+                       vs the population value)
+  rho=-0.5, w=0      : k clamped at 2.0 (the +6 dB honesty bound)
+  dual-mono w=0      : EXACT per-sample unity (rho measures exactly +1,
+                       k computes exactly 1.0, output bit-equal to the
+                       reference -- zero tolerance)
+  anti-correlated    : output = the honest digital zero, k pinned at 2.0
+  width step 1->0    : worst per-sample output step 0.00333336 vs the
+                       slew bound 0.00333343 (the documented law
+                       2/(0.010*fs)*(|L|+|R|) + float rounding)
+  THE CORRECTION     : the r34_energy_uncorrelated gate at w=0.5 caught the
+                       research doc's first derivation error (the global-
+                       gain law applied to the mid-only structure;
+                       -0.343 dB measured vs -0.33 dB predicted by the
+                       wrong law) -- the corrected law
+                       k = sqrt((2 - w^2*(1-rho))/(1+rho)) is pinned by
+                       the tests and documented in the research record's
+                       correction note

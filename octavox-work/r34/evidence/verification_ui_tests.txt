@@ -1,0 +1,26 @@
+[ OK ] font_table                   
+[ OK ] renderer_primitives          
+[ OK ] hitmap_coverage              
+[ OK ] slider_drag_protocol         
+[ OK ] value_relative_drag          
+[ OK ] toggle_and_stepper           
+[ OK ] double_click_default         
+[ OK ] telemetry_display_values     
+[ OK ] golden_render                golden FNV-1a = 0x929df78511dc9220
+[ OK ] view_lifecycle               
+[ OK ] x11_pixel_identity           
+
+UI tests: 11 passed, 0 failed, 0 skipped (11 total)
+[ OK ] font_table                   
+[ OK ] renderer_primitives          
+[ OK ] hitmap_coverage              
+[ OK ] slider_drag_protocol         
+[ OK ] value_relative_drag          
+[ OK ] toggle_and_stepper           
+[ OK ] double_click_default         
+[ OK ] telemetry_display_values     
+[ OK ] golden_render                golden FNV-1a = 0x929df78511dc9220
+[ OK ] view_lifecycle               
+[ OK ] x11_pixel_identity           
+
+UI tests: 11 passed, 0 failed, 0 skipped (11 total)

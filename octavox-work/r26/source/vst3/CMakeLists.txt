@@ -134,6 +134,9 @@ add_library(octavox_core_vst3 STATIC
     # test harnesses).
     ../src/telemetry.cpp
     octavox_telemetry_interface.cpp
+    # R34: the chain-end stereo width stage (MultichannelShifter owns one;
+    # include/octavox/stereo_width.hpp carries the full contract).
+    ../src/stereo_width.cpp
 )
 target_include_directories(octavox_core_vst3 PUBLIC ../include ../src)
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i.86|x86)$")

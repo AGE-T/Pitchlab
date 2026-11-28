@@ -61,6 +61,7 @@ constexpr int kSliderX = 24, kSliderW = 366;        // pitch + feedback tracks
 constexpr int kRowALabelY = 56, kRowATrackY = 72;   // pitch row
 constexpr int kRowBLabelY = 102, kRowBTrackY = 118; // feedback row
 constexpr int kMixX = 410, kMixW = 150;             // mix track (row B)
+constexpr int kWidthX = 576, kWidthW = 150;         // R34: stereo width (row B)
 constexpr int kVoMinusX = 410, kVoPlusX = 550;      // voices stepper boxes
 constexpr int kVoBoxY = 70, kVoBoxW = 18, kVoBoxH = 14;
 constexpr int kHmX = 576;                           // harmony-map toggle box
@@ -181,6 +182,9 @@ MinimalUiModel::Ctl MinimalUiModel::hitTest(int x, int y, uint32_t* paramOut,
                    R{kSliderX, kRowBTrackY, kSliderW, kSliderH});
     if (contains(R{kMixX - 4, kRowBTrackY - 4, kMixW + 8, kSliderH + 8}, x, y))
         return set(Ctl::SliderAbs, kWetDry, R{kMixX, kRowBTrackY, kMixW, kSliderH});
+    if (contains(R{kWidthX - 4, kRowBTrackY - 4, kWidthW + 8, kSliderH + 8}, x, y))
+        return set(Ctl::SliderAbs, kStereoWidth,
+                   R{kWidthX, kRowBTrackY, kWidthW, kSliderH});
 
     // Voice columns (translucent order: any column hit wins).
     for (int v = 0; v < kMaxVoices; ++v) {
@@ -404,8 +408,14 @@ void MinimalUiModel::render(UiRenderer& r) const {
     r.textRight(kMixX + kMixW, kRowBLabelY, buf, C::kColAccent);
     drawSlider(r, R{kMixX, kRowBTrackY, kMixW, kSliderH},
                normalizedFromPlain(kWetDry, plain_[kWetDry]), false, false);
-    // Identity line (row B, right).
-    r.textRight(kByTextRight, kRowBLabelY + 2, "MINIMAL EDITOR R33", C::kColFaint);
+    // Stereo width (row B, right; R34).
+    r.text(kWidthX, kRowBLabelY, "WIDTH", C::kColDim);
+    std::snprintf(buf, sizeof(buf), "%d%%",
+                  static_cast<int>(plain_[kStereoWidth] * 100.0 + 0.5));
+    r.textRight(kWidthX + kWidthW, kRowBLabelY, buf, C::kColAccent);
+    drawSlider(r, R{kWidthX, kRowBTrackY, kWidthW, kSliderH},
+               normalizedFromPlain(kStereoWidth, plain_[kStereoWidth]), false,
+               false);
 
     // ---- voice panel -----------------------------------------------------
     r.rect(16, kVoicePanelY, 752, kVoicePanelH, C::kColPanel);
@@ -499,7 +509,7 @@ void MinimalUiModel::render(UiRenderer& r) const {
     // ---- footer ----------------------------------------------------------
     r.hline(16, kFtrRuleY, 752, C::kColLine);
     r.text(16, kFtrTextY, "PITCHLAB MINIMAL EDITOR", C::kColFaint);
-    r.textRight(kByTextRight, kFtrTextY, "R33 - FIXED 784x416", C::kColFaint);
+    r.textRight(kByTextRight, kFtrTextY, "R34 - FIXED 784x416", C::kColFaint);
 }
 
 //==========================================================================

@@ -326,6 +326,10 @@ void OctavoxNativeProcessor::applyParamToEngine(uint32_t id, double plain) {
         surface_.wetDry = plain;
         engine_.setWetDry(plain);
         return;
+    case ParamId::kStereoWidth:  // R34: the chain-end width stage
+        surface_.stereoWidth = plain;
+        engine_.setStereoWidth(plain);
+        return;
     default: break;
     }
     const uint32_t rel = id - static_cast<uint32_t>(ParamId::kVoiceOffsetBase);
@@ -371,6 +375,7 @@ void OctavoxNativeProcessor::applyFullSurface() {
     }
     engine_.setFeedback(surface_.feedback);
     engine_.setWetDry(surface_.wetDry);
+    engine_.setStereoWidth(surface_.stereoWidth);  // R34
     engine_.setBypass(surface_.bypass >= 0.5);
 }
 

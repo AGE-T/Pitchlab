@@ -1,0 +1,60 @@
+R34-W MACHINE-CODE & STRUCTURAL VERIFICATION (Windows x64 cross-build, zig 0.13.0)
+==================================================================================
+Date (UTC): 2026-11-28 (R34 -- the stereo width round)
+
+Method: identical to the R32-W/R33-W records (objdump -d/-p on the
+cross-built PE, byte-sequence kernel presence, GUID byte search). New in
+R34: the stereo width stage TU (src/stereo_width.cpp) is part of the
+module -- its baseline-ISA contribution and the instruction-count
+accounting are gated explicitly.
+
+1) OBJECT-LEVEL INSTRUCTION SCAN (objdump -d, pe-x86-64):
+   dsp.cpp.obj: ymm=0 vfmadd=0
+   pitch_control.cpp.obj: ymm=0 vfmadd=0
+   simd_avx2.cpp.obj: ymm=207 vfmadd=0
+   simd_dispatch.cpp.obj: ymm=0 vfmadd=0
+   simd_fma.cpp.obj: ymm=68 vfmadd=26
+   stereo_width.cpp.obj: ymm=0 vfmadd=0      <- R34 (baseline ISA by design:
+                                                 scalar per-sample stereo
+                                                 matrix, no SIMD path)
+   telemetry.cpp.obj: ymm=0 vfmadd=0
+   octavox_telemetry_interface.cpp.obj: ymm=0 vfmadd=0
+   octavox_minimal_view.cpp.obj: ymm=0 vfmadd=0
+   octavox_ui_renderer.cpp.obj: ymm=0 vfmadd=0
+
+2) FINAL DLL SCAN (objdump -d on the shipped module):
+   PitchLab_Lagrange6_Balanced.vst3: ymm=275 vfmadd=26 cpuid=3 xgetbv=1
+
+   ymm arithmetic: 275 = 207 (simd_avx2.obj) + 68 (simd_fma.obj) -> EVERY
+   256-bit instruction originates from the two ISA kernel units; the width
+   stage, the editor and the renderer TUs contribute ZERO AVX2/FMA.
+   IDENTICAL to the R32-W and R33-W records: the R34 delta does not
+   disturb the DSP dispatch.
+   vfmadd arithmetic: 26 = 26 (simd_fma.obj only).
+   cpuid(3 leaves) + xgetbv(1) = the R24-W explicit Windows detection path.
+
+3) X11 ABSENCE (the Windows build must reference no X11 symbol):
+   XOpenDisplay/XCreateSimpleWindow/XPutImage occurrences in the final
+   DLL: 0
+
+4) STRUCTURAL CHECKS:
+   format: PE32+ executable for MS Windows 6.00 (DLL), x86-64, 11 sections
+   export: GetPluginFactory (single export, VST3 module contract)
+   imports (12, all system): GDI32.dll, KERNEL32.dll, USER32.dll, ole32.dll
+     + 8 api-ms-win-crt-* (environment, heap, math, private, runtime,
+     stdio, string, time) -- the same set as the R33-W record (the R34
+     stage adds NO import: it is pure arithmetic)
+   GUIDs (byte search, little-endian):
+     processor FUID  6F4E6258-9A31-42E1-8F3C-5A971D2B4E60: FOUND
+     IPitchTelemetry IID D1A60F31-8C4B-4E39-9A67-31D1-8E4F5A21: FOUND
+   moduleinfo.json: byte-identical to the Linux twin (cmp; the host-side
+     moduleinfotool bridge copies the twin's compile-time factory metadata
+     -- 39 parameters now, same FUIDs, same version)
+
+5) HONESTY NOTE (unchanged from R32-W/R33-W): no Windows execution in this
+   sandbox (no wine, no PE runner) -- the Windows module is verified by
+   machine code + structure + the byte-identical moduleinfo, while the
+   IDENTICAL stage logic (the same stereo_width.cpp translation unit) is
+   executed end-to-end on Linux by the 126-case core suite (11 r34 cases),
+   the wrapper tests (22/22), the module integration suite (18/18, incl.
+   stereo_width_module) and the ASan gates.

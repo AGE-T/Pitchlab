@@ -2,7 +2,36 @@ import fs from "node:fs";
 import path from "node:path";
 import { ReportViewer } from "../components/report-viewer";
 
-// R33 (current round): THE MINIMAL EDITOR — the wrapper's first GUI surface,
+// R34 (current round): THE CHAIN-END STEREO WIDTH STAGE — delivered on the
+// user's request ("a stereo kep szelessege allithato, teljesen monora
+// osszehuzhato, a hang energiaja megtartva" — research first, then
+// implement): a correlation-adaptive energy-preserving width stage at the
+// very END of the DSP chain (inside MultichannelShifter::process, after
+// every per-channel engine; the mono engines are untouched). One new
+// parameter "Stereo Width" (id 38, [0,1], default 1.0 = BIT-NEUTRAL — the
+// r15acc determinism hash 0x35fe0d51a4372ac8 is IDENTICAL to R31/R32/R33;
+// 0.0 = full mono collapse BITWISE: L'==R'). The law (mid-only-gain
+// structure): k(w,rho) = sqrt((2 - w^2*(1-rho))/(1+rho)) with rho measured
+// feed-forward on the stage input (a 200 ms one-pole on E[L2],E[R2],E[LR];
+// NO transcendental in the block path — the ACTIVE stage is IEEE-exact
+// deterministic). Dual-mono collapses at EXACT unity (the property that
+// rejects the static equal-power law), uncorrelated at +3 dB, out-of-phase
+// honestly clamped at +6 dB. Slew-limited (a,b) matrix (10 ms) for
+// click-free drags; bypass gates the stage off; state blob v3 (v1/v2
+// restore with the width at the bit-neutral default). The R33 editor
+// gained a WIDTH slider (golden re-pinned DELIBERATELY: 0x929df78511dc9220).
+// The r34_energy_uncorrelated gate at w=0.5 CAUGHT the research doc's first
+// derivation error (-0.343 dB measured = the wrong law's prediction to the
+// digit) — corrected + documented. Verification: core 126/126 Release
+// (115 pre-R34 unchanged + 11 new r34 cases) AND ASan/UBSan/LSan, wrapper
+// 22/22 (+ state v3/v2 back-compat), ui 11/11 (hit-map 39/39, X11 pixel
+// identity), module integration 18/18 (the stereo_width_module case:
+// bitwise mono, +0.013 dB energy, bypass gate bit-exact on the SHIPPED
+// .so), validator 47/47, Windows cross-build machine-code record identical
+// to R32-W/R33-W (stereo_width.obj baseline-ISA). Delivery:
+// PitchLab_R34_Stereo_Width_VST3.zip (Linux + Windows bundles + PDB +
+// README + reports + logs + the real-render screenshots).
+// R33 (previous round): THE MINIMAL EDITOR — the wrapper's first GUI surface,
 // delivered on the user's request ("tudnál neki egy minimalista ui-t is
 // készíteni?"): a fixed-size 784x416 software-rendered IPlugView served by
 // createView("Editor") — all 38 parameters reachable (sliders, voices
@@ -75,6 +104,12 @@ import { ReportViewer } from "../components/report-viewer";
 // eliminations, host-latency verdict corrected). No new archive zip this round
 // (static-audit round); the delivery cards below remain the R23/R22/R21
 // evidence packages.
+const R34_REPORT =
+  "/home/z/my-project/OCTAVOX_R34_STEREO_WIDTH.md";
+const R34_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R34_STEREO_WIDTH.md");
+const R34_RESEARCH =
+  "/home/z/my-project/OCTAVOX_R34_STEREO_WIDTH_RESEARCH.md";
+const R34_RESEARCH_LOCAL = path.join(process.cwd(), "OCTAVOX_R34_STEREO_WIDTH_RESEARCH.md");
 const R33_REPORT =
   "/home/z/my-project/OCTAVOX_R33_MINIMAL_UI.md";
 const R33_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R33_MINIMAL_UI.md");
@@ -115,7 +150,9 @@ const LOCAL_FALLBACK = path.join(process.cwd(), "PITCHLAB_R23_YIN_RESEARCH.md");
 const ZIP_NAME = "Octavox_RE_evidence_round23.zip";
 const R22_ZIP_NAME = "Octavox_RE_evidence_round22.zip";
 const R21_ZIP_NAME = "Octavox_RE_evidence_round21.zip";
-// R33: the minimal-editor demo (the current delivery: Linux + Windows).
+// R34: the stereo-width build (the current delivery: Linux + Windows).
+const R34_DEMO_ZIP = "PitchLab_R34_Stereo_Width_VST3.zip";
+// R33: the minimal-editor demo (the previous delivery).
 const R33_DEMO_ZIP = "PitchLab_R33_Minimal_UI_VST3.zip";
 // R32: the Windows x64 telemetry demo (the previous delivery).
 const R32_DEMO_ZIP = "PitchLab_R32_Telemetry_Demo_Windows_x64.zip";
@@ -134,6 +171,8 @@ function readFirstExisting(paths: string[]): string | null {
 }
 
 function readMarkdown(): string {
+  const r34Report = readFirstExisting([R34_REPORT, R34_REPORT_LOCAL]);
+  const r34Research = readFirstExisting([R34_RESEARCH, R34_RESEARCH_LOCAL]);
   const r33Report = readFirstExisting([R33_REPORT, R33_REPORT_LOCAL]);
   const r32Report = readFirstExisting([R32_REPORT, R32_REPORT_LOCAL]);
   const r31Report = readFirstExisting([R31_REPORT, R31_REPORT_LOCAL]);
@@ -153,8 +192,22 @@ function readMarkdown(): string {
   ]);
   const r23 = readFirstExisting([ROUND23_PATH, ROUND23_ALT, LOCAL_FALLBACK]);
   const parts: string[] = [];
+  if (r34Report)
+    parts.push(r34Report.trim()); // R34 first (current round) — keeps the page H1
+  if (r34Research)
+    parts.push(
+      "\n\n---\n\n" +
+        r34Research
+          .replace(/^# /m, "## ") // demote the research record H1
+          .trim(),
+    );
   if (r33Report)
-    parts.push(r33Report.trim()); // R33 first (current round) — keeps the page H1
+    parts.push(
+      (parts.length ? "\n\n---\n\n" : "") +
+        r33Report
+          .replace(/^# /m, "## ") // demote the R33 H1 (one page, one H1)
+          .trim(),
+    );
   if (r32Report)
     parts.push(
       (parts.length ? "\n\n---\n\n" : "") +
@@ -232,7 +285,7 @@ function readMarkdown(): string {
 
 function readDelivery() {
   const entries: { fileName: string; url: string; sizeBytes: number; sha256: string | null }[] = [];
-  for (const name of [R33_DEMO_ZIP, R32_DEMO_ZIP, R31_DEMO_ZIP, ZIP_NAME, R22_ZIP_NAME, R21_ZIP_NAME]) {
+  for (const name of [R34_DEMO_ZIP, R33_DEMO_ZIP, R32_DEMO_ZIP, R31_DEMO_ZIP, ZIP_NAME, R22_ZIP_NAME, R21_ZIP_NAME]) {
     try {
       const zipPath = path.join(process.cwd(), "public", name);
       const sizeBytes = fs.statSync(zipPath).size;

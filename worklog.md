@@ -1082,3 +1082,84 @@ r31-telemetry-demo branch; local main untouched.
   octavox-work/*/package_README.txt staging notes (the canonical
   READMEs live inside the tracked zips); the attrib host-shim exec bit
   restored to match the branch (the sandbox reset had dropped it).
+
+## ROUND 34 DELIVERY (2026-11-28) — THE CHAIN-END STEREO WIDTH STAGE (energy-preserving; user-requested: "a chain végére... stereo kép szélessége állítható, teljesen monóra összehúzható, a hang energiája megtartva — először kutatás, majd implementáció")
+
+**Core:** octavox-native 16.4.0 (audio-path addition) · **Original binary:
+never executed** (no new RE claims — own design on the PitchLab wrapper
+line, like R31/R33). **Mandate (user):** research the options FIRST, then
+implement one; everything on the r31-telemetry-demo branch, main
+untouched.
+
+- **The research (Part A, OCTAVOX_R34_STEREO_WIDTH_RESEARCH.md):** the
+  option space for energy-preserving width — A: naive M/S (fails the
+  twist), B: static equal-power (correlation-blind; +3 dB wrong on THIS
+  plugin's own dual-mono default output), C: correlation-adaptive static
+  gain (CHOSEN — exact for any stationary content, quasi-static, no
+  pumping), D: dynamic RMS AGC (overkill; C is its quasi-static limit),
+  E: Blumlein/Gerzon shuffler (deferred), F: per-sample normalization
+  (rejected) — with the fundamental constraint (any fixed non-unitary
+  width map changes energy; preservation needs an assumption, a
+  measurement, or a distortion) and the full energy-law derivation.
+- **The implementation (Part B, OCTAVOX_R34_STEREO_WIDTH.md):** a new
+  stage at the END of the chain (inside MultichannelShifter::process,
+  after every per-channel engine; the mono AlignedDelayLine engines are
+  untouched). One new parameter "Stereo Width" (id 38, [0,1], default
+  1.0 = BIT-NEUTRAL; 0.0 = full mono collapse). The mid-only-gain law
+  k(w,rho) = sqrt((2 - w^2*(1-rho))/(1+rho)) applied as the symmetric
+  matrix (a=(k+w)/2, b=(k-w)/2) with the exact identities L'-R' = w(L-R)
+  (bitwise mono at w=0) and L'+R' = k(L+R). Feed-forward rho measurement
+  (200 ms per-sample one-pole, activation seed, re-seed after inert
+  periods), slew-limited matrix (10 ms, click-free), kMaxGain = +6 dB
+  honest clamp, bypass gating, RT-safe. State blob v3 (the 39th double;
+  v1/v2 restore bit-neutral). The R33 editor's new WIDTH slider (hit-map
+  39/39; the golden frame re-pinned DELIBERATELY: FNV-1a
+  0x929df78511dc9220).
+- **THE CORRECTION (the round's own gate catch):** the
+  r34_energy_uncorrelated gate at w=0.5 measured -0.343 dB — the research
+  doc's first derivation had folded k into BOTH paths (the global-gain
+  law k = sqrt(2)/sqrt(1+rho+w^2(1-rho))), correct for THAT structure but
+  wrong for the implemented mid-only one (they agree only at w=0 and 1;
+  the wrong law's prediction 0.925 matches the measurement to the digit).
+  Corrected in the code, the tests and the research record (visible
+  correction note) — exactly the class of error the verification plan
+  exists to catch.
+- **Verification (all green, logs in octavox-work/r34/evidence/):** core
+  126/126 Release AND ASan/UBSan/LSan (115 pre-R34 cases UNCHANGED + 11
+  new r34 cases: default bit-exactness, bitwise mono, the dual-mono
+  exact-unity identity at ZERO tolerance, uncorrelated energy ±0.1 dB at
+  w=0/0.5, the gain law at rho=±0.5, the anti-correlated clamp, the exact
+  DC slew bound, bypass gating, determinism, alloc-freedom, silence) ·
+  the r15acc determinism hash 0x35fe0d51a4372ac8 IDENTICAL to
+  R31/R32/R33 (default bit-neutrality) · wrapper 22/22 Release+ASan (the
+  39-param surface, state v3 roundtrip + the v2 back-compat with a
+  hand-crafted blob) · ui 11/11 Release+ASan (the X11 pixel-identity
+  proof, the re-pinned golden; the ASan gate caught a stack-use-after-
+  scope in the NEW test code — fixed at the source, the mock handler
+  detach) · module integration 18/18 Release+ASan/LSan (the NEW
+  stereo_width_module case drives the SHIPPED module: width=0 through a
+  real parameter queue -> bitwise mono after settle, +0.013 dB
+  steady-state energy vs the default run, bypass+width bit-identical to
+  bypass-only) · validator 47/47 · Windows cross-build (zig 0.13.0
+  re-acquired after ANOTHER sandbox reset; the R32 env-driven wrappers
+  reused): machine-code + structural record IDENTICAL to R32-W/R33-W
+  (ymm=275 vfmadd=26 cpuid=3 xgetbv=1; stereo_width.cpp.obj
+  baseline-ISA), zero X11 refs, same 12 system-DLL imports, moduleinfo
+  byte-identical to the Linux twin.
+- **Deliverables:** OCTAVOX_R34_STEREO_WIDTH_RESEARCH.md +
+  OCTAVOX_R34_STEREO_WIDTH.md (root) + octavox-work/r34/evidence/ (8
+  records) + public/PitchLab_R34_Stereo_Width_VST3.zip (35 files: the
+  Linux AND Windows bundles + PDB + README + both reports + logs + the
+  two real-render screenshots — the demo frame shows the WIDTH slider at
+  60%; SHA-256 43ae3e306c650d3e4c9862e82588855e4941f55ad65f351ea889329362b473c4)
+  + sha256 sidecar + the web page R34 section (ROUND 34 badge, 7 delivery
+  cards, the two embedded R34 editor screenshots, title/meta updated).
+- **Honest limits:** energy preserved, not peaks (+3 dB RMS can raise
+  sample peaks); stationary-content exactness (a ~200 ms smoother tracks
+  the image, not the level); anti-correlated content collapses to the
+  honest zero; widening beyond the original image deliberately not
+  exposed (future work; the law extends trivially); macOS not implemented;
+  Windows machine-code verified only; not a DAW compatibility claim.
+- **Process:** everything on the r31-telemetry-demo branch line (the
+  push-first sandbox strategy — the local worktree carries the delta;
+  push pending at write time, to be completed in this session).

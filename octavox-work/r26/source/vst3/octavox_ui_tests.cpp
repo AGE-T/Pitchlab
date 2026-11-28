@@ -9,7 +9,7 @@
 //      renderer has no OS/font dependency; the pinned constant comes from
 //      this codebase's own deterministic output).
 //
-//   B. MODEL LOGIC (platform-free): hit-map coverage (all 38 parameters
+//   B. MODEL LOGIC (platform-free): hit-map coverage (all 39 parameters
 //      reachable from the layout), the mouse gesture state machine, the
 //      beginEdit/performEdit/endEdit protocol through a MOCK host handler,
 //      exact quantized value mapping (the wrapper's own conversion
@@ -64,6 +64,7 @@ using octavox::vst3wrap::MinimalView;
 using octavox::vst3wrap::OctavoxNativeProcessor;
 using octavox::vst3wrap::kMaxVoices;
 using octavox::vst3wrap::kNumParams;
+using octavox::vst3wrap::kStereoWidth;
 using octavox::vst3wrap::kBypass;
 using octavox::vst3wrap::kPitch;
 using octavox::vst3wrap::kVoices;
@@ -363,6 +364,7 @@ static void caseHitMapCoverage(CaseResult& c) {
         {600, 77, kSpread},       // harmony map
         {200, 123, kFeedback},    // feedback track
         {485, 123, kWetDry},      // mix track
+        {651, 123, kStereoWidth}, // R34: stereo width track
     };
     for (const auto& t : pts) {
         m.press(t.x, t.y);
@@ -469,6 +471,51 @@ static void caseSliderDragProtocol(CaseResult& c) {
         const double steps = std::floor(plain / 0.01 + 0.5);
         check(c, std::fabs(plain - steps * 0.01) < 1e-9,
               "pitch on the 0.01 grid at px " + std::to_string(px));
+    }
+
+    // R34: the stereo width slider -- the same protocol on the new track
+    // (576..726, row B): press at 25%, drag to 80%, release; the last
+    // perform must be the quantized 0.80 and the model cache agrees.
+    {
+        MockHandler mhW;
+        p->setComponentHandler(&mhW);
+        MinimalUiModel mw(p, p, "V");
+        mw.tick();
+        const int wx = 576, ww = 150, wy = 123;
+        mw.press(wx + ww / 4, wy);
+        mw.dragTo(wx + (ww * 4) / 5, wy);
+        mw.release(wx + (ww * 4) / 5, wy);
+        double lastNorm = 0;
+        bool sawWidth = false;
+        for (const auto& e : mhW.ev)
+            if (e.kind == 1 && e.id == kStereoWidth) {
+                lastNorm = e.value;
+                sawWidth = true;
+            }
+        check(c, sawWidth, "width drag performed edits");
+        // The same position->value law the pitch check pins: the plain
+        // value maps through the track geometry (x-x0)/(w-1).
+        const double expectNorm =
+            normalizedFromPlain(kStereoWidth,
+                                static_cast<double>(wx + (ww * 4) / 5 - wx) /
+                                    (ww - 1));
+        check(c, lastNorm == expectNorm,
+              "last width perform == the track-mapped normalized value");
+        check(c, std::fabs(mw.cachedPlain(kStereoWidth) -
+                           plainFromNormalized(kStereoWidth, expectNorm)) < 1e-9,
+              "width model cache == the track-mapped plain value");
+        // double-click = the documented default (1.0).
+        mw.press(wx + ww / 2, wy);
+        mw.release(wx + ww / 2, wy);
+        mw.press(wx + ww / 2, wy);
+        mw.release(wx + ww / 2, wy);
+        check(c, std::fabs(mw.cachedPlain(kStereoWidth) - 1.0) < 1e-9,
+              "width double-click resets to the default 1.0");
+        // Detach the mock handler BEFORE its scope ends: the processor
+        // holds a refcounted pointer to it and would release it at case
+        // teardown -- after this stack object died (the ASan gate's
+        // stack-use-after-scope finding, fixed at the source).
+        p->setComponentHandler(nullptr);
     }
 }
 
@@ -669,7 +716,11 @@ static void caseGoldenRender(CaseResult& c) {
     // formatting at the DEFAULT surface + sentinel telemetry). Deterministic
     // by construction: no OS, font-stack or locale dependency. Re-pinned
     // from this build's own output (the first run printed it in the note).
-    const uint64_t kGolden = 0x0f80c7f43a8358adULL;
+    // R34 re-pin (DELIBERATE layout change, documented): the WIDTH slider
+    // joined the global panel's row B (x 576..726), the row-B identity
+    // line moved to the footer ("R34 - FIXED 784x416") -- the frame hash
+    // changed consciously from the R33 pin 0x0f80c7f43a8358ad.
+    const uint64_t kGolden = 0x929df78511dc9220ULL;
     char note[96];
     std::snprintf(note, sizeof(note), "golden FNV-1a = 0x%016llx",
                   static_cast<unsigned long long>(h));

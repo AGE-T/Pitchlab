@@ -105,6 +105,7 @@
 // All code here is our own (provenance: see the header).
 
 #include "octavox/dsp.hpp"
+#include "octavox/stereo_width.hpp"  // R34: the chain-end width stage
 
 // R23 (Gate 6/8): the Input Pitch/Period Tracking & Spacing-Control Gate --
 // an independent control layer between the detector and the spacing path.
@@ -2132,6 +2133,7 @@ const VoiceStats& AlignedDelayLine::voiceStats(int v) const {
 // ---------------------------------------------------------------------------
 struct MultichannelShifter::MImpl {
     std::vector<AlignedDelayLine*> engines;
+    StereoWidthStage width;  ///< R34: the chain-end width stage (L/R = ch 0/1)
     Config cfg{};
     int channels = 0;
 };
@@ -2160,6 +2162,7 @@ bool MultichannelShifter::prepare(const Config& cfg, int channels) {
             }
         }
         mimpl_->cfg = cfg;
+        mimpl_->width.prepare(cfg.sample_rate);  // R34 (state reset, like the engines)
         return true;
     }
     if (mimpl_) {
@@ -2182,6 +2185,7 @@ bool MultichannelShifter::prepare(const Config& cfg, int channels) {
             }
             mimpl_->engines.push_back(e);
         }
+        mimpl_->width.prepare(cfg.sample_rate);  // R34
     } catch (...) {
         if (mimpl_) {
             for (auto* e : mimpl_->engines) delete e;
@@ -2196,6 +2200,7 @@ bool MultichannelShifter::prepare(const Config& cfg, int channels) {
 void MultichannelShifter::reset() {
     if (!mimpl_) return;
     for (auto* e : mimpl_->engines) e->reset();
+    mimpl_->width.reset();  // R34 (targets persist, like the engine params)
 }
 
 void MultichannelShifter::setRatio(double r) {
@@ -2239,6 +2244,22 @@ void MultichannelShifter::setWetDry(double wet) {
 void MultichannelShifter::setBypass(bool on) {
     if (!mimpl_) return;
     for (auto* e : mimpl_->engines) e->setBypass(on);
+    mimpl_->width.setBypass(on);  // R34: bypass gates the width stage OFF
+}
+
+// R34: the chain-end stereo width stage (see stereo_width.hpp for the
+// full correlation-adaptive energy-preservation contract).
+void MultichannelShifter::setStereoWidth(double w) {
+    if (!mimpl_) return;
+    mimpl_->width.setWidth(w);
+}
+
+double MultichannelShifter::stereoWidthGain() const {
+    return mimpl_ ? mimpl_->width.gain() : 1.0;
+}
+
+double MultichannelShifter::stereoWidthCorrelation() const {
+    return mimpl_ ? mimpl_->width.correlation() : 0.0;
 }
 
 bool MultichannelShifter::ready() const { return mimpl_ != nullptr; }
@@ -2253,6 +2274,10 @@ void MultichannelShifter::process(const float* const* in, float* const* out,
     for (int c = 0; c < channels; ++c) {
         mimpl_->engines[c]->process(in[c], out[c], n);
     }
+    // R34: the width stage AT THE CHAIN END -- after every channel engine,
+    // before the buffers return to the host. No-op at the default width
+    // (bit-neutral; the stage checks its own inertness + channel count).
+    mimpl_->width.process(out, channels, n);
 }
 
 const VoiceStats& MultichannelShifter::voiceStats(int channel, int voice) const {
@@ -2327,6 +2352,6 @@ double AlignedDelayLine::trackedHz() const {
     return impl_ ? impl_->control.diagnostics().tracked_hz : 0.0;
 }
 
-const char* versionString() { return "octavox-native 16.3.0"; }
+const char* versionString() { return "octavox-native 16.4.0"; }
 
 }  // namespace octavox

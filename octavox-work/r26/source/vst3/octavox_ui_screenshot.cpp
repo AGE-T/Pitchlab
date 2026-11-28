@@ -42,6 +42,7 @@ using octavox::vst3wrap::kFeedback;
 using octavox::vst3wrap::kPitch;
 using octavox::vst3wrap::kVoices;
 using octavox::vst3wrap::kWetDry;
+using octavox::vst3wrap::kStereoWidth;
 using octavox::vst3wrap::normalizedFromPlain;
 using octavox::vst3wrap::plainFromNormalized;
 using octavox::vst3wrap::voiceDelayId;
@@ -239,6 +240,7 @@ int main(int argc, char** argv) {
         addParam(kPitch, 0.0);
         addParam(kFeedback, 0.18);
         addParam(kWetDry, 1.0);
+        addParam(kStereoWidth, 0.60);  // R34: the width knob mid-travel
         addParam(voiceOffsetId(1), 7.0);    // V2: a fifth above (spread slot)
         addParam(voiceOffsetId(2), -5.0);   // V3: a fourth below
         addParam(voiceOffsetId(3), 12.0);   // V4: an octave above

@@ -9,9 +9,9 @@
 // license) is used as-is and is NOT redistributed with this evidence package.
 //
 // This header defines:
-//   * the 38-parameter surface (ids, titles, domains, defaults),
+//   * the 39-parameter surface (ids, titles, domains, defaults),
 //   * the exact normalized<->plain conversions (reversible, step-quantized),
-//   * the live Surface model (the audio-thread mirror of all 38 plain values,
+//   * the live Surface model (the audio-thread mirror of all 39 plain values,
 //     in a fixed serialization order = parameter id order),
 //   * the versioned binary state blob layout ('OVR1', version 1),
 //   * the ms->samples conversion for per-voice base delays incl. the clamping
@@ -59,10 +59,10 @@ namespace vst3wrap {
 
 /// The core's default max_voices (Config::max_voices == 8).
 constexpr int kMaxVoices = 8;
-/// Total exposed parameters: 6 global + 4 per voice * 8 voices.
-constexpr int kNumParams = 38;
+/// Total exposed parameters: 6 global + 4 per voice * 8 voices + 1 (R34).
+constexpr int kNumParams = 39;
 /// Fixed queue-table capacity in process(); a host creates at most one queue
-/// per parameter id (38 here), so 64 can never bind (documented).
+/// per parameter id (39 here), so 64 can never bind (documented).
 constexpr int kMaxQueues = 64;
 
 //--------------------------------------------------------------------------
@@ -80,7 +80,17 @@ enum ParamId : uint32_t {
     kVoiceOffsetBase = 6, ///< + 4*v: voice v pitch offset, semitones
     kVoiceGainBase = 7,   ///< + 4*v: voice v gain, [0,2]
     kVoiceMuteBase = 8,   ///< + 4*v: voice v mute, bool
-    kVoiceDelayBase = 9   ///< + 4*v: voice v base delay, ms [0,200]
+    kVoiceDelayBase = 9,  ///< + 4*v: voice v base delay, ms [0,200]
+
+    /// R34: the chain-end stereo image width [0,1], default 1.0 = the
+    /// original image (BIT-NEUTRAL: the core's width stage is inert),
+    /// 0.0 = full mono collapse, with correlation-adaptive energy
+    /// preservation (see include/octavox/stereo_width.hpp + the R34
+    /// research record). APPENDED after the per-voice block: all
+    /// pre-R34 ids (0..37) are unchanged (DAW automation compatibility).
+    /// Distinct from the Harmony Map (id 3), which is the musical
+    /// per-voice interval switch, NOT stereo widening.
+    kStereoWidth = 38
 };
 
 constexpr uint32_t voiceOffsetId(int v) { return kVoiceOffsetBase + 4 * v; }
@@ -132,7 +142,7 @@ inline double maxBaseDelaySamples(double grain) {
 double msToBaseDelaySamples(double ms, double sampleRate, double grain);
 
 //--------------------------------------------------------------------------
-// The live parameter surface (38 plain values; the audio-thread mirror)
+// The live parameter surface (39 plain values; the audio-thread mirror)
 //--------------------------------------------------------------------------
 
 struct Surface {
@@ -149,6 +159,9 @@ struct Surface {
     double gain[kMaxVoices];   ///< linear amplitude
     double mute[kMaxVoices];   ///< 0/1
     double baseMs[kMaxVoices]; ///< milliseconds
+
+    // R34 (param id 38)
+    double stereoWidth;        ///< [0,1], default 1.0 (bit-neutral)
 };
 
 /// The default surface: every value is the core's own default (see header
@@ -178,10 +191,11 @@ struct StateData {
     Config cfg;      ///< full engine config (cfg.sample_rate = the rate the
                      ///< engine is to be prepared at)
     int32_t channels;///< informational: bus channel count at save time
-    Surface surface; ///< the 38 plain values
+    Surface surface; ///< the 39 plain values
 };
 
-/// Write magic + version + Config(17 fields) + channels + 38 plain doubles.
+/// Write magic + version + Config(21 fields) + channels + 39 plain doubles
+/// (v3; see the version history at the layout constants).
 /// Returns false on stream errors.
 bool writeStateData(Steinberg::IBStream* stream, const StateData& st);
 
@@ -233,7 +247,7 @@ struct ParamSpec {
     Steinberg::Vst::UnitID unitId;
 };
 
-/// The 38 parameter specifications, indexed by parameter id (0..37).
+/// The 39 parameter specifications, indexed by parameter id (0..38).
 const ParamSpec& paramSpec(uint32_t id);
 
 /// R21-P0: static per-parameter help text (one ASCII line per id; explains
@@ -242,7 +256,7 @@ const ParamSpec& paramSpec(uint32_t id);
 /// documentation and future GUI tooltip layers. Never null.
 const char* paramHelp(uint32_t id);
 
-/// Register the 38 parameter objects on a parameter container (call from
+/// Register the 39 parameter objects on a parameter container (call from
 /// the processor's initialize(), which has access to the protected member).
 void registerParameters(Steinberg::Vst::ParameterContainer& parameters);
 

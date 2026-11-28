@@ -33,6 +33,7 @@
 #endif
 
 #include "octavox/dsp.hpp"
+#include "octavox/stereo_width.hpp"  // R34: kMaxGain constant (the width stage itself is driven through MultichannelShifter)
 #include "wav_io.hpp"
 
 using namespace octavox;
@@ -449,7 +450,24 @@ static const CaseMeta kAllCases[] = {
     {"r26_engine_fma_churn_closeness", "r26", "long"},
     {"r26_midstream_level_handover", "r26", "long"},
     {"r26_rt_allocfree_batched", "r26", "unit"},
-// total: 115 cases, long: 25, unit: 90
+    // R34 (16.4.0): the chain-end stereo width stage -- the correlation-
+    // adaptive energy-preservation battery (bit-neutral default, bitwise
+    // mono collapse, the correlated-unity full-derivation identity,
+    // uncorrelated energy preservation, the partial-correlation gain law,
+    // the anti-correlated clamp, click-free width steps, bypass gating,
+    // determinism, RT allocation-freedom, silence stability).
+    {"r34_width_default_bitexact", "r34", "unit"},
+    {"r34_mono_collapse_exact", "r34", "unit"},
+    {"r34_energy_correlated_unity", "r34", "unit"},
+    {"r34_energy_uncorrelated", "r34", "unit"},
+    {"r34_partial_correlation_gain", "r34", "unit"},
+    {"r34_anticorrelated_clamp", "r34", "unit"},
+    {"r34_width_ramp_clickfree", "r34", "unit"},
+    {"r34_bypass_gates_width", "r34", "unit"},
+    {"r34_width_determinism", "r34", "unit"},
+    {"r34_width_rt_allocfree", "r34", "unit"},
+    {"r34_silence_stability", "r34", "unit"},
+// total: 126 cases, long: 25, unit: 101
 };
 
 static const int kAllCaseCount =
@@ -459,7 +477,7 @@ static const char* kGroupIds[] = {"prepare_reset", "unity",     "voices",
                                   "stereo",        "rates_formats",
                                   "stability",     "r13",       "r15p1",
                                   "r15acc",        "r19",       "r22",
-                                  "r24"};
+                                  "r24",           "r26",       "r34"};
 static const int kGroupCount =
     static_cast<int>(sizeof(kGroupIds) / sizeof(kGroupIds[0]));
 static const char* kCategories[] = {"unit", "long"};
@@ -5766,6 +5784,513 @@ void casesR26(std::vector<CaseResult>& R) {
 }
 
 // ---------------------------------------------------------------------------
+// R34 (16.4.0): the chain-end stereo width stage -- correlation-adaptive
+// energy preservation (the law + contract: include/octavox/stereo_width.hpp;
+// the option analysis: OCTAVOX_R34_STEREO_WIDTH_RESEARCH.md).
+// ---------------------------------------------------------------------------
+static void casesR34(std::vector<CaseResult>& R) {
+    // Local helpers: total energy of a stereo pair, and a fixed block
+    // pattern runner over a MultichannelShifter (the stage sees the same
+    // block boundaries the host would give it).
+    auto energy2 = [](const std::vector<float>& l, const std::vector<float>& r,
+                      int from, int to) {
+        double e = 0.0;
+        for (int i = from; i < to; ++i) e += (double)l[i] * l[i] + (double)r[i] * r[i];
+        return e;
+    };
+    auto runBlocks = [](MultichannelShifter& m, const std::vector<float>& inL,
+                        const std::vector<float>& inR, std::vector<float>& outL,
+                        std::vector<float>& outR, int block) {
+        int done = 0;
+        const int n = (int)inL.size();
+        while (done < n) {
+            const int k = std::min(block, n - done);
+            const float* in[2] = {inL.data() + done, inR.data() + done};
+            float* out[2] = {outL.data() + done, outR.data() + done};
+            m.process(in, out, 2, k);
+            done += k;
+        }
+    };
+
+    // -- 1. r34_width_default_bitexact --------------------------------------
+    if (harnSelected("r34_width_default_bitexact")) {
+        // Default width: the stage is INERT -- the MultichannelShifter
+        // output is BIT-IDENTICAL to two hand-driven mono engines, for
+        // uncorrelated content that would expose any active arithmetic.
+        // An explicit mid-stream setStereoWidth(1.0) must stay inert too.
+        CaseResult c{"r34_width_default_bitexact"};
+        Config cfg;
+        cfg.ratio = semitoneRatio(400.0);
+        cfg.voices = 4;
+        cfg.feedback = 0.2;
+        const int n = 48000;
+        const auto inL = gen::noise(12345, n, 0.4);
+        const auto inR = gen::noise(67890, n, 0.4);
+        std::vector<float> Lo(n, 0.f), Ro(n, 0.f), rLo(n, 0.f), rRo(n, 0.f);
+        MultichannelShifter m;
+        check(c, m.prepare(cfg, 2), "prepare failed");
+        const int pat[3] = {64, 150, 512};
+        {
+            int done = 0, pi = 0;
+            while (done < n) {
+                const int k = std::min(pat[pi % 3], n - done);
+                const float* in[2] = {inL.data() + done, inR.data() + done};
+                float* out[2] = {Lo.data() + done, Ro.data() + done};
+                m.process(in, out, 2, k);
+                done += k;
+                ++pi;
+                if (done == 24000) m.setStereoWidth(1.0);  // explicit default
+            }
+        }
+        {
+            AlignedDelayLine eA, eB;
+            check(c, eA.prepare(cfg) && eB.prepare(cfg), "reference prepare failed");
+            int done = 0, pi = 0;
+            while (done < n) {
+                const int k = std::min(pat[pi % 3], n - done);
+                eA.process(inL.data() + done, rLo.data() + done, k);
+                eB.process(inR.data() + done, rRo.data() + done, k);
+                done += k;
+                ++pi;
+            }
+        }
+        long diff = 0;
+        for (int i = 0; i < n; ++i) {
+            if (Lo[i] != rLo[i]) ++diff;
+            if (Ro[i] != rRo[i]) ++diff;
+        }
+        addValue(c, "differing_samples", (double)diff);
+        check(c, diff == 0, "default width not bit-neutral (stage leaked)");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 2. r34_mono_collapse_exact ------------------------------------------
+    if (harnSelected("r34_mono_collapse_exact")) {
+        // w=0: L'==R' BITWISE in the steady state (a==b==k/2 exactly once
+        // the slew settled), on real shifted engine output.
+        CaseResult c{"r34_mono_collapse_exact"};
+        Config cfg;
+        cfg.ratio = semitoneRatio(400.0);
+        cfg.voices = 4;
+        const int n = 48000;
+        const auto inL = gen::noise(24680, n, 0.4);
+        const auto inR = gen::noise(13579, n, 0.4);
+        std::vector<float> Lo(n, 0.f), Ro(n, 0.f);
+        MultichannelShifter m;
+        check(c, m.prepare(cfg, 2), "prepare failed");
+        m.setStereoWidth(0.0);
+        runBlocks(m, inL, inR, Lo, Ro, 480);
+        long diff = 0;
+        for (int i = 480; i < n; ++i)  // skip the ~3.5 ms slew-in
+            if (Lo[i] != Ro[i]) ++diff;
+        addValue(c, "nonmono_samples_after_settle", (double)diff);
+        check(c, diff == 0, "w=0 did not collapse to bitwise mono");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 3. r34_energy_correlated_unity ---------------------------------------
+    if (harnSelected("r34_energy_correlated_unity")) {
+        // Dual-mono input (L==R), w=0: rho measures EXACTLY +1, k computes
+        // EXACTLY 1.0, and (L+R)/2 with L==R is exact -- the collapse is
+        // per-sample UNITY with zero tolerance (the full-derivation
+        // bitwise identity; the property that decides against the static
+        // equal-power law, which would be +3 dB here).
+        CaseResult c{"r34_energy_correlated_unity"};
+        Config cfg;
+        cfg.ratio = semitoneRatio(400.0);
+        cfg.voices = 4;
+        const int n = 48000;
+        const auto inL = gen::noise(11223, n, 0.4);
+        const std::vector<float> inR = inL;  // dual-mono
+        std::vector<float> Lo(n, 0.f), Ro(n, 0.f), rLo(n, 0.f), rRo(n, 0.f);
+        MultichannelShifter m;
+        check(c, m.prepare(cfg, 2), "prepare failed");
+        m.setStereoWidth(0.0);
+        runBlocks(m, inL, inR, Lo, Ro, 480);
+        {
+            AlignedDelayLine eA, eB;
+            check(c, eA.prepare(cfg) && eB.prepare(cfg), "reference prepare failed");
+            int done = 0;
+            while (done < n) {
+                const int k = std::min(480, n - done);
+                eA.process(inL.data() + done, rLo.data() + done, k);
+                eB.process(inR.data() + done, rRo.data() + done, k);
+                done += k;
+            }
+        }
+        long diff = 0;
+        for (int i = 480; i < n; ++i) {
+            if (Lo[i] != rLo[i]) ++diff;
+            if (Ro[i] != rRo[i]) ++diff;
+        }
+        addValue(c, "differing_samples_vs_reference", (double)diff);
+        addValue(c, "measured_rho", m.stereoWidthCorrelation());
+        addValue(c, "applied_k", m.stereoWidthGain());
+        check(c, m.stereoWidthCorrelation() == 1.0, "rho not exactly +1");
+        check(c, m.stereoWidthGain() == 1.0, "k not exactly 1.0");
+        check(c, diff == 0, "dual-mono collapse is not exact unity");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 4. r34_energy_uncorrelated --------------------------------------------
+    if (harnSelected("r34_energy_uncorrelated")) {
+        // Independent L/R: steady-state total energy preserved within
+        // +-0.1 dB at w=0 (k -> sqrt(2)) and at w=0.5 (k -> 1.2649).
+        CaseResult c{"r34_energy_uncorrelated"};
+        Config cfg;
+        cfg.ratio = semitoneRatio(400.0);
+        cfg.voices = 4;
+        const int n = 96000;  // 2 s; measure the last 0.5 s (settled)
+        const auto inL = gen::noise(55555, n, 0.4);
+        const auto inR = gen::noise(77777, n, 0.4);
+        std::vector<float> rLo(n, 0.f), rRo(n, 0.f);
+        {
+            AlignedDelayLine eA, eB;
+            check(c, eA.prepare(cfg) && eB.prepare(cfg), "reference prepare failed");
+            int done = 0;
+            while (done < n) {
+                const int k = std::min(480, n - done);
+                eA.process(inL.data() + done, rLo.data() + done, k);
+                eB.process(inR.data() + done, rRo.data() + done, k);
+                done += k;
+            }
+        }
+        const double eRef = energy2(rLo, rRo, n - 24000, n);
+        for (double w : {0.0, 0.5}) {
+            std::vector<float> Lo(n, 0.f), Ro(n, 0.f);
+            MultichannelShifter m;
+            check(c, m.prepare(cfg, 2), "prepare failed");
+            m.setStereoWidth(w);
+            runBlocks(m, inL, inR, Lo, Ro, 480);
+            const double eOut = energy2(Lo, Ro, n - 24000, n);
+            const double db = 10.0 * std::log10(eOut / eRef);
+            char what[64];
+            std::snprintf(what, sizeof what, "energy not preserved at w=%.2f", w);
+            addValue(c, w == 0.0 ? "energy_delta_db_w0" : "energy_delta_db_w05", db);
+            addValue(c, w == 0.0 ? "k_w0" : "k_w05", m.stereoWidthGain());
+            check(c, std::abs(db) < 0.1, what);
+        }
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 5. r34_partial_correlation_gain ---------------------------------------
+    if (harnSelected("r34_partial_correlation_gain")) {
+        // Constructed rho = +0.5 and -0.5 content (unity engine: the parked
+        // copy preserves the constructed correlation exactly): the
+        // converged gain matches k(w,rho) within 2%.
+        CaseResult c{"r34_partial_correlation_gain"};
+        Config cfg;  // unity, 1 voice: bit-exact aligned passthrough
+        const int n = 96000;
+        const auto x = gen::noise(9090, n, 0.3);
+        const auto y = gen::noise(4242, n, 0.3);
+        const auto law = [](double w, double rho) {
+            // the corrected mid-only law (see the R34 correction note)
+            return std::sqrt((2.0 - w * w * (1.0 - rho)) / (1.0 + rho));
+        };
+        for (int iCase = 0; iCase < 2; ++iCase) {
+            const double rhoTgt = iCase == 0 ? 0.5 : -0.5;
+            const double a = rhoTgt, b = std::sqrt(1.0 - rhoTgt * rhoTgt);
+            std::vector<float> inL(n), inR(n);
+            for (int i = 0; i < n; ++i) {
+                inL[i] = x[i];
+                inR[i] = (float)(a * x[i] + b * y[i]);
+            }
+            std::vector<float> Lo(n, 0.f), Ro(n, 0.f);
+            MultichannelShifter m;
+            check(c, m.prepare(cfg, 2), "prepare failed");
+            m.setStereoWidth(0.0);
+            runBlocks(m, inL, inR, Lo, Ro, 480);
+            const double expect = law(0.0, rhoTgt);
+            const double got = m.stereoWidthGain();
+            const double err = std::abs(got - expect) / expect;
+            char what[80];
+            std::snprintf(what, sizeof what, "gain law off at rho=%+.2f", rhoTgt);
+            addValue(c, iCase == 0 ? "k_rho+05" : "k_rho-05", got);
+            addValue(c, iCase == 0 ? "k_rho+05_expected" : "k_rho-05_expected", expect);
+            check(c, err < 0.02, what);
+        }
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 6. r34_anticorrelated_clamp --------------------------------------------
+    if (harnSelected("r34_anticorrelated_clamp")) {
+        // L=-R exactly (unity engine): rho measures exactly -1, k clamps
+        // at kMaxGain, the output is the honest digital-zero mid (energy
+        // CANNOT be preserved through a mono collapse of out-of-phase
+        // content -- physics, documented + clamped, never NaN).
+        CaseResult c{"r34_anticorrelated_clamp"};
+        Config cfg;
+        const int n = 48000;
+        const auto inL = gen::noise(31337, n, 0.3);
+        std::vector<float> inR(n);
+        for (int i = 0; i < n; ++i) inR[i] = -inL[i];
+        std::vector<float> Lo(n, 0.f), Ro(n, 0.f);
+        MultichannelShifter m;
+        check(c, m.prepare(cfg, 2), "prepare failed");
+        m.setStereoWidth(0.0);
+        runBlocks(m, inL, inR, Lo, Ro, 480);
+        long nonfinite = 0, nonzero = 0;
+        for (int i = 480; i < n; ++i) {
+            if (!std::isfinite(Lo[i]) || !std::isfinite(Ro[i])) ++nonfinite;
+            if (Lo[i] != 0.0f || Ro[i] != 0.0f) ++nonzero;
+        }
+        addValue(c, "measured_rho", m.stereoWidthCorrelation());
+        addValue(c, "applied_k", m.stereoWidthGain());
+        addValue(c, "nonfinite_samples", (double)nonfinite);
+        addValue(c, "nonzero_samples_after_settle", (double)nonzero);
+        check(c, m.stereoWidthCorrelation() == -1.0, "rho not exactly -1");
+        check(c, m.stereoWidthGain() == StereoWidthStage::kMaxGain,
+              "k did not clamp at kMaxGain");
+        check(c, nonfinite == 0, "non-finite samples in the output");
+        check(c, nonzero == 0, "anti-correlated collapse is not the honest zero");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 7. r34_width_ramp_clickfree ---------------------------------------------
+    if (harnSelected("r34_width_ramp_clickfree")) {
+        // DIRECT stage unit test with DC inputs: with L,R constant the
+        // output changes ONLY through the matrix motion, so the slew law
+        // is checkable EXACTLY: |out[i]-out[i-1]| <= slew*(|L|+|R|) per
+        // sample and per channel, through the activation k-jump, the
+        // rho-driven target drift, and a mid-stream width re-target.
+        // (An engine-level slope comparison is NOT a valid gate: the
+        // collapsed signal's own slope legitimately differs from the
+        // uncollapsed reference's -- the matrix morph is continuous by
+        // construction, which is what this DC gate proves.)
+        CaseResult c{"r34_width_ramp_clickfree"};
+        const double slew = 2.0 / (0.010 * 48000);  // the documented law
+        StereoWidthStage st;
+        st.prepare(48000.0);
+        const int n = 60 * 480;
+        std::vector<float> dL(n, 0.5f), dR(n, -0.3f);  // DC inputs
+        std::vector<float> Lo(n, 0.f), Ro(n, 0.f);
+        // The exact slew bound uses the ACTUAL float magnitudes plus the
+        // output float-rounding slack (one ulp at |out|<=1 is 6e-8; the
+        // stage computes in double and rounds once on store).
+        const double bound =
+            slew * (std::abs((double)dL[0]) + std::abs((double)dR[0])) + 1.0e-7;
+        // phase 1: inert (default) for 10 blocks -- in place is the
+        // identity, so dL/dR stay pristine.
+        for (int b = 0; b < 10; ++b) {
+            float* ch[2] = {dL.data() + b * 480, dR.data() + b * 480};
+            st.process(ch, 2, 480);
+        }
+        st.setWidth(0.0);  // ACTIVATE: the k target jumps; the slew must not
+        for (int b = 10; b < 60; ++b) {
+            std::copy(dL.begin() + b * 480, dL.begin() + (b + 1) * 480,
+                      Lo.begin() + b * 480);
+            std::copy(dR.begin() + b * 480, dR.begin() + (b + 1) * 480,
+                      Ro.begin() + b * 480);
+            float* o[2] = {Lo.data() + b * 480, Ro.data() + b * 480};
+            st.process(o, 2, 480);
+            if (b == 30) st.setWidth(0.6);  // mid-stream re-target
+        }
+        double worstL = 0.0, worstR = 0.0;
+        for (int i = 10 * 480 + 1; i < n; ++i) {
+            worstL = std::max(worstL, std::abs((double)Lo[i] - Lo[i - 1]));
+            worstR = std::max(worstR, std::abs((double)Ro[i] - Ro[i - 1]));
+        }
+        addValue(c, "worst_per_sample_step_L", worstL);
+        addValue(c, "worst_per_sample_step_R", worstR);
+        addValue(c, "slew_bound", bound);
+        check(c, worstL <= bound && worstR <= bound,
+              "matrix slew exceeded the documented bound");
+        // Continuity at the activation boundary: the first active output
+        // sample sits within ONE slew step of the inert identity (the
+        // slew advances before the first store, so out[0] is one step
+        // into the morph -- a displacement of <= bound, i.e. no step
+        // discontinuity at the activation point).
+        check(c, std::abs((double)Lo[10 * 480] - dL[10 * 480]) <= bound &&
+                     std::abs((double)Ro[10 * 480] - dR[10 * 480]) <= bound,
+              "activation boundary not continuous");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 8. r34_bypass_gates_width --------------------------------------------------
+    if (harnSelected("r34_bypass_gates_width")) {
+        // Bypass ON: the stage is the exact identity regardless of w --
+        // bit-equal to a never-touched bypass reference (bypass = the
+        // plugin does nothing), including a width change WHILE bypassed.
+        CaseResult c{"r34_bypass_gates_width"};
+        Config cfg;
+        cfg.ratio = semitoneRatio(400.0);
+        cfg.voices = 4;
+        const int n = 48000;
+        const auto inL = gen::noise(6060, n, 0.4);
+        const auto inR = gen::noise(7070, n, 0.4);
+        std::vector<float> Lo(n, 0.f), Ro(n, 0.f), rLo(n, 0.f), rRo(n, 0.f);
+        MultichannelShifter m, ref;
+        check(c, m.prepare(cfg, 2) && ref.prepare(cfg, 2), "prepare failed");
+        m.setStereoWidth(0.0);  // the would-be-active width
+        {
+            int done = 0;
+            while (done < n) {
+                const int k = std::min(480, n - done);
+                const float* in[2] = {inL.data() + done, inR.data() + done};
+                float* out[2] = {Lo.data() + done, Ro.data() + done};
+                float* rout[2] = {rLo.data() + done, rRo.data() + done};
+                m.process(in, out, 2, k);
+                ref.process(in, rout, 2, k);
+                done += k;
+                if (done == 12000) {
+                    m.setBypass(true);
+                    ref.setBypass(true);
+                }
+                if (done == 24000) m.setStereoWidth(0.5);  // while bypassed
+                if (done == 36000) {
+                    m.setBypass(false);
+                    ref.setBypass(false);
+                }
+            }
+        }
+        long diff = 0;
+        for (int i = 24000 + 4800; i < 36000; ++i) {  // fully-bypassed window
+            if (Lo[i] != rLo[i]) ++diff;
+            if (Ro[i] != rRo[i]) ++diff;
+        }
+        addValue(c, "differing_samples_in_bypass_window", (double)diff);
+        check(c, diff == 0, "width stage active during bypass");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 9. r34_width_determinism -----------------------------------------------------
+    if (harnSelected("r34_width_determinism")) {
+        // A scripted width automation sequence, run twice: bit-identical.
+        CaseResult c{"r34_width_determinism"};
+        Config cfg;
+        cfg.ratio = semitoneRatio(400.0);
+        cfg.voices = 4;
+        const int n = 48000;
+        const auto inL = gen::noise(8080, n, 0.4);
+        const auto inR = gen::noise(8181, n, 0.4);
+        std::vector<float> A_L(n, 0.f), A_R(n, 0.f), B_L(n, 0.f), B_R(n, 0.f);
+        const auto script = [&inL, &inR, n](MultichannelShifter& m, std::vector<float>& Lo,
+                               std::vector<float>& Ro) {
+            int done = 0;
+            int step = 0;
+            while (done < n) {
+                const int k = std::min((step % 3 == 0 ? 480 : 960), n - done);
+                const float* in[2] = {inL.data() + done, inR.data() + done};
+                float* out[2] = {Lo.data() + done, Ro.data() + done};
+                m.process(in, out, 2, k);
+                done += k;
+                ++step;
+                if (done == 4800) m.setStereoWidth(0.0);
+                if (done == 19200) m.setStereoWidth(0.5);
+                if (done == 33600) m.setStereoWidth(0.25);
+                if (done == 43200) m.setStereoWidth(1.0);  // deactivate
+            }
+        };
+        MultichannelShifter m1, m2;
+        check(c, m1.prepare(cfg, 2) && m2.prepare(cfg, 2), "prepare failed");
+        script(m1, A_L, A_R);
+        script(m2, B_L, B_R);
+        long diff = 0;
+        for (int i = 0; i < n; ++i) {
+            if (A_L[i] != B_L[i]) ++diff;
+            if (A_R[i] != B_R[i]) ++diff;
+        }
+        addValue(c, "differing_samples", (double)diff);
+        check(c, diff == 0, "width automation not deterministic");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 10. r34_width_rt_allocfree ------------------------------------------------------
+    if (harnSelected("r34_width_rt_allocfree")) {
+        // Setters + process under the allocation counter: zero allocations.
+        CaseResult c{"r34_width_rt_allocfree"};
+        Config cfg;
+        cfg.ratio = semitoneRatio(400.0);
+        cfg.voices = 4;
+        MultichannelShifter m;
+        check(c, m.prepare(cfg, 2), "prepare failed");
+        const int n = 48000;
+        const auto inL = gen::noise(1212, n, 0.4);
+        const auto inR = gen::noise(1313, n, 0.4);
+        std::vector<float> Lo(n, 0.f), Ro(n, 0.f);
+        allocs::reset();
+        allocs::arm(true);
+        int done = 0;
+        while (done < n) {
+            const int k = std::min(480, n - done);
+            const float* in[2] = {inL.data() + done, inR.data() + done};
+            float* out[2] = {Lo.data() + done, Ro.data() + done};
+            m.process(in, out, 2, k);
+            done += k;
+            if (done == 4800) m.setStereoWidth(0.3);
+            if (done == 24000) m.setStereoWidth(0.9);
+            if (done == 43200) m.setStereoWidth(1.0);
+        }
+        allocs::arm(false);
+        const long na = allocs::count();
+        addValue(c, "allocations", (double)na);
+        check(c, na == 0, "width stage allocated on the audio path");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+
+    // -- 11. r34_silence_stability ---------------------------------------------------------
+    if (harnSelected("r34_silence_stability")) {
+        // DIRECT stage unit test (the ENGINE's own silence behaviour --
+        // feedback tails etc. -- is the engine's documented domain, not the
+        // stage's): digital silence in => exact silence out (no NaN, rho
+        // frozen), both from a cold start and after real content.
+        CaseResult c{"r34_silence_stability"};
+        StereoWidthStage st;
+        st.prepare(48000.0);
+        st.setWidth(0.4);
+        const int n = 24000;
+        std::vector<float> s(n, 0.0f);
+        std::vector<float> c1(n, 0.f), c1R(n, 0.f);  // cold silence
+        {
+            float* ch[2] = {c1.data(), c1R.data()};
+            st.process(ch, 2, n);
+        }
+        const auto inL = gen::noise(1414, n, 0.4);
+        const auto inR = gen::noise(1515, n, 0.4);
+        {
+            std::vector<float> a = inL, b = inR;
+            float* ch[2] = {a.data(), b.data()};
+            st.process(ch, 2, n);  // content (warms the measurement)
+        }
+        const double rhoAfterContent = st.correlation();
+        std::vector<float> c3(n, 0.f), c3R(n, 0.f);  // trailing silence
+        {
+            float* ch[2] = {c3.data(), c3R.data()};
+            st.process(ch, 2, n);
+        }
+        long bad = 0;
+        for (int i = 0; i < n; ++i)
+            if (!std::isfinite(c1[i]) || c1[i] != 0.0f || c1R[i] != 0.0f) ++bad;
+        for (int i = 0; i < n; ++i)
+            if (!std::isfinite(c3[i]) || c3[i] != 0.0f || c3R[i] != 0.0f) ++bad;
+        addValue(c, "bad_samples", (double)bad);
+        addValue(c, "rho_after_content", rhoAfterContent);
+        addValue(c, "rho_after_silence", st.correlation());
+        addValue(c, "gain_after_silence", st.gain());
+        check(c, bad == 0, "silence not preserved (NaN or non-zero output)");
+        check(c, std::isfinite(st.gain()), "gain non-finite on silence");
+        // rho is PRESERVED mathematically through the silence decay (all
+        // three running means decay by the same factor) but floats to a
+        // few ulps of drift; the gate is the bounded-drift record, not
+        // bit-exactness (the outputs themselves stay EXACT zero).
+        check(c, std::abs(st.correlation() - rhoAfterContent) < 1.0e-9,
+              "rho drifted during silence beyond ulp scale");
+        c.pass = c.note.empty();
+        pushCase(R, std::move(c));
+    }
+}
+
+// ---------------------------------------------------------------------------
 // JSON report
 // ---------------------------------------------------------------------------
 std::string jsonEscape(const std::string& s) {
@@ -5934,7 +6459,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    // selection over the registry (the full default run = all 85 cases)
+    // selection over the registry (the full default run = all 126 cases)
     int selected = 0;
     for (int i = 0; i < kAllCaseCount; ++i)
         if (harnSelected(kAllCases[i].name)) ++selected;
@@ -5953,7 +6478,7 @@ int main(int argc, char** argv) {
         {"r13", casesR13},                    {"r15p1", casesR15P1},
         {"r15acc", casesR15Acc},              {"r19", casesR19},
         {"r22", casesR22},                    {"r24", casesR24},
-        {"r26", casesR26},
+        {"r26", casesR26},                    {"r34", casesR34},
     };
     static const int kRunnerCount =
         static_cast<int>(sizeof(kRunners) / sizeof(kRunners[0]));

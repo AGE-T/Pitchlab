@@ -49,7 +49,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-add_library(octavox_dsp STATIC src/dsp.cpp src/simd_dispatch.cpp)
+add_library(octavox_dsp STATIC src/dsp.cpp src/simd_dispatch.cpp src/stereo_width.cpp)
 target_include_directories(octavox_dsp PUBLIC include src)
 if(OCTAVOX_STAGE_TIMERS)
     target_compile_definitions(octavox_dsp PUBLIC OCTAVOX_STAGE_TIMERS=1)

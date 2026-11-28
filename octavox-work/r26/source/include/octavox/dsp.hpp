@@ -664,6 +664,16 @@ public:
     void setVoiceBaseDelay(int v, double delay);
     void setWetDry(double wet);
     void setBypass(bool on);
+    /// R34 (16.4.0): stereo image width at the CHAIN END, w in [0,1]
+    /// (1.0 = the original image, BIT-NEUTRAL -- the stage is inert; 0.0 =
+    /// full mono collapse), with correlation-adaptive energy preservation
+    /// (the full contract: include/octavox/stereo_width.hpp + the R34
+    /// research record). Broadcast-relevant: the stage lives at the
+    /// MultichannelShifter level (the first two channels = L/R; the mono
+    /// per-channel engines are untouched). While the engine's own bypass
+    /// is engaged the stage targets the exact identity (bypass = the
+    /// plugin does nothing), slewing out/in click-free.
+    void setStereoWidth(double w);
 
     bool ready() const;
     int channels() const;
@@ -673,6 +683,15 @@ public:
     void process(const float* const* in, float* const* out, int channels, int n);
 
     const VoiceStats& voiceStats(int channel, int voice) const;
+
+    // -- R34: stereo width stage diagnostics (tests/reports only; the
+    // stage itself is documented in octavox/stereo_width.hpp) -------------
+    /// The last compensation gain k the width stage applied (1.0 while
+    /// inert). Diagnostics only.
+    double stereoWidthGain() const;
+    /// The smoothed input correlation the width stage currently uses
+    /// (0.0 while never activated). Diagnostics only.
+    double stereoWidthCorrelation() const;
 
     // -- R31: telemetry observers, delegated to channel 0 (the reference
     // engine; per-voice DSP state stays per-channel via voiceStats()).

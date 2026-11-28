@@ -16,7 +16,8 @@
 //   * Buses: symmetric Main In/Out only, mono (1) or stereo (2) channels;
 //     the DSP is a MultichannelShifter (one AlignedDelayLine engine per
 //     channel = structural channel isolation).
-//   * 38 parameters (6 global + 4 per voice x 8) defined in octavox_params.h;
+//   * 39 parameters (6 global + 4 per voice x 8 + the R34 stereo width)
+//     defined in octavox_params.h;
 //     all host-automatable; the audio thread reads them EXCLUSIVELY through
 //     the host's IParameterChanges queues (lock-free by design -- no shared
 //     mutable state with the UI thread except the host-managed parameter
@@ -28,7 +29,7 @@
 //     block-boundary implementation is gated by the wrapper test suite
 //     (octavox_vst3_tests.cpp, case segmentation_equivalence_BITEXACT).
 //   * State: a versioned binary blob ('OVR1' v1) = full Config + the live
-//     38-value surface (octavox_params.cpp writeStateData/readStateData).
+//     39-value surface (octavox_params.cpp writeStateData/readStateData).
 //     Restore = prepare(Config) + re-apply the surface = the documented
 //     deterministic-from-stream-position-0 contract. IComponent::setState /
 //     getState are the authoritative paths; the EditController-state methods
@@ -142,7 +143,7 @@ private:
     MultichannelShifter engine_;
     Config cfg_{};            // the engine configuration (core defaults until
                               // a state restore carries others)
-    Surface surface_{};       // the live 38-value mirror; written ONLY from
+    Surface surface_{};       // the live 39-value mirror; written ONLY from
                               // process() (audio thread; authoritative) and
                               // from setState (host guarantees processing is
                               // paused -- documented reliance)
