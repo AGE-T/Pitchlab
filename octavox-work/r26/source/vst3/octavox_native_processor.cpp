@@ -6,6 +6,7 @@
 
 #include "octavox_build_config.h"
 #include "octavox_ids.h"
+#include "octavox_minimal_view.h"
 
 #include "base/source/fstreamer.h"
 #include "base/source/fobject.h"
@@ -84,6 +85,19 @@ uint64 PLUGIN_API OctavoxNativeProcessor::consumeDirtyBits() {
 
 uint64 PLUGIN_API OctavoxNativeProcessor::getDirtyBits() {
     return telemetry_.dirtyBits();
+}
+
+//==========================================================================
+// R33: the minimal editor
+//==========================================================================
+
+Steinberg::IPlugView* PLUGIN_API OctavoxNativeProcessor::createView(
+    const Steinberg::FIDString name) {
+    // Only the standard "Editor" view type is served (ViewType::kEditor);
+    // anything else (including nullptr) gets no view, per the VST3 contract.
+    if (name && std::strcmp(name, ViewType::kEditor) == 0)
+        return new MinimalView(this, this);
+    return nullptr;
 }
 
 void OctavoxNativeProcessor::notifyLatencyIfChanged() {

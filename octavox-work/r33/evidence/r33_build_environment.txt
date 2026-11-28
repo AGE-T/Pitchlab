@@ -1,0 +1,78 @@
+R33 BUILD ENVIRONMENT RECORD
+============================
+Date (UTC): 2026-11-27 (evening)
+Recorded for: PitchLab R33 -- the minimal editor (first GUI surface)
+
+SOURCE BASELINE
+  branch            : r31-telemetry-demo (AGE-T/Pitchlab) line; local
+                      worktree state = the R32 delivery + this round's
+                      files (the push-first sandbox strategy; see the
+                      worklog)
+  source line       : octavox-work/r26/source (the R26-R33 audit/demo line)
+  R33 delta         : wrapper-side only (the core tree is UNTOUCHED --
+                      proven by the fresh 115/115 + the identical
+                      r15acc determinism hash):
+    new   vst3/octavox_ui_font.h        embedded 5x7 glyph table
+    new   vst3/octavox_ui_renderer.{h,cpp}  software rasteriser
+    new   vst3/octavox_minimal_view.{h,cpp} MinimalUiModel (platform-free
+         logic) + MinimalView (IPlugView; X11+IRunLoop layer on Linux,
+         Win32 layer on Windows) + the processor's createView
+    new   vst3/octavox_ui_tests.cpp     11-case suite (incl. golden render
+         + X11 pixel identity under a real X server)
+    new   vst3/octavox_ui_screenshot.cpp offscreen renderer -> PNG tool
+         (self-contained stored-deflate PNG writer; the published
+         screenshots are the REAL renderer output)
+    mod   vst3/octavox_native_processor.{h,cpp} +createView("Editor")
+    mod   vst3/CMakeLists.txt           view sources + X11 (Linux) /
+         user32+gdi32 (Windows) link + the two new targets
+    mod   vst3/octavox_module_integration_tests.cpp
+         +minimal_editor_surface (17th case; dlopen->factory->createView->
+         real X11 attach + painted-pixel probe) AND a harness fix: the
+         queryInterface->IPtr adoption sites now use addRef=false (the
+         old default double-owned every second instance -- invisible in
+         the Release-only runs of R18-R32, caught by LeakSanitizer once
+         the module suite joined the ASan gate this round)
+  untouched         : native core (dsp/pitch_control/simd/telemetry),
+         the 38-parameter surface, the state blob, the factory/identity,
+         every frozen suite's existing cases (21/21 wrapper cases bit-
+         identical inputs/outputs)
+
+TOOLCHAINS
+  native            : g++ 14.2.0 (Debian), cmake 4.x via pip (--venv)
+  Windows cross     : Zig 0.13.0 (re-acquired from ziglang.org after the
+                      sandbox reset; ~/toolchains/zig-linux-x86_64-0.13.0),
+                      the R32-recreated env-driven wrappers at
+                      octavox-work/r24/win-zig/ (ZIG_BIN override; the
+                      attrib host-shim needed chmod +x after the reset)
+  X server          : Xvfb :99 -screen 0 1280x1024x24 (the pixel-identity
+                      and painted-pixel proofs run against a REAL X server)
+  X11 link          : libX11 only (no Xext/Xrender/fontconfig -- the
+                      editor has no font stack; text is the embedded font)
+
+BUILD DIRECTORIES (fresh; no cache reuse)
+  native core       : build_r33_native (+ build_r33_native_asan)
+  vst3 Linux        : build_r33 (+ build_r33_asan)
+  vst3 Windows      : build_win_r33 (twin moduleinfo from build_r33 via
+                      OCTAVOX_TWIN_MODULEINFO)
+
+VERIFICATION (all green; logs in this directory)
+  core suite Release : 115/115; all four reference hashes bit-exact;
+                       r15acc determinism 0x35fe0d51a4372ac8 = the R31/R32
+                       record (R33 is core-neutral)
+  core suite ASan    : 115/115, zero sanitizer reports, zero leaks
+  wrapper tests      : 21/21 (the frozen surface; Release + ASan)
+  ui tests (NEW)     : 11/11 Release + ASan (X11 pixel identity, golden
+                       render FNV-1a 0x0f80c7f43a8358ad, edit protocol,
+                       quantization grid, telemetry display values incl.
+                       the 220 Hz -> -300.009 cents pin + the sentinel)
+  module integration : 17/17 Release + ASan/LSan (the new
+                       minimal_editor_surface case paints 214733 panel px /
+                       272 accent px / 81091 bg px through the shipped
+                       module's view)
+  validator          : 47/47 (Steinberg VST3 validator, Linux bundle)
+  Windows module     : machine-code + structural record
+                       (r33w_machinecode_verification.txt): ymm=275
+                       vfmadd=26 cpuid=3 xgetbv=1 (identical to R32-W),
+                       editor TUs baseline-ISA, GDI32+USER32 imported,
+                       ZERO X11 references, single GetPluginFactory export,
+                       both GUIDs found, moduleinfo twin-identical

@@ -1,0 +1,36 @@
+R33 MINIMAL-EDITOR TEST SUITE (octavox_ui_tests, Release build_r33)
+================================================================
+DISPLAY=:99 (Xvfb 1280x1024x24): the x11_pixel_identity case runs the
+full host-side proof (attach into a real parent, server pixels
+bit-identical to the renderer buffer, live-audio pixel changes,
+removed() teardown).
+
+[ OK ] font_table                   
+[ OK ] renderer_primitives          
+[ OK ] hitmap_coverage              
+[ OK ] slider_drag_protocol         
+[ OK ] value_relative_drag          
+[ OK ] toggle_and_stepper           
+[ OK ] double_click_default         
+[ OK ] telemetry_display_values     
+[ OK ] golden_render                golden FNV-1a = 0x0f80c7f43a8358ad
+[ OK ] view_lifecycle               
+[ OK ] x11_pixel_identity           
+
+UI tests: 11 passed, 0 failed, 0 skipped (11 total)
+
+=== ASan/UBSan run (build_r33_asan, ASAN_OPTIONS=detect_leaks=1) ===
+
+[ OK ] font_table                   
+[ OK ] renderer_primitives          
+[ OK ] hitmap_coverage              
+[ OK ] slider_drag_protocol         
+[ OK ] value_relative_drag          
+[ OK ] toggle_and_stepper           
+[ OK ] double_click_default         
+[ OK ] telemetry_display_values     
+[ OK ] golden_render                golden FNV-1a = 0x0f80c7f43a8358ad
+[ OK ] view_lifecycle               
+[ OK ] x11_pixel_identity           
+
+UI tests: 11 passed, 0 failed, 0 skipped (11 total)

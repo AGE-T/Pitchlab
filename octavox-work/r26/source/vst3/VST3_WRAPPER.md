@@ -101,7 +101,10 @@ fresh fetch and the working tree content-matches all four components** —
 
 (vstgui4/doc/tutorials are NOT needed: the build sets
 `SMTG_ENABLE_VSTGUI_SUPPORT=OFF`, `SMTG_ENABLE_VST3_PLUGIN_EXAMPLES=OFF`,
-`SMTG_ENABLE_VST3_HOSTING_EXAMPLES=OFF` — no gtk/X11 dependency, no GUI.)
+`SMTG_ENABLE_VST3_HOSTING_EXAMPLES=OFF` — no gtk/X11 dependency. Since R33
+the wrapper HAS an editor — but it is a self-contained software-rendered
+view (`octavox_minimal_view.*` + `octavox_ui_renderer.*`), NOT VSTGUI: the
+only OS dependency added is core Xlib on Linux / user32+gdi32 on Windows.)
 
 ## 3. Files
 
@@ -294,10 +297,14 @@ default-checking cases fail with the reported symptom.
 
 ## 6. Known limitations (honest)
 
-* No GUI/editor (`IPlugView` not implemented — the task book asks for a
-  minimal processor/controller wrapper; hosts automate the parameters).
-  **There is no graphical interface, and none is planned to be faked — do
-  not mistake this wrapper for a completed graphical plug-in.**
+* ~~No GUI/editor~~ — **R33: the minimal editor exists** (see §8). It is a
+  fixed-size 784x416 software-rendered `IPlugView` served by
+  `createView("Editor")`: all 38 parameters reachable, the R31 vendor
+  telemetry displayed live. It is deliberately minimal (no VSTGUI, no font
+  stack, no resize, no keyboard handling) — **macOS is not implemented**
+  (no hardware; `isPlatformTypeSupported` refuses NSView), and on Linux a
+  host without the VST 3.6.8+ `IRunLoop` contract cannot attach it. The
+  parameter surface, the state blob and the audio path are untouched.
 * **No Windows build has been produced or tested.** The Windows/MSVC path
   exists as reviewed scripts (`../tools/get_vst3_sdk.ps1`,
   `../tools/build_and_test.ps1`) and MSVC portability guards in the
@@ -369,10 +376,93 @@ is an SDK-module-load + interface-contract test on ONE host
 implementation (the SDK's own utilities on Linux). **It is not a DAW
 compatibility claim** — no DAW was involved, and passing here does not
 certify behaviour in any specific DAW. The SDK validator run (47/47)
-remains the complementary check. No GUI/editor is exercised (§6).
+remains the complementary check. (R33: the 17th case `minimal_editor_surface`
+exercises the editor through the loaded module — createView + a real X11
+attach + a painted-pixel probe; the deep logic proof lives in
+`octavox_ui_tests`.)
 
 R18 re-verification on the fresh build (SDK at its archived location
 `octavox-work/vst3sdk`): wrapper tests 15/15, validator 47/47,
 integration harness 12/12, and **the module's SHA-256 is byte-identical
 to the R16/R17 record** (`b293cecbcd42…f559ea8ba`) — deterministic
 compilation re-proven from the moved SDK tree.
+
+## 8. The minimal editor (R33)
+
+**What it is.** A fixed-size 784x416 `IPlugView` served by
+`OctavoxNativeProcessor::createView("Editor")` (any other view name returns
+nullptr). Three strictly separated layers:
+
+1. **`MinimalUiModel`** (`octavox_minimal_view.h`) — platform-free logic:
+   the layout, the cached 38 plain parameter values, the cached per-voice
+   R31 telemetry frames, the mouse gesture state machine, and the
+   full-frame draw through the software renderer. Directly unit-testable
+   without any window system (and tested: `octavox_ui_tests`, 11 cases).
+2. **The pixel buffer** — one `uint32_t` per pixel, `0x00RRGGBB`, which is
+   simultaneously the X11 ZPixmap depth-24 LSBFirst layout AND the Win32
+   top-down 32-bpp `BI_RGB` DIB layout: both platform layers blit the SAME
+   bytes with no per-pixel conversion (pinned by the pixel-identity test:
+   `XGetImage` of the attached window is memcmp-identical to the buffer).
+3. **The platform layers** (inside `octavox_minimal_view.cpp`):
+   * **Linux** — an X11 child window created inside the host-provided
+     `X11EmbedWindowID` parent. The view runs on the **host's UI thread**
+     through the VST 3.6.8+ Linux hosting contract: `IRunLoop` (queried
+     from the `IPlugFrame`) drives `IEventHandler` (the X11 connection fd)
+     and `ITimerHandler` (~30 Hz). **No private thread, no cross-thread
+     parameter access.** A host without `IRunLoop` gets
+     `attached() == kResultFalse` (documented requirement; every current
+     Linux DAW provides it).
+   * **Windows** — a `WS_CHILD` window created on the attaching thread;
+     `WM_TIMER` (~30 Hz) ticks + `WM_PAINT` blits the DIB; mouse messages
+     drive the model. All on the host thread. (Cross-compiled; verified at
+     the machine-code level — see the R33 evidence; the identical
+     model/renderer logic is executed end-to-end on Linux.)
+   * **macOS** — NOT implemented (no hardware in the project);
+     `isPlatformTypeSupported("NSView")` returns false, honestly.
+
+**Why no VSTGUI.** The pinned SDK's `vstgui4` submodule is empty in this
+repository and the build always compiled with VSTGUI off (no gtk/X11 font
+stack). A minimal editor depending on nothing but Xlib/GDI keeps the module
+self-contained, keeps every test binary linkable, and — decisively — makes
+each rendered frame **bit-reproducible**: the golden-render test pins the
+exact pixels (FNV-1a `0x0f80c7f43a8358ad` at the default surface).
+
+**The editor surface.** All 38 host parameters are reachable: global
+pitch slider / voices stepper / harmony-map toggle / feedback + mix sliders
+in the top panel; per-voice transpose fields (relative drags), gain bars,
+delay fields and mute buttons in the voice panel; the header bypass LED is
+clickable. Every gesture maps through the wrapper's own
+`normalizedFromPlain`/`plainFromNormalized` — UI edits land on the exact
+quantized grid the host surface defines. Double-click any control = its
+documented default. The edit protocol is `beginEdit` →
+`setParamNormalized` + `performEdit` (per change) → `endEdit` through the
+public `EditController` API — verified by the mock-handler protocol test.
+
+**The telemetry panel** renders the R31 vendor interface live: per-voice
+Hz (derived from id 7's cents-from-C4; the `-65535` sentinel and the
+zeroed parked/never-polled cells both display `--`), the raw cents, the
+id-11 confidence bar, the id-8 glide ratio, and a per-voice activity LED
+driven by `consumeDirtyBits` — the same contract the module tests pin.
+
+**Text rendering.** An embedded 5x7 bitmap font (the classic public-domain
+terminal glyph set, retyped; `octavox_ui_font.h`) — no fontconfig, no GDI
+font selection, ASCII-only strings, C-locale `snprintf` formatting:
+deterministic on every platform.
+
+**Testing** (`octavox_ui_tests`, 11 cases + the 17th module-integration
+case): font table sanity; renderer primitives + clipping; hit-map coverage
+(38/38 controls); slider drag protocol + exact quantization; relative
+value drags + domain clamps; toggles/steppers; double-click defaults;
+telemetry display values (the 220 Hz → −300.009 cents pin; the sentinel);
+the golden full-frame hash; view lifecycle contract; and — under a real X
+server (Xvfb) — the **pixel-identity proof**: attach into a real parent
+window with a host-side `IRunLoop` implementation, pump it, and verify the
+SERVER-SIDE pixels are bit-identical to the render buffer, that live audio
+changes the telemetry pixels, and that `removed()` destroys the window.
+The module-level case drives the same flow through the dlopen'ed bundle.
+
+**Honest limits.** No wheel/keyboard handling (`onWheel`/`onKeyDown`/
+`onKeyUp` return kResultFalse); no DPI scaling (fixed 784x416); no macOS;
+no PE execution in this sandbox (the Windows layer is machine-code
+verified only); the editor does not exercise anything the validator tests
+(47/47 unchanged).

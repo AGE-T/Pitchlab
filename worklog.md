@@ -972,3 +972,113 @@ branch (main untouched).
   re-shipped, byte-identical rebuilds not claimed.
 - **Process:** everything on the r31-telemetry-demo branch; local main
   untouched; token outside the repo (~/.secrets, 600).
+
+---
+
+## ROUND 33 DELIVERY (2026-11-27) — THE MINIMAL EDITOR (the wrapper's first GUI surface; user-requested: "tudnál neki egy minimalista ui-t is készíteni?")
+
+**Core:** octavox-native 16.3.0 · **Original binary: never executed** (no new
+RE claims — this round is OWN DESIGN on the PitchLab wrapper line).
+**Mandate (user):** a minimalist UI for the plugin. Everything on the
+r31-telemetry-demo branch; local main untouched.
+
+- **What was built:** `createView("Editor")` now serves a fixed-size
+  784x416 software-rendered `IPlugView` — dark warm-neutral theme, single
+  amber accent, embedded classic 5x7 bitmap font (retyped public-domain
+  terminal glyph set). NO VSTGUI (the pinned SDK's vstgui4 submodule is
+  empty; the build always had it off), NO font stack, no X11 extensions:
+  core Xlib on Linux, user32+gdi32 on Windows.
+- **Three-layer architecture (strictly separated):** (1) `MinimalUiModel`
+  — platform-free logic (layout, cached values, cached telemetry frames,
+  the mouse gesture state machine, the full-frame draw), directly
+  unit-testable; (2) one pixel buffer, 0x00RRGGBB — simultaneously the
+  X11 ZPixmap depth-24 LSBFirst layout AND the Win32 top-down 32-bpp
+  BI_RGB DIB layout (both platform layers blit the SAME bytes); (3) the
+  platform layers: Linux = X11 child window driven ON THE HOST'S THREAD
+  via the VST 3.6.8+ IRunLoop contract (IEventHandler on the X11 fd +
+  ITimerHandler ~30 Hz; NO private thread, NO cross-thread parameter
+  access; hosts without IRunLoop get a documented attach refusal) ·
+  Windows = WS_CHILD + DIB + WM_TIMER/WM_PAINT on the host thread
+  (cross-built, machine-code verified) · macOS = honestly not implemented.
+- **Every one of the 38 parameters reachable** (3 sliders, voices
+  stepper, harmony-map toggle, per-voice transpose/gain/delay/mute, the
+  clickable bypass LED); values map through the wrapper's own
+  normalized<->plain conversions (the exact quantized grid); the edit
+  protocol is beginEdit -> setParamNormalized+performEdit -> endEdit;
+  double-click = documented default. The R31 IPitchTelemetry telemetry is
+  displayed LIVE (per-voice Hz from id 7's cents, raw cents, the id-11
+  confidence bar, the id-8 glide ratio, dirty-bit LEDs via
+  consumeDirtyBits; the -65535 sentinel AND zeroed parked/never-polled
+  cells render as "--" — the display gate uses the id-8 ratio).
+- **New verification stack (all green, logs in octavox-work/r33/evidence/):**
+  native core 115/115 Release AND ASan/UBSan/LSan (r15acc determinism hash
+  0x35fe0d51a4372ac8 IDENTICAL to the R31/R32 records — the round is
+  core-neutral) · wrapper 21/21 (frozen, Release + ASan) · NEW ui tests
+  11/11 Release + ASan (font, renderer primitives, hit-map 38/38, drag
+  protocol + quantization, relative drags + clamps, toggles/steppers,
+  double-click defaults, telemetry values incl. the 220 Hz -> -300.009
+  cents pin, the golden full-frame render pin FNV-1a 0x0f80c7f43a8358ad,
+  view lifecycle, and the X11 PIXEL-IDENTITY proof: under a real Xvfb
+  server the test acts as the Linux host — IPlugFrame+IRunLoop
+  implementation, real attach, fd+timer pumping — and XGetImage of the
+  server-side window is memcmp-IDENTICAL to the render buffer, before and
+  after live audio changes the telemetry pixels; removed() tears down) ·
+  module integration 17/17 Release + ASan/LSan (the new 17th case
+  minimal_editor_surface drives the SHIPPED module: dlopen -> factory ->
+  createView -> real attach -> painted-pixel probe 214,733 panel px /
+  272 accent px / 81,091 bg px; teardown verified) · validator 47/47.
+- **A pre-existing harness defect found + fixed:** running the module
+  suite under LeakSanitizer (new in this round's ASan gate) exposed the
+  R18-era `queryInterface -> IPtr(p)` adoption sites double-owning every
+  second instance (the IPtr default add-refs; invisible in the
+  Release-only runs of R18-R32). All sites now adopt with addRef=false;
+  the suite is leak-clean. Product code was NOT affected. (Same
+  born-1-reference rule applied to the new createView/test IPtr sites.)
+- **Windows cross-build:** zig 0.13.0 re-acquired after the sandbox reset
+  (~/toolchains, outside the repo); the R32 env-driven win-zig wrappers
+  reused (the attrib host-shim needed chmod +x after the reset); fresh
+  build_win_r33 with the twin-moduleinfo bridge. Machine-code +
+  structural record: ymm=275 vfmadd=26 cpuid=3 xgetbv=1 — IDENTICAL to
+  the R32-W record (the editor/renderer TUs are baseline-ISA); GDI32 is
+  the NEW import (CreateDIBSection/SetDIBitsToDevice/DeleteObject) +
+  USER32 (CreateWindowExW/RegisterClassExW/SetTimer/BeginPaint/
+  DefWindowProcW/InvalidateRect/SetCapture); ZERO X11 references; single
+  GetPluginFactory export; both GUIDs found; moduleinfo byte-identical
+  to the Linux twin.
+- **The published screenshots are the REAL renderer output:** the new
+  octavox_ui_screenshot tool (self-contained stored-deflate PNG writer,
+  no zlib/libpng) renders the same model/renderer the live view uses;
+  demo mode applies the preset through a REAL parameter queue + the
+  container sync (the architecturally faithful host path) and feeds 3 s
+  of 220 Hz vibrato so the LEDs/readouts show live tracked values
+  (per-voice ratios x1.4983/x0.7492/x2.0000 for +7/-5/+12 st). The
+  frames were reviewed via a vision model; the one real issue it caught
+  (never-polled telemetry cells displaying "261.6 Hz" instead of
+  no-data) was fixed by the id-8 ratio display gate + re-pinned golden.
+- **Deliverables:** OCTAVOX_R33_MINIMAL_UI.md (root) +
+  octavox-work/r33/evidence/ (9 records) +
+  public/PitchLab_R33_Minimal_UI_VST3.zip (20 files: the Linux AND
+  Windows bundles + PDB + README + report + logs + the two screenshots;
+  SHA-256 890d255b42a89de0551a634d385ed04780b0267a2666d5e56fc965aa3cc89898)
+  + sha256 sidecar + the web page R33 section (ROUND 33 badge, 6 delivery
+  cards with the two embedded editor screenshots, title/meta updated;
+  browser-verified desktop + 390px mobile, no console errors, lint clean).
+- **Honest limits (documented):** macOS not implemented (refuses NSView);
+  Windows machine-code verified only (no PE execution in this sandbox;
+  the identical logic is executed end-to-end on Linux); minimal by design
+  (no wheel/keys, no DPI scaling, no resize, no tooltips); the golden
+  hash pins THIS layout (deliberate changes need a conscious re-pin);
+  not a DAW compatibility claim.
+- **Process:** everything on the r31-telemetry-demo branch line (the
+  push-first sandbox strategy — the local worktree carries the delta).
+  Push COMPLETED after a token re-upload ("próbáld újra"): the fetch
+  revealed R32 had already gone up as e697069e (the remote branch had
+  moved past 0ecedbb before the previous session died); this round
+  followed in the same reconciliation pass — remote r31-telemetry-demo
+  now carries R33 (blob-verified post-push). Local main (ac6612c) and
+  remote main (42757e7a) untouched. Excluded as before:
+  src/app/report-viewer.tsx (stale R28 copy; the live one is
+  src/components/report-viewer.tsx), upload/txt.svg, and the loose
+  octavox-work/*/package_README.txt staging notes (the canonical
+  READMEs live inside the tracked zips); the attrib host-shim exec bit
+  restored to match the branch (the sandbox reset had dropped it).

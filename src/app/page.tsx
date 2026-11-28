@@ -2,7 +2,28 @@ import fs from "node:fs";
 import path from "node:path";
 import { ReportViewer } from "../components/report-viewer";
 
-// R32 (current round): WINDOWS x64 BUILD OF THE TELEMETRY DEMO — the R31
+// R33 (current round): THE MINIMAL EDITOR — the wrapper's first GUI surface,
+// delivered on the user's request ("tudnál neki egy minimalista ui-t is
+// készíteni?"): a fixed-size 784x416 software-rendered IPlugView served by
+// createView("Editor") — all 38 parameters reachable (sliders, voices
+// stepper, harmony-map toggle, per-voice transpose/gain/delay/mute, bypass
+// LED), the R31 vendor telemetry displayed LIVE (per-voice Hz/cents/
+// confidence/ratio + dirty-bit LEDs), embedded classic 5x7 font, NO VSTGUI
+// and no font stack (core Xlib on Linux / user32+gdi32 on Windows). The
+// Linux layer runs on the host's thread via the VST 3.6.8+ IRunLoop
+// contract (no private thread); the Windows layer is a WS_CHILD + DIB on
+// the host thread (cross-built with the R32 zig pipeline, machine-code
+// verified: GDI32 new import, zero X11 refs, ymm accounting IDENTICAL to
+// R32-W). Verification: core 115/115 Release+ASan (r15acc hash unchanged
+// = core-neutral), wrapper 21/21, NEW ui tests 11/11 incl. the X11
+// PIXEL-IDENTITY proof (server-side pixels memcmp-identical to the render
+// buffer under a real Xvfb X server) + a golden full-frame render pin
+// (FNV-1a 0x0f80c7f43a8358ad), module integration 17/17 (new 17th case:
+// the shipped module's view attach + painted-pixel probe; also fixed the
+// pre-existing IPtr double-own leak the LSan gate exposed), validator
+// 47/47. Delivery: PitchLab_R33_Minimal_UI_VST3.zip (Linux + Windows
+// bundles + PDB + README + report + logs + the real-render screenshots).
+// R32 (previous round): WINDOWS x64 BUILD OF THE TELEMETRY DEMO — the R31
 // demo ported to Windows x64 with the R24-W cross method restored: Zig
 // 0.13.0 re-acquired (outside the repo), the win-zig wrappers recreated
 // (env-driven, committed), and TWO Windows-portability defects closed —
@@ -54,6 +75,9 @@ import { ReportViewer } from "../components/report-viewer";
 // eliminations, host-latency verdict corrected). No new archive zip this round
 // (static-audit round); the delivery cards below remain the R23/R22/R21
 // evidence packages.
+const R33_REPORT =
+  "/home/z/my-project/OCTAVOX_R33_MINIMAL_UI.md";
+const R33_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R33_MINIMAL_UI.md");
 const R32_REPORT =
   "/home/z/my-project/OCTAVOX_R32_WINDOWS_BUILD.md";
 const R32_REPORT_LOCAL = path.join(process.cwd(), "OCTAVOX_R32_WINDOWS_BUILD.md");
@@ -91,7 +115,9 @@ const LOCAL_FALLBACK = path.join(process.cwd(), "PITCHLAB_R23_YIN_RESEARCH.md");
 const ZIP_NAME = "Octavox_RE_evidence_round23.zip";
 const R22_ZIP_NAME = "Octavox_RE_evidence_round22.zip";
 const R21_ZIP_NAME = "Octavox_RE_evidence_round21.zip";
-// R32: the Windows x64 telemetry demo (the current delivery).
+// R33: the minimal-editor demo (the current delivery: Linux + Windows).
+const R33_DEMO_ZIP = "PitchLab_R33_Minimal_UI_VST3.zip";
+// R32: the Windows x64 telemetry demo (the previous delivery).
 const R32_DEMO_ZIP = "PitchLab_R32_Telemetry_Demo_Windows_x64.zip";
 // R31: the Linux telemetry/latency-truth demo VST3 build.
 const R31_DEMO_ZIP = "PitchLab_R31_Telemetry_Demo_VST3.zip";
@@ -108,6 +134,7 @@ function readFirstExisting(paths: string[]): string | null {
 }
 
 function readMarkdown(): string {
+  const r33Report = readFirstExisting([R33_REPORT, R33_REPORT_LOCAL]);
   const r32Report = readFirstExisting([R32_REPORT, R32_REPORT_LOCAL]);
   const r31Report = readFirstExisting([R31_REPORT, R31_REPORT_LOCAL]);
   const r30Report = readFirstExisting([R30_REPORT, R30_REPORT_LOCAL]);
@@ -126,8 +153,15 @@ function readMarkdown(): string {
   ]);
   const r23 = readFirstExisting([ROUND23_PATH, ROUND23_ALT, LOCAL_FALLBACK]);
   const parts: string[] = [];
+  if (r33Report)
+    parts.push(r33Report.trim()); // R33 first (current round) — keeps the page H1
   if (r32Report)
-    parts.push(r32Report.trim()); // R32 first (current round) — keeps the page H1
+    parts.push(
+      (parts.length ? "\n\n---\n\n" : "") +
+        r32Report
+          .replace(/^# /m, "## ") // demote the R32 H1 (one page, one H1)
+          .trim(),
+    );
   if (r31Report)
     parts.push(
       (parts.length ? "\n\n---\n\n" : "") +
@@ -198,7 +232,7 @@ function readMarkdown(): string {
 
 function readDelivery() {
   const entries: { fileName: string; url: string; sizeBytes: number; sha256: string | null }[] = [];
-  for (const name of [R32_DEMO_ZIP, R31_DEMO_ZIP, ZIP_NAME, R22_ZIP_NAME, R21_ZIP_NAME]) {
+  for (const name of [R33_DEMO_ZIP, R32_DEMO_ZIP, R31_DEMO_ZIP, ZIP_NAME, R22_ZIP_NAME, R21_ZIP_NAME]) {
     try {
       const zipPath = path.join(process.cwd(), "public", name);
       const sizeBytes = fs.statSync(zipPath).size;

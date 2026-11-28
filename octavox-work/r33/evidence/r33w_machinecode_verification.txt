@@ -1,0 +1,66 @@
+R33-W MACHINE-CODE & STRUCTURAL VERIFICATION (Windows x64 cross-build, zig 0.13.0)
+==================================================================================
+Date (UTC): 2026-11-27T23:0x (evening)
+
+Method: identical to the R32-W record (objdump -d/-p on the cross-built PE,
+byte-sequence kernel presence, GUID byte search). New in R33: the minimal
+editor's Win32 layer is part of the module -- its GDI32/USER32 surface and
+the ABSENCE of any X11 reference are gated explicitly.
+
+1) OBJECT-LEVEL INSTRUCTION SCAN (objdump -d, pe-x86-64):
+   dsp.cpp.obj: ymm=0 vfmadd=0
+   pitch_control.cpp.obj: ymm=0 vfmadd=0
+   simd_avx2.cpp.obj: ymm=207 vfmadd=0
+   simd_dispatch.cpp.obj: ymm=0 vfmadd=0
+   simd_fma.cpp.obj: ymm=68 vfmadd=26
+   telemetry.cpp.obj: ymm=0 vfmadd=0
+   octavox_telemetry_interface.cpp.obj: ymm=0 vfmadd=0
+   octavox_minimal_view.cpp.obj: ymm=0 vfmadd=0      <- R33 (baseline ISA only)
+   octavox_ui_renderer.cpp.obj: ymm=0 vfmadd=0       <- R33 (baseline ISA only)
+
+2) FINAL DLL SCAN (objdump -d on the shipped module):
+   PitchLab_Lagrange6_Balanced.vst3: ymm=275 vfmadd=26 cpuid=3 xgetbv=1
+
+   ymm arithmetic: 275 = 207 (simd_avx2.obj) + 68 (simd_fma.obj) -> EVERY
+   256-bit instruction originates from the two ISA kernel units; the editor
+   and renderer TUs contribute ZERO AVX2/FMA (the UI is baseline-ISA by
+   design). IDENTICAL to the R32-W record: the R33 delta does not disturb
+   the DSP dispatch.
+   vfmadd arithmetic: 26 = 26 (simd_fma.obj only).
+   cpuid(3 leaves) + xgetbv(1) = the R24-W explicit Windows detection path.
+
+3) KERNEL PRESENCE (byte-sequence match, link-independent check):
+   119/123 distinctive simd_avx2 ymm byte-sequences (>= 3 bytes) found
+   verbatim in the final DLL (the 4 misses are relocation-adjusted
+   encodings; the instruction-count accounting above is the authoritative
+   gate -- same method class as the R32 record).
+
+4) STRUCTURAL CHECKS:
+   format: PE32+ executable for MS Windows 6.00 (DLL), x86-64, 11 sections
+   export: GetPluginFactory (single export, VST3 module contract)
+   imports: 12 DLLs, all Windows system:
+     KERNEL32.dll, GDI32.dll (NEW in R33: the editor's DIB blit path),
+     USER32.dll, ole32.dll, api-ms-win-crt-{math,private,runtime,string,
+     heap,stdio,environment,time}-l1-1-0.dll
+   editor Win32 surface LINKED (import tables):
+     USER32: BeginPaint, CreateWindowExW, DefWindowProcW, InvalidateRect,
+             RegisterClassExW, SetCapture, SetTimer (the child-window layer)
+     GDI32:  CreateDIBSection, DeleteObject, SetDIBitsToDevice (the 32-bpp
+             top-down DIB blit -- the SAME 0x00RRGGBU buffer the X11 layer
+             puts, verified pixel-identical on the Linux side)
+   X11 references: NONE (strings -a: no XOpenDisplay/XCreateSimpleWindow/
+     XPutImage/XNextEvent/libX11 -- the platform layers are cleanly
+     separated per OS)
+   processor FUID 6F4E6258-9A31-42E1-8F3C-5A971D2B4E60: FOUND (GUID bytes)
+   IPitchTelemetry IID D1A60F31-8C4B-4E39-9A67-31D1-8E4F5A21: FOUND
+   moduleinfo.json: byte-identical to the Linux twin's (compile-time factory
+   metadata; copied via the documented moduleinfotool host bridge with
+   OCTAVOX_TWIN_MODULEINFO pointing at the R33 twin)
+
+5) HONEST LIMITS (same class as R32-W):
+   * cross-built with zig 0.13.0 (the recorded R21/R22/R24-W/R32-W
+     toolchain deviation); no MSVC, no Windows SDK, no wine in this sandbox
+     -- NO PE EXECUTION. The Windows editor path is verified at the
+     machine-code/structural level ONLY; the identical model/renderer logic
+     is executed end-to-end on the Linux side (pixel-identity test).
+   * byte-identical Windows rebuilds are not claimed.

@@ -32,7 +32,10 @@
 // not certify behaviour in any specific DAW.  The SDK validator run remains
 // the separate complementary check (see VST3_WRAPPER.md).
 //
-// No GUI/editor is exercised (the wrapper deliberately has none).
+// R33: the minimal editor IS exercised (createView through the loaded
+// module, and -- when DISPLAY is available -- a real X11 attach + painted
+// -pixel probe; the deep logic/pixel-identity proof lives in the dedicated
+// octavox_ui_tests suite).
 // ---------------------------------------------------------------------------
 #include "octavox_params.h"
 #include "octavox_ids.h"
@@ -45,8 +48,10 @@
 #include "public.sdk/source/vst/hosting/parameterchanges.h"
 #include "public.sdk/source/common/memorystream.h"
 
+#include "pluginterfaces/gui/iplugview.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivstcomponent.h"
+#include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 #include "pluginterfaces/base/funknown.h"
 
@@ -56,6 +61,13 @@
 #include <cmath>
 #include <string>
 #include <vector>
+
+#if defined(__linux__)
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <sys/select.h>
+#include <unistd.h>
+#endif
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
@@ -288,7 +300,9 @@ void caseProcessorCreation(CaseResult& c) {
         if (g_component->queryInterface(IAudioProcessor::iid,
                                         reinterpret_cast<void**>(&ap)) == kResultTrue &&
             ap)
-            g_audio = IPtr<IAudioProcessor>(ap);  // adopts the add-ref'd ptr
+            // ADOPTS the queryInterface reference (addRef=false): the raw
+            // pointer already owns its query ref.
+            g_audio = IPtr<IAudioProcessor>(ap, false);
     }
     check(c, g_audio != nullptr, "component does not export IAudioProcessor");
     {
@@ -296,7 +310,7 @@ void caseProcessorCreation(CaseResult& c) {
         if (g_component->queryInterface(IEditController::iid,
                                         reinterpret_cast<void**>(&ec)) == kResultTrue &&
             ec)
-            g_edit = IPtr<IEditController>(ec);
+            g_edit = IPtr<IEditController>(ec, false);
     }
     check(c, g_edit != nullptr,
           "component does not export IEditController (single-component)");
@@ -578,7 +592,7 @@ void caseStateSaveRestore(CaseResult& c) {
         IAudioProcessor* ap2 = nullptr;
         if (comp2->queryInterface(IAudioProcessor::iid,
                                   reinterpret_cast<void**>(&ap2)) == kResultTrue && ap2)
-            audio2 = IPtr<IAudioProcessor>(ap2);
+            audio2 = IPtr<IAudioProcessor>(ap2, false);  // adopt the query ref
     }
     check(c, audio2 != nullptr, "second instance lacks IAudioProcessor");
     check(c, comp2->initialize(g_hostContext) == kResultOk,
@@ -695,7 +709,7 @@ void caseTelemetryValues(CaseResult& c) {
     {
         IAudioProcessor* ap2 = nullptr;
         if (comp2->queryInterface(IAudioProcessor::iid, (void**)&ap2) == kResultOk && ap2)
-            audio2 = IPtr<IAudioProcessor>(ap2);
+            audio2 = IPtr<IAudioProcessor>(ap2, false);  // adopt the query ref
     }
     IPitchTelemetry* tel2 = nullptr;
     check(c, comp2->queryInterface(IPitchTelemetry::iid, (void**)&tel2) == kResultOk && tel2,
@@ -791,7 +805,7 @@ void caseTelemetryDirtyBits(CaseResult& c) {
     {
         IAudioProcessor* ap2 = nullptr;
         if (comp2->queryInterface(IAudioProcessor::iid, (void**)&ap2) == kResultOk && ap2)
-            audio2 = IPtr<IAudioProcessor>(ap2);
+            audio2 = IPtr<IAudioProcessor>(ap2, false);  // adopt the query ref
     }
     IPitchTelemetry* tel2 = nullptr;
     check(c, comp2->queryInterface(IPitchTelemetry::iid, (void**)&tel2) == kResultOk && tel2,
@@ -869,6 +883,223 @@ void caseTelemetryDirtyBits(CaseResult& c) {
     c.pass = c.note.empty();
 }
 
+// ===== R33: the minimal editor surface ====================================
+
+#if defined(__linux__)
+// A minimal host-side plug frame serving IRunLoop (the VST 3.6.8+ Linux
+// hosting contract) so the module's editor can attach for real.
+class EditorPlugFrame : public FObject, public IPlugFrame {
+public:
+    class Loop : public FObject, public Linux::IRunLoop {
+    public:
+        std::vector<Linux::IEventHandler*> handlers;
+        std::vector<int> fds;
+        std::vector<Linux::ITimerHandler*> timers;
+        tresult PLUGIN_API registerEventHandler(Linux::IEventHandler* h,
+                                                Linux::FileDescriptor fd) SMTG_OVERRIDE {
+            handlers.push_back(h);
+            fds.push_back(static_cast<int>(fd));
+            return kResultTrue;
+        }
+        tresult PLUGIN_API unregisterEventHandler(Linux::IEventHandler* h) SMTG_OVERRIDE {
+            for (size_t i = 0; i < handlers.size();) {
+                if (handlers[i] == h) {
+                    handlers.erase(handlers.begin() + i);
+                    fds.erase(fds.begin() + i);
+                } else {
+                    ++i;
+                }
+            }
+            return kResultTrue;
+        }
+        tresult PLUGIN_API registerTimer(Linux::ITimerHandler* h,
+                                         Linux::TimerInterval) SMTG_OVERRIDE {
+            timers.push_back(h);
+            return kResultTrue;
+        }
+        tresult PLUGIN_API unregisterTimer(Linux::ITimerHandler* h) SMTG_OVERRIDE {
+            for (size_t i = 0; i < timers.size();) {
+                if (timers[i] == h)
+                    timers.erase(timers.begin() + i);
+                else
+                    ++i;
+            }
+            return kResultTrue;
+        }
+        OBJ_METHODS(Loop, FObject)
+        DEFINE_INTERFACES
+            DEF_INTERFACE(Linux::IRunLoop)
+        END_DEFINE_INTERFACES(FObject)
+        REFCOUNT_METHODS(FObject)
+    };
+    Loop loop;
+    tresult PLUGIN_API resizeView(IPlugView*, ViewRect*) SMTG_OVERRIDE {
+        return kResultTrue;
+    }
+    tresult PLUGIN_API queryInterface(const TUID iid, void** obj) SMTG_OVERRIDE {
+        QUERY_INTERFACE(iid, obj, Steinberg::IPlugFrame::iid, Steinberg::IPlugFrame)
+        if (iid && obj &&
+            Steinberg::FUnknownPrivate::iidEqual(iid, Steinberg::Linux::IRunLoop::iid)) {
+            *obj = static_cast<Steinberg::Linux::IRunLoop*>(&loop);
+            loop.addRef();
+            return kResultTrue;
+        }
+        return FObject::queryInterface(iid, obj);
+    }
+    OBJ_METHODS(EditorPlugFrame, FObject)
+    REFCOUNT_METHODS(FObject)
+};
+#endif  // __linux__
+
+// The minimal editor through the SHIPPED module: createView from the loaded
+// factory, the view-type/platform contract, and (with DISPLAY) a real X11
+// attach whose server-side pixels contain the editor's painted palette.
+void caseMinimalEditorSurface(CaseResult& c) {
+    if (!g_module) { c.note = "no module"; return; }
+    IPtr<IComponent> comp2 = g_module->getFactory().createInstance<IComponent>(
+        VST3::UID(octavox::vst3wrap::OctavoxNativeProcessorUID));
+    check(c, comp2 != nullptr, "instance creation failed");
+    if (!comp2) { c.pass = false; return; }
+    IPtr<IEditController> ec2;
+    {
+        IEditController* ec = nullptr;
+        if (comp2->queryInterface(IEditController::iid, (void**)&ec) == kResultOk && ec)
+            ec2 = IPtr<IEditController>(ec, false);  // adopt the query ref
+    }
+    check(c, ec2 != nullptr, "IEditController not served");
+    if (!ec2) { c.pass = false; return; }
+    check(c, comp2->initialize(g_hostContext) == kResultOk, "initialize failed");
+
+    // createView transfers the born-1 reference (the VST3 host contract):
+    // IPtr takes ownership WITHOUT an additional addRef.
+    IPtr<IPlugView> view(ec2->createView(ViewType::kEditor), false);
+    check(c, view != nullptr, "createView(\"Editor\") returned no view");
+    if (!view) { c.pass = false; return; }
+    check(c, ec2->createView("NotAViewType") == nullptr,
+          "unknown view type must return nullptr");
+    check(c, view->canResize() == kResultFalse, "the minimal view is fixed-size");
+    ViewRect vr{};
+    check(c, view->getSize(&vr) == kResultOk, "getSize failed");
+    addValue(c, "view_width", (double)(vr.right - vr.left));
+    addValue(c, "view_height", (double)(vr.bottom - vr.top));
+    check(c, vr.right - vr.left == 784 && vr.bottom - vr.top == 416,
+          "expected the fixed 784x416 editor size");
+#if defined(__linux__)
+    check(c, view->isPlatformTypeSupported("X11EmbedWindowID") == kResultTrue,
+          "X11EmbedWindowID must be supported");
+    check(c, view->isPlatformTypeSupported("NSView") == kResultFalse,
+          "NSView must not be supported");
+    check(c, view->attached((void*)0x1234, "Bogus") == kResultFalse,
+          "bogus platform type must be refused");
+
+    // The real attach (only with an X server present; xvfb-run counts).
+    if (const char* disp = getenv("DISPLAY")) {
+        (void)disp;
+        addValue(c, "attach_exercised", 1.0);
+        Display* dpy = XOpenDisplay(nullptr);
+        check(c, dpy != nullptr, "XOpenDisplay failed");
+        if (dpy) {
+            const int scr = DefaultScreen(dpy);
+            Window parent = XCreateSimpleWindow(
+                dpy, DefaultRootWindow(dpy), 0, 0, 800, 440, 0,
+                BlackPixel(dpy, scr), 0x202020ul);
+            XMapWindow(dpy, parent);
+            XFlush(dpy);
+            static EditorPlugFrame frame;
+            view->setFrame(&frame);
+            const tresult ar = view->attached(
+                reinterpret_cast<void*>(static_cast<uintptr_t>(parent)),
+                "X11EmbedWindowID");
+            check(c, ar == kResultOk, "attach into a real parent failed");
+            bool painted = false, tornDown = false;
+            if (ar == kResultOk) {
+                // Pump like a host for up to ~2 s: fd events + 33 ms ticks.
+                const int viewFd = frame.loop.fds.empty() ? -1 : frame.loop.fds[0];
+                const int testFd = ConnectionNumber(dpy);
+                int maxFd = (testFd > viewFd ? testFd : viewFd) + 1;
+                for (int round = 0; round < 100 && !painted; ++round) {
+                    fd_set rfds;
+                    FD_ZERO(&rfds);
+                    if (viewFd >= 0) FD_SET(viewFd, &rfds);
+                    FD_SET(testFd, &rfds);
+                    struct timeval tv { 0, 20000 };
+                    select(maxFd, &rfds, nullptr, nullptr, &tv);
+                    if (viewFd >= 0 && FD_ISSET(viewFd, &rfds) &&
+                        !frame.loop.handlers.empty())
+                        frame.loop.handlers[0]->onFDIsSet(viewFd);
+                    if (FD_ISSET(testFd, &rfds)) {
+                        while (XPending(dpy)) {
+                            XEvent e;
+                            XNextEvent(dpy, &e);
+                        }
+                    }
+                    if (!frame.loop.timers.empty())
+                        frame.loop.timers[0]->onTimer();
+                    XSync(dpy, False);
+                    // Find the child and probe its pixels for the palette.
+                    Window rootRet = 0, parentRet = 0, child = 0;
+                    Window* children = nullptr;
+                    unsigned n = 0;
+                    if (XQueryTree(dpy, parent, &rootRet, &parentRet, &children, &n)) {
+                        if (n > 0) child = children[0];
+                        if (children) XFree(children);
+                    }
+                    if (child) {
+                        XImage* img = XGetImage(dpy, child, 0, 0, 784, 416,
+                                                AllPlanes, ZPixmap);
+                        if (img && img->data) {
+                            size_t panel = 0, accent = 0, bg = 0;
+                            const uint32_t* px =
+                                reinterpret_cast<const uint32_t*>(img->data);
+                            for (size_t i = 0;
+                                 i < 784u * 416u && i < (size_t)(img->bytes_per_line / 4) * 416u;
+                                 ++i) {
+                                const uint32_t v = px[i] & 0xFFFFFFu;
+                                if (v == 0x1C1F24u) ++panel;
+                                if (v == 0xE8A33Du) ++accent;
+                                if (v == 0x17191Du) ++bg;
+                            }
+                            addValue(c, "painted_panel_px", (double)panel);
+                            addValue(c, "painted_accent_px", (double)accent);
+                            addValue(c, "painted_bg_px", (double)bg);
+                            painted = (panel > 100000 && accent > 100 && bg > 10000);
+                        }
+                        if (img) {
+                            XDestroyImage(img);
+                        }
+                    }
+                }
+                check(c, painted,
+                      "the attached view painted its palette into the window");
+                check(c, view->removed() == kResultOk, "removed failed");
+                check(c, frame.loop.handlers.empty() && frame.loop.timers.empty(),
+                      "run-loop handlers not unregistered on remove");
+                XSync(dpy, False);
+                Window rootRet = 0, parentRet = 0;
+                Window* children = nullptr;
+                unsigned n = 0;
+                XQueryTree(dpy, parent, &rootRet, &parentRet, &children, &n);
+                tornDown = (n == 0);
+                if (children) XFree(children);
+                check(c, tornDown, "child window not destroyed on remove");
+            }
+            XDestroyWindow(dpy, parent);
+            XCloseDisplay(dpy);
+        }
+    } else {
+        // Not a failure: the painted-pixel proof needs an X server (the
+        // lifecycle contract above already passed); recorded as a value.
+        addValue(c, "attach_exercised", 0.0);
+    }
+#else
+    check(c, view->isPlatformTypeSupported("NSView") == kResultFalse,
+          "no platform on this OS");
+#endif
+    view = nullptr;  // release the view BEFORE terminating the component
+    ec2->terminate();
+    c.pass = c.note.empty();
+}
+
 // The latency-truth notification (the R30 U-2 principle): the host is told
 // kLatencyChanged on the first report and whenever the reported value
 // changes (an active state restore with a different sample-domain config).
@@ -884,7 +1115,7 @@ void caseLatencyNotification(CaseResult& c) {
     {
         IAudioProcessor* ap2 = nullptr;
         if (comp2->queryInterface(IAudioProcessor::iid, (void**)&ap2) == kResultOk && ap2)
-            audio2 = IPtr<IAudioProcessor>(ap2);
+            audio2 = IPtr<IAudioProcessor>(ap2, false);  // adopt the query ref
     }
     if (!audio2) { c.pass = false; return; }
     // (the FUnknown* cast goes through the HostApplication branch -- the
@@ -1111,6 +1342,11 @@ int main(int argc, char** argv) {
     {
         CaseResult c{"latency_notification"};
         caseLatencyNotification(c);
+        pushCase(R, std::move(c));
+    }
+    {
+        CaseResult c{"minimal_editor_surface"};
+        caseMinimalEditorSurface(c);
         pushCase(R, std::move(c));
     }
     {

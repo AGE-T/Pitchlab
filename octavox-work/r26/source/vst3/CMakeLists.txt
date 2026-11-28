@@ -161,6 +161,24 @@ set(SMTG_ENABLE_VST3_HOSTING_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory("${VST3_SDK_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/vst3sdk"
                  EXCLUDE_FROM_ALL)
 
+# ---------------------------------------------------------------------------
+# R33: the minimal editor's X11 dependency (Linux only). The editor needs
+# exactly core Xlib (XOpenDisplay/XCreateSimpleWindow/XPutImage/... -- no
+# Xext, no Xrender, no font stack); the Win32 path needs gdi32/user32 and
+# is cross-compiled with the R32 zig toolchain.
+# ---------------------------------------------------------------------------
+if(UNIX AND NOT APPLE)
+    find_package(X11 REQUIRED)
+    set(OCTAVOX_UI_LIBS X11::X11)
+    set(OCTAVOX_UI_SOURCES octavox_minimal_view.cpp)
+elseif(WIN32)
+    set(OCTAVOX_UI_LIBS user32 gdi32)
+    set(OCTAVOX_UI_SOURCES octavox_minimal_view.cpp)
+else()
+    set(OCTAVOX_UI_LIBS)
+    set(OCTAVOX_UI_SOURCES octavox_minimal_view.cpp)
+endif()
+
 # Bring the smtg_* macros into THIS scope + the SDK root's platform setup.
 list(APPEND CMAKE_MODULE_PATH "${VST3_SDK_ROOT}/cmake/modules")
 include(SMTG_VST3_SDK)
@@ -222,9 +240,16 @@ smtg_add_vst3plugin(octavoxnative
         octavox_build_config.h
         octavox_ids.h
         factory.cpp
+        # R33: the minimal editor (IPlugView; platform layers compiled per
+        # OS inside octavox_minimal_view.cpp) + its software renderer.
+        ${OCTAVOX_UI_SOURCES}
+        octavox_minimal_view.h
+        octavox_ui_renderer.cpp
+        octavox_ui_renderer.h
+        octavox_ui_font.h
         ${VST3_SDK_ROOT}/public.sdk/source/vst/vstsinglecomponenteffect.cpp
 )
-target_link_libraries(octavoxnative PRIVATE octavox_core_vst3 sdk)
+target_link_libraries(octavoxnative PRIVATE octavox_core_vst3 sdk ${OCTAVOX_UI_LIBS})
 target_include_directories(octavoxnative PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(octavoxnative PRIVATE ${OCTAVOX_VST3_VARIANT_DEF})
 if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
@@ -241,13 +266,16 @@ add_executable(octavox_vst3_wrapper_tests
     octavox_params.cpp
     octavox_native_processor.cpp
     factory.cpp
+    ${OCTAVOX_UI_SOURCES}   # R33: createView references MinimalView
+    octavox_ui_renderer.cpp
     ${VST3_SDK_ROOT}/public.sdk/source/vst/vstsinglecomponenteffect.cpp
     ${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/parameterchanges.cpp
     ${VST3_SDK_ROOT}/public.sdk/source/common/memorystream.cpp
     ../tests/alloc_counter.cpp
 )
 target_link_libraries(octavox_vst3_wrapper_tests PRIVATE octavox_core_vst3
-                                                         sdk sdk_hosting)
+                                                         sdk sdk_hosting
+                                                         ${OCTAVOX_UI_LIBS})
 target_include_directories(octavox_vst3_wrapper_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(octavox_vst3_wrapper_tests PRIVATE ${OCTAVOX_VST3_VARIANT_DEF})
@@ -284,7 +312,7 @@ endif()
 # (the Windows/macOS harness paths are AUTHORED, not executed -- the
 #  R18 execution evidence is Linux-only, as stated in VST3_WRAPPER.md §7.)
 target_link_libraries(octavox_module_integration_tests PRIVATE
-    octavox_core_vst3 sdk sdk_hosting)
+    octavox_core_vst3 sdk sdk_hosting ${OCTAVOX_UI_LIBS})
 target_include_directories(octavox_module_integration_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
@@ -332,3 +360,50 @@ if(NOT MSVC)  # R17-P2: -Wall/-Wextra are GCC/Clang options
     target_compile_options(octavox_dual_nulltest PRIVATE -Wall -Wextra)
 endif()
 add_dependencies(octavox_dual_nulltest octavoxnative)
+
+# ---------------------------------------------------------------------------
+# R33: the minimal-editor logic + renderer test suite (platform-free model
+# + pixel-identity attach test under a real X server; see the file header).
+# ---------------------------------------------------------------------------
+add_executable(octavox_ui_tests
+    octavox_ui_tests.cpp
+    octavox_params.cpp
+    octavox_native_processor.cpp
+    factory.cpp
+    ${OCTAVOX_UI_SOURCES}
+    octavox_ui_renderer.cpp
+    ${VST3_SDK_ROOT}/public.sdk/source/vst/vstsinglecomponenteffect.cpp
+    ${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/parameterchanges.cpp
+    ${VST3_SDK_ROOT}/public.sdk/source/common/memorystream.cpp
+)
+target_link_libraries(octavox_ui_tests PRIVATE octavox_core_vst3 sdk sdk_hosting
+                                                     ${OCTAVOX_UI_LIBS})
+target_include_directories(octavox_ui_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(octavox_ui_tests PRIVATE ${OCTAVOX_VST3_VARIANT_DEF})
+if(NOT MSVC)
+    target_compile_options(octavox_ui_tests PRIVATE -Wall -Wextra)
+endif()
+
+# ---------------------------------------------------------------------------
+# R33: the offscreen screenshot tool (renders the editor through the same
+# model/renderer the live view uses; emits a deterministic PNG -- the
+# report/web/demo images are the REAL renderer output, not mock-ups).
+# ---------------------------------------------------------------------------
+add_executable(octavox_ui_screenshot
+    octavox_ui_screenshot.cpp
+    octavox_params.cpp
+    octavox_native_processor.cpp
+    factory.cpp
+    ${OCTAVOX_UI_SOURCES}
+    octavox_ui_renderer.cpp
+    ${VST3_SDK_ROOT}/public.sdk/source/vst/vstsinglecomponenteffect.cpp
+    ${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/parameterchanges.cpp
+    ${VST3_SDK_ROOT}/public.sdk/source/common/memorystream.cpp
+)
+target_link_libraries(octavox_ui_screenshot PRIVATE octavox_core_vst3 sdk sdk_hosting
+                                                        ${OCTAVOX_UI_LIBS})
+target_include_directories(octavox_ui_screenshot PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(octavox_ui_screenshot PRIVATE ${OCTAVOX_VST3_VARIANT_DEF})
+if(NOT MSVC)
+    target_compile_options(octavox_ui_screenshot PRIVATE -Wall -Wextra)
+endif()

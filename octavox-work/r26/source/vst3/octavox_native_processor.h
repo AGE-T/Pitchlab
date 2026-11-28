@@ -89,6 +89,13 @@ public:
     // (the SingleComponentEffect chain and the IPitchTelemetry branch).
     REFCOUNT_METHODS(SingleComponentEffect)
 
+    //--- from IEditController ----------------------------------------------
+    // R33: the minimal editor (IPlugView; fixed-size software-rendered
+    // view -- see octavox_minimal_view.h). The processor itself owns no
+    // view state; every createView call hands out a fresh MinimalView.
+    Steinberg::IPlugView* PLUGIN_API createView(
+        const Steinberg::FIDString name) SMTG_OVERRIDE;
+
     //--- from IPluginBase ---------------------------------------------------
     Steinberg::tresult PLUGIN_API initialize(Steinberg::FUnknown* context) SMTG_OVERRIDE;
     Steinberg::tresult PLUGIN_API terminate() SMTG_OVERRIDE;
